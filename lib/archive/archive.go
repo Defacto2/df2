@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/uuid/v2/lib/directories"
-	"github.com/Defacto2/uuid/v2/lib/images"
-	"github.com/Defacto2/uuid/v2/lib/logs"
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/images"
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
 	unarr "github.com/gen2brain/go-unarr"

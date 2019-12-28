@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/Defacto2/uuid/v2/lib/database"
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/spf13/cobra"
 )
 

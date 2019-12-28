@@ -4,8 +4,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Defacto2/uuid/v2/lib/assets"
-	"github.com/Defacto2/uuid/v2/lib/directories"
+	"github.com/Defacto2/df2/lib/assets"
+	"github.com/Defacto2/df2/lib/directories"
 	"github.com/spf13/cobra"
 )
 

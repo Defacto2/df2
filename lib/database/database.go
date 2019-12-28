@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Defacto2/uuid/v2/lib/archive"
-	"github.com/Defacto2/uuid/v2/lib/directories"
-	"github.com/Defacto2/uuid/v2/lib/logs"
+	"github.com/Defacto2/df2/lib/archive"
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
 	"github.com/google/uuid"

@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/uuid/v2/lib/directories"
-	"github.com/Defacto2/uuid/v2/lib/logs"
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/disintegration/imaging"
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"

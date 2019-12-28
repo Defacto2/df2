@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/uuid/v2/lib/database"
-	"github.com/Defacto2/uuid/v2/lib/logs"
+	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/logs"
 
-	"github.com/Defacto2/uuid/v2/lib/directories"
+	"github.com/Defacto2/df2/lib/directories"
 
 	"github.com/dustin/go-humanize"
 
