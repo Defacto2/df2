@@ -104,7 +104,7 @@ func Clean(target string, delete bool, human bool) {
 		paths = append(paths, d.Img000, d.Img400, d.Img150)
 	}
 	// connect to the database
-	rows, m := database.CreateUUIDMap()
+	rows, m := CreateUUIDMap()
 	logs.Cli("\nThe following files do not match any UUIDs in the database\n")
 	// parse directories
 	var sum results
@@ -130,6 +130,26 @@ func Clean(target string, delete bool, human bool) {
 		}
 		logs.Cli(fmt.Sprintf("%v drive space consumed\n", pts))
 	}
+}
+
+// CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
+func CreateUUIDMap() (int, database.IDs) {
+	db := database.Connect()
+	defer db.Close()
+	// query database
+	var id, uuid string
+	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
+	logs.Check(err)
+	m := database.IDs{} // this map is to store all the UUID values used in the database
+	// handle query results
+	rc := 0 // row count
+	for rows.Next() {
+		err = rows.Scan(&id, &uuid)
+		logs.Check(err)
+		m[uuid] = database.Empty{} // store record `uuid` value as a key name in the map `m` with an empty value
+		rc++
+	}
+	return rc, m
 }
 
 // backup is used by scanPath to backup matched orphans

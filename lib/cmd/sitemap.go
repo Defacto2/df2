@@ -118,7 +118,7 @@ func obfuscateParam(param string) string {
 func reverseInt(value int) int {
 	int := strconv.Itoa(value)
 	new := ""
-	for x := len(new); x > 0; x-- {
+	for x := len(int); x > 0; x-- {
 		new += string(int[x-1])
 	}
 	newInt, err := strconv.Atoi(new)

@@ -15,6 +15,7 @@ const (
 )
 
 var (
+	panic    bool = false // debug log
 	quiet    bool = false // quiet disables most printing or output to terminal
 	cfgFile  string
 	home, _  = os.UserHomeDir()
@@ -23,7 +24,7 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "uuid",
+	Use:   "df2",
 	Short: "A tool to configure and manage defacto2.net",
 }
 
@@ -40,10 +41,13 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", cfgFilename))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
+	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
+	_ = rootCmd.Flags().MarkHidden("panic")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	initPanic(panic)
 	initQuiet(quiet)
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -59,6 +63,10 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil && !quiet {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func initPanic(q bool) {
+	logs.Panic = q
 }
 
 // initQuiet quiets the terminal output

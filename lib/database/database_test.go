@@ -97,6 +97,6 @@ func Test_sqlGroups(t *testing.T) {
 
 func BenchmarkGroupsToHTML(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		GroupsToHTML("all", false)
+		GroupsToHTML("all", false, true, "")
 	}
 }

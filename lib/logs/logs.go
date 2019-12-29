@@ -6,12 +6,20 @@ import (
 )
 
 // Quiet silences most writing to the standard output.
-var Quiet = false
+var (
+	Panic = false
+	Quiet = false
+)
 
 // Check logs any errors and exits to the operating system with error code 1.
 func Check(err error) {
 	if err != nil {
-		log.Fatal("ERROR: ", err)
+		switch Panic {
+		case true:
+			log.Panic(err)
+		default:
+			log.Fatal("ERROR: ", err)
+		}
 	}
 }
 

@@ -6,14 +6,14 @@ import (
 	"html/template"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/Defacto2/df2/lib/archive"
-	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/spf13/viper"
 
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
 	"github.com/google/uuid"
@@ -37,172 +37,46 @@ type Empty struct{}
 // IDs are unique UUID values used by the database and filenames.
 type IDs map[string]struct{}
 
-// Record of a file item.
-type Record struct {
-	ID   string // mysql auto increment id
-	UUID string // record unique id
-	File string // absolute path to file
-	Name string // filename
-}
-
 var (
-	// TODO move to configuration
-	d       = Connection{Name: "defacto2-inno", User: "root", Pass: "password", Server: "tcp(localhost:3306)"}
-	proofID string
-	pwPath  string // The path to a secured text file containing the d.User login password
+	d      = Connection{} // connection details
+	pwPath string         // path to a secured text file containing the d.User login password
 )
-
-func recordNew(values []sql.RawBytes) bool {
-	if values[2] == nil || string(values[2]) != string(values[3]) {
-		return false
-	}
-	return true
-}
 
 // Connect to the database.
 func Connect() *sql.DB {
+	connectInit()
 	pw := readPassword()
-	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v/%v", d.User, pw, d.Server, d.Name))
+	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", d.User, pw, d.Server, d.Name))
 	logs.Check(err)
-	// ping the server to make sure the connection works
-	err = db.Ping()
+	err = db.Ping() // ping the server to make sure the connection works
 	logs.Check(err)
 	return db
 }
 
-// CreateProof ...
-func CreateProof(id string, ow bool, all bool) error {
-	if !validUUID(id) && !validID(id) {
-		return fmt.Errorf("invalid id given %q it needs to be an auto-generated MySQL id or an uuid", id)
-	}
-	proofID = id
-	return CreateProofs(ow, all)
-}
-
-// CreateProofs is a placeholder to scan archives.
-func CreateProofs(ow bool, all bool) error {
-	db := Connect()
-	defer db.Close()
-	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file_zip_content`,`updatedat`,`platform`"
-	w := "WHERE `section` = 'releaseproof'"
-	if proofID != "" {
-		switch {
-		case validUUID(proofID):
-			w = fmt.Sprintf("%v AND `uuid`=%q", w, proofID)
-		case validID(proofID):
-			w = fmt.Sprintf("%v AND `id`=%q", w, proofID)
+// CronGroups ...
+func CronGroups() {
+	// these are currently thread unsafe!
+	// make these 4 image tasks multithread
+	// c := make(chan bool)
+	// go func() { GroupsToHTML("bbs", count, pct, "bbs.htm"); c <- true }()
+	// go func() { GroupsToHTML("ftp", count, pct, "ftp.htm"); c <- true }()
+	// go func() { GroupsToHTML("group", count, pct, "group.htm"); c <- true }()
+	// go func() { GroupsToHTML("magazine", count, pct, "magazine.htm"); c <- true }()
+	//<-c // sync 4 tasks
+	tags := []string{"bbs", "ftp", "group", "magazine"}
+	for i := range tags {
+		name := tags[i] + ".htm"
+		if update := updateFile(path.Join("/Users/ben/github/df2", name), UpdateAt()); !update {
+			println(name + " has nothing to update")
+		} else {
+			GroupsToHTML(tags[i], true, false, name)
 		}
 	}
-	rows, err := db.Query(s + "FROM `files`" + w)
-	if err != nil {
-		return err
-	}
-	columns, err := rows.Columns()
-	if err != nil {
-		return err
-	}
-	values := make([]sql.RawBytes, len(columns))
-	// more information: https://github.com/go-sql-driver/mysql/wiki/Examples
-	scanArgs := make([]interface{}, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
-	}
-	dir := directories.Init(false)
-	// fetch the rows
-	cnt := 0
-	missing := 0
-	// todo move to sep func to allow individual record parsing
-	for rows.Next() {
-		err = rows.Scan(scanArgs...)
-		logs.Check(err)
-		if new := recordNew(values); !new && !all {
-			continue
-		}
-		cnt++
-		r := Record{ID: string(values[0]), UUID: string(values[1]), Name: string(values[4])}
-		r.File = filepath.Join(dir.UUID, r.UUID)
-		// ping file
-		if _, err := os.Stat(r.File); os.IsNotExist(err) {
-			fmt.Printf("✗ item %v (%v) missing %v\n", cnt, r.ID, r.File)
-			missing++
-			continue
-		}
-		// iterate through each value
-		var value string
-		for i, col := range values {
-			if col == nil {
-				value = "NULL"
-			} else {
-				value = string(col)
-			}
-			switch columns[i] {
-			case "id":
-				fmt.Printf("✓ item %v (%v) ", cnt, value)
-			case "uuid":
-				fmt.Printf("%v, ", value)
-			case "createdat":
-				fmt.Printf("%v, ", value)
-			case "filename":
-				fmt.Printf("%v\n", value)
-			case "file_zip_content":
-				if col == nil || ow {
-					if u := fileZipContent(r); !u {
-						continue
-					}
-					// todo: tag platform based on found files
-					err := archive.Extract(r.File, r.UUID)
-					logs.Log(err)
-				}
-			case "deletedat":
-			case "updatedat": // ignore
-			default:
-				fmt.Printf("   %v: %v\n", columns[i], value)
-			}
-		}
-		fmt.Println("---------------")
-	}
-	logs.Check(rows.Err())
-	fmt.Println("Total proofs handled: ", cnt)
-	if missing > 0 {
-		fmt.Println("UUID files not found: ", missing)
-	}
-	return nil
-}
-
-// CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
-func CreateUUIDMap() (int, IDs) {
-	db := Connect()
-	defer db.Close()
-	// query database
-	var id, uuid string
-	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
-	logs.Check(err)
-	m := IDs{} // this map is to store all the UUID values used in the database
-	// handle query results
-	rc := 0 // row count
-	for rows.Next() {
-		err = rows.Scan(&id, &uuid)
-		logs.Check(err)
-		m[uuid] = Empty{} // store record `uuid` value as a key name in the map `m` with an empty value
-		rc++
-	}
-	return rc, m
 }
 
 // GroupsX returns a list of organisations or groups.
 func GroupsX(where string, count bool) {
 	db := Connect()
-
-	//<h2><a href="/g/13-omens">13 OMENS</a></h2><hr>
-
-	// switch(arguments.key) {
-	// 	case "magazine": sql = "section = 'magazine' AND"; break;
-	// 	case "bbs": sql = "RIGHT(group_brand_for,4) = ' BBS' AND"; break;
-	// 	case "ftp": sql = "RIGHT(group_brand_for,4) = ' FTP' AND"; break;
-	// 	// This will only display groups who are listed under group_brand_for. group_brand_by only groups will be ignored
-	// 	case "group": sql = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"; break;
-	// }
-
 	s := "SELECT pubValue, (SELECT CONCAT(pubCombined, ' ', '(', initialisms, ')') FROM groups WHERE pubName = pubCombined AND Length(initialisms) <> 0) AS pubCombined"
 	s += " FROM (SELECT TRIM(group_brand_for) AS pubValue, group_brand_for AS pubCombined FROM files WHERE Length(group_brand_for) <> 0"
 	s += " UNION SELECT TRIM(group_brand_by) AS pubValue, group_brand_by AS pubCombined FROM files WHERE Length(group_brand_by) <> 0) AS pubTbl"
@@ -241,11 +115,15 @@ func GroupsX(where string, count bool) {
 }
 
 // Groups returns a list of organizations or groups filtered by name.
-func Groups(name string, count bool) ([]string, int) {
+func Groups(name string) ([]string, int) {
 	db := Connect()
+	fmt.Println("Groups >", name)
 	s := sqlGroups(name, false)
 	// count records
 	rows, err := db.Query(s)
+	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
+		println(s)
+	}
 	logs.Check(err)
 	defer db.Close()
 	total := 0
@@ -267,31 +145,58 @@ func Groups(name string, count bool) ([]string, int) {
 			continue
 		}
 		i++
-		progressSum(i, total)
 		g = fmt.Sprintf("%v", grp.String)
-		if count {
-			g += fmt.Sprint(GroupCount(grp.String), " files ")
-		}
 		grps = append(grps, g)
 	}
 	return grps, total
 }
 
-// GroupsToHTML ...
-func GroupsToHTML(name string, count bool) {
+// GroupCount returns the number of file entries associated with a group.
+func GroupCount(name string) int {
+	db := Connect()
+	n := name
+	var count int
+	s := "SELECT COUNT(*) FROM files WHERE "
+	s += fmt.Sprintf("group_brand_for='%v' OR group_brand_for LIKE '%v,%%' OR group_brand_for LIKE '%%, %v,%%' OR group_brand_for LIKE '%%, %v'", n, n, n, n)
+	s += fmt.Sprintf(" OR group_brand_by='%v' OR group_brand_by LIKE '%v,%%' OR group_brand_by LIKE '%%, %v,%%' OR group_brand_by LIKE '%%, %v'", n, n, n, n)
+	row := db.QueryRow(s)
+	err := row.Scan(&count)
+	logs.Check(err)
+	defer db.Close()
+	return count
+}
+
+func updateFile(name string, database time.Time) bool {
+	f, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return true
+	}
+	logs.Check(err)
+	mod := f.ModTime()
+	return !mod.UTC().After(database.UTC())
+}
+
+// GroupsToHTML prints a HTML snippet listing links to each group, with an optional file count.
+func GroupsToHTML(name string, count bool, countIndicator bool, filename string) {
 	// TODO create a cronjob flag that retrieves the most recent updateat value and compares it to now()
 	// <h2><a href="/g/13-omens">13 OMENS</a></h2><hr>
-	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a></h2>{{end}}`
+	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
 	type Group struct {
-		ID   string
-		Name string
-		Hr   bool
+		ID    string
+		Name  string
+		Count int
+		Hr    bool
 	}
-	grp, _ := Groups(name, false)
+	grp, _ := Groups(name)
 	data := make([]Group, len(grp))
 	cap := ""
 	hr := false
+	var cnt int
+	total := len(grp)
 	for i := range grp {
+		if countIndicator {
+			progressPct(name, i+1, total)
+		}
 		n := grp[i]
 		switch c := n[:1]; {
 		case cap == "":
@@ -302,16 +207,41 @@ func GroupsToHTML(name string, count bool) {
 		default:
 			hr = false
 		}
+		switch count {
+		case false:
+			cnt = 0
+		case true:
+			cnt = GroupCount(n)
+		}
 		data[i] = Group{
-			ID:   MakeSlug(grp[i]),
-			Name: grp[i],
-			Hr:   hr,
+			ID:    MakeSlug(n),
+			Name:  n,
+			Count: cnt,
+			Hr:    hr,
 		}
 	}
 	t, err := template.New("h2").Parse(tpl)
 	logs.Check(err)
-	err = t.Execute(os.Stdout, data)
-	logs.Check(err)
+	switch {
+	case filename == "":
+		err = t.Execute(os.Stdout, data)
+		logs.Check(err)
+	case name == "bbs", name == "ftp", name == "group", name == "magazine":
+		f, err := os.Create(path.Join("/Users/ben/github/df2", filename))
+		logs.Check(err)
+		defer f.Close()
+		err = t.Execute(f, data)
+		logs.Check(err)
+	default:
+		logs.Check(fmt.Errorf("invalid name %q used", name))
+	}
+}
+
+// GroupsPrint ...
+func GroupsPrint(name string, count bool) {
+	g, i := Groups(name)
+	fmt.Println(strings.Join(g, ", "))
+	fmt.Println("Total groups", i)
 }
 
 // MakeSlug takes a name and makes it into a URL friendly slug.
@@ -330,36 +260,6 @@ func MakeSlug(name string) string {
 	return n
 }
 
-// GroupsPrint ...
-func GroupsPrint(name string, count bool) {
-	g, i := Groups(name, count)
-	fmt.Println(strings.Join(g, ", "))
-	fmt.Println("Total groups", i)
-}
-
-func progressSum(count int, total int) {
-	fmt.Printf("\rBuilding %d/%d", count, total)
-}
-
-func progressPct(count int, total int) {
-	fmt.Printf("\rBuilding %.2f %%", float64(count)/float64(total)*100)
-}
-
-// GroupCount returns the number of file entries associated with a group.
-func GroupCount(name string) int {
-	db := Connect()
-	n := name
-	var count int
-	s := "SELECT COUNT(*) FROM files WHERE "
-	s += fmt.Sprintf("group_brand_for='%v' OR group_brand_for LIKE '%v,%%' OR group_brand_for LIKE '%%, %v,%%' OR group_brand_for LIKE '%%, %v'", n, n, n, n)
-	s += fmt.Sprintf(" OR group_brand_by='%v' OR group_brand_by LIKE '%v,%%' OR group_brand_by LIKE '%%, %v,%%' OR group_brand_by LIKE '%%, %v'", n, n, n, n)
-	row := db.QueryRow(s)
-	err := row.Scan(&count)
-	logs.Check(err)
-	defer db.Close()
-	return count
-}
-
 // Update is a temp SQL update func.
 func Update(id string, content string) {
 	db := Connect()
@@ -371,14 +271,52 @@ func Update(id string, content string) {
 	fmt.Println("Updated file_zip_content", r)
 }
 
-func fileZipContent(r Record) bool {
-	a, err := archive.Read(r.File)
-	if err != nil {
-		logs.Log(err)
+func UpdateAt() time.Time {
+	db := Connect()
+	defer db.Close()
+	var updatedat time.Time
+	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat` ORDER BY `updatedat` DESC LIMIT 1")
+	err := row.Scan(&updatedat)
+	logs.Check(err)
+	return updatedat
+}
+
+func connectInit() {
+	if d != (Connection{}) { // check for empty struct
+		return
+	}
+	d = Connection{
+		Name: viper.GetString("connection.name"),
+		User: viper.GetString("connection.user"),
+		Pass: viper.GetString("connection.password"),
+		Server: fmt.Sprintf("%v(%v:%v)", // example: tcp(localhost:3306)
+			viper.GetString("connection.server.protocol"),
+			viper.GetString("connection.server.host"),
+			viper.GetString("connection.server.port")),
+	}
+	d.Pass = "password"
+}
+
+func IsID(id string) bool {
+	if _, err := strconv.Atoi(id); err != nil {
 		return false
 	}
-	Update(r.ID, strings.Join(a, "\n"))
 	return true
+}
+
+func IsUUID(id string) bool {
+	if _, err := uuid.Parse(id); err != nil {
+		return false
+	}
+	return true
+}
+
+func progressPct(name string, count int, total int) {
+	fmt.Printf("\rQuerying %s %.2f %%", name, float64(count)/float64(total)*100)
+}
+
+func progressSum(count int, total int) {
+	fmt.Printf("\rBuilding %d/%d", count, total)
 }
 
 // readPassword attempts to read and return the Defacto2 database user password when stored in a local text file.
@@ -396,20 +334,6 @@ func readPassword() string {
 	return strings.TrimSpace(fmt.Sprintf("%s", pw))
 }
 
-func validUUID(id string) bool {
-	if _, err := uuid.Parse(id); err != nil {
-		return false
-	}
-	return true
-}
-
-func validID(id string) bool {
-	if _, err := strconv.Atoi(id); err != nil {
-		return false
-	}
-	return true
-}
-
 // sqlGroups returns a complete SQL WHERE statement where the groups are filtered by name.
 func sqlGroups(name string, includeSoftDeletes bool) string {
 	inc := includeSoftDeletes
@@ -424,7 +348,7 @@ func sqlGroups(name string, includeSoftDeletes bool) string {
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
 		sql = "SELECT DISTINCT group_brand_for AS pubCombined "
-		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + sqlGroupsWhere(name, inc) + ")"
+		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + sqlGroupsWhere(name, inc)
 	default:
 		sql = "(SELECT DISTINCT group_brand_for AS pubCombined "
 		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + sqlGroupsWhere(name, inc) + ")"

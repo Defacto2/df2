@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/proof"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +24,9 @@ var proofCmd = &cobra.Command{
 		var err error
 		switch {
 		case proofID != "":
-			err = database.CreateProof(proofID, proofOverwrite, proofAll)
+			err = proof.Query(proofID, proofOverwrite, proofAll)
 		default:
-			err = database.CreateProofs(proofOverwrite, proofAll)
+			err = proof.Queries(proofOverwrite, proofAll)
 		}
 		logs.Check(err)
 	},
