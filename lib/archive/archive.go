@@ -22,9 +22,8 @@ type task struct {
 	cont bool   // continue, don't scan anymore images
 }
 
-// var archives = []string{"zip", "tar.gz", "tar", "rar", "gz", "lzh", "lha", "cab", "arj", "arc", "7z"}
-
-// Extract decompresses and parses an archive
+// Extract decompresses and parses a named archive.
+// uuid is used to rename the extracted assets such as image previews.
 func Extract(name string, uuid string) error {
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
@@ -89,7 +88,7 @@ func Extract(name string, uuid string) error {
 	return nil
 }
 
-// NewExt replaces or appends the extension to a file name.
+// NewExt replaces or appends the extension to a filename.
 func NewExt(name string, extension string) string {
 	e := filepath.Ext(name)
 	if e == "" {
@@ -99,7 +98,9 @@ func NewExt(name string, extension string) string {
 	return fn + extension
 }
 
-// Read returns a list of files within rar, tar, zip, 7z archives
+// Read returns a list of files within an rar, tar, zip or 7z archive.
+// In the future I would like to add support for the following archives
+// "tar.gz", "gz", "lzh", "lha", "cab", "arj", "arc".
 func Read(name string) ([]string, error) {
 	a, err := unarr.NewArchive(name)
 	if err != nil {
@@ -113,6 +114,7 @@ func Read(name string) ([]string, error) {
 	return list, nil
 }
 
+// dir lists the content of a directory.
 func dir(name string) {
 	files, err := ioutil.ReadDir(name)
 	logs.Check(err)
