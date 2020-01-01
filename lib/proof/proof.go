@@ -126,6 +126,7 @@ func Queries(ow bool, all bool) error {
 	return nil
 }
 
+// fileZipContent reads an archive and saves its content to the database
 func fileZipContent(r Record) bool {
 	a, err := archive.Read(r.File)
 	if err != nil {
@@ -136,6 +137,7 @@ func fileZipContent(r Record) bool {
 	return true
 }
 
+// recordNew determin if a record is unapproved
 func recordNew(values []sql.RawBytes) bool {
 	if values[2] == nil || string(values[2]) != string(values[3]) {
 		return false

@@ -23,17 +23,17 @@ func Check(err error) {
 	}
 }
 
-// Log any errors.
-func Log(err error) {
-	if err != nil {
-		log.Printf("! %v", err)
-	}
-}
-
 // Cli writes the string to the standard output.
 func Cli(s string) {
 	switch Quiet {
 	case false:
 		fmt.Print(s)
+	}
+}
+
+// Log any errors.
+func Log(err error) {
+	if err != nil {
+		log.Printf("! %v", err)
 	}
 }

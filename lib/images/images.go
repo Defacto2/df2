@@ -24,7 +24,7 @@ import (
 	_ "golang.org/x/image/webp" // register WebP decoding
 )
 
-// Duplicate an image file and appends prefix to its name
+// Duplicate an image file and appends prefix to its name.
 func Duplicate(name string, prefix string) (string, error) {
 	src, err := os.Open(name)
 	if err != nil {
@@ -56,7 +56,6 @@ func Generate(n string, id string, d directories.Dir) {
 	go func() { e := ToThumb(n, f.Img150, 150); logs.Log(e); c <- true }()
 	<-c // sync 4 tasks
 	os.Remove(n)
-
 }
 
 // NewExt replaces or appends the extension to a file name.
@@ -141,7 +140,7 @@ func ToThumb(file string, saveDir string, size int) error {
 	if err := os.Rename(f, s); err != nil {
 		return err
 	}
-	fmt.Printf("Generating thumbnail x%v, %v\n", size, pSize(s))
+	fmt.Printf("Generating thumbnail x%v, %v\n", size, filesize(s))
 	if err := os.Remove(cp); err != nil {
 		return err
 	}
@@ -159,11 +158,11 @@ func ToWebp(src string, dest string) error {
 		InputFile(src).
 		OutputFile(dest).
 		Run()
-	fmt.Println("Converted to WebP,", pSize(dest))
+	fmt.Println("Converted to WebP,", filesize(dest))
 	return err
 }
 
-func pSize(name string) string {
+func filesize(name string) string {
 	f, err := os.Stat(name)
 	if err != nil {
 		return ""

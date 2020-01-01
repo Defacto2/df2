@@ -1,6 +1,6 @@
 package assets
 
-// todo: format tables with go tab writer; add colour text
+// TODO: format tables with go tab writer; add colour text
 
 import (
 	"archive/tar"

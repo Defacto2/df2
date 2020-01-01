@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
 )
@@ -24,11 +24,11 @@ var groupCmd = &cobra.Command{
 	Short: "A HTML snippet generator to list groups",
 	Run: func(cmd *cobra.Command, args []string) {
 		if groupCronJob {
-			database.CronGroups()
+			groups.Cronjob()
 			return
 		}
 		validateFilter()
-		database.GroupsToHTML(groupFilter, groupCntFiles, groupProgress, "")
+		groups.HTML(groupFilter, groupCntFiles, groupProgress, "")
 	},
 }
 

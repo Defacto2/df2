@@ -136,6 +136,7 @@ func randStringBytes(n int) string {
 	return string(b)
 }
 
+// errPrefix gives user feedback with invalid params.
 func errPrefix(prefix uint) error {
 	return fmt.Errorf("invalid prefix %v, it must be between 0 - 9", prefix)
 }
