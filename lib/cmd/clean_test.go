@@ -38,28 +38,3 @@ func Test_options(t *testing.T) {
 		})
 	}
 }
-
-func Test_valid(t *testing.T) {
-	type args struct {
-		a []string
-		x string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{"empty", args{}, false},
-		{"targets", args{targets, "all"}, true},
-		{"no targets", args{targets, "foo"}, false},
-		{"simple", args{[]string{"test"}, "test"}, true},
-		{"empty x", args{[]string{"test"}, ""}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := valid(tt.args.a, tt.args.x); got != tt.want {
-				t.Errorf("valid() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}

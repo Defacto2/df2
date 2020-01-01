@@ -8,11 +8,12 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 )
+
+const source = "/Users/ben/github/df2"
 
 // Count returns the number of file entries associated with a group.
 func Count(name string) int {
@@ -29,12 +30,12 @@ func Count(name string) int {
 	return count
 }
 
-// Cronjob ...
+// Cronjob is used for system automation to generate dynamic HTML pages.
 func Cronjob() {
 	tags := []string{"bbs", "ftp", "group", "magazine"}
 	for i := range tags {
 		name := tags[i] + ".htm"
-		if update := updateFile(path.Join("/Users/ben/github/df2", name), UpdateAt()); !update {
+		if update := database.FileUpdate(path.Join(source, name), database.LastUpdate()); !update {
 			println(name + " has nothing to update")
 		} else {
 			HTML(tags[i], true, false, name)
@@ -42,7 +43,7 @@ func Cronjob() {
 	}
 }
 
-// CronThreads cannot be used as this is not thread unsafe.
+// CronThreads is a multithread Cronjob but cannot be used as this func is not thread-safe.
 func CronThreads() {
 	var (
 		count = true
@@ -57,9 +58,8 @@ func CronThreads() {
 	<-c // sync 4 tasks
 }
 
-// HTML prints a HTML snippet listing links to each group, with an optional file count.
+// HTML prints a snippet listing links to each group, with an optional file count.
 func HTML(name string, count bool, countIndicator bool, filename string) {
-	// TODO create a cronjob flag that retrieves the most recent updateat value and compares it to now()
 	// <h2><a href="/g/13-omens">13 OMENS</a></h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
 	type Group struct {
@@ -108,7 +108,7 @@ func HTML(name string, count bool, countIndicator bool, filename string) {
 		err = t.Execute(os.Stdout, data)
 		logs.Check(err)
 	case name == "bbs", name == "ftp", name == "group", name == "magazine":
-		f, err := os.Create(path.Join("/Users/ben/github/df2", filename))
+		f, err := os.Create(path.Join(source, filename))
 		logs.Check(err)
 		defer f.Close()
 		err = t.Execute(f, data)
@@ -118,7 +118,8 @@ func HTML(name string, count bool, countIndicator bool, filename string) {
 	}
 }
 
-// Initialism returns a list of organisations or groups.
+// Initialism lists organizations or groups and their initialism filtered by a name.
+// TODO where filter isn't implemented
 func Initialism(where string, count bool) {
 	db := database.Connect()
 	s := "SELECT pubValue, (SELECT CONCAT(pubCombined, ' ', '(', initialisms, ')') FROM groups WHERE pubName = pubCombined AND Length(initialisms) <> 0) AS pubCombined"
@@ -158,7 +159,7 @@ func Initialism(where string, count bool) {
 	fmt.Println("Total groups", i)
 }
 
-// List organizations or groups filtered by name.
+// List organizations or groups filtered by a name.
 func List(name string) ([]string, int) {
 	db := database.Connect()
 	fmt.Println("Groups >", name)
@@ -211,28 +212,19 @@ func MakeSlug(name string) string {
 	return n
 }
 
-// Print ... TODO CMD
+// Print list organizations or groups filtered by a name and summaries the results.
 func Print(name string, count bool) {
 	g, i := List(name)
 	fmt.Println(strings.Join(g, ", "))
 	fmt.Println("Total groups", i)
 }
 
-// UpdateAt xxx
-func UpdateAt() time.Time {
-	db := database.Connect()
-	defer db.Close()
-	var updatedat time.Time
-	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat` ORDER BY `updatedat` DESC LIMIT 1")
-	err := row.Scan(&updatedat)
-	logs.Check(err)
-	return updatedat
-}
-
+// progressPct returns the count of total remaining as a percentage.
 func progressPct(name string, count int, total int) {
 	fmt.Printf("\rQuerying %s %.2f %%", name, float64(count)/float64(total)*100)
 }
 
+// progressSum returns the count of total remaining.
 func progressSum(count int, total int) {
 	fmt.Printf("\rBuilding %d/%d", count, total)
 }
@@ -296,14 +288,4 @@ func sqlGroupsWhere(name string, includeSoftDeletes bool) string {
 		return sql[:l-4]
 	}
 	return sql
-}
-
-func updateFile(name string, database time.Time) bool {
-	f, err := os.Stat(name)
-	if os.IsNotExist(err) {
-		return true
-	}
-	logs.Check(err)
-	mod := f.ModTime()
-	return !mod.UTC().After(database.UTC())
 }

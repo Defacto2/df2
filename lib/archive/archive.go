@@ -88,7 +88,7 @@ func Extract(name string, uuid string) error {
 	return nil
 }
 
-// NewExt replaces or appends the extension to a filename.
+// NewExt swaps or appends the extension to a filename.
 func NewExt(name string, extension string) string {
 	e := filepath.Ext(name)
 	if e == "" {

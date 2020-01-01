@@ -147,7 +147,7 @@ func ToThumb(file string, saveDir string, size int) error {
 	return nil
 }
 
-// ToWebp converts any support format to a WebP image using a 3rd party library.
+// ToWebp converts any supported format to a WebP image using a 3rd party library.
 func ToWebp(src string, dest string) error {
 	// skip if already a webp image
 	if m, _ := mimetype.DetectFile(src); m.Extension() == ".webp" {

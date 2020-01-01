@@ -88,15 +88,6 @@ func createDirectory(path string) bool {
 	return false
 }
 
-// createPlaceHolders generates a collection placeholder files in the UUID subdirectories.
-func createPlaceHolders() {
-	createHolderFiles(D.UUID, 1000000, 9)
-	createHolderFiles(D.Emu, 1000000, 2)
-	createHolderFiles(D.Img000, 1000000, 9)
-	createHolderFiles(D.Img400, 500000, 9)
-	createHolderFiles(D.Img150, 100000, 9)
-}
-
 // createHolderFiles generates a number of placeholder files in the given directory.
 func createHolderFiles(dir string, size int, number uint) {
 	if number > 9 {
@@ -125,6 +116,15 @@ func createHolderFile(dir string, size int, prefix uint) {
 	if err := ioutil.WriteFile(fn, text, 0644); err != nil {
 		logs.Log(err)
 	}
+}
+
+// createPlaceHolders generates a collection placeholder files in the UUID subdirectories.
+func createPlaceHolders() {
+	createHolderFiles(D.UUID, 1000000, 9)
+	createHolderFiles(D.Emu, 1000000, 2)
+	createHolderFiles(D.Img000, 1000000, 9)
+	createHolderFiles(D.Img400, 500000, 9)
+	createHolderFiles(D.Img150, 100000, 9)
 }
 
 // randStringBytes generates a random string of n x characters.

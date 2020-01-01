@@ -27,7 +27,7 @@ var (
 
 // Query parses a single proof.
 func Query(id string, ow bool, all bool) error {
-	if !database.IsUUID(id) && !database.IsID(id) {
+	if !database.UUID(id) && !database.ID(id) {
 		return fmt.Errorf("invalid id given %q it needs to be an auto-generated MySQL id or an uuid", id)
 	}
 	proofID = id
@@ -44,9 +44,9 @@ func Queries(ow bool, all bool) error {
 	w := "WHERE `section` = 'releaseproof'"
 	if proofID != "" {
 		switch {
-		case database.IsUUID(proofID):
+		case database.UUID(proofID):
 			w = fmt.Sprintf("%v AND `uuid`=%q", w, proofID)
-		case database.IsID(proofID):
+		case database.ID(proofID):
 			w = fmt.Sprintf("%v AND `id`=%q", w, proofID)
 		}
 	}
@@ -133,11 +133,11 @@ func fileZipContent(r Record) bool {
 		logs.Log(err)
 		return false
 	}
-	database.Update(r.ID, strings.Join(a, "\n"))
+	database.UpdateZipContent(r.ID, strings.Join(a, "\n"))
 	return true
 }
 
-// recordNew determin if a record is unapproved
+// recordNew reports if a proof is set to unapproved
 func recordNew(values []sql.RawBytes) bool {
 	if values[2] == nil || string(values[2]) != string(values[3]) {
 		return false

@@ -40,6 +40,7 @@ func init() {
 	groupCmd.Flags().BoolVarP(&groupCronJob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
 }
 
+// validateFilter compairs the value of the filter flag against the list of values in the enforced const.
 func validateFilter() {
 	okay := false
 	list := strings.Split(enforced, ",")

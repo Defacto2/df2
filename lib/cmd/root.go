@@ -65,11 +65,12 @@ func initConfig() {
 	}
 }
 
+// initPanic toggles panics for all logged errors.
 func initPanic(q bool) {
 	logs.Panic = q
 }
 
-// initQuiet quiets the terminal output
+// initQuiet quiets the terminal output.
 func initQuiet(q bool) {
 	logs.Quiet = q
 }

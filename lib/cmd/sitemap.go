@@ -16,13 +16,13 @@ import (
 
 const resource string = "https://defacto2.net/f/"
 
-// url comprise the <url> tag in the sitemap
+// url composes the <url> tag in the sitemap
 type url struct {
 	Location     string `xml:"loc"`
 	LastModified string `xml:"lastmod,omitempty"` // optional
 }
 
-// Urlset is the sitemap xml template
+// Urlset is a sitemap XML template
 type Urlset struct {
 	XMLName xml.Name `xml:"urlset"`
 	XMLNS   string   `xml:"xmlns,attr"`
@@ -43,6 +43,7 @@ func init() {
 	rootCmd.AddCommand(sitemapCmd)
 }
 
+// create generates and prints the sitemap.
 func create() {
 	// query
 	var id string
@@ -86,6 +87,7 @@ func create() {
 	os.Stdout.Write(output)
 }
 
+// obfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
 func obfuscateParam(param string) string {
 	rv := param // return value
 	// check to make sure param doesn't begin with a 0 digit
@@ -115,6 +117,7 @@ func obfuscateParam(param string) string {
 	return strconv.FormatInt(int64(b), 16) + strconv.FormatInt(int64(a), 16)
 }
 
+// reverseInt swaps the direction of the value, 12345 would return 54321.
 func reverseInt(value int) int {
 	int := strconv.Itoa(value)
 	new := ""

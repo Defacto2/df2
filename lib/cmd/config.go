@@ -218,6 +218,7 @@ func configMissing(name string, suffix string) {
 	os.Exit(1)
 }
 
+// promptCheck asks the user for a string configuration value and saves it.
 func promptCheck(cnt int) {
 	switch {
 	case cnt == 2:
@@ -227,6 +228,7 @@ func promptCheck(cnt int) {
 	}
 }
 
+// promptDir asks the user for a directory path and saves it.
 func promptDir() {
 	// allow multiple word user input
 	scanner := bufio.NewScanner(os.Stdin)
@@ -256,6 +258,7 @@ func promptDir() {
 	}
 }
 
+// promptString asks the user for a port configuration value and saves it.
 func promptPort() {
 	var input string
 	cnt := 0
@@ -274,7 +277,7 @@ func promptPort() {
 			continue
 		}
 		// check that the input a valid port
-		if v := validPort(int(i)); !v {
+		if v := Port(int(i)); !v {
 			fmt.Printf("%s %v, is out of range\n", "✗", input)
 			promptCheck(cnt)
 			continue
@@ -286,6 +289,7 @@ func promptPort() {
 	}
 }
 
+// promptString asks the user for a string configuration value and saves it.
 func promptString(keep string) {
 	// allow multiple word user input
 	scanner := bufio.NewScanner(os.Stdin)
@@ -311,6 +315,7 @@ func promptString(keep string) {
 	}
 }
 
+// promptYN asks the user for a Yes or No input.
 func promptYN(query string, yesDefault bool) bool {
 	var input string
 	y := "Y"
@@ -332,6 +337,7 @@ func promptYN(query string, yesDefault bool) bool {
 	return false
 }
 
+// writeConfig saves all configs to a configuration file.
 func writeConfig(update bool) {
 	bs, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
@@ -345,8 +351,9 @@ func writeConfig(update bool) {
 	fmt.Println(s+" config file at:", filepath)
 }
 
-func validPort(p int) bool {
-	if p < portMin || p > portMax {
+// Port reports if the value is valid.
+func Port(port int) bool {
+	if port < portMin || port > portMax {
 		return false
 	}
 	return true

@@ -42,12 +42,3 @@ func options(a []string) string {
 	sort.Strings(a)
 	return "\noptions: " + strings.Join(a, ", ")
 }
-
-func valid(a []string, x string) bool {
-	for _, b := range a {
-		if b == x {
-			return true
-		}
-	}
-	return false
-}

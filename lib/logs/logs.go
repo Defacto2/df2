@@ -5,9 +5,10 @@ import (
 	"log"
 )
 
-// Quiet silences most writing to the standard output.
 var (
+	// Panic uses the panic function to handle all error logs.
 	Panic = false
+	// Quiet stops most writing to the standard output.
 	Quiet = false
 )
 
