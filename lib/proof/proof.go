@@ -105,7 +105,6 @@ func Queries(ow bool, all bool) error {
 					if u := fileZipContent(r); !u {
 						continue
 					}
-					// todo: tag platform based on found files
 					err := archive.Extract(r.File, r.UUID)
 					logs.Log(err)
 				}

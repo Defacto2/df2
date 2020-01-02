@@ -18,6 +18,7 @@ const source = "/Users/ben/github/df2"
 // Count returns the number of file entries associated with a group.
 func Count(name string) int {
 	db := database.Connect()
+	defer db.Close()
 	n := name
 	var count int
 	s := "SELECT COUNT(*) FROM files WHERE "
@@ -26,7 +27,6 @@ func Count(name string) int {
 	row := db.QueryRow(s)
 	err := row.Scan(&count)
 	logs.Check(err)
-	defer db.Close()
 	return count
 }
 
@@ -60,15 +60,17 @@ func CronThreads() {
 
 // HTML prints a snippet listing links to each group, with an optional file count.
 func HTML(name string, count bool, countIndicator bool, filename string) {
-	// <h2><a href="/g/13-omens">13 OMENS</a></h2><hr>
-	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
+	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
+	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
 	type Group struct {
-		ID    string
-		Name  string
-		Count int
-		Hr    bool
+		ID         string
+		Name       string
+		Count      int
+		Initialism string
+		Hr         bool
 	}
-	grp, _ := List(name)
+	grp, x := List(name)
+	println(x, "matching", name, "records found")
 	data := make([]Group, len(grp))
 	cap := ""
 	hr := false
@@ -95,10 +97,11 @@ func HTML(name string, count bool, countIndicator bool, filename string) {
 			cnt = Count(n)
 		}
 		data[i] = Group{
-			ID:    MakeSlug(n),
-			Name:  n,
-			Count: cnt,
-			Hr:    hr,
+			ID:         MakeSlug(n),
+			Name:       n,
+			Count:      cnt,
+			Initialism: initialism(n),
+			Hr:         hr,
 		}
 	}
 	t, err := template.New("h2").Parse(tpl)
@@ -118,67 +121,15 @@ func HTML(name string, count bool, countIndicator bool, filename string) {
 	}
 }
 
-// Initialism lists organizations or groups and their initialism filtered by a name.
-// TODO where filter isn't implemented
-func Initialism(where string, count bool) {
-	db := database.Connect()
-	s := "SELECT pubValue, (SELECT CONCAT(pubCombined, ' ', '(', initialisms, ')') FROM groups WHERE pubName = pubCombined AND Length(initialisms) <> 0) AS pubCombined"
-	s += " FROM (SELECT TRIM(group_brand_for) AS pubValue, group_brand_for AS pubCombined FROM files WHERE Length(group_brand_for) <> 0"
-	s += " UNION SELECT TRIM(group_brand_by) AS pubValue, group_brand_by AS pubCombined FROM files WHERE Length(group_brand_by) <> 0) AS pubTbl"
-	rows, err := db.Query(s)
-	logs.Check(err)
-	defer db.Close()
-	var (
-		grp         sql.NullString
-		grpAndShort sql.NullString
-	)
-	i := 0
-	g := ""
-	grps := []string{}
-	for rows.Next() {
-		err = rows.Scan(&grp, &grpAndShort)
-		logs.Check(err)
-		_, errU := grp.Value()
-		_, errC := grpAndShort.Value()
-		if errU != nil || errC != nil {
-			continue
-		}
-		i++
-		switch grpAndShort.String {
-		case "":
-			g = fmt.Sprintf("%v", grp.String)
-		default:
-			g = fmt.Sprintf("%v", grpAndShort.String)
-		}
-		if count {
-			g += fmt.Sprint(Count(grp.String), " files ")
-		}
-		grps = append(grps, g)
-	}
-	fmt.Println(strings.Join(grps, ", "))
-	fmt.Println("Total groups", i)
-}
-
 // List organizations or groups filtered by a name.
 func List(name string) ([]string, int) {
 	db := database.Connect()
-	fmt.Println("Groups >", name)
+	defer db.Close()
 	s := sqlGroups(name, false)
-	// count records
-	rows, err := db.Query(s)
-	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
-		println(s)
-	}
-	logs.Check(err)
-	defer db.Close()
-	total := 0
-	for rows.Next() {
-		total++
-	}
+	total := database.Total(s)
 	// interate through records
-	rows, err = db.Query(s)
+	rows, err := db.Query(s)
 	logs.Check(err)
-	defer db.Close()
 	var grp sql.NullString
 	i := 0
 	g := ""
@@ -196,9 +147,19 @@ func List(name string) ([]string, int) {
 	return grps, total
 }
 
+func removeInitialism(s string) string {
+	s = strings.TrimSpace(s)
+	a := strings.Split(s, " ")
+	l := a[len(a)-1]
+	if l[:1] == "(" && l[len(l)-1:] == ")" {
+		return strings.Join(a[:len(a)-1], " ")
+	}
+	return s
+}
+
 // MakeSlug takes a name and makes it into a URL friendly slug.
 func MakeSlug(name string) string {
-	n := name
+	n := removeInitialism(name)
 	n = strings.ReplaceAll(n, "-", "_")
 	n = strings.ReplaceAll(n, ", ", "*")
 	n = strings.ReplaceAll(n, " & ", " ampersand ")
@@ -229,12 +190,41 @@ func progressPct(name string, count int, total int) {
 // 	fmt.Printf("\rBuilding %d/%d", count, total)
 // }
 
+func wheres() [4]string {
+	return [4]string{"bbs", "ftp", "group", "magazine"}
+}
+
+func sqlInitialisms(name string, includeSoftDeletes bool) string {
+	inc := includeSoftDeletes
+	var sql string
+	sql = "SELECT pubValue, (SELECT CONCAT(pubCombined, ' ', '(', initialisms, ')') "
+	sql += "FROM groups WHERE pubName = pubCombined AND Length(initialisms) <> 0) AS pubCombined"
+	sql += " FROM (SELECT TRIM(group_brand_for) AS pubValue, group_brand_for AS pubCombined " + sqlGroupsWhere(name, inc)
+	sql += "FROM files WHERE Length(group_brand_for) <> 0"
+	sql += " UNION SELECT TRIM(group_brand_by) AS pubValue, group_brand_by AS pubCombined " + sqlGroupsWhere(name, inc)
+	sql += "FROM files WHERE Length(group_brand_by) <> 0) AS pubTbl"
+	return sql + " ORDER BY pubCombined"
+}
+
+func initialism(name string) string {
+	db := database.Connect()
+	defer db.Close()
+	var i string
+	s := fmt.Sprintf("SELECT `initialisms` FROM groups WHERE `pubname` = %q", name)
+	row := db.QueryRow(s)
+	err := row.Scan(&i)
+	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
+		return ""
+	}
+	logs.Check(err)
+	return i
+}
+
 // sqlGroups returns a complete SQL WHERE statement where the groups are filtered by name.
 func sqlGroups(name string, includeSoftDeletes bool) string {
 	inc := includeSoftDeletes
-	c := [4]string{"bbs", "ftp", "group", "magazine"}
 	skip := false
-	for _, a := range c {
+	for _, a := range wheres() {
 		if a == name {
 			skip = true
 		}

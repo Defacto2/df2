@@ -1,6 +1,8 @@
 package groups
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_sqlGroupsWhere(t *testing.T) {
 	type args struct {
@@ -56,5 +58,53 @@ func Test_sqlGroups(t *testing.T) {
 func BenchmarkGroupsToHTML(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		HTML("all", false, true, "")
+	}
+}
+
+func TestMakeSlug(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{"Defacto2"}, "defacto2"},
+		{"", args{"Defacto 2"}, "defacto-2"},
+		{"", args{"Defacto 2 (DF2)"}, "defacto-2"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MakeSlug(tt.args.name); got != tt.want {
+				t.Errorf("MakeSlug() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_removeInitialism(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{"Defacto (DF)"}, "Defacto"},
+		{"", args{"Defacto 2 (DF2)"}, "Defacto 2"},
+		{"", args{"Defacto 2"}, "Defacto 2"},
+		{"", args{"Razor 1911 (RZR)"}, "Razor 1911"},
+		{"", args{"Defacto (2) (DF2)"}, "Defacto (2)"},
+		{"", args{"(Defacto 2) (DF2)"}, "(Defacto 2)"},
+		{"", args{"Defacto(DF)"}, "Defacto(DF)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeInitialism(tt.args.s); got != tt.want {
+				t.Errorf("removeInitialism() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

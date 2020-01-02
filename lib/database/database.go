@@ -80,6 +80,22 @@ func LastUpdate() time.Time {
 	return updatedat
 }
 
+// Total reports the number of records fetched by the supplied SQL query.
+func Total(s string) int {
+	db := Connect()
+	rows, err := db.Query(s)
+	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
+		println(s)
+	}
+	logs.Check(err)
+	defer db.Close()
+	total := 0
+	for rows.Next() {
+		total++
+	}
+	return total
+}
+
 // UUID reports whether id is a universal unique record id.
 func UUID(id string) bool {
 	if _, err := uuid.Parse(id); err != nil {
@@ -119,4 +135,3 @@ func readPassword() string {
 	logs.Check(err)
 	return strings.TrimSpace(fmt.Sprintf("%s", pw))
 }
-

@@ -70,7 +70,7 @@ func Extract(name string, uuid string) error {
 			if tx.cont {
 				continue
 			}
-			// todo copy file
+			// todo copy file (uuid.txt in downloads)
 			tx.name = fn
 			tx.size = file.Size()
 			tx.cont = true

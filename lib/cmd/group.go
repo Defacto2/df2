@@ -44,7 +44,6 @@ func init() {
 func validateFilter() {
 	okay := false
 	list := strings.Split(enforced, ",")
-	println("validating")
 	for _, n := range list {
 		if groupFilter == n {
 			okay = true
