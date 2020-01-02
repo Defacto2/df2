@@ -225,9 +225,9 @@ func progressPct(name string, count int, total int) {
 }
 
 // progressSum returns the count of total remaining.
-func progressSum(count int, total int) {
-	fmt.Printf("\rBuilding %d/%d", count, total)
-}
+// func progressSum(count int, total int) {
+// 	fmt.Printf("\rBuilding %d/%d", count, total)
+// }
 
 // sqlGroups returns a complete SQL WHERE statement where the groups are filtered by name.
 func sqlGroups(name string, includeSoftDeletes bool) string {
