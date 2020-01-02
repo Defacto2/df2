@@ -68,7 +68,6 @@ func Queries(ow bool, all bool) error {
 	// fetch the rows
 	cnt := 0
 	missing := 0
-	// todo move to sep func to allow individual record parsing
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
@@ -133,7 +132,7 @@ func fileZipContent(r Record) bool {
 		logs.Log(err)
 		return false
 	}
-	database.UpdateZipContent(r.ID, strings.Join(a, "\n"))
+	updateZipContent(r.ID, strings.Join(a, "\n"))
 	return true
 }
 
@@ -143,4 +142,15 @@ func recordNew(values []sql.RawBytes) bool {
 		return false
 	}
 	return true
+}
+
+// updateZipContent sets the file_zip_content column to match content and platform to "image".
+func updateZipContent(id string, content string) {
+	db := database.Connect()
+	defer db.Close()
+	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=?,deletedat=NULL,deletedby=NULL WHERE id=?")
+	logs.Check(err)
+	r, err := update.Exec(content, database.UpdateID, "image", id)
+	logs.Check(err)
+	fmt.Println("Updated file_zip_content", r)
 }

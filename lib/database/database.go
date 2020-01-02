@@ -80,17 +80,6 @@ func LastUpdate() time.Time {
 	return updatedat
 }
 
-// UpdateZipContent sets the file_zip_content column to content.
-func UpdateZipContent(id string, content string) {
-	db := Connect()
-	defer db.Close()
-	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=?,deletedat=NULL,deletedby=NULL WHERE id=?")
-	logs.Check(err)
-	r, err := update.Exec(content, UpdateID, "image", id)
-	logs.Check(err)
-	fmt.Println("Updated file_zip_content", r)
-}
-
 // UUID reports whether id is a universal unique record id.
 func UUID(id string) bool {
 	if _, err := uuid.Parse(id); err != nil {
