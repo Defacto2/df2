@@ -271,7 +271,7 @@ func initialism(name string) string {
 }
 
 // progressPct returns the count of total remaining as a percentage.
-func progressPct(name string, count int, total int) {
+func progressPct(name string, count int, total int) float64 {
 	r := float64(count) / float64(total) * 100
 	switch r {
 	case 100:
@@ -279,6 +279,7 @@ func progressPct(name string, count int, total int) {
 	default:
 		fmt.Printf("\rQuerying %s %.2f %%", name, r)
 	}
+	return r
 }
 
 // progressSum returns the count of total remaining.

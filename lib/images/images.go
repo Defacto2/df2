@@ -38,8 +38,7 @@ func Duplicate(name string, prefix string) (string, error) {
 		return "", err
 	}
 	defer dest.Close()
-	_, err = io.Copy(dest, src)
-	if err != nil {
+	if _, err = io.Copy(dest, src); err != nil {
 		return "", err
 	}
 	return fn + prefix + ext, nil
