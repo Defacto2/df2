@@ -10,16 +10,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	cfgFilename = ".df2.yaml"
-)
+const configName = ".df2.yaml"
 
 var (
-	panic    bool = false // debug log
-	quiet    bool = false // quiet disables most printing or output to terminal
-	cfgFile  string
-	home, _  = os.UserHomeDir()
-	filepath = path.Join(home, cfgFilename)
+	panic      bool = false // debug log
+	quiet      bool = false // quiet disables most printing or output to terminal
+	configFile string
+	home, _    = os.UserHomeDir()
+	filepath   = path.Join(home, configName)
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -39,29 +37,27 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", cfgFilename))
+	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", configName))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
-	_ = rootCmd.Flags().MarkHidden("panic")
+	err := rootCmd.PersistentFlags().MarkHidden("panic")
+	logs.Check(err)
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	initPanic(panic)
 	initQuiet(quiet)
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+	if configFile != "" {
+		viper.SetConfigFile(configFile)
 	} else {
 		viper.AddConfigPath(home)
-		viper.SetConfigName(cfgFilename)
+		viper.SetConfigName(configName)
 	}
-
 	viper.AutomaticEnv() // read in environment variables that match
-
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil && !quiet {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		println("Using config file:", viper.ConfigFileUsed())
 	}
 }
 
