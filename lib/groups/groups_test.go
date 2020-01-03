@@ -57,7 +57,7 @@ func Test_sqlGroups(t *testing.T) {
 
 func BenchmarkGroupsToHTML(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		HTML("all", false, true, "")
+		HTML("", Request{"", true, true, true})
 	}
 }
 
@@ -73,6 +73,7 @@ func TestMakeSlug(t *testing.T) {
 		{"", args{"Defacto2"}, "defacto2"},
 		{"", args{"Defacto 2"}, "defacto-2"},
 		{"", args{"Defacto 2 (DF2)"}, "defacto-2"},
+		{"", args{"Defacto  2"}, "defacto-2"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -104,6 +105,28 @@ func Test_removeInitialism(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := removeInitialism(tt.args.s); got != tt.want {
 				t.Errorf("removeInitialism() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFixSpaces(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{"abc"}, "abc"},
+		{"", args{"a b c"}, "a b c"},
+		{"", args{"a  b  c"}, "a b c"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FixSpaces(tt.args.s); got != tt.want {
+				t.Errorf("FixSpaces() = %v, want %v", got, tt.want)
 			}
 		})
 	}

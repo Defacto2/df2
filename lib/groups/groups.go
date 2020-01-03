@@ -13,6 +13,35 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
+// Filters are group categories.
+const Filters = "bbs,ftp,group,magazine"
+
+// Request flags for group functions.
+type Request struct {
+	// Filter groups by category.
+	Filter string
+	// Counts the group's total files.
+	Counts bool
+	// Initialisms and acronyms for groups.
+	Initialisms bool
+	// Progress counter when requesting database data.
+	Progress bool
+}
+
+// Group data.
+type Group struct {
+	// ID used in URLs to link to the group.
+	ID string
+	// Name of the group.
+	Name string
+	// Count file totals.
+	Count int
+	// Initialism or acronym.
+	Initialism string
+	// Inject a HR element to separate a collection of groups.
+	Hr bool
+}
+
 const source = "/Users/ben/github/df2"
 
 // Count returns the number of file entries associated with a group.
@@ -38,7 +67,7 @@ func Cronjob() {
 		if update := database.FileUpdate(path.Join(source, name), database.LastUpdate()); !update {
 			println(name + " has nothing to update")
 		} else {
-			HTML(tags[i], true, false, name)
+			HTML(name, Request{tags[i], true, true, false})
 		}
 	}
 }
@@ -47,40 +76,54 @@ func Cronjob() {
 func CronThreads() {
 	var (
 		count = true
+		init  = true
 		pct   = false
 	)
 	// make these 4 image tasks multithread
 	c := make(chan bool)
-	go func() { HTML("bbs", count, pct, "bbs.htm"); c <- true }()
-	go func() { HTML("ftp", count, pct, "ftp.htm"); c <- true }()
-	go func() { HTML("group", count, pct, "group.htm"); c <- true }()
-	go func() { HTML("magazine", count, pct, "magazine.htm"); c <- true }()
+	go func() {
+		r := Request{"bbs", count, init, pct}
+		HTML("bbs.htm", r)
+		c <- true
+	}()
+	go func() {
+		r := Request{"ftp", count, init, pct}
+		HTML("ftp.htm", r)
+		c <- true
+	}()
+	go func() {
+		r := Request{"group", count, init, pct}
+		HTML("group.htm", r)
+		c <- true
+	}()
+	go func() {
+		r := Request{"magazine", count, init, pct}
+		HTML("magazine.htm", r)
+		c <- true
+	}()
 	<-c // sync 4 tasks
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func HTML(name string, count bool, countIndicator bool, filename string) {
+func HTML(filename string, r Request) {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
-	type Group struct {
-		ID         string
-		Name       string
-		Count      int
-		Initialism string
-		Hr         bool
+	grp, x := List(r.Filter)
+	f := r.Filter
+	if f == "" {
+		f = "all"
 	}
-	grp, x := List(name)
-	println(x, "matching", name, "records found")
+	println(x, "matching", f, "records found")
 	data := make([]Group, len(grp))
 	cap := ""
 	hr := false
-	var cnt int
 	total := len(grp)
 	for i := range grp {
-		if countIndicator {
-			progressPct(name, i+1, total)
+		if r.Progress {
+			progressPct(r.Filter, i+1, total)
 		}
 		n := grp[i]
+		// hr element
 		switch c := n[:1]; {
 		case cap == "":
 			cap = c
@@ -90,17 +133,21 @@ func HTML(name string, count bool, countIndicator bool, filename string) {
 		default:
 			hr = false
 		}
-		switch count {
-		case false:
-			cnt = 0
-		case true:
-			cnt = Count(n)
+		// file totals
+		c := 0
+		if r.Counts {
+			c = Count(n)
+		}
+		// initialism
+		in := ""
+		if r.Initialisms {
+			in = initialism(n)
 		}
 		data[i] = Group{
 			ID:         MakeSlug(n),
 			Name:       n,
-			Count:      cnt,
-			Initialism: initialism(n),
+			Count:      c,
+			Initialism: in,
 			Hr:         hr,
 		}
 	}
@@ -110,15 +157,22 @@ func HTML(name string, count bool, countIndicator bool, filename string) {
 	case filename == "":
 		err = t.Execute(os.Stdout, data)
 		logs.Check(err)
-	case name == "bbs", name == "ftp", name == "group", name == "magazine":
+	case r.Filter == "bbs", r.Filter == "ftp", r.Filter == "group", r.Filter == "magazine":
 		f, err := os.Create(path.Join(source, filename))
 		logs.Check(err)
 		defer f.Close()
 		err = t.Execute(f, data)
 		logs.Check(err)
 	default:
-		logs.Check(fmt.Errorf("invalid name %q used", name))
+		logs.Check(fmt.Errorf("invalid filter %q used", r.Filter))
 	}
+	println("\n->", r.Filter, r.Counts, r.Initialisms, r.Progress)
+}
+
+// FixSpaces removes duplicate spaces from a string.
+func FixSpaces(s string) string {
+	r := regexp.MustCompile(`\s+`)
+	return r.ReplaceAllString(s, " ")
 }
 
 // List organizations or groups filtered by a name.
@@ -147,19 +201,10 @@ func List(name string) ([]string, int) {
 	return grps, total
 }
 
-func removeInitialism(s string) string {
-	s = strings.TrimSpace(s)
-	a := strings.Split(s, " ")
-	l := a[len(a)-1]
-	if l[:1] == "(" && l[len(l)-1:] == ")" {
-		return strings.Join(a[:len(a)-1], " ")
-	}
-	return s
-}
-
 // MakeSlug takes a name and makes it into a URL friendly slug.
 func MakeSlug(name string) string {
-	n := removeInitialism(name)
+	n := FixSpaces(name)
+	n = removeInitialism(n)
 	n = strings.ReplaceAll(n, "-", "_")
 	n = strings.ReplaceAll(n, ", ", "*")
 	n = strings.ReplaceAll(n, " & ", " ampersand ")
@@ -174,38 +219,43 @@ func MakeSlug(name string) string {
 }
 
 // Print list organizations or groups filtered by a name and summaries the results.
-func Print(name string, count bool) {
-	g, i := List(name)
-	fmt.Println(strings.Join(g, ", "))
-	fmt.Println("Total groups", i)
+func Print(r Request) {
+	grp, total := List(r.Filter)
+	println(total, "matching", r.Filter, "records found")
+	var a []string
+	for i := range grp {
+		if r.Progress {
+			progressPct(r.Filter, i+1, total)
+		}
+		// name
+		n := grp[i]
+		s := n
+		// initialism
+		if r.Initialisms {
+			if in := initialism(n); in != "" {
+				s = fmt.Sprintf("%v [%s]", s, in)
+			}
+		}
+		// file totals
+		if r.Counts {
+			if c := Count(n); c > 0 {
+				s = fmt.Sprintf("%v (%d)", s, c)
+			}
+		}
+		a = append(a, s)
+	}
+	fmt.Println()
+	fmt.Println(strings.Join(a, ", "))
+	fmt.Println("Total groups", total)
 }
 
-// progressPct returns the count of total remaining as a percentage.
-func progressPct(name string, count int, total int) {
-	fmt.Printf("\rQuerying %s %.2f %%", name, float64(count)/float64(total)*100)
+// Wheres are group categories.
+func Wheres() []string {
+	return strings.Split(Filters, ",")
 }
 
-// progressSum returns the count of total remaining.
-// func progressSum(count int, total int) {
-// 	fmt.Printf("\rBuilding %d/%d", count, total)
-// }
-
-func wheres() [4]string {
-	return [4]string{"bbs", "ftp", "group", "magazine"}
-}
-
-func sqlInitialisms(name string, includeSoftDeletes bool) string {
-	inc := includeSoftDeletes
-	var sql string
-	sql = "SELECT pubValue, (SELECT CONCAT(pubCombined, ' ', '(', initialisms, ')') "
-	sql += "FROM groups WHERE pubName = pubCombined AND Length(initialisms) <> 0) AS pubCombined"
-	sql += " FROM (SELECT TRIM(group_brand_for) AS pubValue, group_brand_for AS pubCombined " + sqlGroupsWhere(name, inc)
-	sql += "FROM files WHERE Length(group_brand_for) <> 0"
-	sql += " UNION SELECT TRIM(group_brand_by) AS pubValue, group_brand_by AS pubCombined " + sqlGroupsWhere(name, inc)
-	sql += "FROM files WHERE Length(group_brand_by) <> 0) AS pubTbl"
-	return sql + " ORDER BY pubCombined"
-}
-
+// initialism returns a group's initialism or acronym.
+// For example "Defacto2" would return "df2"
 func initialism(name string) string {
 	db := database.Connect()
 	defer db.Close()
@@ -220,11 +270,39 @@ func initialism(name string) string {
 	return i
 }
 
+// progressPct returns the count of total remaining as a percentage.
+func progressPct(name string, count int, total int) {
+	r := float64(count) / float64(total) * 100
+	switch r {
+	case 100:
+		fmt.Printf("\rQuerying %s %.0f %%  ", name, r)
+	default:
+		fmt.Printf("\rQuerying %s %.2f %%", name, r)
+	}
+}
+
+// progressSum returns the count of total remaining.
+// func progressSum(count int, total int) {
+// 	fmt.Printf("\rBuilding %d/%d", count, total)
+// }
+
+// removeInitialism removes a (bracketed initialism) from a string.
+// For example "Defacto2 (DF2)" would return "Defacto2".
+func removeInitialism(s string) string {
+	s = strings.TrimSpace(s)
+	a := strings.Split(s, " ")
+	l := a[len(a)-1]
+	if l[:1] == "(" && l[len(l)-1:] == ")" {
+		return strings.Join(a[:len(a)-1], " ")
+	}
+	return s
+}
+
 // sqlGroups returns a complete SQL WHERE statement where the groups are filtered by name.
 func sqlGroups(name string, includeSoftDeletes bool) string {
 	inc := includeSoftDeletes
 	skip := false
-	for _, a := range wheres() {
+	for _, a := range Wheres() {
 		if a == name {
 			skip = true
 		}
