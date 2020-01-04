@@ -169,6 +169,23 @@ func HTML(filename string, r Request) {
 	println("\n->", r.Filter, r.Counts, r.Initialisms, r.Progress)
 }
 
+// Fix the formatting of group names.
+func Fix(simulate bool) {
+	grp, _ := List("")
+	c := 0
+	for i := range grp {
+		c = c + fixApply(simulate, grp[i])
+	}
+	switch {
+	case c > 0 && simulate:
+		println(c, "fixes required")
+	case c > 0:
+		println(c, "fixes applied")
+	default:
+		println("no fixes required")
+	}
+}
+
 // FixSpaces removes duplicate spaces from a string.
 func FixSpaces(s string) string {
 	r := regexp.MustCompile(`\s+`)
@@ -252,6 +269,62 @@ func Print(r Request) {
 // Wheres are group categories.
 func Wheres() []string {
 	return strings.Split(Filters, ",")
+}
+
+func fixApply(simulate bool, g string) int {
+	f := FixSpaces(g)
+	f = strings.TrimSpace(f)
+	f = fixThe(f)
+
+	v := 0
+	if f != g && simulate {
+		fmt.Printf("? %q != %q\n", g, f)
+		v++
+	} else if f != g {
+		s := "✓"
+		v++
+		if x := fixGroup(g); !x {
+			s = "✗"
+			v--
+		}
+		fmt.Printf("%s %q == %q\n", s, g, f)
+	}
+	return v
+}
+
+func fixThe(g string) string {
+	a := strings.Split(g, " ")
+	if len(a) < 2 {
+		return g
+	}
+	l := a[len(a)-1]
+	if strings.ToLower(a[0]) == "the" && (l == "BBS" || l == "FTP") {
+		return strings.Join(a[1:], " ") // drop "the" prefix
+	}
+	return g
+}
+
+func fixGroup(g string) bool {
+	db := database.Connect()
+	defer db.Close()
+	var sql = [2]string{
+		"UPDATE files SET group_brand_for=? WHERE group_brand_for=?",
+		"UPDATE files SET group_brand_by=? WHERE group_brand_by=?",
+	}
+	for i := range sql {
+		update, err := db.Prepare(sql[i])
+		logs.Check(err)
+		if err != nil {
+			return false
+		}
+		_, err = update.Exec(FixSpaces(g), g)
+		logs.Check(err)
+		if err != nil {
+			return false
+		}
+	}
+
+	return true
 }
 
 // initialism returns a group's initialism or acronym.

@@ -157,3 +157,29 @@ func Test_progressPct(t *testing.T) {
 		})
 	}
 }
+
+func Test_fixThe(t *testing.T) {
+	type args struct {
+		g string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{"The X BBS"}, "X BBS"},
+		{"", args{"The X FTP"}, "X FTP"},
+		{"", args{"the X BBS"}, "X BBS"},
+		{"", args{"THE X BBS"}, "X BBS"},
+		{"", args{"The"}, "The"},
+		{"", args{"Hello BBS"}, "Hello BBS"},
+		{"", args{"The High & Mighty Hello BBS"}, "High & Mighty Hello BBS"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := fixThe(tt.args.g); got != tt.want {
+				t.Errorf("fixThe() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
