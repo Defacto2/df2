@@ -271,11 +271,14 @@ func Wheres() []string {
 	return strings.Split(Filters, ",")
 }
 
-func fixApply(simulate bool, g string) int {
+func fixes(g string) string {
 	f := FixSpaces(g)
 	f = strings.TrimSpace(f)
-	f = fixThe(f)
+	return fixThe(f)
+}
 
+func fixApply(simulate bool, g string) int {
+	f := fixes(g)
 	v := 0
 	if f != g && simulate {
 		fmt.Printf("? %q != %q\n", g, f)
@@ -317,7 +320,7 @@ func fixGroup(g string) bool {
 		if err != nil {
 			return false
 		}
-		_, err = update.Exec(FixSpaces(g), g)
+		_, err = update.Exec(fixes(g), g)
 		logs.Check(err)
 		if err != nil {
 			return false
