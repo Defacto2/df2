@@ -120,7 +120,7 @@ func HTML(filename string, r Request) {
 	total := len(grp)
 	for i := range grp {
 		if r.Progress {
-			progressPct(r.Filter, i+1, total)
+			logs.ProgressPct(r.Filter, i+1, total)
 		}
 		n := grp[i]
 		// hr element
@@ -242,7 +242,7 @@ func Print(r Request) {
 	var a []string
 	for i := range grp {
 		if r.Progress {
-			progressPct(r.Filter, i+1, total)
+			logs.ProgressPct(r.Filter, i+1, total)
 		}
 		// name
 		n := grp[i]
@@ -345,23 +345,6 @@ func initialism(name string) string {
 	logs.Check(err)
 	return i
 }
-
-// progressPct returns the count of total remaining as a percentage.
-func progressPct(name string, count int, total int) float64 {
-	r := float64(count) / float64(total) * 100
-	switch r {
-	case 100:
-		fmt.Printf("\rQuerying %s %.0f %%  ", name, r)
-	default:
-		fmt.Printf("\rQuerying %s %.2f %%", name, r)
-	}
-	return r
-}
-
-// progressSum returns the count of total remaining.
-// func progressSum(count int, total int) {
-// 	fmt.Printf("\rBuilding %d/%d", count, total)
-// }
 
 // removeInitialism removes a (bracketed initialism) from a string.
 // For example "Defacto2 (DF2)" would return "Defacto2".

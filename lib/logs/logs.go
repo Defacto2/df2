@@ -38,3 +38,20 @@ func Log(err error) {
 		log.Printf("! %v", err)
 	}
 }
+
+// ProgressPct returns the count of total remaining as a percentage.
+func ProgressPct(name string, count int, total int) float64 {
+	r := float64(count) / float64(total) * 100
+	switch r {
+	case 100:
+		fmt.Printf("\rQuerying %s %.0f %%  ", name, r)
+	default:
+		fmt.Printf("\rQuerying %s %.2f %%", name, r)
+	}
+	return r
+}
+
+// ProgressSum returns the count of total remaining.
+// func ProgressSum(count int, total int) {
+// 	fmt.Printf("\rBuilding %d/%d", count, total)
+// }
