@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
@@ -18,6 +19,7 @@ var (
 	configFile string
 	home, _    = os.UserHomeDir()
 	filepath   = path.Join(home, configName)
+	fmtflags   = []string{"html", "text", "h", "t"}
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -69,4 +71,25 @@ func initPanic(q bool) {
 // initQuiet quiets the terminal output.
 func initQuiet(q bool) {
 	logs.Quiet = q
+}
+
+// filterFlag compairs the value of the filter flag against the list of slice values.
+func filterFlag(t interface{}, val string) {
+	if val == "" {
+		return
+	}
+	switch t := t.(type) {
+	case []string:
+		k := false
+		for _, value := range t {
+			if value == val || (val == value[:1]) {
+				k = true
+				break
+			}
+		}
+		if !k {
+			logs.Check(fmt.Errorf("unsupported --filter flag %q, valid flags: %s", val, strings.Join(t, ", ")))
+			os.Exit(1)
+		}
+	}
 }

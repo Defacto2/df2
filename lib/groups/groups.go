@@ -166,7 +166,6 @@ func HTML(filename string, r Request) {
 	default:
 		logs.Check(fmt.Errorf("invalid filter %q used", r.Filter))
 	}
-	println("\n->", r.Filter, r.Counts, r.Initialisms, r.Progress)
 }
 
 // Fix the formatting of group names.

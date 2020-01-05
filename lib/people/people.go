@@ -3,10 +3,14 @@ package people
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"path"
 	"sort"
 	"strings"
+	"text/template"
 
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/campoy/unique"
 )
@@ -21,8 +25,20 @@ type Request struct {
 	Progress bool
 }
 
+// Person data.
+type Person struct {
+	// ID used in URLs to link to the person.
+	ID string
+	// Nick of the person.
+	Nick string
+	// Inject a HR element to separate a collection of groups.
+	Hr bool
+}
+
 // Filters are peoples' roles.
 const Filters = "artists,coders,musicians,writers"
+
+const source = "/Users/ben/github/df2"
 
 // List people filtered by a role.
 func List(role string) ([]string, int) {
@@ -50,28 +66,72 @@ func List(role string) ([]string, int) {
 	return ppl, total
 }
 
+// HTML prints a snippet listing links to each person.
+func HTML(filename string, r Request) {
+	// <h2><a href="/g/ben">Ben</a></h2><hr>
+	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
+	grp, x := List(r.Filter)
+	f := r.Filter
+	if f == "" {
+		f = "all"
+	}
+	println(x, "matching", f, "records found")
+	data := make([]Person, len(grp))
+	cap := ""
+	hr := false
+	total := len(grp)
+	for i := range grp {
+		if r.Progress {
+			logs.ProgressPct(r.Filter, i+1, total)
+		}
+		n := grp[i]
+		// hr element
+		switch c := n[:1]; {
+		case cap == "":
+			cap = c
+		case c != cap:
+			cap = c
+			hr = true
+		default:
+			hr = false
+		}
+		data[i] = Person{
+			ID:   groups.MakeSlug(n),
+			Nick: n,
+			Hr:   hr,
+		}
+	}
+	t, err := template.New("h2").Parse(tpl)
+	logs.Check(err)
+	switch {
+	case filename == "":
+		err = t.Execute(os.Stdout, data)
+		logs.Check(err)
+	case r.Filter == "artists", r.Filter == "coders", r.Filter == "musicians", r.Filter == "writers":
+		f, err := os.Create(path.Join(source, filename))
+		logs.Check(err)
+		defer f.Close()
+		err = t.Execute(f, data)
+		logs.Check(err)
+	default:
+		logs.Check(fmt.Errorf("invalid filter %q used", r.Filter))
+	}
+}
+
 // Print lists people filtered by a role and summaries the results.
 func Print(r Request) {
 	ppl, total := List(r.Filter)
 	println(total, "matching", r.Filter, "records found")
 	var a []string
-
 	for i := range ppl {
 		if r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)
 		}
 		// role
-		n := ppl[i]
-		s := n
-		// file totals
-		// if r.Counts {
-		// 	if c := Count(n); c > 0 {
-		// 		s = fmt.Sprintf("%v (%d)", s, c)
-		// 	}
-		// }
-		x := strings.Split(s, ",")
+		x := strings.Split(ppl[i], ",")
 		a = append(a, x...)
 	}
+	ppl = []string{}
 	// title and sort names
 	for i := range a {
 		if r.Progress {
@@ -86,6 +146,11 @@ func Print(r Request) {
 	fmt.Println()
 	fmt.Println(strings.Join(a, ","))
 	fmt.Println("Total authors", len(a))
+}
+
+// Wheres are group categories.
+func Wheres() []string {
+	return strings.Split(Filters, ",")
 }
 
 // sqlPeople returns a complete SQL WHERE statement where the people are filtered by a role.

@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/Defacto2/df2/lib/groups"
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -28,14 +25,16 @@ var groupCmd = &cobra.Command{
 			groups.Cronjob()
 			return
 		}
-		validateFilter()
+		filterFlag(groups.Wheres(), gf.filter)
+		var req groups.Request
+		if filterFlag(fmtflags, gf.format); gf.format != "" {
+			req = groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
+		}
 		switch gf.format {
 		case "html", "h", "":
-			groups.HTML("", groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress})
+			groups.HTML("", req)
 		case "text", "t":
-			groups.Print(groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress})
-		default:
-			println("ooof invalid flag value --format", gf.format)
+			groups.Print(req)
 		}
 	},
 }
@@ -47,22 +46,5 @@ func init() {
 	groupCmd.Flags().BoolVarP(&gf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
 	groupCmd.Flags().BoolVarP(&gf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
 	groupCmd.Flags().StringVarP(&gf.format, "format", "t", "", "output format (default html)\noptions: html,text")
-	groupCmd.Flags().BoolVarP(&gf.init, "initialism", "i", false, "display the acronyms and initialisms for groups")
-}
-
-// validateFilter compairs the value of the filter flag against the list of values in the enforced const.
-func validateFilter() {
-	if gf.filter == "" {
-		return
-	}
-	okay := false
-	list := groups.Wheres()
-	for _, n := range list {
-		if gf.filter == n {
-			okay = true
-		}
-	}
-	if !okay {
-		logs.Check(fmt.Errorf("unsupported filter flag %q, valid flags: %s", gf.filter, groups.Filters))
-	}
+	groupCmd.Flags().BoolVarP(&gf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
 }
