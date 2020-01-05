@@ -13,6 +13,7 @@ import (
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/campoy/unique"
+	"github.com/spf13/viper"
 )
 
 // Request flags for people functions.
@@ -37,8 +38,6 @@ type Person struct {
 
 // Filters are peoples' roles.
 const Filters = "artists,coders,musicians,writers"
-
-const source = "/Users/ben/github/df2"
 
 // List people filtered by a role.
 func List(role string) ([]string, int) {
@@ -108,7 +107,7 @@ func HTML(filename string, r Request) {
 		err = t.Execute(os.Stdout, data)
 		logs.Check(err)
 	case r.Filter == "artists", r.Filter == "coders", r.Filter == "musicians", r.Filter == "writers":
-		f, err := os.Create(path.Join(source, filename))
+		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
 		logs.Check(err)
 		defer f.Close()
 		err = t.Execute(f, data)
@@ -131,7 +130,7 @@ func Print(r Request) {
 		x := strings.Split(ppl[i], ",")
 		a = append(a, x...)
 	}
-	ppl = []string{}
+	//ppl = nil
 	// title and sort names
 	for i := range a {
 		if r.Progress {
@@ -158,13 +157,13 @@ func sqlPeople(role string, includeSoftDeletes bool) string {
 	inc := includeSoftDeletes
 	f := ""
 	switch role {
-	case "writers", "writer", "w":
+	case "writers", "w":
 		f = "w"
-	case "musicians", "music", "m":
+	case "musicians", "m":
 		f = "m"
-	case "coders", "code", "c":
+	case "coders", "c":
 		f = "c"
-	case "artists", "art", "a":
+	case "artists", "a":
 		f = "a"
 	case "", "all":
 		f = "wmca"

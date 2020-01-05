@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,7 +11,6 @@ import (
 )
 
 func Test_readPassword(t *testing.T) {
-
 	// create a temporary file with the content EXAMPLE
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "prefix")
 	if err != nil {
@@ -26,14 +24,13 @@ func Test_readPassword(t *testing.T) {
 	if err := tmpFile.Close(); err != nil {
 		log.Fatal(err)
 	}
-
 	tests := []struct {
 		name   string
 		pwPath string
 		want   string
 	}{
-		{"empty", "", "password"},
-		{"invalid", "/tmp/Test_readPassword/validfile", "password"},
+		{"empty", "", ""},
+		{"invalid", "/tmp/Test_readPassword/validfile", ""},
 		{"temp", tmpFile.Name(), "EXAMPLE"},
 	}
 	for _, tt := range tests {
@@ -86,7 +83,7 @@ func TestUUID(t *testing.T) {
 		{"", args{"0000"}, false},
 		{"", args{""}, false},
 		{"zeros", args{"00000000-0000-0000-0000-000000000000"}, true},
-		{"random", args{fmt.Sprintf("%s", uuid.New())}, true},
+		{"random", args{uuid.New().String()}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

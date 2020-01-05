@@ -11,6 +11,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/spf13/viper"
 )
 
 // Filters are group categories.
@@ -42,8 +43,6 @@ type Group struct {
 	Hr bool
 }
 
-const source = "/Users/ben/github/df2"
-
 // Count returns the number of file entries associated with a group.
 func Count(name string) int {
 	db := database.Connect()
@@ -64,7 +63,7 @@ func Cronjob() {
 	tags := []string{"bbs", "ftp", "group", "magazine"}
 	for i := range tags {
 		name := tags[i] + ".htm"
-		if update := database.FileUpdate(path.Join(source, name), database.LastUpdate()); !update {
+		if update := database.FileUpdate(path.Join(viper.GetString("directory.html"), name), database.LastUpdate()); !update {
 			println(name + " has nothing to update")
 		} else {
 			HTML(name, Request{tags[i], true, true, false})
@@ -158,7 +157,7 @@ func HTML(filename string, r Request) {
 		err = t.Execute(os.Stdout, data)
 		logs.Check(err)
 	case r.Filter == "bbs", r.Filter == "ftp", r.Filter == "group", r.Filter == "magazine":
-		f, err := os.Create(path.Join(source, filename))
+		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
 		logs.Check(err)
 		defer f.Close()
 		err = t.Execute(f, data)

@@ -174,19 +174,21 @@ func InitDefaults() {
 	viper.SetDefault("connection.name", "defacto2-inno")
 	viper.SetDefault("connection.user", "root")
 	viper.SetDefault("connection.password", "password")
+
 	viper.SetDefault("connection.server.protocol", "tcp")
 	viper.SetDefault("connection.server.host", "localhost")
 	viper.SetDefault("connection.server.port", "3306")
 
-	viper.SetDefault("directory.root", "/var/www")
-	viper.SetDefault("directory.backup", "/var/www/files/backups")
-	viper.SetDefault("directory.emu", "/var/www/uuid/emularity.zip")
-	viper.SetDefault("directory.uuid", "/var/www/uuid")
-	viper.SetDefault("directory.000", "/var/www/images/uuid/original")
-	viper.SetDefault("directory.150", "/var/www/images/uuid/150x150")
-	viper.SetDefault("directory.400", "/var/www/images/uuid/400x400")
-	viper.SetDefault("directory.incoming.files", "/var/www/incoming/user_submissions/files")
-	viper.SetDefault("directory.incoming.previews", "/var/www/incoming/user_submissions/previews")
+	viper.SetDefault("directory.root", "/opt/assets")
+	viper.SetDefault("directory.backup", "/opt/assets/backups")
+	viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
+	viper.SetDefault("directory.uuid", "/opt/assets/downloads")
+	viper.SetDefault("directory.000", "/opt/assets/000")
+	viper.SetDefault("directory.150", "/opt/assets/150")
+	viper.SetDefault("directory.400", "/opt/assets/400")
+	viper.SetDefault("directory.html", "/opt/assets/html")
+	viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
+	viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
 }
 
 func init() {

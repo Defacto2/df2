@@ -24,5 +24,6 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusukebe/go-pngquant v0.0.0-20160211022948-c4f19d2a5658
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
+	gopkg.in/gookit/color.v1 v1.1.6
 	gopkg.in/yaml.v2 v2.2.4
 )

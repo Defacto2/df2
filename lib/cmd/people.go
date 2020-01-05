@@ -6,7 +6,7 @@ import (
 )
 
 type pplFlags struct {
-	cronjob  bool
+	//cronjob  bool
 	filter   string
 	format   string
 	progress bool

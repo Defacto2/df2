@@ -3,6 +3,8 @@ package logs
 import (
 	"fmt"
 	"log"
+
+	"gopkg.in/gookit/color.v1"
 )
 
 var (
@@ -55,3 +57,12 @@ func ProgressPct(name string, count int, total int) float64 {
 // func ProgressSum(count int, total int) {
 // 	fmt.Printf("\rBuilding %d/%d", count, total)
 // }
+
+// Sec prints a secondary notice.
+func Sec(s string) {
+	color.Secondary.Println(s)
+}
+// Warn prints a warning notice.
+func Warn(s string) {
+	color.Warn.Println(s)
+}
