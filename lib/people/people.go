@@ -3,10 +3,12 @@ package people
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/campoy/unique"
 )
 
 // Request flags for people functions.
@@ -53,6 +55,7 @@ func Print(r Request) {
 	ppl, total := List(r.Filter)
 	println(total, "matching", r.Filter, "records found")
 	var a []string
+
 	for i := range ppl {
 		if r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)
@@ -66,43 +69,56 @@ func Print(r Request) {
 		// 		s = fmt.Sprintf("%v (%d)", s, c)
 		// 	}
 		// }
-		a = append(a, s)
+		x := strings.Split(s, ",")
+		a = append(a, x...)
 	}
+	// title and sort names
+	for i := range a {
+		if r.Progress {
+			logs.ProgressPct(r.Filter, i+1, total)
+		}
+		a[i] = strings.Title(a[i])
+	}
+	sort.Strings(a)
+	// remove duplicates
+	less := func(i, j int) bool { return a[i] < a[j] }
+	unique.Slice(&a, less)
 	fmt.Println()
-	fmt.Println(strings.Join(a, ", "))
-	fmt.Println("Total authors", total)
+	fmt.Println(strings.Join(a, ","))
+	fmt.Println("Total authors", len(a))
 }
 
 // sqlPeople returns a complete SQL WHERE statement where the people are filtered by a role.
 func sqlPeople(role string, includeSoftDeletes bool) string {
 	inc := includeSoftDeletes
-	f := "wcam"
-	switch strings.ToLower(role) {
-	case "writers":
+	f := ""
+	switch role {
+	case "writers", "writer", "w":
 		f = "w"
-	case "musicians":
+	case "musicians", "music", "m":
 		f = "m"
-	case "coders":
+	case "coders", "code", "c":
 		f = "c"
-	case "artists":
+	case "artists", "art", "a":
 		f = "a"
 	case "", "all":
 		f = "wmca"
 	}
 	var sql string
-	switch {
-	case strings.ContainsAny(f, "w"):
+	if strings.ContainsAny(f, "w") {
 		sql += " UNION (SELECT DISTINCT credit_text AS pubCombined FROM files WHERE Length(credit_text) <> 0 " + sqlPeopleDel(inc) + ")"
-	case strings.ContainsAny(f, "m"):
+	}
+	if strings.ContainsAny(f, "m") {
 		sql += " UNION (SELECT DISTINCT credit_audio AS pubCombined FROM files WHERE Length(credit_audio) <> 0 " + sqlPeopleDel(inc) + ")"
-	case strings.ContainsAny(f, "c"):
+	}
+	if strings.ContainsAny(f, "c") {
 		sql += " UNION (SELECT DISTINCT credit_program AS pubCombined FROM files WHERE Length(credit_program) <> 0 " + sqlPeopleDel(inc) + ")"
-	case strings.ContainsAny(f, "a"):
+	}
+	if strings.ContainsAny(f, "a") {
 		sql += " UNION (SELECT DISTINCT credit_illustration AS pubCombined FROM files WHERE Length(credit_illustration) <> 0 " + sqlPeopleDel(inc) + ")"
 	}
 	sql += " ORDER BY pubCombined"
 	sql = strings.Replace(sql, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
-	fmt.Println(sql)
 	return sql
 }
 

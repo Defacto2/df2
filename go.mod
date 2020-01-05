@@ -3,6 +3,7 @@ module github.com/Defacto2/df2
 go 1.13
 
 require (
+	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/disintegration/imaging v1.6.2
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.0
