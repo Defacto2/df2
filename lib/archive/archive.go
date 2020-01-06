@@ -74,8 +74,6 @@ func Extract(name string, uuid string) error {
 			tx.name = fn
 			tx.size = file.Size()
 			tx.cont = true
-		default:
-			//fmt.Println(fmime.Extension())
 		}
 	}
 	if n := th.name; n != "" {

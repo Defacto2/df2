@@ -3,6 +3,9 @@ package logs
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/gookit/color.v1"
 )
@@ -58,11 +61,42 @@ func ProgressPct(name string, count int, total int) float64 {
 // 	fmt.Printf("\rBuilding %d/%d", count, total)
 // }
 
+// X returns a red cross mark.
+func X() string {
+	return color.Danger.Sprint("✗")
+}
+
+// Y returns a green tick mark.
+func Y() string {
+	return color.Success.Sprint("✓")
+}
+
 // Sec prints a secondary notice.
 func Sec(s string) {
 	color.Secondary.Println(s)
 }
+
 // Warn prints a warning notice.
 func Warn(s string) {
 	color.Warn.Println(s)
+}
+
+// Path returns a file or directory path with all missing elements marked in red.
+func Path(name string) string {
+	a := strings.Split(name, "/")
+	var p string
+	var s string
+	for i, e := range a {
+		if e == "" {
+			s = "/"
+			continue
+		}
+		p = strings.Join(a[0:i+1], "/")
+		if _, err := os.Stat(p); os.IsNotExist(err) {
+			s = filepath.Join(s, color.Danger.Sprint(e))
+		} else {
+			s = filepath.Join(s, e)
+		}
+	}
+	return fmt.Sprint(s)
 }

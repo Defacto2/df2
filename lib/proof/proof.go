@@ -6,11 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/gookit/color"
 )
 
 // Record of a file item.
@@ -31,13 +33,13 @@ func Query(id string, ow bool, all bool) error {
 		return fmt.Errorf("invalid id given %q it needs to be an auto-generated MySQL id or an uuid", id)
 	}
 	proofID = id
-	return Queries(ow, all)
+	return Queries(ow, all, false)
 }
 
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
-func Queries(ow bool, all bool) error {
+func Queries(ow bool, all bool, miss bool) error {
 	db := database.Connect()
 	defer db.Close()
 	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file_zip_content`,`updatedat`,`platform`"
@@ -68,6 +70,7 @@ func Queries(ow bool, all bool) error {
 	// fetch the rows
 	cnt := 0
 	missing := 0
+	base := logs.Path(dir.UUID)
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
@@ -79,8 +82,10 @@ func Queries(ow bool, all bool) error {
 		r.File = filepath.Join(dir.UUID, r.UUID)
 		// ping file
 		if _, err := os.Stat(r.File); os.IsNotExist(err) {
-			fmt.Printf("✗ item %v (%v) missing %v\n", cnt, r.ID, r.File)
 			missing++
+			if !miss {
+				fmt.Printf("%s item %v (%v) missing %v\n", logs.X(), cnt, r.ID, filepath.Join(base, color.Danger.Sprint(r.UUID)))
+			}
 			continue
 		}
 		// iterate through each value
@@ -93,13 +98,19 @@ func Queries(ow bool, all bool) error {
 			}
 			switch columns[i] {
 			case "id":
-				fmt.Printf("✓ item %v (%v) ", cnt, value)
+				fmt.Printf("%s item %04d (%v) ", logs.Y(), cnt, value) // cnt has 3 leading zeros
 			case "uuid":
-				fmt.Printf("%v, ", value)
+				fmt.Printf("%v ", value)
 			case "createdat":
-				fmt.Printf("%v, ", value)
+				t, err := time.Parse("2006-01-02T15:04:05Z", value)
+				logs.Check(err)
+				if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
+					fmt.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 2006")))
+				} else {
+					fmt.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 15:04")))
+				}
 			case "filename":
-				fmt.Printf("%v\n", value)
+				fmt.Printf("%v\n    ⮑", value)
 			case "file_zip_content":
 				if col == nil || ow {
 					if u := fileZipContent(r); !u {
@@ -111,15 +122,16 @@ func Queries(ow bool, all bool) error {
 			case "deletedat":
 			case "updatedat": // ignore
 			default:
-				fmt.Printf("   %v: %v\n", columns[i], value)
+				fmt.Printf("  %v: %v\n", columns[i], value)
 			}
 		}
-		fmt.Println("---------------")
 	}
 	logs.Check(rows.Err())
-	fmt.Println("Total proofs handled: ", cnt)
+	t := fmt.Sprintf("Total proofs handled: %v", cnt)
+	fmt.Println(strings.Repeat("─", len(t)))
+	fmt.Println(t)
 	if missing > 0 {
-		fmt.Println("UUID files not found: ", missing)
+		fmt.Println("UUID files not found:", missing)
 	}
 	return nil
 }
@@ -149,7 +161,7 @@ func updateZipContent(id string, content string) {
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	logs.Check(err)
-	r, err := update.Exec(content, database.UpdateID, "image", id)
+	_, err = update.Exec(content, database.UpdateID, "image", id)
 	logs.Check(err)
-	fmt.Println("Updated file_zip_content", r)
+	fmt.Println("  updated file_zip_content")
 }
