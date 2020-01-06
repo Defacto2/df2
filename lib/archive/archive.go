@@ -83,7 +83,7 @@ func Extract(name string, uuid string) error {
 		f := directories.Files(uuid)
 		size, err := FileMove(n, f.UUID+".txt")
 		logs.Check(err)
-		println(fmt.Sprintf("  %s ⮕ ...%s.txt %s", logs.Y(), uuid[26:36], humanize.Bytes(uint64(size))))
+		print(fmt.Sprintf("  %s ⮕ ...%s.txt %s", logs.Y(), uuid[26:36], humanize.Bytes(uint64(size))))
 	}
 	if x := true; !x {
 		dir(tempDir)
