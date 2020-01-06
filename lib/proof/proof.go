@@ -113,11 +113,15 @@ func Queries(ow bool, all bool, miss bool) error {
 				fmt.Printf("%v\n   • ", value)
 			case "file_zip_content":
 				if col == nil || ow {
-					if u := fileZipContent(r); !u {
+					if u := r.fileZipContent(); !u {
 						continue
 					}
-					err := archive.Extract(r.File, r.UUID)
-					logs.Log(err)
+					if err := archive.Extract(r.File, r.UUID); err != nil {
+						logs.Log(err)
+					} else {
+						err = r.approve()
+						logs.Log(err)
+					}
 				}
 			case "deletedat":
 			case "updatedat": // ignore
@@ -125,6 +129,7 @@ func Queries(ow bool, all bool, miss bool) error {
 				//fmt.Printf("  %v: %v\n", columns[i], value)
 			}
 		}
+		println()
 	}
 	logs.Check(rows.Err())
 	t := fmt.Sprintf("Total proofs handled: %v", cnt)
@@ -136,8 +141,20 @@ func Queries(ow bool, all bool, miss bool) error {
 	return nil
 }
 
+// approve sets the record to be publically viewable.
+func (r Record) approve() error {
+	db := database.Connect()
+	defer db.Close()
+	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
+	logs.Check(err)
+	_, err = update.Exec(database.UpdateID, r.ID)
+	logs.Check(err)
+	print(fmt.Sprintf("  %s approved", logs.Y()))
+	return nil
+}
+
 // fileZipContent reads an archive and saves its content to the database
-func fileZipContent(r Record) bool {
+func (r Record) fileZipContent() bool {
 	a, err := archive.Read(r.File)
 	if err != nil {
 		logs.Log(err)
@@ -159,7 +176,7 @@ func recordNew(values []sql.RawBytes) bool {
 func updateZipContent(id string, content string) {
 	db := database.Connect()
 	defer db.Close()
-	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=?,deletedat=NULL,deletedby=NULL WHERE id=?")
+	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
 	logs.Check(err)
 	_, err = update.Exec(content, database.UpdateID, "image", id)
 	logs.Check(err)
