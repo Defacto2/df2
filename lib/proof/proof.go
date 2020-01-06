@@ -110,7 +110,7 @@ func Queries(ow bool, all bool, miss bool) error {
 					fmt.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 15:04")))
 				}
 			case "filename":
-				fmt.Printf("%v\n    ⮑", value)
+				fmt.Printf("%v\n   • ", value)
 			case "file_zip_content":
 				if col == nil || ow {
 					if u := fileZipContent(r); !u {
@@ -122,7 +122,7 @@ func Queries(ow bool, all bool, miss bool) error {
 			case "deletedat":
 			case "updatedat": // ignore
 			default:
-				fmt.Printf("  %v: %v\n", columns[i], value)
+				//fmt.Printf("  %v: %v\n", columns[i], value)
 			}
 		}
 	}
@@ -163,5 +163,5 @@ func updateZipContent(id string, content string) {
 	logs.Check(err)
 	_, err = update.Exec(content, database.UpdateID, "image", id)
 	logs.Check(err)
-	fmt.Println("  updated file_zip_content")
+	fmt.Printf("%s file_zip_content", logs.Y())
 }

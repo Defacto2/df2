@@ -2,6 +2,7 @@ package archive
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -70,20 +71,47 @@ func Extract(name string, uuid string) error {
 			if tx.cont {
 				continue
 			}
-			// todo copy file (uuid.txt in downloads)
 			tx.name = fn
 			tx.size = file.Size()
 			tx.cont = true
 		}
 	}
 	if n := th.name; n != "" {
-		d := directories.Init(false)
-		images.Generate(n, uuid, d)
+		images.Generate(n, uuid)
 	}
-	if x := false; !x {
+	if n := tx.name; n != "" {
+		f := directories.Files(uuid)
+		size, err := FileMove(n, f.UUID+".txt")
+		logs.Check(err)
+		println(fmt.Sprintf("  %s ⮕ ...%s.txt %s", logs.Y(), uuid[26:36], humanize.Bytes(uint64(size))))
+	}
+	if x := true; !x {
 		dir(tempDir)
 	}
 	return nil
+}
+
+// FileMove copies a file to the destination and then deletes the source.
+func FileMove(name string, dest string) (int64, error) {
+	src, err := os.Open(name)
+	if err != nil {
+		return 0, err
+	}
+	defer src.Close()
+	file, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	i, err := io.Copy(file, src)
+	if err != nil {
+		return 0, err
+	}
+	err = os.Remove(name)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }
 
 // NewExt swaps or appends the extension to a filename.
