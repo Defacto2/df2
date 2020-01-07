@@ -1,14 +1,11 @@
 package assets
 
-// TODO: format tables with go tab writer; add colour text
-
 import (
 	"archive/tar"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -88,11 +85,47 @@ func AddTarFile(path, name string, tw *tar.Writer) error {
 	return nil
 }
 
-// Clean walks through and scans directories containing UUID files and erases any orphans that cannot be matched to the database
-func Clean(target string, delete bool, human bool) {
+// Clean walks through and scans directories containing UUID files and erases any orphans that cannot be matched to the database.
+func Clean(target string, delete, human bool) {
+	targets(target)
+	// connect to the database
+	rows, m := CreateUUIDMap()
+	logs.Out("\nThe following files do not match any UUIDs in the database\n")
+	// parse directories
+	var sum results
+	for p := range paths {
+		s := scan{path: paths[p], delete: delete, human: human, m: m}
+		sum.calculate(s)
+	}
+	// output a summary of the results
+	logs.Out(fmt.Sprintf("\nTotal orphaned files discovered %v out of %v\n", humanize.Comma(int64(sum.count)), humanize.Comma(int64(rows))))
+	if sum.fails > 0 {
+		logs.Out(fmt.Sprintf("Due to errors, %v files could not be deleted\n", sum.fails))
+	}
+	if len(paths) > 1 {
+		var pts string
+		if human {
+			pts = humanize.Bytes(uint64(sum.bytes))
+		} else {
+			pts = fmt.Sprintf("%v B", sum.bytes)
+		}
+		logs.Out(fmt.Sprintf("%v drive space consumed\n", pts))
+	}
+}
+
+func (sum *results) calculate(s scan) {
+	r, err := s.scanPath()
+	logs.Log(err)
+	sum.bytes += r.bytes
+	sum.count += r.count
+	sum.fails += r.fails
+}
+
+func targets(target string) int {
 	if d.Base == "" {
 		d = directories.Init(false)
 	}
+	paths = nil
 	switch target {
 	case "all":
 		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400, d.Img150)
@@ -103,33 +136,7 @@ func Clean(target string, delete bool, human bool) {
 	case "image":
 		paths = append(paths, d.Img000, d.Img400, d.Img150)
 	}
-	// connect to the database
-	rows, m := CreateUUIDMap()
-	logs.Cli("\nThe following files do not match any UUIDs in the database\n")
-	// parse directories
-	var sum results
-	for p := range paths {
-		s := scan{path: paths[p], delete: delete, human: human, m: m}
-		r, err := scanPath(s)
-		logs.Log(err)
-		sum.bytes += r.bytes
-		sum.count += r.count
-		sum.fails += r.fails
-	}
-	// output a summary of the results
-	logs.Cli(fmt.Sprintf("\nTotal orphaned files discovered %v out of %v\n", humanize.Comma(int64(sum.count)), humanize.Comma(int64(rows))))
-	if sum.fails > 0 {
-		logs.Cli(fmt.Sprintf("Due to errors, %v files could not be deleted\n", sum.fails))
-	}
-	if len(paths) > 1 {
-		var pts string
-		if human {
-			pts = humanize.Bytes(uint64(sum.bytes))
-		} else {
-			pts = fmt.Sprintf("%v B", sum.bytes)
-		}
-		logs.Cli(fmt.Sprintf("%v drive space consumed\n", pts))
-	}
+	return len(paths)
 }
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
@@ -152,9 +159,8 @@ func CreateUUIDMap() (int, database.IDs) {
 	return rc, m
 }
 
-// backup is used by scanPath to backup matched orphans.
-func backup(s *scan, list []os.FileInfo) {
-	archive := make(map[string]struct{})
+func (s *scan) archive(list []os.FileInfo) map[string]struct{} {
+	a := make(map[string]struct{})
 	for _, file := range list {
 		if file.IsDir() {
 			continue // ignore directories
@@ -167,22 +173,24 @@ func backup(s *scan, list []os.FileInfo) {
 		// search the map `m` for `UUID`, the result is saved as a boolean to `exists`
 		_, exists := s.m[id]
 		if !exists {
-			archive[fn] = empty
+			a[fn] = empty
 		}
 	}
+	return a
+}
+
+// backup is used by scanPath to backup matched orphans.
+func backup(s *scan, list []os.FileInfo) {
+	archive := s.archive(list)
 	// identify which files should be backed up
-	baks := make(map[string]string)
-	baks[d.UUID] = "uuid"
-	baks[d.Img150] = "img-150xthumbs"
-	baks[d.Img400] = "img-400xthumbs"
-	baks[d.Img000] = "img-captures"
+	baks := baks()
 	if _, ok := baks[s.path]; ok {
-		t := time.Now()
-		name := fmt.Sprintf("%vbak-%v-%v-%v-%v-%v%v%v.tar", d.Backup, baks[s.path], t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+		t := time.Now().Format("2006-Jan-2-150405") //Mon Jan 2 15:04:05 MST 2006
+		name := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", baks[s.path], t))
 		basepath := s.path
 		// create tar archive
 		newTar, err := os.Create(name)
-		logs.Check(err)
+		logs.File("directory.backup", err)
 		tw := tar.NewWriter(newTar)
 		defer tw.Close()
 		c := 0
@@ -192,27 +200,21 @@ func backup(s *scan, list []os.FileInfo) {
 			if err != nil {
 				return err
 			}
-			var name string
-			if os.IsPathSeparator(path[len(path)-1]) {
-				name, err = filepath.Rel(basepath, path)
-			} else {
-				name, err = filepath.Rel(filepath.Dir(basepath), path)
-			}
-			name = filepath.ToSlash(name)
+			name, err := walkName(basepath, path)
 			if err != nil {
 				return err
 			}
 			if _, ok := archive[name]; ok {
 				c++
 				if c == 1 {
-					logs.Cli("Archiving these files before deletion\n\n")
+					logs.Out("Archiving these files before deletion\n\n")
 				}
 				return AddTarFile(path, name, tw)
 			}
 			return nil // no match
 		})
 		// if backup fails, then abort deletion
-		if c == 0 || err != nil {
+		if err != nil || c == 0 {
 			// clean up any loose archives
 			newTar.Close()
 			err := os.Remove(name)
@@ -221,44 +223,27 @@ func backup(s *scan, list []os.FileInfo) {
 	}
 }
 
-// delete is used by scanPath to remove matched orphans.
-func delete(s *scan, list []os.FileInfo) results {
-	var r = results{count: 0, fails: 0, bytes: 0}
-	for _, file := range list {
-		if file.IsDir() {
-			continue // ignore directories
-		}
-		if _, file := ignore[file.Name()]; file {
-			continue // ignore files
-		}
-		base := file.Name()
-		uuid := strings.TrimSuffix(base, filepath.Ext(base))
-		// search the map `m` for `UUID`, the result is saved as a boolean to `exists`
-		_, exists := s.m[uuid]
-		if !exists {
-			r.count++
-			r.bytes += file.Size()
-			var del string
-			if s.delete {
-				del = fmt.Sprintf("  ✔")
-				fn := path.Join(s.path, file.Name())
-				if rm := os.Remove(fn); rm != nil {
-					del = fmt.Sprintf("  ✖\n%v", rm)
-					r.fails++
-				}
-			}
-			var fs, mt string
-			if s.human {
-				fs = humanize.Bytes(uint64(file.Size()))
-				mt = file.ModTime().Format("2006-Jan-02 15:04:05")
-			} else {
-				fs = fmt.Sprint(file.Size())
-				mt = fmt.Sprint(file.ModTime())
-			}
-			logs.Cli(fmt.Sprintf("%v.\t%-44s\t%v\t%v  %v%v\n", r.count, base, fs, file.Mode(), mt, del))
-		}
+func baks() map[string]string {
+	b := make(map[string]string)
+	b[d.UUID] = "uuid"
+	b[d.Img150] = "img-150xthumbs"
+	b[d.Img400] = "img-400xthumbs"
+	b[d.Img000] = "img-captures"
+	return b
+}
+
+func walkName(basepath string, path string) (string, error) {
+	var name string
+	var err error
+	if os.IsPathSeparator(path[len(path)-1]) {
+		name, err = filepath.Rel(basepath, path)
+	} else {
+		name, err = filepath.Rel(filepath.Dir(basepath), path)
 	}
-	return r
+	if err != nil {
+		return "", err
+	}
+	return filepath.ToSlash(name), nil
 }
 
 // ignoreList is used by scanPath to filter files that should not be erased.
@@ -277,8 +262,8 @@ func ignoreList(path string) files {
 }
 
 // scanPath gets a list of filenames located in s.path and matches the results against the list generated by CreateUUIDMap.
-func scanPath(s scan) (results, error) {
-	logs.Cli(fmt.Sprintf("\nResults from %v\n\n", s.path))
+func (s scan) scanPath() (results, error) {
+	logs.Out(fmt.Sprintf("\nResults from %v\n\n", s.path))
 	// query file system
 	list, err := ioutil.ReadDir(s.path)
 	if err != nil {
@@ -291,13 +276,14 @@ func scanPath(s scan) (results, error) {
 		backup(&s, list)
 	}
 	// list and if requested, delete orphaned files
-	r := delete(&s, list)
+	//r := delete(&s, list)
+	r := parse(&s, &list)
 	var dsc string
 	if s.human {
 		dsc = humanize.Bytes(uint64(r.bytes))
 	} else {
 		dsc = fmt.Sprintf("%v B", r.bytes)
 	}
-	logs.Cli(fmt.Sprintf("\n%v orphaned files\n%v drive space consumed\n", r.count, dsc))
+	logs.Out(fmt.Sprintf("\n%v orphaned files\n%v drive space consumed\n", r.count, dsc))
 	return r, nil // number of orphaned files discovered, deletion failures, their cumulative size in bytes
 }
