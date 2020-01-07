@@ -32,7 +32,7 @@ var groupCmd = &cobra.Command{
 		}
 		switch gf.format {
 		case "html", "h", "":
-			groups.HTML("", req)
+			req.HTML("")
 		case "text", "t":
 			groups.Print(req)
 		}

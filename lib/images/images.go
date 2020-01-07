@@ -54,7 +54,7 @@ func Generate(n string, id string) {
 		}
 	}
 	f := directories.Files(id)
-	// these use dependencies that are not thread safe
+	// these funcs use dependencies that are not thread safe
 	s, err := ToPng(n, NewExt(f.Img000, ".png"), 1500)
 	out(s, err)
 	s, err = ToWebp(n, NewExt(f.Img000, ".webp"))

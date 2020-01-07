@@ -66,7 +66,7 @@ func Cronjob() {
 		if update := database.FileUpdate(path.Join(viper.GetString("directory.html"), name), database.LastUpdate()); !update {
 			println(name + " has nothing to update")
 		} else {
-			HTML(name, Request{tags[i], true, true, false})
+			Request{tags[i], true, true, false}.HTML(name)
 		}
 	}
 }
@@ -81,30 +81,26 @@ func CronThreads() {
 	// make these 4 image tasks multithread
 	c := make(chan bool)
 	go func() {
-		r := Request{"bbs", count, init, pct}
-		HTML("bbs.htm", r)
+		Request{"bbs", count, init, pct}.HTML("bbs.htm")
 		c <- true
 	}()
 	go func() {
-		r := Request{"ftp", count, init, pct}
-		HTML("ftp.htm", r)
+		Request{"ftp", count, init, pct}.HTML("ftp.htm")
 		c <- true
 	}()
 	go func() {
-		r := Request{"group", count, init, pct}
-		HTML("group.htm", r)
+		Request{"group", count, init, pct}.HTML("group.htm")
 		c <- true
 	}()
 	go func() {
-		r := Request{"magazine", count, init, pct}
-		HTML("magazine.htm", r)
+		Request{"magazine", count, init, pct}.HTML("magazine.htm")
 		c <- true
 	}()
 	<-c // sync 4 tasks
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func HTML(filename string, r Request) {
+func (r Request) HTML(filename string) {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
 	grp, x := List(r.Filter)
