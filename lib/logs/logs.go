@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -22,6 +23,7 @@ func Check(err error) {
 	if err != nil {
 		switch Panic {
 		case true:
+			fmt.Printf("error type: %T\tmsg: %v\n", err, err)
 			log.Panic(err)
 		default:
 			log.Fatal("ERROR: ", err)
@@ -29,8 +31,8 @@ func Check(err error) {
 	}
 }
 
-// Cli writes the string to the standard output.
-func Cli(s string) {
+// Out writes the string to the standard output.
+func Out(s string) {
 	switch Quiet {
 	case false:
 		fmt.Print(s)
@@ -61,6 +63,16 @@ func ProgressPct(name string, count int, total int) float64 {
 // 	fmt.Printf("\rBuilding %d/%d", count, total)
 // }
 
+// Sec prints a secondary notice.
+func Sec(s string) {
+	color.Secondary.Println(s)
+}
+
+// Warn prints a warning notice.
+func Warn(s string) {
+	color.Warn.Println(s)
+}
+
 // X returns a red cross mark.
 func X() string {
 	return color.Danger.Sprint("✗")
@@ -71,14 +83,22 @@ func Y() string {
 	return color.Success.Sprint("✓")
 }
 
-// Sec prints a secondary notice.
-func Sec(s string) {
-	color.Secondary.Println(s)
-}
-
-// Warn prints a warning notice.
-func Warn(s string) {
-	color.Warn.Println(s)
+// File is a logger for common os package functions.
+// config is an optional configuration path used by cmd.config.
+func File(config string, err error) {
+	var pathError *os.PathError
+	if errors.As(err, &pathError) {
+		fmt.Println(X(), "failed to create or open file:", Path(pathError.Path))
+		if config != "" {
+			fmt.Println("  to fix run: config set --name", config)
+		}
+		if Panic {
+			log.Panic(err)
+		}
+		os.Exit(1)
+	} else {
+		Log(err)
+	}
 }
 
 // Path returns a file or directory path with all missing elements marked in red.
