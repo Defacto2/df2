@@ -22,11 +22,15 @@ var proofCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
+		r := proof.Request{
+			Overwrite: prff.overwrite,
+			All:       prff.all,
+			HideMiss:  prff.hideMissing}
 		switch {
 		case prff.id != "":
-			err = proof.Query(prff.id, prff.overwrite, prff.all)
+			err = r.Query(prff.id)
 		default:
-			err = proof.Queries(prff.overwrite, prff.all, prff.hideMissing)
+			err = r.Queries()
 		}
 		logs.Check(err)
 	},
