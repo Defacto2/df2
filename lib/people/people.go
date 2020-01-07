@@ -152,22 +152,26 @@ func Wheres() []string {
 	return strings.Split(Filters, ",")
 }
 
+func roles(r string) string {
+	switch r {
+	case "writers", "w":
+		return "w"
+	case "musicians", "m":
+		return "m"
+	case "coders", "c":
+		return "c"
+	case "artists", "a":
+		return "a"
+	case "", "all":
+		return "wmca"
+	}
+	return ""
+}
+
 // sqlPeople returns a complete SQL WHERE statement where the people are filtered by a role.
 func sqlPeople(role string, includeSoftDeletes bool) string {
 	inc := includeSoftDeletes
-	f := ""
-	switch role {
-	case "writers", "w":
-		f = "w"
-	case "musicians", "m":
-		f = "m"
-	case "coders", "c":
-		f = "c"
-	case "artists", "a":
-		f = "a"
-	case "", "all":
-		f = "wmca"
-	}
+	f := roles(role)
 	var sql string
 	if strings.ContainsAny(f, "w") {
 		sql += " UNION (SELECT DISTINCT credit_text AS pubCombined FROM files WHERE Length(credit_text) <> 0 " + sqlPeopleDel(inc) + ")"
