@@ -232,7 +232,7 @@ func baks() map[string]string {
 	return b
 }
 
-func walkName(basepath string, path string) (string, error) {
+func walkName(basepath, path string) (string, error) {
 	var name string
 	var err error
 	if os.IsPathSeparator(path[len(path)-1]) {

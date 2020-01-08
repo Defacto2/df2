@@ -25,7 +25,7 @@ type task struct {
 
 // Extract decompresses and parses a named archive.
 // uuid is used to rename the extracted assets such as image previews.
-func Extract(name string, uuid string) error {
+func Extract(name, uuid string) error {
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
 	if err != nil {
@@ -96,7 +96,7 @@ func taskInit() task {
 }
 
 // FileMove copies a file to the destination and then deletes the source.
-func FileMove(name string, dest string) (int64, error) {
+func FileMove(name, dest string) (int64, error) {
 	src, err := os.Open(name)
 	if err != nil {
 		return 0, err
@@ -119,7 +119,7 @@ func FileMove(name string, dest string) (int64, error) {
 }
 
 // NewExt swaps or appends the extension to a filename.
-func NewExt(name string, extension string) string {
+func NewExt(name, extension string) string {
 	e := filepath.Ext(name)
 	if e == "" {
 		return name + extension
