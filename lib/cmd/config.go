@@ -136,7 +136,7 @@ var configSetCmd = &cobra.Command{
 		sort.Strings(keys)
 		// sort.SearchStrings() - The slice must be sorted in ascending order.
 		if i := sort.SearchStrings(keys, name); i == len(keys) || keys[i] != name {
-			err := fmt.Errorf("to see a list of usable settings, run: retrotxt config info")
+			err := fmt.Errorf("to see a list of usable settings, run: df2 config info")
 			logs.Check(fmt.Errorf("invalid flag %v %v", fmt.Sprintf("--name %s", name), err))
 		}
 		s := viper.GetString(name)

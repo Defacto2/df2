@@ -47,8 +47,7 @@ func init() {
 func create() {
 	// query
 	var id string
-	var createdat sql.NullString
-	var updatedat sql.NullString
+	var createdat, updatedat sql.NullString
 	db := database.Connect()
 	rows, err := db.Query("SELECT `id`,`createdat`,`updatedat` FROM `files` WHERE `deletedat` IS NULL")
 	logs.Check(err)

@@ -9,6 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	delete   bool
+	humanize bool
+	makeDirs bool
+	target   string
+	targets  []string = []string{"all", "download", "emulation", "image"}
+)
+
 // cleanCmd represents the clean command
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
@@ -19,14 +27,6 @@ var cleanCmd = &cobra.Command{
 		assets.Clean(target, delete, humanize)
 	},
 }
-
-var (
-	delete   bool
-	humanize bool
-	makeDirs bool
-	target   string
-	targets  []string = []string{"all", "download", "emulation", "image"}
-)
 
 func init() {
 	rootCmd.AddCommand(cleanCmd)
@@ -40,5 +40,5 @@ func init() {
 
 func options(a []string) string {
 	sort.Strings(a)
-	return "\noptions: " + strings.Join(a, ", ")
+	return "\noptions: " + strings.Join(a, ",")
 }
