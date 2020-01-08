@@ -354,24 +354,23 @@ func removeInitialism(s string) string {
 
 // sqlGroups returns a complete SQL WHERE statement where the groups are filtered by name.
 func sqlGroups(name string, includeSoftDeletes bool) string {
-	inc := includeSoftDeletes
-	skip := false
+	var inc, skip bool = includeSoftDeletes, false
 	for _, a := range Wheres() {
 		if a == name {
 			skip = true
 		}
 	}
-	var sql string
+	var sql, where string = "", sqlGroupsWhere(name, inc)
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
 		sql = "SELECT DISTINCT group_brand_for AS pubCombined "
-		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + sqlGroupsWhere(name, inc)
+		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + where
 	default:
 		sql = "(SELECT DISTINCT group_brand_for AS pubCombined "
-		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + sqlGroupsWhere(name, inc) + ")"
+		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + where + ")"
 		sql += " UNION "
 		sql += "(SELECT DISTINCT group_brand_by AS pubCombined "
-		sql += "FROM files WHERE Length(group_brand_by) <> 0 " + sqlGroupsWhere(name, inc) + ")"
+		sql += "FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
 	}
 	return sql + " ORDER BY pubCombined"
 }
