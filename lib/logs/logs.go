@@ -118,8 +118,7 @@ func File(config string, err error) {
 // Path returns a file or directory path with all missing elements marked in red.
 func Path(name string) string {
 	a := strings.Split(name, "/")
-	var p string
-	var s string
+	var p, s string
 	for i, e := range a {
 		if e == "" {
 			s = "/"
@@ -235,11 +234,9 @@ func PromptString(keep string) string {
 // PromptYN asks the user for a yes or no input.
 func PromptYN(query string, yesDefault bool) bool {
 	var input string
-	y := "Y"
-	n := "n"
+	var y, n string = "Y", "n"
 	if !yesDefault {
-		y = "y"
-		n = "N"
+		y, n = "y", "N"
 	}
 	fmt.Printf("%s? [%s/%s] ", query, y, n)
 	fmt.Scanln(&input)
