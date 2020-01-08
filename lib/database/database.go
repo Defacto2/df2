@@ -45,9 +45,14 @@ var (
 func Connect() *sql.DB {
 	connectInit()
 	pw := readPassword()
-	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true&useSSL=false", d.User, pw, d.Server, d.Name))
+	cfg := fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true&useSSL=false", d.User, pw, d.Server, d.Name)
+	db, err := sql.Open("mysql", cfg)
 	logs.Check(err)
 	err = db.Ping() // ping the server to make sure the connection works
+	if err != nil {
+		cfg := fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true&useSSL=false", d.User, "******", d.Server, d.Name)
+		println(cfg)
+	}
 	logs.Check(err)
 	return db
 }
