@@ -71,34 +71,6 @@ func Cronjob() {
 	}
 }
 
-// CronThreads is a multithread Cronjob but cannot be used as this func is not thread-safe.
-func CronThreads() {
-	var (
-		count = true
-		init  = true
-		pct   = false
-	)
-	// make these 4 image tasks multithread
-	c := make(chan bool)
-	go func() {
-		Request{"bbs", count, init, pct}.HTML("bbs.htm")
-		c <- true
-	}()
-	go func() {
-		Request{"ftp", count, init, pct}.HTML("ftp.htm")
-		c <- true
-	}()
-	go func() {
-		Request{"group", count, init, pct}.HTML("group.htm")
-		c <- true
-	}()
-	go func() {
-		Request{"magazine", count, init, pct}.HTML("magazine.htm")
-		c <- true
-	}()
-	<-c // sync 4 tasks
-}
-
 // HTML prints a snippet listing links to each group, with an optional file count.
 func (r Request) HTML(filename string) {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
