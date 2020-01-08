@@ -89,9 +89,9 @@ func LastUpdate() time.Time {
 }
 
 // Total reports the number of records fetched by the supplied SQL query.
-func Total(s string) int {
+func Total(s *string) int {
 	db := Connect()
-	rows, err := db.Query(s)
+	rows, err := db.Query(*s)
 	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
 		println(s)
 	}

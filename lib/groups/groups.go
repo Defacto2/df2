@@ -191,7 +191,7 @@ func List(name string) ([]string, int) {
 	db := database.Connect()
 	defer db.Close()
 	s := sqlGroups(name, false)
-	total := database.Total(s)
+	total := database.Total(&s)
 	// interate through records
 	rows, err := db.Query(s)
 	logs.Check(err)
