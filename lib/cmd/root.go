@@ -11,6 +11,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+/*
+Useful cobra funcs
+rootCmd.CommandPath() || rootCmd.Use || rootCmd.Name() // df2
+rootCmd.ResetCommands()
+rootCmd.ResetFlags()
+rootCmd.SilenceErrors()
+rootCmd.SilenceUsage()
+*/
+
 const configName = ".df2.yaml"
 
 var (
@@ -61,6 +70,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil && !quiet {
 		logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed()))
 	} else if e := fmt.Sprintf("%s", err); strings.Contains(e, "\""+configName+"\" Not Found in") {
+
 		logs.Warn(fmt.Sprintf("no config file in use, please run: %s config create\n", rootCmd.CommandPath()))
 	} else {
 		println(fmt.Sprintf("%s", err))
