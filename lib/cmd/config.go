@@ -19,7 +19,6 @@ import (
 var (
 	configSetName string
 	fileOverwrite bool
-	infoStyles    string
 )
 
 // configCmd represents the config command

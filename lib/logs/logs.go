@@ -179,10 +179,9 @@ func PromptDir() string {
 			fmt.Fprintln(os.Stderr, "will not save the change as this directory is not found:", Path(save))
 			os.Exit(1)
 		}
-		return save
 	}
 	scannerCheck(scanner)
-	return ""
+	return save
 }
 
 // PromptPort asks the user for a port configuration value and returns the input.
