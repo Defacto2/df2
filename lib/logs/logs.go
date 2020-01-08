@@ -61,7 +61,7 @@ func Out(s string) {
 }
 
 // ProgressPct returns the count of total remaining as a percentage.
-func ProgressPct(name string, count int, total int) float64 {
+func ProgressPct(name string, count, total int) float64 {
 	r := float64(count) / float64(total) * 100
 	switch r {
 	case 100:
@@ -73,7 +73,7 @@ func ProgressPct(name string, count int, total int) float64 {
 }
 
 // ProgressSum returns the count of total remaining.
-// func ProgressSum(count int, total int) {
+// func ProgressSum(count, total int) {
 // 	fmt.Printf("\rBuilding %d/%d", count, total)
 // }
 

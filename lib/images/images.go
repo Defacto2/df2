@@ -25,7 +25,7 @@ import (
 )
 
 // Duplicate an image file and appends prefix to its name.
-func Duplicate(name string, prefix string) (string, error) {
+func Duplicate(name, prefix string) (string, error) {
 	src, err := os.Open(name)
 	if err != nil {
 		return "", err
@@ -45,7 +45,7 @@ func Duplicate(name string, prefix string) (string, error) {
 }
 
 // Generate a collection of site images.
-func Generate(n string, id string) {
+func Generate(n, id string) {
 	out := func(s string, e error) {
 		if s != "" {
 			print("  ", s)
@@ -67,7 +67,7 @@ func Generate(n string, id string) {
 }
 
 // NewExt replaces or appends the extension to a file name.
-func NewExt(name string, extension string) string {
+func NewExt(name, extension string) string {
 	e := filepath.Ext(name)
 	if e == "" {
 		return name + extension
@@ -78,7 +78,7 @@ func NewExt(name string, extension string) string {
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
-func ToPng(src string, dest string, maxDimension int) (string, error) {
+func ToPng(src, dest string, maxDimension int) (string, error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return "", err
@@ -122,7 +122,7 @@ func ToPng(src string, dest string, maxDimension int) (string, error) {
 }
 
 // ToThumb creates a thumb from an image that is size pixel in width and height.
-func ToThumb(file string, saveDir string, size int) (string, error) {
+func ToThumb(file, saveDir string, size int) (string, error) {
 	pfx := "_" + fmt.Sprintf("%v", size) + "x"
 	cp, err := Duplicate(file, pfx)
 	if err != nil {
@@ -154,7 +154,7 @@ func ToThumb(file string, saveDir string, size int) (string, error) {
 }
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
-func ToWebp(src string, dest string) (string, error) {
+func ToWebp(src, dest string) (string, error) {
 	// skip if already a webp image
 	if m, _ := mimetype.DetectFile(src); m.Extension() == ".webp" {
 		return "", nil
