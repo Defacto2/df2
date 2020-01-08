@@ -44,7 +44,7 @@ func List(role string) ([]string, int) {
 	db := database.Connect()
 	defer db.Close()
 	s := sqlPeople(role, false)
-	total := database.Total(s)
+	total := database.Total(&s)
 	// interate through records
 	rows, err := db.Query(s)
 	logs.Check(err)
