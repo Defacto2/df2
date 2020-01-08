@@ -7,20 +7,13 @@ import (
 	"os"
 	"os/exec"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
-)
-
-const (
-	// portMin is the lowest permitted network port
-	portMin int = 0
-	// portMax is the largest permitted network port
-	portMax int = 65535
 )
 
 var (
@@ -39,7 +32,7 @@ var configCmd = &cobra.Command{
 			os.Exit(0)
 		}
 		_ = cmd.Usage()
-		logs.Check(fmt.Errorf("invalid command %v please use one of the available config commands", args[0]))
+		logs.Arg(args)
 	},
 }
 
@@ -65,12 +58,12 @@ var configDeleteCmd = &cobra.Command{
 		if _, err := os.Stat(cfg); os.IsNotExist(err) {
 			configMissing(cmd.CommandPath(), "delete")
 		}
-		switch promptYN("Confirm the file deletion", false) {
+		switch logs.PromptYN("Confirm the file deletion", false) {
 		case true:
 			if err := os.Remove(cfg); err != nil {
 				logs.Check(fmt.Errorf("Could not remove %v %v", cfg, err))
 			}
-			fmt.Println("The file is deleted")
+			fmt.Println("The config is gone")
 		}
 	},
 }
@@ -118,9 +111,17 @@ var configInfoCmd = &cobra.Command{
 		println("These are the default configurations used by this tool when no flags are given.\n")
 		sets, err := yaml.Marshal(viper.AllSettings())
 		logs.Check(err)
-		fmt.Println("config file:", filepath)
-		fmt.Println(string(sets))
-		println()
+		fmt.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), filepath)
+		scanner := bufio.NewScanner(strings.NewReader(string(sets)))
+		for scanner.Scan() {
+			s := strings.Split(scanner.Text(), ":")
+			color.Cyan.Print(s[0])
+			color.Red.Print(":")
+			if len(s) > 1 {
+				fmt.Printf("%s", strings.Join(s[1:], ""))
+			}
+			fmt.Println()
+		}
 	},
 }
 
@@ -128,8 +129,8 @@ var configSetCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Change a configuration",
 	//todo add long with information on how to view settings
-	Example: `--name create.meta.description # to change the meta description setting
---name version.format          # to set the version command output format`,
+	Example: `--name connection.server.host # to change the database host setting
+--name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var name = configSetName
 		keys := viper.AllKeys()
@@ -148,25 +149,29 @@ var configSetCmd = &cobra.Command{
 		}
 		switch {
 		case name == "connection.server.host":
-			fmt.Printf("\nSet a new host, leave blank to keep as-is (recommended: localhost): \n")
-			promptString(s)
+			fmt.Printf("\nSet a new host, leave blank to keep as-is %v: \n", recommend("localhost"))
+			configSave(logs.PromptString(s))
 		case name == "connection.server.protocol":
-			fmt.Printf("\nSet a new protocol, leave blank to keep as-is (recommended: tcp): \n")
-			promptString(s)
+			fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", recommend("tcp"))
+			configSave(logs.PromptString(s))
 		case name == "connection.server.port":
-			fmt.Printf("Set a new MySQL port, choices: %v-%v (recommended: 3306)\n", portMin, portMax)
-			promptPort()
+			fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", logs.PortMin, logs.PortMax, recommend("3306"))
+			configSave(logs.PromptPort())
 		case name[:10] == "directory.":
 			fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")
-			promptDir()
+			configSave(logs.PromptDir())
 		case name == "connection.password":
 			fmt.Printf("\nSet a new MySQL user encrypted or plaintext password or leave blank to keep as-is: \n")
-			promptString(s)
+			configSave(logs.PromptString(s))
 		default:
 			fmt.Printf("\nSet a new value, leave blank to keep as-is or use a dash [-] to disable: \n")
-			promptString(s)
+			configSave(logs.PromptString(s))
 		}
 	},
+}
+
+func recommend(value string) string {
+	return color.Info.Sprintf("(recommend: %v)", value)
 }
 
 // InitDefaults initialises flag and configuration defaults.
@@ -199,10 +204,9 @@ func init() {
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configEditCmd)
 	configCmd.AddCommand(configInfoCmd)
-	configInfoCmd.Flags().StringVarP(&infoStyles, "syntax-style", "c", "monokai", "config syntax highligher, \"use none\" to disable")
 	configCmd.AddCommand(configSetCmd)
 	configSetCmd.Flags().StringVarP(&configSetName, "name", "n", "", `the configuration path to edit in dot syntax (see examples)
-to see a list of names run: retrotxt config info`)
+to see a list of names run: df2 config info`)
 	_ = configSetCmd.MarkFlagRequired("name")
 }
 
@@ -220,129 +224,20 @@ func configMissing(name string, suffix string) {
 	os.Exit(1)
 }
 
-// promptCheck asks the user for a string configuration value and saves it.
-func promptCheck(cnt int) {
-	switch {
-	case cnt == 2:
-		fmt.Println("Ctrl+C to keep the existing port")
-	case cnt >= 4:
-		os.Exit(1)
+func configSave(value interface{}) {
+	switch value.(type) {
+	case int64, string:
+	default:
+		logs.Check(fmt.Errorf("unsupported value interface type"))
 	}
-}
-
-// promptDir asks the user for a directory path and saves it.
-func promptDir() {
-	// allow multiple word user input
-	scanner := bufio.NewScanner(os.Stdin)
-	var save string
-	for scanner.Scan() {
-		txt := scanner.Text()
-		switch txt {
-		case "":
-			os.Exit(0)
-		case "-":
-			save = ""
-		default:
-			save = txt
-		}
-		if _, err := os.Stat(save); os.IsNotExist(err) {
-			fmt.Fprintln(os.Stderr, "will not save the change:", err)
-			os.Exit(1)
-		}
-		viper.Set(configSetName, save)
-		fmt.Printf("%s %s is now set to \"%v\"\n", "✓", configSetName, save)
-		writeConfig(true)
-		os.Exit(0)
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading standard input:", err)
-		os.Exit(1)
-	}
-}
-
-// promptString asks the user for a port configuration value and saves it.
-func promptPort() {
-	var input string
-	cnt := 0
-	for {
-		input = ""
-		cnt++
-		fmt.Scanln(&input)
-		if input == "" {
-			promptCheck(cnt)
-			continue
-		}
-		i, err := strconv.ParseInt(input, 10, 0)
-		if err != nil && input != "" {
-			fmt.Printf("%s %v\n", "✗", input)
-			promptCheck(cnt)
-			continue
-		}
-		// check that the input a valid port
-		if v := Port(int(i)); !v {
-			fmt.Printf("%s %v, is out of range\n", "✗", input)
-			promptCheck(cnt)
-			continue
-		}
-		viper.Set(configSetName, i)
-		fmt.Printf("%s %s is now set to \"%v\"\n", "✓", configSetName, i)
-		writeConfig(true)
-		os.Exit(0)
-	}
-}
-
-// promptString asks the user for a string configuration value and saves it.
-func promptString(keep string) {
-	// allow multiple word user input
-	scanner := bufio.NewScanner(os.Stdin)
-	var save string
-	for scanner.Scan() {
-		txt := scanner.Text()
-		switch txt {
-		case "":
-			os.Exit(0)
-		case "-":
-			save = ""
-		default:
-			save = txt
-		}
-		viper.Set(configSetName, save)
-		fmt.Printf("%s %s is now set to \"%v\"\n", "✓", configSetName, save)
-		writeConfig(true)
-		os.Exit(0)
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading standard input:", err)
-		os.Exit(1)
-	}
-}
-
-// promptYN asks the user for a Yes or No input.
-func promptYN(query string, yesDefault bool) bool {
-	var input string
-	y := "Y"
-	n := "n"
-	if !yesDefault {
-		y = "y"
-		n = "N"
-	}
-	fmt.Printf("%s? [%s/%s] ", query, y, n)
-	fmt.Scanln(&input)
-	switch input {
-	case "":
-		if yesDefault {
-			return true
-		}
-	case "yes", "y":
-		return true
-	}
-	return false
+	viper.Set(configSetName, value)
+	fmt.Printf("%s %s is now set to \"%v\"\n", "✓", configSetName, value)
+	writeConfig(true)
 }
 
 // writeConfig saves all configs to a configuration file.
 func writeConfig(update bool) {
 	bs, err := yaml.Marshal(viper.AllSettings())
-	logs.Check(err)
 	logs.Check(err)
 	err = ioutil.WriteFile(filepath, bs, 0660)
 	logs.Check(err)
@@ -351,12 +246,4 @@ func writeConfig(update bool) {
 		s = "Updated the"
 	}
 	fmt.Println(s+" config file at:", filepath)
-}
-
-// Port reports if the value is valid.
-func Port(port int) bool {
-	if port < portMin || port > portMax {
-		return false
-	}
-	return true
 }

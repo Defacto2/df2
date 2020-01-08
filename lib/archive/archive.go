@@ -46,8 +46,8 @@ func Extract(name string, uuid string) error {
 	if err != nil {
 		return err
 	}
-	th := task{name: "", size: 0, cont: false}
-	tx := task{name: "", size: 0, cont: false}
+	th := taskInit()
+	tx := taskInit()
 	for _, file := range files {
 		if th.cont && tx.cont {
 			break
@@ -89,6 +89,10 @@ func Extract(name string, uuid string) error {
 		dir(tempDir)
 	}
 	return nil
+}
+
+func taskInit() task {
+	return task{name: "", size: 0, cont: false}
 }
 
 // FileMove copies a file to the destination and then deletes the source.
