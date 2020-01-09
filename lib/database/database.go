@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"math"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
@@ -36,24 +36,30 @@ type Empty struct{}
 // IDs are unique UUID values used by the database and filenames.
 type IDs map[string]struct{}
 
-var (
-	d      = Connection{} // connection details
-	pwPath string         // path to a secured text file containing the d.User login password
-)
+var c = Connection{} // connection details
+
+func (c *Connection) String() string {
+	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
+}
 
 // Connect to the database.
 func Connect() *sql.DB {
-	connectInit()
-	pw := readPassword()
-	cfg := fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true&useSSL=false", d.User, pw, d.Server, d.Name)
-	db, err := sql.Open("mysql", cfg)
-	logs.Check(err)
+	config()
+	//cfg := fmt.Sprint(c)
+	db, err := sql.Open("mysql", fmt.Sprint(&c))
+	logs.Check(err) // TODO this could log the password, so search and filter it out
 	err = db.Ping() // ping the server to make sure the connection works
 	if err != nil {
-		cfg := fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true&useSSL=false", d.User, "******", d.Server, d.Name)
-		println(cfg)
+		println(strings.Replace(fmt.Sprint(&c), c.Pass, "****", 1)) // filter the password and then print the datasource connection info
+		// to discover more errors fmt.Printf("%T", err)
+		if err, ok := err.(*net.OpError); ok {
+			if strings.Contains(err.Error(), "connect: connection refused") {
+				logs.Check(fmt.Errorf("the database server is either down or the port is blocked"))
+			} else {
+				logs.Check(err)
+			}
+		}
 	}
-	logs.Check(err)
 	return db
 }
 
@@ -117,12 +123,12 @@ func UUID(id string) bool {
 	return true
 }
 
-// connectInit initializes the database connection using stored settings.
-func connectInit() {
-	if d != (Connection{}) { // check for empty struct
+// config initializes the database connection using stored settings.
+func config() {
+	if c != (Connection{}) { // check for empty struct
 		return
 	}
-	d = Connection{
+	c = Connection{
 		Name: viper.GetString("connection.name"),
 		User: viper.GetString("connection.user"),
 		Pass: viper.GetString("connection.password"),
@@ -131,20 +137,4 @@ func connectInit() {
 			viper.GetString("connection.server.host"),
 			viper.GetString("connection.server.port")),
 	}
-	d.Pass = "password"
-}
-
-// readPassword attempts to read and report the Defacto2 database user password when stored in a local text file.
-func readPassword() string {
-	// fetch database password
-	pwFile, err := os.Open(pwPath)
-	// return an empty password if path fails
-	if err != nil {
-		//log.Print("WARNING: ", err)
-		return d.Pass
-	}
-	defer pwFile.Close()
-	pw, err := ioutil.ReadAll(pwFile)
-	logs.Check(err)
-	return strings.TrimSpace(fmt.Sprintf("%s", pw))
 }
