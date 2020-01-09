@@ -332,7 +332,8 @@ func sqlGroups(name string, includeSoftDeletes bool) string {
 			skip = true
 		}
 	}
-	var sql, where string = "", sqlGroupsWhere(name, inc)
+	var sql string
+	var where = sqlGroupsWhere(name, inc)
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
 		sql = "SELECT DISTINCT group_brand_for AS pubCombined "
