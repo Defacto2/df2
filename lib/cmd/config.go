@@ -1,9 +1,12 @@
 package cmd
 
+// os.Exit() = 200+
+
 import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"sort"
@@ -16,22 +19,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	configSetName string
-	fileOverwrite bool
-)
+var cfgOWFlag bool
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Configure the settings for this tool",
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 && cmd.Flags().NFlag() == 0 {
-			_ = cmd.Usage()
-			os.Exit(0)
+		err := cmd.Usage()
+		logs.Check(err)
+		if len(args) != 0 || cmd.Flags().NFlag() != 0 {
+			logs.Arg("config", args)
 		}
-		_ = cmd.Usage()
-		logs.Arg(args)
 	},
 }
 
@@ -39,7 +38,8 @@ var configCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new config file",
 	Run: func(cmd *cobra.Command, args []string) {
-		if cfg := viper.ConfigFileUsed(); cfg != "" && !fileOverwrite {
+		config.ignore = true
+		if cfg := viper.ConfigFileUsed(); cfg != "" && !cfgOWFlag {
 			configExists(cmd.CommandPath(), "create")
 		}
 		writeConfig(false)
@@ -57,13 +57,14 @@ var configDeleteCmd = &cobra.Command{
 		if _, err := os.Stat(cfg); os.IsNotExist(err) {
 			configMissing(cmd.CommandPath(), "delete")
 		}
-		switch logs.PromptYN("Confirm the file deletion", false) {
+		switch logs.PromptYN("Remove the config file", false) {
 		case true:
 			if err := os.Remove(cfg); err != nil {
-				logs.Check(fmt.Errorf("Could not remove %v %v", cfg, err))
+				logs.Check(fmt.Errorf("could not remove %v %v", cfg, err))
 			}
-			fmt.Println("The config is gone")
+			fmt.Println("the config is gone")
 		}
+		os.Exit(0)
 	},
 }
 
@@ -77,7 +78,7 @@ var configEditCmd = &cobra.Command{
 		}
 		var edit string
 		if err := viper.BindEnv("editor", "EDITOR"); err != nil {
-			editors := []string{"micro", "nano", "vim"}
+			editors := [3]string{"micro", "nano", "vim"}
 			for _, editor := range editors {
 				if _, err := exec.LookPath(editor); err == nil {
 					edit = editor
@@ -85,12 +86,16 @@ var configEditCmd = &cobra.Command{
 				}
 			}
 			if edit != "" {
-				fmt.Printf("There is no %s environment variable set so using: %s\n", "EDITOR", edit)
+				log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
+			} else {
+				log.Println("no suitable editor could be found\nplease set one by creating a $EDITOR environment variable in your shell configuration")
+				os.Exit(200)
 			}
 		} else {
 			edit = viper.GetString("editor")
 			if _, err := exec.LookPath(edit); err != nil {
-				logs.Check(fmt.Errorf("%v command not found %v", edit, exec.ErrNotFound))
+				log.Printf("%q edit command not found\n%v", edit, exec.ErrNotFound)
+				os.Exit(201)
 			}
 		}
 		// credit: https://stackoverflow.com/questions/21513321/how-to-start-vim-from-go
@@ -111,6 +116,7 @@ var configInfoCmd = &cobra.Command{
 		sets, err := yaml.Marshal(viper.AllSettings())
 		logs.Check(err)
 		fmt.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), filepath)
+		configErrCheck()
 		scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 		for scanner.Scan() {
 			s := strings.Split(scanner.Text(), ":")
@@ -131,13 +137,19 @@ var configSetCmd = &cobra.Command{
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var name = configSetName
+		if viper.ConfigFileUsed() == "" {
+			configMissing(cmd.CommandPath(), "set")
+		}
+		var name = config.nameFlag
 		keys := viper.AllKeys()
 		sort.Strings(keys)
 		// sort.SearchStrings() - The slice must be sorted in ascending order.
 		if i := sort.SearchStrings(keys, name); i == len(keys) || keys[i] != name {
-			err := fmt.Errorf("to see a list of usable settings, run: df2 config info")
-			logs.Check(fmt.Errorf("invalid flag %v %v", fmt.Sprintf("--name %s", name), err))
+			fmt.Printf("%s\n%s %s\n",
+				color.Warn.Sprintf("invalid flag value %v", fmt.Sprintf("--name %s", name)),
+				fmt.Sprint("to see a list of usable settings run:"),
+				color.Bold.Sprint("df2 config info"))
+			os.Exit(202)
 		}
 		s := viper.GetString(name)
 		switch s {
@@ -199,28 +211,29 @@ func init() {
 	InitDefaults()
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configCreateCmd)
-	configCreateCmd.Flags().BoolVarP(&fileOverwrite, "overwrite", "y", false, "overwrite any existing config file")
+	configCreateCmd.Flags().BoolVarP(&cfgOWFlag, "overwrite", "y", false, "overwrite any existing config file")
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configEditCmd)
 	configCmd.AddCommand(configInfoCmd)
 	configCmd.AddCommand(configSetCmd)
-	configSetCmd.Flags().StringVarP(&configSetName, "name", "n", "", `the configuration path to edit in dot syntax (see examples)
+	configSetCmd.Flags().StringVarP(&config.nameFlag, "name", "n", "", `the configuration path to edit in dot syntax (see examples)
 to see a list of names run: df2 config info`)
 	_ = configSetCmd.MarkFlagRequired("name")
 }
 
-func configExists(name string, suffix string) {
+func configExists(name, suffix string) {
 	cmd := strings.TrimSuffix(name, suffix)
-	fmt.Printf("A config file already is in use at: %s\n", viper.ConfigFileUsed())
-	fmt.Printf("To edit it: %s\n", cmd+"edit")
-	fmt.Printf("To delete:  %s\n", cmd+"delete")
-	os.Exit(1)
+	color.Warn.Println("a config file already is in use")
+	fmt.Printf("to edit:\t%s\n", cmd+"edit")
+	fmt.Printf("to remove:\t%s\n", cmd+"delete")
+	os.Exit(20)
 }
 
-func configMissing(name string, suffix string) {
+func configMissing(name, suffix string) {
 	cmd := strings.TrimSuffix(name, suffix) + "create"
-	fmt.Printf("No config file is in use.\nTo create one run: %s\n", cmd)
-	os.Exit(1)
+	color.Warn.Println("no config file is in use")
+	fmt.Printf("to create:\t%s\n", cmd)
+	os.Exit(21)
 }
 
 func configSave(value interface{}) {
@@ -229,8 +242,8 @@ func configSave(value interface{}) {
 	default:
 		logs.Check(fmt.Errorf("unsupported value interface type"))
 	}
-	viper.Set(configSetName, value)
-	fmt.Printf("%s %s is now set to \"%v\"\n", "✓", configSetName, value)
+	viper.Set(config.nameFlag, value)
+	fmt.Printf("%s %s is now set to \"%v\"\n", logs.Y(), color.Primary.Sprint(config.nameFlag), color.Info.Sprint(value))
 	writeConfig(true)
 }
 
@@ -238,11 +251,11 @@ func configSave(value interface{}) {
 func writeConfig(update bool) {
 	bs, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
-	err = ioutil.WriteFile(filepath, bs, 0660)
+	err = ioutil.WriteFile(filepath, bs, 0600) // owner+wr
 	logs.Check(err)
-	s := "Created a new"
+	s := "created a new"
 	if update {
-		s = "Updated the"
+		s = "updated the"
 	}
-	fmt.Println(s+" config file at:", filepath)
+	fmt.Println(s+" config file", filepath)
 }

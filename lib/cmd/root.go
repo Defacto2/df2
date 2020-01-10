@@ -69,7 +69,6 @@ func Execute() {
 func configErrCheck() {
 	if !config.ignore {
 		configErrMsg()
-		os.Exit(101)
 	}
 }
 
@@ -78,6 +77,8 @@ func configErrMsg() {
 		fmt.Printf("%s %s\n", color.Warn.Sprint("no config file in use, please run:"),
 			color.Bold.Sprintf("%s config create", rootCmd.CommandPath()))
 		os.Exit(102)
+	} else if config.errors {
+		os.Exit(101)
 	}
 }
 
