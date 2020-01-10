@@ -26,10 +26,7 @@ var groupCmd = &cobra.Command{
 			return
 		}
 		filterFlag(groups.Wheres(), "filter", gf.filter)
-		var req groups.Request
-		if filterFlag(fmtflags, "format", gf.format); gf.format != "" {
-			req = groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
-		}
+		var req = groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
 		switch gf.format {
 		case "html", "h", "":
 			req.HTML("")
