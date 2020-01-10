@@ -12,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/viper"
+	"gopkg.in/gookit/color.v1"
 )
 
 // Filters are group categories.
@@ -145,10 +146,11 @@ func Fix(simulate bool) {
 	switch {
 	case c > 0 && simulate:
 		println(c, "fixes required")
+		color.Notice.Println("use the --simulate=false flag to apply these fixes")
 	case c > 0:
 		println(c, "fixes applied")
 	default:
-		println("no fixes required")
+		println("no fixes applied")
 	}
 }
 
@@ -247,16 +249,16 @@ func fixApply(simulate bool, g string) int {
 	f := fixes(g)
 	v := 0
 	if f != g && simulate {
-		fmt.Printf("? %q != %q\n", g, f)
+		fmt.Printf("%s %q %s %s\n", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
 		v++
 	} else if f != g {
-		s := "✓"
+		s := logs.Y()
 		v++
 		if x := fixGroup(g); !x {
-			s = "✗"
+			s = logs.X()
 			v--
 		}
-		fmt.Printf("%s %q == %q\n", s, g, f)
+		fmt.Printf("%s %q %s %s\n", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
 	}
 	return v
 }
