@@ -1,5 +1,7 @@
 package proof
 
+// os.Exit() = 9x
+
 import (
 	"database/sql"
 	"fmt"
@@ -36,9 +38,7 @@ type row struct {
 	missing int
 }
 
-var (
-	proofID string // ID used for proofs, either a UUID or ID string
-)
+var proofID string // ID used for proofs, either a UUID or ID string
 
 // Query parses a single proof.
 func (req Request) Query(id string) error {
