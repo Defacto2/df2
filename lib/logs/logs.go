@@ -1,5 +1,7 @@
 package logs
 
+// os.Exit() = 1x
+
 import (
 	"bufio"
 	"errors"
@@ -27,9 +29,13 @@ var (
 	Quiet = false
 )
 
-// Arg returns instructions for invalid arguments.
-func Arg(args []string) {
-	Check(fmt.Errorf("invalid command %q please use one of the available config commands", args[0]))
+// Arg returns instructions for invalid command arguments.
+func Arg(arg string, args []string) {
+	fmt.Printf("%s %s %s\n",
+		color.Warn.Sprint("invalid command"),
+		color.Bold.Sprintf("\"%s %s\"", arg, args[0]),
+		color.Warn.Sprint("\nplease use one of the Available Commands shown above"))
+	os.Exit(10)
 }
 
 // Check logs any errors and exits to the operating system with error code 1.
@@ -37,22 +43,22 @@ func Check(err error) {
 	if err != nil {
 		switch Panic {
 		case true:
-			fmt.Printf("error type: %T\tmsg: %v\n", err, err)
+			println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
 			log.Panic(err)
 		default:
-			log.Fatal("ERROR: ", err)
+			log.Fatal(color.Danger.Sprint("ERROR:"), err)
 		}
 	}
 }
 
-// Log any errors.
+// Log an error but do not exit to the operating system.
 func Log(err error) {
 	if err != nil {
-		log.Printf("! %v", err)
+		log.Printf(color.Danger.Sprint("!"), "%v", err)
 	}
 }
 
-// Out writes the string to the standard output.
+// Out is a wrapper for standard output that obeys the --quiet persistant flag.
 func Out(s string) {
 	switch Quiet {
 	case false:
@@ -65,9 +71,9 @@ func ProgressPct(name string, count, total int) float64 {
 	r := float64(count) / float64(total) * 100
 	switch r {
 	case 100:
-		fmt.Printf("\rQuerying %s %.0f %%  ", name, r)
+		fmt.Printf("\rquerying %s %.0f %%  ", name, r)
 	default:
-		fmt.Printf("\rQuerying %s %.2f %%", name, r)
+		fmt.Printf("\rquerying %s %.2f %%", name, r)
 	}
 	return r
 }
@@ -78,21 +84,21 @@ func ProgressPct(name string, count, total int) float64 {
 // }
 
 // Sec prints a secondary notice.
-func Sec(s string) {
-	color.Secondary.Println(s)
+func Sec(s string) string {
+	return color.Secondary.Sprint(s)
 }
 
 // Warn prints a warning notice.
-func Warn(s string) {
-	color.Warn.Println(s)
+func Warn(s string) string {
+	return color.Warn.Sprint(s)
 }
 
-// X returns a red cross mark.
+// X returns a red ✗ cross mark.
 func X() string {
 	return color.Danger.Sprint("✗")
 }
 
-// Y returns a green tick mark.
+// Y returns a green ✓ tick mark.
 func Y() string {
 	return color.Success.Sprint("✓")
 }
@@ -102,14 +108,14 @@ func Y() string {
 func File(config string, err error) {
 	var pathError *os.PathError
 	if errors.As(err, &pathError) {
-		fmt.Println(X(), "failed to create or open file:", Path(pathError.Path))
+		log.Println(X(), "failed to create or open file:", Path(pathError.Path))
 		if config != "" {
 			fmt.Println("  to fix run:", color.Info.Sprintf("config set --name %v", config))
 		}
 		if Panic {
 			log.Panic(err)
 		}
-		os.Exit(1)
+		os.Exit(11)
 	} else {
 		Log(err)
 	}
@@ -146,16 +152,16 @@ func Port(port int) bool {
 func promptCheck(cnt int) {
 	switch {
 	case cnt == 2:
-		fmt.Println("ctrl+C to keep the existing port")
+		fmt.Println("Ctrl+C to keep the existing port")
 	case cnt >= 4:
-		os.Exit(1)
+		os.Exit(12)
 	}
 }
 
 func scannerCheck(s *bufio.Scanner) {
 	if err := s.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "reading input:", err)
-		os.Exit(1)
+		os.Exit(13)
 	}
 }
 
@@ -176,7 +182,7 @@ func PromptDir() string {
 		}
 		if _, err := os.Stat(save); os.IsNotExist(err) {
 			fmt.Fprintln(os.Stderr, "will not save the change as this directory is not found:", Path(save))
-			os.Exit(1)
+			os.Exit(14)
 		}
 	}
 	scannerCheck(scanner)

@@ -1,5 +1,7 @@
 package cmd
 
+// os.Exit() = 10x
+
 import (
 	"fmt"
 	"os"
@@ -7,28 +9,40 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 /*
 Useful cobra funcs
-rootCmd.CommandPath() || rootCmd.Use || rootCmd.Name() // df2
-rootCmd.ResetCommands()
-rootCmd.ResetFlags()
-rootCmd.SilenceErrors()
-rootCmd.SilenceUsage()
+	rootCmd.CommandPath() || rootCmd.Use || rootCmd.Name() // df2
+	rootCmd.ResetCommands()
+	rootCmd.ResetFlags()
+	rootCmd.SilenceErrors()
+	rootCmd.SilenceUsage()
 */
 
-const configName = ".df2.yaml"
+type configuration struct {
+	errors   bool   // flag a config file error
+	filename string // config file persistant flag
+	ignore   bool   // ignore config file error
+	nameFlag string // viper configuration path
+}
+
+var config = configuration{
+	errors: false,
+	ignore: false,
+}
+
+const configName string = ".df2.yaml" // default configuration filename
 
 var (
-	panic      bool = false // debug log
-	quiet      bool = false // quiet disables most printing or output to terminal
-	configFile string
-	home, _    = os.UserHomeDir()
-	filepath   = path.Join(home, configName)
-	fmtflags   = []string{"html", "text", "h", "t"}
+	panic    bool = false // debug log
+	quiet    bool = false // quiet disables most printing or output to terminal
+	home, _       = os.UserHomeDir()
+	filepath      = path.Join(home, configName)
+	fmtflags      = []string{"html", "text", "h", "t"}
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -41,14 +55,35 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Printf("%s %s\n", logs.X(), err)
-		os.Exit(1)
+		fmt.Println(color.Warn.Sprintf("%s", err))
+		e := err.Error()
+		switch {
+		case strings.Contains(e, "required flag(s) \"name\""):
+			println("see Examples for usage or run to list setting choices:", color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
+		}
+		os.Exit(100)
+	}
+	configErrCheck()
+}
+
+func configErrCheck() {
+	if !config.ignore {
+		configErrMsg()
+		os.Exit(101)
+	}
+}
+
+func configErrMsg() {
+	if !quiet && config.errors {
+		fmt.Printf("%s %s\n", color.Warn.Sprint("no config file in use, please run:"),
+			color.Bold.Sprintf("%s config create", rootCmd.CommandPath()))
+		os.Exit(102)
 	}
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", configName))
+	rootCmd.PersistentFlags().StringVar(&config.filename, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", configName))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
 	err := rootCmd.PersistentFlags().MarkHidden("panic")
@@ -59,21 +94,20 @@ func init() {
 func initConfig() {
 	initPanic(panic)
 	initQuiet(quiet)
-	if configFile != "" {
-		viper.SetConfigFile(configFile)
+	if config.filename != "" {
+		viper.SetConfigFile(config.filename)
 	} else {
 		viper.AddConfigPath(home)
 		viper.SetConfigName(configName)
 	}
 	viper.AutomaticEnv() // read in environment variables that match
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil && !quiet {
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			config.errors = true
+		}
+	} else if !quiet {
 		logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed()))
-	} else if e := fmt.Sprintf("%s", err); strings.Contains(e, "\""+configName+"\" Not Found in") {
-
-		logs.Warn(fmt.Sprintf("no config file in use, please run: %s config create\n", rootCmd.CommandPath()))
-	} else {
-		println(fmt.Sprintf("%s", err))
 	}
 }
 
@@ -94,16 +128,19 @@ func filterFlag(t interface{}, val string) {
 	}
 	switch t := t.(type) {
 	case []string:
-		k := false
+		ok := false
 		for _, value := range t {
 			if value == val || (val == value[:1]) {
-				k = true
+				ok = true
 				break
 			}
 		}
-		if !k {
-			logs.Check(fmt.Errorf("unsupported --filter flag %q, valid flags: %s", val, strings.Join(t, ", ")))
-			os.Exit(1)
+		if !ok {
+			fmt.Printf("%s %s\n%s %s\n", color.Warn.Sprint("unsupported --filter flag"),
+				color.Bold.Sprintf("%q", val),
+				color.Warn.Sprint("available flags"),
+				color.Primary.Sprint(strings.Join(t, ",")))
+			os.Exit(103)
 		}
 	}
 }
