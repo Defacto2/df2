@@ -229,9 +229,9 @@ func Print(r Request) {
 		}
 		a = append(a, s)
 	}
-	fmt.Println()
-	fmt.Println(strings.Join(a, ", "))
-	fmt.Println("Total groups", total)
+	logs.Println()
+	logs.Println(strings.Join(a, ", "))
+	logs.Println("Total groups", total)
 }
 
 // Wheres are group categories.
@@ -249,7 +249,7 @@ func fixApply(simulate bool, g string) int {
 	f := fixes(g)
 	v := 0
 	if f != g && simulate {
-		fmt.Printf("%s %q %s %s\n", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
+		logs.Printf("%s %q %s %s\n", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
 		v++
 	} else if f != g {
 		s := logs.Y()
@@ -258,7 +258,7 @@ func fixApply(simulate bool, g string) int {
 			s = logs.X()
 			v--
 		}
-		fmt.Printf("%s %q %s %s\n", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
+		logs.Printf("%s %q %s %s\n", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
 	}
 	return v
 }
@@ -380,7 +380,7 @@ func sqlGroupsWhere(name string, includeSoftDeletes bool) string {
 	}
 	l := len(sql)
 	if l > 4 && sql[l-4:] == " AND" {
-		fmt.Printf("%q|", sql[l-4:])
+		logs.Printf("%q|", sql[l-4:])
 		return sql[:l-4]
 	}
 	return sql

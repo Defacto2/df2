@@ -58,12 +58,31 @@ func Log(err error) {
 	}
 }
 
-// Out is a wrapper for standard output that obeys the --quiet persistant flag.
-func Out(s string) {
+// Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
+func Print(a ...interface{}) (int, error) {
 	switch Quiet {
 	case false:
-		fmt.Print(s)
+		return fmt.Print(a...)
 	}
+	return 0, nil
+}
+
+// Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
+func Printf(format string, a ...interface{}) (int, error) {
+	switch Quiet {
+	case false:
+		return fmt.Printf(format, a...)
+	}
+	return 0, nil
+}
+
+// Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
+func Println(a ...interface{}) (int, error) {
+	switch Quiet {
+	case false:
+		return fmt.Println(a...)
+	}
+	return 0, nil
 }
 
 // ProgressPct returns the count of total remaining as a percentage.
@@ -110,7 +129,7 @@ func File(config string, err error) {
 	if errors.As(err, &pathError) {
 		log.Println(X(), "failed to create or open file:", Path(pathError.Path))
 		if config != "" {
-			fmt.Println("  to fix run:", color.Info.Sprintf("config set --name %v", config))
+			Println("  to fix run:", color.Info.Sprintf("config set --name %v", config))
 		}
 		if Panic {
 			log.Panic(err)

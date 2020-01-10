@@ -34,7 +34,6 @@ var sitemapCmd = &cobra.Command{
 	Use:   "sitemap",
 	Short: "An site map generator",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("sitemap called")
 		create()
 	},
 }

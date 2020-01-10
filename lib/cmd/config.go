@@ -62,7 +62,7 @@ var configDeleteCmd = &cobra.Command{
 			if err := os.Remove(cfg); err != nil {
 				logs.Check(fmt.Errorf("could not remove %v %v", cfg, err))
 			}
-			fmt.Println("the config is gone")
+			logs.Println("the config is gone")
 		}
 		os.Exit(0)
 	},
@@ -103,7 +103,7 @@ var configEditCmd = &cobra.Command{
 		exe.Stdin = os.Stdin
 		exe.Stdout = os.Stdout
 		if err := exe.Run(); err != nil {
-			fmt.Printf("%s\n", err)
+			logs.Printf("%s\n", err)
 		}
 	},
 }
@@ -115,7 +115,7 @@ var configInfoCmd = &cobra.Command{
 		println("These are the default configurations used by this tool when no flags are given.\n")
 		sets, err := yaml.Marshal(viper.AllSettings())
 		logs.Check(err)
-		fmt.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), filepath)
+		logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), filepath)
 		configErrCheck()
 		scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 		for scanner.Scan() {
@@ -123,9 +123,9 @@ var configInfoCmd = &cobra.Command{
 			color.Cyan.Print(s[0])
 			color.Red.Print(":")
 			if len(s) > 1 {
-				fmt.Printf("%s", strings.Join(s[1:], ""))
+				logs.Printf("%s", strings.Join(s[1:], ""))
 			}
-			fmt.Println()
+			logs.Println()
 		}
 	},
 }
@@ -145,7 +145,7 @@ var configSetCmd = &cobra.Command{
 		sort.Strings(keys)
 		// sort.SearchStrings() - The slice must be sorted in ascending order.
 		if i := sort.SearchStrings(keys, name); i == len(keys) || keys[i] != name {
-			fmt.Printf("%s\n%s %s\n",
+			logs.Printf("%s\n%s %s\n",
 				color.Warn.Sprintf("invalid flag value %v", fmt.Sprintf("--name %s", name)),
 				fmt.Sprint("to see a list of usable settings run:"),
 				color.Bold.Sprint("df2 config info"))
@@ -224,15 +224,15 @@ to see a list of names run: df2 config info`)
 func configExists(name, suffix string) {
 	cmd := strings.TrimSuffix(name, suffix)
 	color.Warn.Println("a config file already is in use")
-	fmt.Printf("to edit:\t%s\n", cmd+"edit")
-	fmt.Printf("to remove:\t%s\n", cmd+"delete")
+	logs.Printf("to edit:\t%s\n", cmd+"edit")
+	logs.Printf("to remove:\t%s\n", cmd+"delete")
 	os.Exit(20)
 }
 
 func configMissing(name, suffix string) {
 	cmd := strings.TrimSuffix(name, suffix) + "create"
 	color.Warn.Println("no config file is in use")
-	fmt.Printf("to create:\t%s\n", cmd)
+	logs.Printf("to create:\t%s\n", cmd)
 	os.Exit(21)
 }
 
@@ -243,7 +243,7 @@ func configSave(value interface{}) {
 		logs.Check(fmt.Errorf("unsupported value interface type"))
 	}
 	viper.Set(config.nameFlag, value)
-	fmt.Printf("%s %s is now set to \"%v\"\n", logs.Y(), color.Primary.Sprint(config.nameFlag), color.Info.Sprint(value))
+	logs.Printf("%s %s is now set to \"%v\"\n", logs.Y(), color.Primary.Sprint(config.nameFlag), color.Info.Sprint(value))
 	writeConfig(true)
 }
 
@@ -257,5 +257,5 @@ func writeConfig(update bool) {
 	if update {
 		s = "updated the"
 	}
-	fmt.Println(s+" config file", filepath)
+	logs.Println(s+" config file", filepath)
 }

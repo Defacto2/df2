@@ -142,9 +142,9 @@ func Print(r Request) {
 	// remove duplicates
 	less := func(i, j int) bool { return a[i] < a[j] }
 	unique.Slice(&a, less)
-	fmt.Println()
-	fmt.Println(strings.Join(a, ","))
-	fmt.Println("Total authors", len(a))
+	logs.Println()
+	logs.Println(strings.Join(a, ","))
+	logs.Println("Total authors", len(a))
 }
 
 // Wheres are group categories.

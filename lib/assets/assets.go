@@ -92,7 +92,7 @@ func Clean(target string, delete, human bool) {
 	targets(target)
 	// connect to the database
 	rows, m := CreateUUIDMap()
-	logs.Out("\nThe following files do not match any UUIDs in the database\n")
+	logs.Print("\nThe following files do not match any UUIDs in the database\n")
 	// parse directories
 	var sum results
 	for p := range paths {
@@ -102,7 +102,7 @@ func Clean(target string, delete, human bool) {
 	// output a summary of the results
 	color.Info.Println(fmt.Sprintf("\nTotal orphaned files discovered %v out of %v", humanize.Comma(int64(sum.count)), humanize.Comma(int64(rows))))
 	if sum.fails > 0 {
-		logs.Out(fmt.Sprintf("due to errors %v files could not be deleted\n", sum.fails))
+		logs.Print(fmt.Sprintf("due to errors %v files could not be deleted\n", sum.fails))
 	}
 	if len(paths) > 1 && sum.bytes > 0 {
 		var pts string
@@ -111,7 +111,7 @@ func Clean(target string, delete, human bool) {
 		} else {
 			pts = fmt.Sprintf("%v B", sum.bytes)
 		}
-		logs.Out(fmt.Sprintf("%v drive space consumed\n", pts))
+		logs.Print(fmt.Sprintf("%v drive space consumed\n", pts))
 	}
 }
 
@@ -209,7 +209,7 @@ func backup(s *scan, list []os.FileInfo) {
 			if _, ok := archive[name]; ok {
 				c++
 				if c == 1 {
-					logs.Out("archiving these files before deletion\n\n")
+					logs.Print("archiving these files before deletion\n\n")
 				}
 				return AddTarFile(path, name, tw)
 			}
@@ -268,7 +268,6 @@ func (s scan) scanPath() (results, error) {
 	color.Primary.Printf("\nResults from %v\n", s.path)
 	// query file system
 	list, err := ioutil.ReadDir(s.path)
-	//fmt.Printf("%T | %v", err, err)
 	if err != nil {
 		var e *os.PathError
 		if errors.As(err, &e) {
@@ -292,6 +291,6 @@ func (s scan) scanPath() (results, error) {
 	} else {
 		dsc = fmt.Sprintf("%v B", r.bytes)
 	}
-	logs.Out(fmt.Sprintf("\n%v orphaned files\n%v drive space consumed\n", r.count, dsc))
+	logs.Print(fmt.Sprintf("\n%v orphaned files\n%v drive space consumed\n", r.count, dsc))
 	return r, nil // number of orphaned files discovered, deletion failures, their cumulative size in bytes
 }

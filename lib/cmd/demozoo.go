@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -11,7 +10,7 @@ var demozooCmd = &cobra.Command{
 	Use:   "demozoo",
 	Short: "A brief description of your command",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("demozoo called")
+		logs.Println("demozoo called")
 	},
 }
 

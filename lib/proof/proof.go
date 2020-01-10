@@ -94,13 +94,13 @@ func (req Request) Queries() error {
 			value = val(col)
 			switch columns[i] {
 			case "id":
-				fmt.Printf("%s item %04d (%v) ", logs.Y(), rw.count, value) // rw.count has 3 leading zeros
+				logs.Printf("%s item %04d (%v) ", logs.Y(), rw.count, value) // rw.count has 3 leading zeros
 			case "uuid":
-				fmt.Printf("%v ", value)
+				logs.Printf("%v ", value)
 			case "createdat":
 				clock(value)
 			case "filename":
-				fmt.Printf("%v", value)
+				logs.Printf("%v", value)
 			case "file_zip_content":
 				r.zip(col, req.Overwrite)
 			default:
@@ -130,9 +130,9 @@ func clock(value string) {
 	t, err := time.Parse("2006-01-02T15:04:05Z", value)
 	logs.Check(err)
 	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
-		fmt.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 2006")))
+		logs.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 2006")))
 	} else {
-		fmt.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 15:04")))
+		logs.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 15:04")))
 	}
 }
 
@@ -182,10 +182,10 @@ func sqlSelect() string {
 
 func (rw row) summary() {
 	t := fmt.Sprintf("Total proofs handled: %v", rw.count)
-	fmt.Println(strings.Repeat("─", len(t)))
-	fmt.Println(t)
+	logs.Println(strings.Repeat("─", len(t)))
+	logs.Println(t)
 	if rw.missing > 0 {
-		fmt.Println("UUID files not found:", rw.missing)
+		logs.Println("UUID files not found:", rw.missing)
 	}
 }
 
@@ -197,7 +197,7 @@ func updateZipContent(id string, content string) {
 	logs.Check(err)
 	_, err = update.Exec(content, database.UpdateID, "image", id)
 	logs.Check(err)
-	fmt.Printf("%s file_zip_content", logs.Y())
+	logs.Printf("%s file_zip_content", logs.Y())
 }
 
 func val(col sql.RawBytes) string {
@@ -209,7 +209,7 @@ func val(col sql.RawBytes) string {
 
 func (r Record) zip(col sql.RawBytes, overwrite bool) {
 	if col == nil || overwrite {
-		fmt.Print("\n   • ")
+		logs.Print("\n   • ")
 		if u := r.fileZipContent(); !u {
 			return
 		}

@@ -56,10 +56,10 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "df2",
 	Short: "A tool to optimise and manage defacto2.net",
-	Long: fmt.Sprintf(`A tool to optimise and manage defacto2.net
-Copyright © %v Ben Garrett
-https://github.com/Defacto2/df2
-`, copyright),
+	Long: fmt.Sprintf("%s\nCopyright © %v Ben Garrett\n%v",
+		color.Info.Sprint("A tool to optimise and manage defacto2.net"),
+		copyright,
+		color.Primary.Sprint("https://github.com/Defacto2/df2")),
 	Version: color.Primary.Sprint(version) + "\n",
 }
 

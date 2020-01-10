@@ -151,6 +151,6 @@ func dir(name string) {
 	for _, file := range files {
 		mime, err := mimetype.DetectFile(name + "/" + file.Name())
 		logs.Log(err)
-		fmt.Println(file.Name(), humanize.Bytes(uint64(file.Size())), mime)
+		logs.Println(file.Name(), humanize.Bytes(uint64(file.Size())), mime)
 	}
 }
