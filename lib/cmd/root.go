@@ -129,7 +129,7 @@ func initQuiet(q bool) {
 }
 
 // filterFlag compairs the value of the filter flag against the list of slice values.
-func filterFlag(t interface{}, val string) {
+func filterFlag(t interface{}, flag, val string) {
 	if val == "" {
 		return
 	}
@@ -143,7 +143,7 @@ func filterFlag(t interface{}, val string) {
 			}
 		}
 		if !ok {
-			fmt.Printf("%s %s\n%s %s\n", color.Warn.Sprint("unsupported --filter flag"),
+			fmt.Printf("%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
 				color.Bold.Sprintf("%q", val),
 				color.Warn.Sprint("available flags"),
 				color.Primary.Sprint(strings.Join(t, ",")))

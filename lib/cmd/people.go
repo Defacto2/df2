@@ -19,9 +19,9 @@ var peopleCmd = &cobra.Command{
 	Use:   "people",
 	Short: "A HTML snippet generator to list people",
 	Run: func(cmd *cobra.Command, args []string) {
-		filterFlag(people.Wheres(), pf.filter)
+		filterFlag(people.Wheres(), "filter", pf.filter)
 		var req people.Request
-		if filterFlag(fmtflags, pf.format); pf.format != "" {
+		if filterFlag(fmtflags, "format", pf.format); pf.format != "" {
 			req = people.Request{Filter: pf.filter, Progress: pf.progress}
 		}
 		switch pf.format {

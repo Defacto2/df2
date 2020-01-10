@@ -25,9 +25,9 @@ var groupCmd = &cobra.Command{
 			groups.Cronjob()
 			return
 		}
-		filterFlag(groups.Wheres(), gf.filter)
+		filterFlag(groups.Wheres(), "filter", gf.filter)
 		var req groups.Request
-		if filterFlag(fmtflags, gf.format); gf.format != "" {
+		if filterFlag(fmtflags, "format", gf.format); gf.format != "" {
 			req = groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
 		}
 		switch gf.format {
