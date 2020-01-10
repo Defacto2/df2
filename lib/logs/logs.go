@@ -46,7 +46,7 @@ func Check(err error) {
 			println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
 			log.Panic(err)
 		default:
-			log.Fatal(color.Danger.Sprint("ERROR:"), err)
+			log.Fatal(color.Danger.Sprint("ERROR: "), err)
 		}
 	}
 }
@@ -54,7 +54,7 @@ func Check(err error) {
 // Log an error but do not exit to the operating system.
 func Log(err error) {
 	if err != nil {
-		log.Printf(color.Danger.Sprint("!"), "%v", err)
+		log.Printf("%s %s", color.Danger.Sprint("!"), err)
 	}
 }
 
