@@ -9,10 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	simulate bool
-)
-
 // fixCmd represents the fix command
 var fixCmd = &cobra.Command{
 	Use:   "fix",

@@ -34,6 +34,7 @@ var config = configuration{
 	errors: false,
 	ignore: false,
 }
+var simulate bool
 
 const (
 	configName string = ".df2.yaml" // default configuration filename
