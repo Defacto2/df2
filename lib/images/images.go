@@ -118,7 +118,7 @@ func ToPng(src, dest string, maxDimension int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s %v ⮕ png %v", logs.Y(), strings.ToLower(ext), humanize.Bytes(uint64(s))), nil
+	return fmt.Sprintf("%s %v » png %v", "✓", strings.ToLower(ext), humanize.Bytes(uint64(s))), nil
 }
 
 // ToThumb creates a thumb from an image that is size pixel in width and height.
@@ -150,7 +150,7 @@ func ToThumb(file, saveDir string, size int) (string, error) {
 	if err := os.Remove(cp); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s %vx%v %v", logs.Y(), size, size, filesize(s)), nil
+	return fmt.Sprintf("%s %vx%v %v", "✓", size, size, filesize(s)), nil
 }
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
@@ -167,7 +167,7 @@ func ToWebp(src, dest string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s ⮕ webp %v", logs.Y(), filesize(dest)), nil
+	return fmt.Sprintf("%s » webp %v", "✓", filesize(dest)), nil
 }
 
 func filesize(name string) string {

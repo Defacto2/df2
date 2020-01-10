@@ -145,7 +145,7 @@ func filterFlag(t interface{}, flag, val string) {
 		if !ok {
 			fmt.Printf("%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
 				color.Bold.Sprintf("%q", val),
-				color.Warn.Sprint("available flags"),
+				color.Warn.Sprint("available flag values"),
 				color.Primary.Sprint(strings.Join(t, ",")))
 			os.Exit(103)
 		}
