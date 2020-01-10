@@ -35,7 +35,10 @@ var config = configuration{
 	ignore: false,
 }
 
-const configName string = ".df2.yaml" // default configuration filename
+const (
+	configName string = ".df2.yaml" // default configuration filename
+	version    string = "0.0"       // df2 version
+)
 
 var (
 	panic    bool = false // debug log
@@ -47,13 +50,16 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "df2",
-	Short: "A tool to configure and manage defacto2.net",
+	Use:     "df2",
+	Short:   "A tool to configure and manage defacto2.net",
+	Version: color.Primary.Sprint(version) + "\n",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	rootCmd.SetVersionTemplate(`df2 tool version {{.Version}}`)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(color.Warn.Sprintf("%s", err))
 		e := err.Error()
