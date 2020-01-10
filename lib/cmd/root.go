@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
@@ -38,7 +39,7 @@ var simulate bool
 
 const (
 	configName string = ".df2.yaml" // default configuration filename
-	version    string = "0.0"       // df2 version
+	version    string = "0.0.1"     // df2 version
 )
 
 var (
@@ -51,8 +52,12 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:     "df2",
-	Short:   "A tool to configure and manage defacto2.net",
+	Use:   "df2",
+	Short: "A tool to optimise and manage defacto2.net",
+	Long: fmt.Sprintf(`A tool to optimise and manage defacto2.net
+Copyright © %v Ben Garrett
+https://github.com/Defacto2/df2
+`, time.Now().Year()),
 	Version: color.Primary.Sprint(version) + "\n",
 }
 
