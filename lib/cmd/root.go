@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,11 +44,12 @@ const (
 )
 
 var (
-	panic    bool = false // debug log
-	quiet    bool = false // quiet disables most printing or output to terminal
-	home, _       = os.UserHomeDir()
-	filepath      = path.Join(home, configName)
-	fmtflags      = []string{"html", "text", "h", "t"}
+	panic     bool = false // debug log
+	quiet     bool = false // quiet disables most printing or output to terminal
+	home, _        = os.UserHomeDir()
+	filepath       = path.Join(home, configName)
+	fmtflags       = []string{"html", "text", "h", "t"}
+	copyright      = copyYears()
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -57,7 +59,7 @@ var rootCmd = &cobra.Command{
 	Long: fmt.Sprintf(`A tool to optimise and manage defacto2.net
 Copyright © %v Ben Garrett
 https://github.com/Defacto2/df2
-`, time.Now().Year()),
+`, copyright),
 	Version: color.Primary.Sprint(version) + "\n",
 }
 
@@ -92,6 +94,14 @@ func configErrMsg() {
 	} else if config.errors {
 		os.Exit(101)
 	}
+}
+
+func copyYears() string {
+	var y, c int = time.Now().Year(), 2020
+	if y == c {
+		return strconv.Itoa(c)
+	}
+	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // 2020-21
 }
 
 func init() {
