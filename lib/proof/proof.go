@@ -149,7 +149,15 @@ func (r Record) fileZipContent() bool {
 
 // recordNew reports if a proof is set to unapproved
 func recordNew(values []sql.RawBytes) bool {
-	if values[2] == nil || string(values[2]) != string(values[3]) {
+	if values[2] == nil {
+		return false
+	}
+	// normalise the date values as sometimes updatedat & deletedat can be off by a second.
+	del, err := time.Parse(time.RFC3339, string(values[2]))
+	logs.Log(err)
+	upd, err := time.Parse(time.RFC3339, string(values[3]))
+	logs.Log(err)
+	if diff := upd.Sub(del); diff.Seconds() > 5 {
 		return false
 	}
 	return true
@@ -168,7 +176,7 @@ func (rw row) skip(r Record, hide bool) bool {
 
 func sqlSelect() string {
 	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file_zip_content`,`updatedat`,`platform`"
-	w := "WHERE `section` = 'releaseproof'"
+	w := " WHERE `section` = 'releaseproof'"
 	if proofID != "" {
 		switch {
 		case database.UUID(proofID):
@@ -177,7 +185,7 @@ func sqlSelect() string {
 			w = fmt.Sprintf("%v AND `id`=%q", w, proofID)
 		}
 	}
-	return s + "FROM `files`" + w
+	return s + " FROM `files`" + w
 }
 
 func (rw row) summary() {
