@@ -59,30 +59,30 @@ func Log(err error) {
 }
 
 // Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
-func Print(a ...interface{}) (int, error) {
+func Print(a ...interface{}) {
 	switch Quiet {
 	case false:
-		return fmt.Print(a...)
+		_, err := fmt.Print(a...)
+		Log(err)
 	}
-	return 0, nil
 }
 
 // Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
-func Printf(format string, a ...interface{}) (int, error) {
+func Printf(format string, a ...interface{}) {
 	switch Quiet {
 	case false:
-		return fmt.Printf(format, a...)
+		_, err := fmt.Printf(format, a...)
+		Log(err)
 	}
-	return 0, nil
 }
 
 // Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
-func Println(a ...interface{}) (int, error) {
+func Println(a ...interface{}) {
 	switch Quiet {
 	case false:
-		return fmt.Println(a...)
+		_, err := fmt.Println(a...)
+		Log(err)
 	}
-	return 0, nil
 }
 
 // ProgressPct returns the count of total remaining as a percentage.
@@ -97,10 +97,10 @@ func ProgressPct(name string, count, total int) float64 {
 	return r
 }
 
-// ProgressSum returns the count of total remaining.
-// func ProgressSum(count, total int) {
-// 	fmt.Printf("\rBuilding %d/%d", count, total)
-// }
+// ProgressSum returns the count of total remaining. TODO toggle with a configuration setting
+func ProgressSum(count, total int) {
+	fmt.Printf("\rBuilding %d/%d", count, total)
+}
 
 // Sec prints a secondary notice.
 func Sec(s string) string {
