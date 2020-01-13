@@ -113,7 +113,7 @@ func TestLinkDownload(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := LinkDownload(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
+			if _, err := LinkDownload(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("LinkDownload() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -127,33 +127,25 @@ func TestLinkPing(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    int
-		want1   string
 		wantErr bool
 	}{
-		{"empty", args{""}, 0, "", true},
-		{"ftp", args{"ftp://example.com"}, 0, "", true},
-		{"fake", args{"https://thisisnotaurl-example.com"}, 0, "", true},
-		{"fake", args{"https://example.com"}, 200, "200 OK", false},
+		{"empty", args{""}, true},
+		{"fake", args{"https://example.com"}, false},
+		{"fake", args{"https://thisisnotaurl-example.com"}, true},
+		{"fake", args{"https://example.com"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := LinkPing(tt.args.url)
+			_, err := LinkPing(tt.args.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LinkPing() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if got != tt.want {
-				t.Errorf("LinkPing() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("LinkPing() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
 }
 
-func TestLinkQuietGet(t *testing.T) {
+func TestLinkDownloadQ(t *testing.T) {
 	type args struct {
 		name string
 		url  string
@@ -170,8 +162,8 @@ func TestLinkQuietGet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := LinkQuietGet(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
-				t.Errorf("LinkQuietGet() error = %v, wantErr %v", err, tt.wantErr)
+			if _, err := LinkDownloadQ(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
+				t.Errorf("LinkDownloadQ() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
