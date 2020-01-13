@@ -12,11 +12,24 @@ var demozooCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Run: func(cmd *cobra.Command, args []string) {
 		logs.Println("demozoo called")
-		data := demozoo.Fetch(179611)
-		//		data.Print()
-		p, s := data.PouetID()
-		logs.Printf("Pouet ID %v and HTTP status %v\n", p, s)
-		data.Downloads()
+		// data := demozoo.Fetch(179611)
+		// //		data.Print()
+		// p, s := data.PouetID()
+		// logs.Printf("Pouet ID %v and HTTP status %v\n", p, s)
+		// data.Downloads()
+		var err error
+		r := demozoo.Request{
+			Overwrite: false,
+			All:       false,
+			HideMiss:  false}
+		switch {
+		// case proo.id != "":
+		// 	err = r.Query(proo.id)
+		default:
+			err = r.Query("26732")
+			//err = r.Queries()
+		}
+		logs.Check(err)
 	},
 }
 
