@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
@@ -78,7 +77,7 @@ func (req Request) Queries() error {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
-		if new := recordNew(values); !new && !req.All {
+		if new := database.IsNew(values); !new && !req.All {
 			continue
 		}
 		rw.count++
@@ -90,19 +89,19 @@ func (req Request) Queries() error {
 		}
 		// iterate through each value
 		var value string
-		for i, col := range values {
-			value = val(col)
+		for i, raw := range values {
+			value = val(raw)
 			switch columns[i] {
 			case "id":
 				logs.Printf("%s item %04d (%v) ", logs.Y(), rw.count, value) // rw.count has 3 leading zeros
 			case "uuid":
 				logs.Printf("%v ", value)
 			case "createdat":
-				clock(value)
+				database.DateTime(raw)
 			case "filename":
 				logs.Printf("%v", value)
 			case "file_zip_content":
-				r.zip(col, req.Overwrite)
+				r.zip(raw, req.Overwrite)
 			default:
 				//fmt.Printf("  %v: %v\n", columns[i], value)
 			}
@@ -126,16 +125,6 @@ func (r Record) approve() error {
 	return nil
 }
 
-func clock(value string) {
-	t, err := time.Parse("2006-01-02T15:04:05Z", value)
-	logs.Check(err)
-	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
-		logs.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 2006")))
-	} else {
-		logs.Printf("%v ", color.Info.Sprint(t.UTC().Format("2 Jan 15:04")))
-	}
-}
-
 // fileZipContent reads an archive and saves its content to the database
 func (r Record) fileZipContent() bool {
 	a, err := archive.Read(r.File)
@@ -147,27 +136,11 @@ func (r Record) fileZipContent() bool {
 	return true
 }
 
-// recordNew reports if a proof is set to unapproved
-func recordNew(values []sql.RawBytes) bool {
-	if values[2] == nil {
-		return false
-	}
-	// normalise the date values as sometimes updatedat & deletedat can be off by a second.
-	del, err := time.Parse(time.RFC3339, string(values[2]))
-	logs.Log(err)
-	upd, err := time.Parse(time.RFC3339, string(values[3]))
-	logs.Log(err)
-	if diff := upd.Sub(del); diff.Seconds() > 5 {
-		return false
-	}
-	return true
-}
-
 func (rw row) skip(r Record, hide bool) bool {
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
 		rw.missing++
 		if !hide {
-			fmt.Printf("%s item %v (%v) missing %v\n", logs.X(), rw.count, r.ID, filepath.Join(rw.base, color.Danger.Sprint(r.UUID)))
+			fmt.Printf("%s item %04d (%v) missing %v\n", logs.X(), rw.count, r.ID, filepath.Join(rw.base, color.Danger.Sprint(r.UUID)))
 		}
 		return true
 	}
