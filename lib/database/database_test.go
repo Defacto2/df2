@@ -37,7 +37,7 @@ func TestID(t *testing.T) {
 	}
 }
 
-func TestUUID(t *testing.T) {
+func TestIsUUID(t *testing.T) {
 	type args struct {
 		id string
 	}
@@ -54,8 +54,8 @@ func TestUUID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := UUID(tt.args.id); got != tt.want {
-				t.Errorf("UUID() = %v, want %v", got, tt.want)
+			if got := IsUUID(tt.args.id); got != tt.want {
+				t.Errorf("IsUUID() = %v, want %v", got, tt.want)
 			}
 		})
 	}

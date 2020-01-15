@@ -41,8 +41,8 @@ var proofID string // ID used for proofs, either a UUID or ID string
 
 // Query parses a single proof.
 func (req Request) Query(id string) error {
-	if !database.UUID(id) && !database.ID(id) {
-		return fmt.Errorf("invalid id given %q it needs to be an auto-generated MySQL id or an uuid", id)
+	if err := database.CheckID(id); err != nil {
+		return err
 	}
 	proofID = id
 	return req.Queries()
@@ -152,9 +152,9 @@ func sqlSelect() string {
 	w := " WHERE `section` = 'releaseproof'"
 	if proofID != "" {
 		switch {
-		case database.UUID(proofID):
+		case database.IsUUID(proofID):
 			w = fmt.Sprintf("%v AND `uuid`=%q", w, proofID)
-		case database.ID(proofID):
+		case database.IsID(proofID):
 			w = fmt.Sprintf("%v AND `id`=%q", w, proofID)
 		}
 	}
