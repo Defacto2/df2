@@ -346,8 +346,8 @@ var prodID = ""
 
 // Query parses a single Demozoo entry.
 func (req Request) Query(id string) error {
-	if !database.UUID(id) && !database.ID(id) {
-		return fmt.Errorf("invalid id given %q it needs to be an auto-generated MySQL id or an uuid", id)
+	if err := database.CheckID(id); err != nil {
+		return err
 	}
 	prodID = id
 	return req.Queries()
@@ -370,6 +370,64 @@ type Record struct {
 	LastMod        time.Time // file download last modified time
 }
 
+func (r Record) sql() (string, []interface{}) {
+	const base string = ""
+	var set []string
+	var args []interface{}
+
+	if r.Filename != "" {
+		set = append(set, "filename=?")
+		args = append(args, []interface{}{r.Filename}...)
+	}
+	if r.Filesize != "" {
+		set = append(set, "filesize=?")
+		args = append(args, []interface{}{r.Filesize}...)
+	}
+	if r.FileZipContent != "" {
+		set = append(set, "file_zip_content=?")
+		args = append(args, []interface{}{r.FileZipContent}...)
+	}
+	if r.SumMD5 != "" {
+		set = append(set, "file_integrity_weak=?")
+		args = append(args, []interface{}{r.SumMD5}...)
+	}
+	if r.Sum384 != "" {
+		set = append(set, "file_integrity_strong=?")
+		args = append(args, []interface{}{r.Sum384}...)
+	}
+	if r.LastMod.Year() != 0001 {
+		set = append(set, "file_last_modified=?")
+		args = append(args, []interface{}{r.LastMod.Format(database.Datetime)}...)
+	}
+	if len(set) == 0 {
+		return "", args
+	}
+	query := "UPDATE files SET " + strings.Join(set, ",") + " WHERE id=?"
+	args = append(args, []interface{}{r.ID}...)
+	return query, args
+}
+
+func (r Record) Save(simulate bool) error {
+	db := database.Connect()
+	defer db.Close()
+
+	query, args := r.sql()
+	update, err := db.Prepare(query)
+
+	logs.Check(err)
+	_, err = update.Exec(args)
+	logs.Check(err)
+
+	// update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
+	// logs.Check(err)
+
+	// _, err = update.Exec(database.UpdateID, r.ID)
+	// logs.Check(err)
+
+	print(fmt.Sprintf("  %s updated", logs.Y()))
+	return nil
+}
+
 func (r Record) String() string {
 	return fmt.Sprintf("%s item %04d (%v) %v DZ:%v %v",
 		logs.Y(), r.count, r.ID,
@@ -382,9 +440,9 @@ func sqlSelect() string {
 	w := " WHERE `web_id_demozoo` IS NOT NULL AND `platform` = 'dos'"
 	if prodID != "" {
 		switch {
-		case database.UUID(prodID):
+		case database.IsUUID(prodID):
 			w = fmt.Sprintf("%v AND `uuid`=%q", w, prodID)
-		case database.ID(prodID):
+		case database.IsID(prodID):
 			w = fmt.Sprintf("%v AND `id`=%q", w, prodID)
 		}
 	}
@@ -497,8 +555,9 @@ func (req Request) Queries() error {
 			fallthrough
 		case r.FileZipContent == "":
 			if zip := r.fileZipContent(); zip {
-				err := archive.ExtractDemozoo(r.AbsFile, r.UUID)
+				_, err := archive.ExtractDemozoo(r.AbsFile, r.UUID)
 				logs.Log(err)
+				// TODO save ExtractDemozoo results
 			}
 		}
 		logs.Println()
