@@ -97,10 +97,9 @@ func percent(count uint64, total uint64) uint64 {
 // printProgress prints that the download progress is complete.
 func progressDone(name string, written int64) {
 	logs.Printf("\r%v download saved as: %v\033[0K", humanize.Bytes(uint64(written)), name)
-	logs.Println()
 }
 
-// LinkDownload downloads the URL and saves it to the named file.
+// LinkDownload downloads the URL and saves it as the named file.
 func LinkDownload(name, url string) (http.Header, error) {
 	var h http.Header
 	out, err := os.Create(name)
