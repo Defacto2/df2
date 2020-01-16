@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/Defacto2/df2/lib/database"
 )
 
 func Test_mutateURL(t *testing.T) {
@@ -154,7 +152,8 @@ func TestRecord_sql(t *testing.T) {
 		AbsFile        string
 		ID             string
 		UUID           string
-		WebIDDemozoo   string
+		WebIDDemozoo   uint
+		WebIDPouet     uint
 		Filename       string
 		Filesize       string
 		FileZipContent string
@@ -163,24 +162,28 @@ func TestRecord_sql(t *testing.T) {
 		SumMD5         string
 		Sum384         string
 		LastMod        time.Time
+		Readme         string
+		DOSeeBinary    string
+		Platform       string
+		GroupFor       string
+		GroupBy        string
 	}
 	const where string = " WHERE id=?"
 	var now = time.Now()
-	var empty []interface{}
 	tests := []struct {
 		name   string
 		fields fields
 		want   string
-		want1  []interface{}
+		want1  int
 	}{
-		{"empty", fields{}, "", empty},
-		{"filename", fields{ID: "1", Filename: "hi.txt"}, "UPDATE files SET filename=?" + where, []interface{}{"hi.txt", "1"}},
-		{"filesize", fields{ID: "1", Filesize: "54321"}, "UPDATE files SET filesize=?" + where, []interface{}{"54321", "1"}},
-		{"zip content", fields{ID: "1", FileZipContent: "HI.TXT\nHI.EXE"}, "UPDATE files SET file_zip_content=?" + where, []interface{}{"HI.TXT\nHI.EXE", "1"}},
-		{"md5", fields{ID: "1", SumMD5: "md5placeholder"}, "UPDATE files SET file_integrity_weak=?" + where, []interface{}{"md5placeholder", "1"}},
-		{"sha386", fields{ID: "1", Sum384: "shaplaceholder"}, "UPDATE files SET file_integrity_strong=?" + where, []interface{}{"shaplaceholder", "1"}},
-		{"lastmod", fields{ID: "1", LastMod: now}, "UPDATE files SET file_last_modified=?" + where, []interface{}{now.Format(database.Datetime), "1"}},
-		{"a file", fields{ID: "1", Filename: "some.gif", Filesize: "5012352"}, "UPDATE files SET filename=?,filesize=?" + where, []interface{}{"some.gif", "5012352", "1"}},
+		{"empty", fields{}, "", 0},
+		{"filename", fields{ID: "1", Filename: "hi.txt"}, "UPDATE files SET filename=?,updatedat=?,updatedby=?" + where, 4},
+		{"filesize", fields{ID: "1", Filesize: "54321"}, "UPDATE files SET filesize=?,updatedat=?,updatedby=?" + where, 4},
+		{"zip content", fields{ID: "1", FileZipContent: "HI.TXT\nHI.EXE"}, "UPDATE files SET file_zip_content=?,updatedat=?,updatedby=?" + where, 4},
+		{"md5", fields{ID: "1", SumMD5: "md5placeholder"}, "UPDATE files SET file_integrity_weak=?,updatedat=?,updatedby=?" + where, 4},
+		{"sha386", fields{ID: "1", Sum384: "shaplaceholder"}, "UPDATE files SET file_integrity_strong=?,updatedat=?,updatedby=?" + where, 4},
+		{"lastmod", fields{ID: "1", LastMod: now}, "UPDATE files SET file_last_modified=?,updatedat=?,updatedby=?" + where, 4},
+		{"a file", fields{ID: "1", Filename: "some.gif", Filesize: "5012352"}, "UPDATE files SET filename=?,filesize=?,updatedat=?,updatedby=?" + where, 5},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -190,6 +193,7 @@ func TestRecord_sql(t *testing.T) {
 				ID:             tt.fields.ID,
 				UUID:           tt.fields.UUID,
 				WebIDDemozoo:   tt.fields.WebIDDemozoo,
+				WebIDPouet:     tt.fields.WebIDPouet,
 				Filename:       tt.fields.Filename,
 				Filesize:       tt.fields.Filesize,
 				FileZipContent: tt.fields.FileZipContent,
@@ -198,13 +202,18 @@ func TestRecord_sql(t *testing.T) {
 				SumMD5:         tt.fields.SumMD5,
 				Sum384:         tt.fields.Sum384,
 				LastMod:        tt.fields.LastMod,
+				Readme:         tt.fields.Readme,
+				DOSeeBinary:    tt.fields.DOSeeBinary,
+				Platform:       tt.fields.Platform,
+				GroupFor:       tt.fields.GroupFor,
+				GroupBy:        tt.fields.GroupBy,
 			}
 			got, got1 := r.sql()
 			if got != tt.want {
 				t.Errorf("Record.sql() got = %v, want %v", got, tt.want)
 			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Record.sql() got1 = %v, want %v", got1, tt.want1)
+			if !reflect.DeepEqual(len(got1), tt.want1) {
+				t.Errorf("Record.sql() got1 = %v, want %v", len(got1), tt.want1)
 			}
 		})
 	}
