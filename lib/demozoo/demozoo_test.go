@@ -25,7 +25,7 @@ func Test_mutateURL(t *testing.T) {
 		{"example", args{u: exp}, "http://example.com"},
 		{"nil", args{nil}, ""},
 		{"broken", args{bro}, "not-a-valid-url"},
-		{"scene.org", args{fso}, "https://files.scene.org/get/someplace"},
+		{"scene.org", args{fso}, "https://files.scene.org/get:nl-http/someplace"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
