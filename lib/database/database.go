@@ -47,7 +47,7 @@ func (c *Connection) String() string {
 	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
 }
 
-// Connect to the database.
+// Connect will connect to the database and handle any errors.
 func Connect() *sql.DB {
 	config()
 	db, err := sql.Open("mysql", fmt.Sprint(&c))
@@ -73,6 +73,21 @@ func Connect() *sql.DB {
 		}
 	}
 	return db
+}
+
+// ConnectErr will connect to the database or return any errors.
+func ConnectErr() (*sql.DB, error) {
+	config()
+	db, err := sql.Open("mysql", fmt.Sprint(&c))
+	if err != nil {
+		e := strings.Replace(err.Error(), c.Pass, "****", 1)
+		return nil, fmt.Errorf(e)
+	}
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 // DateTime colours and formats a date and time string.
