@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func TestID(t *testing.T) {
+func TestIsID(t *testing.T) {
 	type args struct {
 		id string
 	}
@@ -30,8 +30,8 @@ func TestID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ID(tt.args.id); got != tt.want {
-				t.Errorf("ID() = %v, want %v", got, tt.want)
+			if got := IsID(tt.args.id); got != tt.want {
+				t.Errorf("IsID() = %v, want %v", got, tt.want)
 			}
 		})
 	}
