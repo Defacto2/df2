@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"gopkg.in/gookit/color.v1"
 )
@@ -54,7 +55,13 @@ func Check(err error) {
 // Log an error but do not exit to the operating system.
 func Log(err error) {
 	if err != nil {
-		log.Printf("%s %s", color.Danger.Sprint("!"), err)
+		switch Panic {
+		case true:
+			println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
+			log.Panic(err)
+		default:
+			log.Printf("%s %s", color.Danger.Sprint("!"), err)
+		}
 	}
 }
 
@@ -274,4 +281,12 @@ func PromptYN(query string, yesDefault bool) bool {
 		return true
 	}
 	return false
+}
+
+func Truncate(text string, n int) string {
+	var new string = "…"
+	if utf8.RuneCountInString(text) <= n {
+		return text
+	}
+	return text[0:n-utf8.RuneCountInString(new)] + new
 }
