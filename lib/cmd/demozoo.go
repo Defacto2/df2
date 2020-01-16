@@ -29,9 +29,10 @@ var demozooCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		r := demozoo.Request{
-			Overwrite: false,
-			All:       false,
-			HideMiss:  false}
+			All:       dzoo.all,
+			Overwrite: dzoo.overwrite,
+			Simulate:  dzoo.simulate}
+		demozoo.Verbose = true
 		switch {
 		case dzoo.id != "":
 			err = r.Query(dzoo.id)
@@ -48,13 +49,13 @@ var demozooCmd = &cobra.Command{
 		case len(dzoo.extract) == 1:
 			id, err := uuid.NewRandom()
 			logs.Check(err)
-			d, err := archive.ExtractDemozoo(dzoo.extract[0], id.String())
+			d, err := archive.ExtractDemozoo(dzoo.extract[0], id.String(), []string{})
 			logs.Check(err)
 			if err == nil {
 				println(d.String())
 			}
 		case len(dzoo.extract) > 1: // only use the first 2 flags
-			d, err := archive.ExtractDemozoo(dzoo.extract[0], dzoo.extract[1])
+			d, err := archive.ExtractDemozoo(dzoo.extract[0], dzoo.extract[1], []string{})
 			logs.Check(err)
 			if err == nil {
 				println(d.String())
@@ -71,7 +72,7 @@ func init() {
 	demozooCmd.Flags().BoolVarP(&dzoo.new, "new", "n", false, "scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().StringVarP(&dzoo.id, "id", "i", "", "id or uuid to handle only one demozoo entry")
 	demozooCmd.Flags().BoolVar(&dzoo.all, "all", false, "scan for all demozoo entries, not just new submissions")
-	demozooCmd.Flags().BoolVarP(&simulate, "simulate", "s", true, "simulate the fixes and display the expected changes")
+	demozooCmd.Flags().BoolVarP(&dzoo.simulate, "simulate", "s", false, "simulate the fixes and display the expected changes")
 	demozooCmd.Flags().BoolVar(&dzoo.overwrite, "overwrite", false, "rescan archives and overwrite all existing assets\n")
 	demozooCmd.Flags().UintVarP(&dzoo.ping, "ping", "p", 0, "fetch and display a production record from the Demozoo.org API")
 	demozooCmd.Flags().UintVarP(&dzoo.download, "download", "d", 0, "fetch and download a production's link file via the Demozoo.org API\n")
