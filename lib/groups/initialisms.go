@@ -28,11 +28,14 @@ func (g group) sqlInitialism() string {
 }
 
 func (g *group) get() error {
-	db := database.Connect()
+	db, err := database.ConnectErr()
+	if err != nil {
+		return err
+	}
 	defer db.Close()
 	var pubname string
 	row := db.QueryRow(g.sqlInitialism())
-	err := row.Scan(&pubname)
+	err = row.Scan(&pubname)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}

@@ -1,6 +1,7 @@
 package groups
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -153,6 +154,28 @@ func Test_fixThe(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := fixThe(tt.args.g); got != tt.want {
 				t.Errorf("fixThe() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVariations(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{"0", args{""}, []string(nil)},
+		{"1", args{"hello"}, []string{"hello"}},
+		{"2", args{"hello world"}, []string{"hello world", "helloworld", "hello-world", "hello_world", "hello.world"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Variations(tt.args.name); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Variations() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

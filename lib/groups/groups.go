@@ -234,6 +234,39 @@ func Print(r Request) {
 	logs.Println("Total groups", total)
 }
 
+// Variations creates format variations for a named group.
+func Variations(name string) []string {
+	var v []string
+	if name == "" {
+		return v
+	}
+	name = strings.ToLower(name)
+	v = append(v, name)
+	if name != "" {
+		s := strings.Split(name, " ")
+		a := strings.Join(s, "")
+		if name != a {
+			v = append(v, a)
+		}
+		b := strings.Join(s, "-")
+		if name != b {
+			v = append(v, b)
+		}
+		c := strings.Join(s, "_")
+		if name != c {
+			v = append(v, c)
+		}
+		d := strings.Join(s, ".")
+		if name != d {
+			v = append(v, d)
+		}
+		if init, err := Initialism(name); err == nil && init != "" {
+			v = append(v, strings.ToLower(init))
+		}
+	}
+	return v
+}
+
 // Wheres are group categories.
 func Wheres() []string {
 	return strings.Split(Filters, ",")
