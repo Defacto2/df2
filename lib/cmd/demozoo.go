@@ -32,7 +32,6 @@ var demozooCmd = &cobra.Command{
 			All:       dzoo.all,
 			Overwrite: dzoo.overwrite,
 			Simulate:  dzoo.simulate}
-		demozoo.Verbose = true
 		switch {
 		case dzoo.id != "":
 			err = r.Query(dzoo.id)
@@ -68,6 +67,7 @@ var demozooCmd = &cobra.Command{
 }
 
 func init() {
+	var err error
 	rootCmd.AddCommand(demozooCmd)
 	demozooCmd.Flags().BoolVarP(&dzoo.new, "new", "n", false, "scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().StringVarP(&dzoo.id, "id", "i", "", "id or uuid to handle only one demozoo entry")
@@ -78,8 +78,9 @@ func init() {
 	demozooCmd.Flags().UintVarP(&dzoo.download, "download", "d", 0, "fetch and download a production's link file via the Demozoo.org API\n")
 	demozooCmd.Flags().StringArrayVar(&dzoo.extract, "extract", make([]string, 0), `extracts and parses an archived file
 requires two flags: --extract [filename] --extract [uuid]`)
-	demozooCmd.MarkFlagFilename("extract")
-	err := demozooCmd.Flags().MarkHidden("extract")
+	err = demozooCmd.MarkFlagFilename("extract")
+	logs.Check(err)
+	err = demozooCmd.Flags().MarkHidden("extract")
 	logs.Check(err)
 	demozooCmd.Flags().SortFlags = false
 }
