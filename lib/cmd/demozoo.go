@@ -27,6 +27,7 @@ var demozooCmd = &cobra.Command{
 	Use:   "demozoo",
 	Short: "Interact with Demozoo.org upload submissions",
 	Run: func(cmd *cobra.Command, args []string) {
+		var empty []string
 		var err error
 		r := demozoo.Request{
 			All:       dzoo.all,
@@ -48,13 +49,13 @@ var demozooCmd = &cobra.Command{
 		case len(dzoo.extract) == 1:
 			id, err := uuid.NewRandom()
 			logs.Check(err)
-			d, err := archive.ExtractDemozoo(dzoo.extract[0], id.String(), []string{})
+			d, err := archive.ExtractDemozoo(dzoo.extract[0], id.String(), &empty)
 			logs.Check(err)
 			if err == nil {
 				println(d.String())
 			}
 		case len(dzoo.extract) > 1: // only use the first 2 flags
-			d, err := archive.ExtractDemozoo(dzoo.extract[0], dzoo.extract[1], []string{})
+			d, err := archive.ExtractDemozoo(dzoo.extract[0], dzoo.extract[1], &empty)
 			logs.Check(err)
 			if err == nil {
 				println(d.String())

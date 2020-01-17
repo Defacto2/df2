@@ -53,7 +53,7 @@ func TestExtractDemozoo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExtractDemozoo(tt.args.name, tt.args.uuid, tt.args.varNames)
+			got, err := ExtractDemozoo(tt.args.name, tt.args.uuid, &tt.args.varNames)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ExtractDemozoo() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -149,6 +149,7 @@ func Test_findDOS(t *testing.T) {
 		files contents
 	}
 	var empty contents
+	var e []string
 	f1 := content{
 		ext:        ".com",
 		name:       "hi.com",
@@ -186,7 +187,7 @@ func Test_findDOS(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := findDOS(tt.args.name, tt.args.files); got != tt.want {
+			if got := findDOS(tt.args.name, tt.args.files, &e); got != tt.want {
 				t.Errorf("findDOS() = %v, want %v", got, tt.want)
 			}
 		})
@@ -199,6 +200,7 @@ func Test_findNFO(t *testing.T) {
 		files contents
 	}
 	var empty contents
+	var e []string
 	f1 := content{
 		ext:      ".diz",
 		name:     "file_id.diz",
@@ -236,7 +238,7 @@ func Test_findNFO(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := findNFO(tt.args.name, tt.args.files); got != tt.want {
+			if got := findNFO(tt.args.name, tt.args.files, &e); got != tt.want {
 				t.Errorf("findNFO() = %v, want %v", got, tt.want)
 			}
 		})

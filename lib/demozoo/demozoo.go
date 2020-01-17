@@ -216,7 +216,7 @@ func (req Request) Queries() error {
 				if r.GroupFor != "" {
 					names = append(names, groups.Variations(r.GroupFor)...)
 				}
-				edz, err := archive.ExtractDemozoo(r.AbsFile, r.UUID, names)
+				edz, err := archive.ExtractDemozoo(r.AbsFile, r.UUID, &names)
 				logs.Log(err)
 				c := strings.Split(r.FileZipContent, "\n")
 				logs.Printf(" • %d files", len(c))

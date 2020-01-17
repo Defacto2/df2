@@ -27,7 +27,7 @@ func (d Demozoo) String() string {
 }
 
 // ExtractDemozoo decompresses and parses archives fetched from Demozoo.org.
-func ExtractDemozoo(name, uuid string, varNames []string) (Demozoo, error) {
+func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {
 	var dz Demozoo
 	if err := database.CheckUUID(uuid); err != nil {
 		return dz, err
@@ -63,13 +63,12 @@ func ExtractDemozoo(name, uuid string, varNames []string) (Demozoo, error) {
 		}
 		zips[i] = zip
 	}
-	// varNames --> findNFO, findDOS = for{}
-	if nfo := findNFO(name, zips); nfo != "" {
+	if nfo := findNFO(name, zips, varNames); nfo != "" {
 		if moveText(filepath.Join(tempDir, nfo), uuid) {
 			dz.NFO = nfo
 		}
 	}
-	if dos := findDOS(name, zips); dos != "" {
+	if dos := findDOS(name, zips, varNames); dos != "" {
 		dz.DOSee = dos
 	}
 	return dz, nil
@@ -121,7 +120,7 @@ func (f finds) top() string {
 
 type finds map[string]int
 
-func findDOS(name string, files contents) string {
+func findDOS(name string, files contents, varNames *[]string) string {
 	finds := make(finds) // filename and priority values
 	for _, file := range files {
 		if !file.executable {
@@ -130,6 +129,8 @@ func findDOS(name string, files contents) string {
 		base := strings.TrimSuffix(name, file.ext) // base filename without extension
 		fn := strings.ToLower(file.name)           // normalize filenames
 		ext := strings.ToLower(file.ext)           // normalize file extensions
+		e := findVariant(fn, ".exe", varNames)
+		c := findVariant(fn, ".com", varNames)
 		switch {
 		case ext == ".bat": // [random].bat
 			finds[file.name] = 1
@@ -137,16 +138,20 @@ func findDOS(name string, files contents) string {
 			finds[file.name] = 2
 		case fn == base+".com": // [archive name].com
 			finds[file.name] = 3
-		case ext == ".exe": // [random].exe
+		case e != "":
 			finds[file.name] = 4
-		case ext == ".com": // [random].com
+		case c != "":
 			finds[file.name] = 5
+		case ext == ".exe": // [random].exe
+			finds[file.name] = 6
+		case ext == ".com": // [random].com
+			finds[file.name] = 7
 		}
 	}
 	return finds.top()
 }
 
-func findNFO(name string, files contents) string {
+func findNFO(name string, files contents, varNames *[]string) string {
 	finds := make(finds) // filename and priority values
 	for _, file := range files {
 		if !file.textfile {
@@ -155,23 +160,39 @@ func findNFO(name string, files contents) string {
 		base := strings.TrimSuffix(name, file.ext) // base filename without extension
 		fn := strings.ToLower(file.name)           // normalize filenames
 		ext := strings.ToLower(file.ext)           // normalize file extensions
+		n := findVariant(fn, ".nfo", varNames)
+		t := findVariant(fn, ".txt", varNames)
 		switch {
 		case fn == base+".nfo": // [archive name].nfo
 			finds[file.name] = 1
-		case ext == ".nfo": // [random].nfo
+		case n != "":
 			finds[file.name] = 2
 		case fn == base+".txt": // [archive name].txt
 			finds[file.name] = 3
-		case fn == "file_id.diz": // BBS file description
+		case t != "":
 			finds[file.name] = 4
-		case fn == base+".diz": // [archive name].diz
+		case ext == ".nfo": // [random].nfo
 			finds[file.name] = 5
-		case fn == base+".txt": // [random].txt
+		case fn == "file_id.diz": // BBS file description
 			finds[file.name] = 6
-		case fn == base+".diz": // [random].diz
+		case fn == base+".diz": // [archive name].diz
 			finds[file.name] = 7
+		case fn == base+".txt": // [random].txt
+			finds[file.name] = 8
+		case fn == base+".diz": // [random].diz
+			finds[file.name] = 9
 		default: // currently lacking is [group name].nfo and [group name].txt priorities
 		}
 	}
 	return finds.top()
+}
+
+func findVariant(name, ext string, varNames *[]string) string {
+	for _, v := range *varNames {
+		f := v + ext
+		if f == name {
+			return f
+		}
+	}
+	return ""
 }
