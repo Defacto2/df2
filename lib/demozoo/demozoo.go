@@ -4,13 +4,9 @@ import (
 	"crypto/md5"
 	"crypto/sha512"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -20,92 +16,13 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/download"
+	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
 
-const (
-	prodAPI string = "https://demozoo.org/api/v1/productions"
-)
-
-// ProductionsAPIv1 productions API v1.
-// This can be dynamically generated at https://mholt.github.io/json-to-go/
-// Get the Demozoo JSON output from https://demozoo.org/api/v1/productions/{{.ID}}/?format=json
-type ProductionsAPIv1 struct {
-	URL         string `json:"url"`
-	DemozooURL  string `json:"demozoo_url"`
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	AuthorNicks []struct {
-		Name         string `json:"name"`
-		Abbreviation string `json:"abbreviation"`
-		Releaser     struct {
-			URL     string `json:"url"`
-			ID      int    `json:"id"`
-			Name    string `json:"name"`
-			IsGroup bool   `json:"is_group"`
-		} `json:"releaser"`
-	} `json:"author_nicks"`
-	AuthorAffiliationNicks []interface{} `json:"author_affiliation_nicks"`
-	ReleaseDate            string        `json:"release_date"`
-	Supertype              string        `json:"supertype"`
-	Platforms              []struct {
-		URL  string `json:"url"`
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	} `json:"platforms"`
-	Types []struct {
-		URL       string `json:"url"`
-		ID        int    `json:"id"`
-		Name      string `json:"name"`
-		Supertype string `json:"supertype"`
-	} `json:"types"`
-	Credits []struct {
-		Nick struct {
-			Name         string `json:"name"`
-			Abbreviation string `json:"abbreviation"`
-			Releaser     struct {
-				URL     string `json:"url"`
-				ID      int    `json:"id"`
-				Name    string `json:"name"`
-				IsGroup bool   `json:"is_group"`
-			} `json:"releaser"`
-		} `json:"nick"`
-		Category string `json:"category"`
-		Role     string `json:"role"`
-	} `json:"credits"`
-	DownloadLinks []struct {
-		LinkClass string `json:"link_class"`
-		URL       string `json:"url"`
-	} `json:"download_links"`
-	ExternalLinks []struct {
-		LinkClass string `json:"link_class"`
-		URL       string `json:"url"`
-	} `json:"external_links"`
-	ReleaseParties      []interface{} `json:"release_parties"`
-	CompetitionPlacings []interface{} `json:"competition_placings"`
-	InvitationParties   []interface{} `json:"invitation_parties"`
-	Screenshots         []struct {
-		OriginalURL     string `json:"original_url"`
-		OriginalWidth   int    `json:"original_width"`
-		OriginalHeight  int    `json:"original_height"`
-		StandardURL     string `json:"standard_url"`
-		StandardWidth   int    `json:"standard_width"`
-		StandardHeight  int    `json:"standard_height"`
-		ThumbnailURL    string `json:"thumbnail_url"`
-		ThumbnailWidth  int    `json:"thumbnail_width"`
-		ThumbnailHeight int    `json:"thumbnail_height"`
-	} `json:"screenshots"`
-}
-
-// Production API production request.
-type Production struct {
-	ID         int64         // Demozoo production ID
-	Timeout    time.Duration // HTTP request timeout in seconds (default 5)
-	link       string        // URL link to sent the request // ??
-	StatusCode int           // received HTTP statuscode
-	Status     string        // received HTTP status
-}
+const prodAPI string = "https://demozoo.org/api/v1/productions"
 
 // Fetch a Demozoo production by its ID.
 func Fetch(id uint) (int, string, ProductionsAPIv1) {
@@ -116,230 +33,11 @@ func Fetch(id uint) (int, string, ProductionsAPIv1) {
 	return d.StatusCode, d.Status, api
 }
 
-// data gets a production API link and normalises the results.
-func (p *Production) data() *ProductionsAPIv1 {
-	var err error
-	p.URL()
-	var r = download.Request{
-		Link: p.link,
-	}
-	err = r.Body()
-	logs.Log(err)
-	p.Status = r.Status
-	p.StatusCode = r.StatusCode
-	dz := ProductionsAPIv1{}
-	if len(r.Read) > 0 {
-		err = json.Unmarshal(r.Read, &dz)
-	}
-	if err != nil && logs.Panic {
-		logs.Println(string(r.Read))
-	}
-	logs.Check(err)
-	return &dz
-}
-
-// URL creates a productions API v.1 request link.
-// example: https://demozoo.org/api/v1/productions/158411/?format=json
-func (p *Production) URL() {
-	rawurl, err := prodURL(p.ID)
-	logs.Check(err)
-	p.link = rawurl
-}
-
-// prodURL creates a production URL from a Demozoo ID.
-func prodURL(id int64) (string, error) {
-	if id < 0 {
-		return "", fmt.Errorf("unexpected negative id value %v", id)
-	}
-	u, err := url.Parse(prodAPI) // base URL
-	if err != nil {
-		return "", err
-	}
-	u.Path = path.Join(u.Path, strconv.FormatInt(id, 10)) // append ID
-	q := u.Query()
-	q.Set("format", "json") // append format=json
-	u.RawQuery = q.Encode()
-	return u.String(), nil
-}
-
-// DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink() (string, string) {
-	var save, link string
-	var err error
-	for _, l := range p.DownloadLinks {
-		var l DownloadsAPIv1 = l // apply type so we can use it with methods
-		if ok := l.parse(); !ok {
-			continue
-		}
-		if ping, err := download.LinkPing(l.URL); err != nil || ping.StatusCode != 200 {
-			continue
-		}
-		link = l.URL
-		save, err = saveName(l.URL)
-		if err != nil {
-			continue
-		}
-		break
-	}
-	return save, link
-}
-
-// DownloadsAPIv1 are DownloadLinks for ProductionsAPIv1.
-type DownloadsAPIv1 struct {
-	LinkClass string `json:"link_class"`
-	URL       string `json:"url"`
-}
-
-// Downloads parses the Demozoo DownloadLinks and saves the first suitable download.
-func (p *ProductionsAPIv1) Downloads() {
-	for _, l := range p.DownloadLinks {
-		var l DownloadsAPIv1 = l // apply type so we can use it with methods
-		if ok := l.parse(); !ok {
-			logs.Print(" not usable\n")
-			continue
-		}
-		ping, err := download.LinkPing(l.URL)
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		if ping.StatusCode != 200 {
-			logs.Printf(" %s", ping.Status) // print the HTTP status
-			continue
-		}
-		logs.Print("\n")
-		save, err := saveName(l.URL)
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		saveDest, err := filepath.Abs(filepath.Join("/home", "ben", save)) // TODO PATH arg instead of hardcoded
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		_, err = download.LinkDownload(saveDest, l.URL)
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		break
-	}
-}
-
-// saveName gets a filename from the URL or generates a random filename.
-func saveName(rawurl string) (string, error) {
-	u, err := url.Parse(rawurl)
-	if err != nil {
-		return "", err
-	}
-	base := filepath.Base(u.Path)
-	if base == "." {
-		base = randomName()
-	}
-	return base, nil
-}
-
-// randomName generates a random temporary filename.
-func randomName() string {
-	tmpfile, err := ioutil.TempFile("", "df2-download")
-	logs.Check(err)
-	defer os.Remove(tmpfile.Name())
-	name := tmpfile.Name()
-	err = tmpfile.Close()
-	logs.Check(err)
-	return name
-}
-
-// parse corrects any known errors with a Downloads API link.
-func (dl *DownloadsAPIv1) parse() bool {
-	u, err := url.Parse(dl.URL) // validate url
-	if err != nil {
-		return false
-	}
-	u = mutateURL(u)
-	dl.URL = u.String()
-	return true
-}
-
-// mutateURL applies fixes to known problematic URLs.
-func mutateURL(u *url.URL) *url.URL {
-	if u == nil {
-		u, err := url.Parse("")
-		logs.Check(err)
-		return u
-	}
-	switch u.Hostname() {
-	case "files.scene.org":
-		p := strings.Split(u.Path, "/")
-		// https://files.scene.org/view/.. >
-		// https://files.scene.org/get:nl-http/..
-		if p[1] == "view" {
-			p[1] = "get:nl-http" // must include -http to avoid FTP links
-			u.Path = strings.Join(p, "/")
-		}
-	}
-	return u
-}
-
-// PouetID returns the ID value used by Pouet's which prod URL syntax
-// and its HTTP status code.
-// example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID() (int, int) {
-	for _, l := range p.ExternalLinks {
-		if l.LinkClass != "PouetProduction" {
-			continue
-		}
-		id, err := parsePouetProduction(l.URL)
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		ping, _ := download.LinkPing(l.URL)
-		return id, ping.StatusCode
-	}
-	return 0, 0
-}
-
-// parsePouetProduction takes a pouet prod URL and extracts the ID
-func parsePouetProduction(rawurl string) (int, error) {
-	u, err := url.Parse(rawurl)
-	if err != nil {
-		return 0, err
-	}
-	q := u.Query()
-	w := q.Get("which")
-	if w == "" {
-		return 0, fmt.Errorf("unexpected PouetProduction url syntax: %s", rawurl)
-	}
-	id, err := strconv.Atoi(w)
-	if err != nil {
-		return 0, fmt.Errorf("unexpected PouetProduction which= query syntax: %s", w)
-	}
-	if id < 0 {
-		return 0, fmt.Errorf("unexpected PouetProduction which= query value: %s", w)
-	}
-	return id, nil
-}
-
-// Print displays the production API results as tabbed JSON.
-func (p *ProductionsAPIv1) Print() {
-	js, err := json.MarshalIndent(&p, "", "  ")
-	logs.Check(err)
-	logs.Println(string(js))
-}
-
-type row struct {
-	base    string
-	count   int
-	missing int
-}
-
 // Request proofs.
 type Request struct {
+	All       bool // parse all demozoo entries
 	Overwrite bool // overwrite existing files
-	All       bool // parse all proofs
-	HideMiss  bool // ignore missing uuid files
+	Simulate  bool // simulate database save
 }
 
 var prodID = ""
@@ -353,90 +51,8 @@ func (req Request) Query(id string) error {
 	return req.Queries()
 }
 
-// Record of a file item.
-type Record struct {
-	count          int
-	AbsFile        string // absolute path to file
-	ID             string // mysql auto increment id
-	UUID           string // record unique id
-	WebIDDemozoo   string // demozoo production id
-	Filename       string
-	Filesize       string
-	FileZipContent string
-	CreatedAt      string
-	UpdatedAt      string
-	SumMD5         string    // file download MD5 hash
-	Sum384         string    // file download SHA384 hash
-	LastMod        time.Time // file download last modified time
-}
-
-func (r Record) sql() (string, []interface{}) {
-	const base string = ""
-	var set []string
-	var args []interface{}
-
-	if r.Filename != "" {
-		set = append(set, "filename=?")
-		args = append(args, []interface{}{r.Filename}...)
-	}
-	if r.Filesize != "" {
-		set = append(set, "filesize=?")
-		args = append(args, []interface{}{r.Filesize}...)
-	}
-	if r.FileZipContent != "" {
-		set = append(set, "file_zip_content=?")
-		args = append(args, []interface{}{r.FileZipContent}...)
-	}
-	if r.SumMD5 != "" {
-		set = append(set, "file_integrity_weak=?")
-		args = append(args, []interface{}{r.SumMD5}...)
-	}
-	if r.Sum384 != "" {
-		set = append(set, "file_integrity_strong=?")
-		args = append(args, []interface{}{r.Sum384}...)
-	}
-	if r.LastMod.Year() != 0001 {
-		set = append(set, "file_last_modified=?")
-		args = append(args, []interface{}{r.LastMod.Format(database.Datetime)}...)
-	}
-	if len(set) == 0 {
-		return "", args
-	}
-	query := "UPDATE files SET " + strings.Join(set, ",") + " WHERE id=?"
-	args = append(args, []interface{}{r.ID}...)
-	return query, args
-}
-
-func (r Record) Save(simulate bool) error {
-	db := database.Connect()
-	defer db.Close()
-
-	query, args := r.sql()
-	update, err := db.Prepare(query)
-
-	logs.Check(err)
-	_, err = update.Exec(args)
-	logs.Check(err)
-
-	// update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
-	// logs.Check(err)
-
-	// _, err = update.Exec(database.UpdateID, r.ID)
-	// logs.Check(err)
-
-	print(fmt.Sprintf("  %s updated", logs.Y()))
-	return nil
-}
-
-func (r Record) String() string {
-	return fmt.Sprintf("%s item %04d (%v) %v DZ:%v %v",
-		logs.Y(), r.count, r.ID,
-		color.Primary.Sprint(r.UUID), color.Note.Sprint(r.WebIDDemozoo),
-		r.CreatedAt)
-}
-
 func sqlSelect() string {
-	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`"
+	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`"
 	w := " WHERE `web_id_demozoo` IS NOT NULL AND `platform` = 'dos'"
 	if prodID != "" {
 		switch {
@@ -447,6 +63,39 @@ func sqlSelect() string {
 		}
 	}
 	return s + " FROM `files`" + w
+}
+
+type row struct {
+	count   int
+	missing int
+}
+
+func newRecord(c int, values []sql.RawBytes) Record {
+	r := Record{
+		count: c,
+		ID:    string(values[0]), // id
+		UUID:  string(values[1]), // uuid
+		// deletedat
+		CreatedAt: database.DateTime(values[3]), // createdat
+		Filename:  string(values[4]),            // filename
+		Filesize:  string(values[5]),            // filesize
+		// web_id_demozoo
+		FileZipContent: string(values[7]),            // file_zip_content
+		UpdatedAt:      database.DateTime(values[8]), // updatedat
+		Platform:       string(values[9]),            // platform
+		Sum384:         string(values[10]),           // file_integrity_strong
+		SumMD5:         string(values[11]),           // file_integrity_weak
+		// web_id_pouet
+		GroupFor: string(values[13]),
+		GroupBy:  string(values[14]),
+	}
+	if i, err := strconv.Atoi(string(values[6])); err == nil { // deletedat
+		r.WebIDDemozoo = uint(i)
+	}
+	if i, err := strconv.Atoi(string(values[12])); err == nil { // web_id_pouet
+		r.WebIDPouet = uint(i)
+	}
+	return r
 }
 
 // Queries parses all new proofs.
@@ -478,63 +127,66 @@ func (req Request) Queries() error {
 			continue
 		}
 		rw.count++
-		r := Record{
-			count:          rw.count,
-			ID:             string(values[0]),
-			UUID:           string(values[1]),
-			UpdatedAt:      database.DateTime(values[2]),
-			CreatedAt:      database.DateTime(values[3]),
-			Filename:       string(values[4]),
-			Filesize:       string(values[5]),
-			WebIDDemozoo:   string(values[6]),
-			FileZipContent: string(values[7])}
-		r.AbsFile = filepath.Join(dir.UUID, r.UUID)
-		// confirm UUID is missing
-		if !rw.skipRow(r) {
-			continue // TODO maybe still remove this and instead handle filename = null
-		}
-		logs.Print(r)
+		r := newRecord(rw.count, values)
+		logs.Print(r.String()) // counter and record intro
 		// confirm API request
-		code, status, api := Fetch(273607)
+		code, status, api := Fetch(r.WebIDDemozoo)
 		if code < 200 || code > 299 {
 			logs.Printf("(%s)\n", download.StatusColor(code, status))
 			continue
 		}
-		// handle download
-		// ?look for existing file
-		switch {
-		case r.Filesize == "", r.Filename == "":
+		// pouet id
+		if id, c := api.PouetID(); id > 0 && c < 300 {
+			r.WebIDPouet = uint(id)
+		}
+		// confirm & handle missing UUID host download file
+		r.AbsFile = filepath.Join(dir.UUID, r.UUID)
+		if rw.absNotExist(r) || req.Overwrite {
 			name, link := api.DownloadLink()
 			if len(link) == 0 {
 				logs.Print(color.Note.Sprint("no suitable downloads found\n"))
 				continue
 			}
 			logs.Printf("%s %s\n", color.Primary.Sprint(link), download.StatusColor(200, "200 OK"))
-			head, err := download.LinkDownload(name, link)
+			head, err := download.LinkDownload(r.AbsFile, link)
 			if err != nil {
 				logs.Log(err)
 				continue
 			}
-			logs.Print(" •")
+			logs.EL()
+			logs.Print("\r")
+			// reset existing data due to the new download
+			r.Filename = name
+			logs.Printf(" • %s", r.Filename)
+			r.Filesize = ""
+			r.SumMD5 = ""
+			r.Sum384 = ""
+			r.FileZipContent = ""
 			// last modified time passed via HTTP
 			if lm := head.Get("Last-Modified"); len(lm) > 0 {
-				if t, err := time.Parse(download.RFC5322, lm); err == nil {
+				if t, err := time.Parse(download.RFC5322, lm); err != nil {
+					logs.Log(err)
+				} else {
 					r.LastMod = t
+					if time.Now().Year() == t.Year() {
+						logs.Printf(" • mod %s", t.Format("2 Jan"))
+					} else {
+						logs.Printf(" • mod %s", t.Format("Jan 06"))
+					}
 				}
 			}
+		}
+		switch {
+		case r.Filesize == "", r.SumMD5 == "", r.Sum384 == "":
+			stat, err := os.Stat(r.AbsFile)
 			if err != nil {
 				logs.Log(err)
 				continue
 			}
-			stat, err := os.Stat(name)
-			if err != nil {
-				logs.Log(err)
-				continue
-			}
-			r.AbsFile = stat.Name()
 			r.Filesize = strconv.Itoa(int(stat.Size()))
-			// Hashes (move to func) --->
-			f, err := os.Open(stat.Name())
+			logs.Printf(" • %s", humanize.Bytes(uint64(stat.Size())))
+			// file hashes
+			f, err := os.Open(r.AbsFile)
 			if err != nil {
 				logs.Log(err)
 				continue
@@ -545,46 +197,65 @@ func (req Request) Queries() error {
 				logs.Log(err)
 				continue
 			}
+			r.SumMD5 = fmt.Sprintf("%x", h1.Sum(nil))
+			logs.Printf(" • md5 %s", logs.Truncate(r.SumMD5, 10))
 			h2 := sha512.New384()
 			if _, err := io.Copy(h2, f); err != nil {
 				logs.Log(err)
 				continue
 			}
-			r.SumMD5 = fmt.Sprintf("%x", h1.Sum(nil))
 			r.Sum384 = fmt.Sprintf("%x", h2.Sum(nil))
+			logs.Printf(" • sha %s", logs.Truncate(r.Sum384, 10))
 			fallthrough
 		case r.FileZipContent == "":
 			if zip := r.fileZipContent(); zip {
-				_, err := archive.ExtractDemozoo(r.AbsFile, r.UUID)
+				var names []string
+				if r.GroupBy != "" {
+					names = append(names, groups.Variations(r.GroupBy)...)
+				}
+				if r.GroupFor != "" {
+					names = append(names, groups.Variations(r.GroupFor)...)
+				}
+				edz, err := archive.ExtractDemozoo(r.AbsFile, r.UUID, names)
 				logs.Log(err)
-				// TODO save ExtractDemozoo results
+				c := strings.Split(r.FileZipContent, "\n")
+				logs.Printf(" • %d files", len(c))
+				if strings.ToLower(r.Platform) == "dos" && edz.DOSee != "" {
+					logs.Printf(" • dosee %q", edz.DOSee)
+					r.DOSeeBinary = edz.DOSee
+				}
+				if edz.NFO != "" {
+					logs.Printf(" • text %q", edz.NFO)
+					r.Readme = edz.NFO
+				}
+			}
+		default: // skip record as nothing needs updating
+			logs.Printf("skipped, no changes needed %v\n", logs.Y())
+			continue
+		}
+		// save results
+		switch req.Simulate {
+		case true:
+			logs.Printf(" • simulated %v\n", logs.Y())
+		default:
+			if err = r.Save(); err != nil {
+				logs.Printf(" • saved %v ", logs.X())
+				logs.Log(err)
+			} else {
+				logs.Printf(" • saved %v\n", logs.Y())
 			}
 		}
-		logs.Println()
 	}
 	logs.Check(rows.Err())
+	if prodID != "" {
+		if rw.count == 0 {
+			t := fmt.Sprintf("id %q is not a Demozoo sourced file record", prodID)
+			logs.Println(t)
+		}
+		return nil
+	}
 	rw.summary()
 	return nil
-}
-
-// fileZipContent reads an archive and saves its content to the database
-func (r *Record) fileZipContent() bool {
-	a, err := archive.Read(r.AbsFile)
-	if err != nil {
-		logs.Log(err)
-		return false
-	}
-	r.FileZipContent = strings.Join(a, "\n")
-	//updateZipContent(r.ID, strings.Join(a, "\n"))
-	return true
-}
-
-func (rw row) skipRow(r Record) bool {
-	if _, err := os.Stat(r.AbsFile); os.IsNotExist(err) {
-		rw.missing++
-		return true
-	}
-	return false
 }
 
 func (rw row) summary() {
