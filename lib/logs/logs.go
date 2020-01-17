@@ -21,6 +21,10 @@ const (
 	PortMin int = 0
 	// PortMax is the largest permitted network port
 	PortMax int = 65535
+	// AED is the ANSI Erase in Display
+	AED string = "\r\003[2J"
+	// AEL is the ANSI Erase in Line sequence
+	AEL string = "\r\033[0K"
 )
 
 var (
@@ -50,6 +54,11 @@ func Check(err error) {
 			log.Fatal(color.Danger.Sprint("ERROR: "), err)
 		}
 	}
+}
+
+// EL prints the ANSI command Erase in Line.
+func EL() {
+	Print(AEL)
 }
 
 // Log an error but do not exit to the operating system.
@@ -283,10 +292,11 @@ func PromptYN(query string, yesDefault bool) bool {
 	return false
 }
 
-func Truncate(text string, n int) string {
+// Truncate shortens a string to len characters.
+func Truncate(text string, len int) string {
 	var new string = "…"
-	if utf8.RuneCountInString(text) <= n {
+	if utf8.RuneCountInString(text) <= len {
 		return text
 	}
-	return text[0:n-utf8.RuneCountInString(new)] + new
+	return text[0:len-utf8.RuneCountInString(new)] + new
 }
