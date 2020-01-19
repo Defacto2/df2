@@ -17,6 +17,20 @@ package main
 
 import "github.com/Defacto2/df2/lib/cmd"
 
+/*
+TODOs
+- cracktros containing `installer` from DZ
+- cracktros containing `application generator` from DZ
+- ansilove with no thumbs
+- images with no thumbs
+
+- auto-approve
+ - when thumbs, previews, tags, file content, file size, file name are okay, grp != Changeme
+
+- strings to unicode runes for file contents and filenames
+- uuid type enforcement
+*/
+
 func main() {
 	cmd.Execute()
 }
