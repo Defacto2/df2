@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
+	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
 )
@@ -23,6 +25,15 @@ var fixCmd = &cobra.Command{
 	},
 }
 
+var fixApproveCmd = &cobra.Command{
+	Use:   "approve",
+	Short: "Approve file records that qualify to go public",
+	Run: func(cmd *cobra.Command, args []string) {
+		println("approve goes here")
+		database.Approve()
+	},
+}
+
 var fixGroupsCmd = &cobra.Command{
 	Use:   "groups",
 	Short: "Repair malformed group names",
@@ -31,8 +42,18 @@ var fixGroupsCmd = &cobra.Command{
 	},
 }
 
+var fixImagesCmd = &cobra.Command{
+	Use:   "images",
+	Short: "Generate missing images",
+	Run: func(cmd *cobra.Command, args []string) {
+		images.Fix(simulate)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(fixCmd)
+	fixCmd.AddCommand(fixApproveCmd)
 	fixCmd.AddCommand(fixGroupsCmd)
+	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", true, "simulate the fixes and display the expected changes")
 }
