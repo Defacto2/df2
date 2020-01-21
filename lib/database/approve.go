@@ -123,19 +123,6 @@ func queries() error {
 	return nil
 }
 
-func (r record) summary(rows int) {
-	t := fmt.Sprintf("Total items handled: %d", r.c)
-	d := fmt.Sprintf("Database records fetched: %d", rows)
-	if rows <= r.c {
-		logs.Println(strings.Repeat("─", len(t)))
-		logs.Println(t)
-	} else {
-		logs.Println(strings.Repeat("─", len(d)))
-		logs.Println(t)
-		logs.Println(d)
-	}
-}
-
 // approve sets the record to be publically viewable.
 func (r record) approve() error {
 	db := Connect()
@@ -163,15 +150,15 @@ func (r record) checkDownload(path string) bool {
 	return true
 }
 
-func (r record) checkImage(path string) bool {
-	if _, err := os.Stat(r.imagePath(path)); os.IsNotExist(err) {
-		return false
+func (r *record) checkFileContent(fc string) bool {
+	r.zipContent = fc
+	switch filepath.Ext(r.filename) {
+	case ".7z", ".arj", ".rar", ".zip":
+		if r.zipContent == "" {
+			return false
+		}
 	}
 	return true
-}
-
-func (r record) imagePath(path string) string {
-	return filepath.Join(fmt.Sprint(path), r.uuid+".png")
 }
 
 func (r *record) checkFileName(fn string) bool {
@@ -190,27 +177,6 @@ func (r *record) checkFileSize(fs string) bool {
 	return true
 }
 
-func (r *record) checkHash(h1, h2 string) bool {
-	if r.hashStrong = string(h1); r.hashStrong == "" {
-		return false
-	}
-	if r.hashWeak = string(h2); r.hashWeak == "" {
-		return false
-	}
-	return true
-}
-
-func (r *record) checkFileContent(fc string) bool {
-	r.zipContent = fc
-	switch filepath.Ext(r.filename) {
-	case ".7z", ".arj", ".rar", ".zip":
-		if r.zipContent == "" {
-			return false
-		}
-	}
-	return true
-}
-
 func (r *record) checkGroups(g1, g2 string) bool {
 	r.groupBy = g1
 	r.groupFor = g2
@@ -223,16 +189,46 @@ func (r *record) checkGroups(g1, g2 string) bool {
 	return true
 }
 
-func (r *record) checkTags(t1, t2 string) bool {
-	if r.platform = t1; r.platform == "" {
+func (r *record) checkHash(h1, h2 string) bool {
+	if r.hashStrong = string(h1); r.hashStrong == "" {
 		return false
 	}
-	switch t1 {
-	case "ansi", "markup", "pdf", "text":
+	if r.hashWeak = string(h2); r.hashWeak == "" {
+		return false
+	}
+	return true
+}
+
+func (r record) checkImage(path string) bool {
+	if _, err := os.Stat(r.imagePath(path)); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func (r *record) checkTags(t1, t2 string) bool {
+	if r.platform = t1; r.platform == "" {
 		return false
 	}
 	if r.tag = t2; r.tag == "" {
 		return false
 	}
 	return true
+}
+
+func (r record) imagePath(path string) string {
+	return filepath.Join(fmt.Sprint(path), r.uuid+".png")
+}
+
+func (r record) summary(rows int) {
+	t := fmt.Sprintf("Total items handled: %d", r.c)
+	d := fmt.Sprintf("Database records fetched: %d", rows)
+	if rows <= r.c {
+		logs.Println(strings.Repeat("─", len(t)))
+		logs.Println(t)
+	} else {
+		logs.Println(strings.Repeat("─", len(d)))
+		logs.Println(t)
+		logs.Println(d)
+	}
 }
