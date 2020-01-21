@@ -24,9 +24,6 @@ TODOs
 - ansilove with no thumbs
 - images with no thumbs
 
-- auto-approve
- - when thumbs, previews, tags, file content, file size, file name are okay, grp != Changeme
-
 - strings to unicode runes for file contents and filenames
 - uuid type enforcement
 */

@@ -10,12 +10,13 @@ import (
 
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/gookit/color"
 )
 
+// Approve automatically checks and clears file records for live.
 func Approve() {
-	// 	- auto-approve
-	//  - when thumbs, previews, tags, file content, file size, file name are okay, grp != Changeme
-	Queries()
+	err := queries()
+	logs.Check(err)
 }
 
 func sqlSelect() string {
@@ -26,6 +27,7 @@ func sqlSelect() string {
 
 type record struct {
 	c          int
+	save       bool
 	id         uint
 	uuid       string
 	filename   string
@@ -39,10 +41,18 @@ type record struct {
 	hashWeak   string
 }
 
+func (r record) String() string {
+	status := logs.Y()
+	if !r.save {
+		status = logs.X()
+	}
+	return fmt.Sprintf("%s item %04d (%v) %s %s", status, r.c, r.id, color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename))
+}
+
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
-func Queries() error {
+func queries() error {
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query(sqlSelect())
@@ -62,7 +72,9 @@ func Queries() error {
 	// fetch the rows
 	var r record
 	r.c = 0
+	rowCnt := 0
 	for rows.Next() {
+		rowCnt++
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
 		if new := IsNew(values); !new {
@@ -96,20 +108,32 @@ func Queries() error {
 		if !r.checkImage(dir.Img150) {
 			continue
 		}
-		// todo approve
+		r.save = true
 		if r.autoID(string(values[0])) == 0 {
-			continue
-			// or set false then println?
+			r.save = false
+		} else if err := r.approve(); err != nil {
+			logs.Log(err)
+			r.save = false
 		}
 		r.c++
 		fmt.Println(r)
 	}
 	logs.Check(rows.Err())
+	r.summary(rowCnt)
 	return nil
 }
 
-func (r record) String() string {
-	return fmt.Sprintf("%d. %s %s", r.c, r.uuid, r.filename)
+func (r record) summary(rows int) {
+	t := fmt.Sprintf("Total items handled: %d", r.c)
+	d := fmt.Sprintf("Database records fetched: %d", rows)
+	if rows <= r.c {
+		logs.Println(strings.Repeat("─", len(t)))
+		logs.Println(t)
+	} else {
+		logs.Println(strings.Repeat("─", len(d)))
+		logs.Println(t)
+		logs.Println(d)
+	}
 }
 
 // approve sets the record to be publically viewable.
@@ -120,7 +144,6 @@ func (r record) approve() error {
 	logs.Check(err)
 	_, err = update.Exec(UpdateID, r.id)
 	logs.Check(err)
-	print(fmt.Sprintf("  %s approved", logs.Y()))
 	return nil
 }
 
@@ -202,6 +225,10 @@ func (r *record) checkGroups(g1, g2 string) bool {
 
 func (r *record) checkTags(t1, t2 string) bool {
 	if r.platform = t1; r.platform == "" {
+		return false
+	}
+	switch t1 {
+	case "ansi", "markup", "pdf", "text":
 		return false
 	}
 	if r.tag = t2; r.tag == "" {

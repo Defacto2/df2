@@ -40,7 +40,7 @@ var simulate bool
 
 const (
 	configName string = ".df2.yaml" // default configuration filename
-	version    string = "0.0.2"     // df2 version
+	version    string = "0.0.3"     // df2 version
 )
 
 var (
