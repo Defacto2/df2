@@ -20,7 +20,7 @@ func Approve() {
 
 func sqlSelect() string {
 	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`"
-	w := " WHERE `web_id_demozoo` IS NOT NULL AND `platform` = 'dos'"
+	w := " WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 	return s + " FROM `files`" + w
 }
 
