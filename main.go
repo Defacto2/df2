@@ -19,8 +19,6 @@ import "github.com/Defacto2/df2/lib/cmd"
 
 /*
 TODOs
-- cracktros containing `installer` from DZ
-- cracktros containing `application generator` from DZ
 - ansilove with no thumbs
 - images with no thumbs
 

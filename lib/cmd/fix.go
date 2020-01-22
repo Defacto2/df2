@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
@@ -28,8 +29,15 @@ var fixApproveCmd = &cobra.Command{
 	Use:   "approve",
 	Short: "Approve file records that qualify to go public",
 	Run: func(cmd *cobra.Command, args []string) {
-		println("approve goes here")
 		database.Approve()
+	},
+}
+
+var fixDemozooCmd = &cobra.Command{
+	Use:   "demozoo",
+	Short: "Repair imported Demozoo data conflicts",
+	Run: func(cmd *cobra.Command, args []string) {
+		demozoo.Fix()
 	},
 }
 
@@ -52,6 +60,7 @@ var fixImagesCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(fixCmd)
 	fixCmd.AddCommand(fixApproveCmd)
+	fixCmd.AddCommand(fixDemozooCmd)
 	fixCmd.AddCommand(fixGroupsCmd)
 	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", true, "simulate the fixes and display the expected changes")
