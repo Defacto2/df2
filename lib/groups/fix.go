@@ -23,12 +23,12 @@ func Fix(sim bool) {
 	}
 	switch {
 	case c > 0 && simulate:
-		println(c, "fixes required")
-		color.Notice.Println("use the --simulate=false flag to apply these fixes")
+		logs.Println(c, "fixes required")
+		logs.Simulate()
 	case c > 0:
-		println(c, "fixes applied")
+		logs.Println(c, "fixes applied")
 	default:
-		println("no fixes applied")
+		logs.Println("no fixes applied")
 	}
 }
 

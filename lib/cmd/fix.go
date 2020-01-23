@@ -7,6 +7,7 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/groups"
+	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
 )
@@ -54,7 +55,7 @@ var fixImagesCmd = &cobra.Command{
 	Use:   "images",
 	Short: "Generate missing images",
 	Run: func(cmd *cobra.Command, args []string) {
-		//images.Fix(simulate)
+		images.Fix(simulate)
 	},
 }
 

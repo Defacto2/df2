@@ -45,7 +45,8 @@ func Duplicate(name, prefix string) (string, error) {
 }
 
 // Generate a collection of site images.
-func Generate(n, id string) {
+func Generate(name, id string) {
+	var n string = name
 	out := func(s string, e error) {
 		if s != "" {
 			print("  ", s)

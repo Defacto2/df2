@@ -200,6 +200,11 @@ func scannerCheck(s *bufio.Scanner) {
 	}
 }
 
+// Simulate prints the --simulate=false flag info.
+func Simulate() {
+	Println(color.Notice.Sprint("use the --simulate=false flag to apply these fixes"))
+}
+
 // PromptDir asks the user for a directory path and saves it.
 func PromptDir() string {
 	// allow multiple word user input
