@@ -1,4 +1,4 @@
-package cmd
+package sitemap
 
 import (
 	"database/sql"
@@ -11,7 +11,6 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/spf13/cobra"
 )
 
 const resource string = "https://defacto2.net/f/"
@@ -29,21 +28,8 @@ type Urlset struct {
 	Svs     []url    `xml:"url"`
 }
 
-// sitemapCmd represents the sitemap command
-var sitemapCmd = &cobra.Command{
-	Use:   "sitemap",
-	Short: "An site map generator",
-	Run: func(cmd *cobra.Command, args []string) {
-		create()
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(sitemapCmd)
-}
-
-// create generates and prints the sitemap.
-func create() {
+// Create generates and prints the sitemap.
+func Create() {
 	// query
 	var id string
 	var createdat, updatedat sql.NullString

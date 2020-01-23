@@ -68,7 +68,7 @@ func Fix(sim bool) error {
 	if simulate && c > 0 {
 		logs.Simulate()
 	} else if c == 0 {
-		logs.Println("all images have their assets")
+		logs.Println("everything is okay, there is nothing to do")
 	}
 	return nil
 }
