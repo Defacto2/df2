@@ -20,7 +20,6 @@ import "github.com/Defacto2/df2/lib/cmd"
 /*
 TODOs
 - ansilove with no thumbs
-- images with no thumbs
 
 - strings to unicode runes for file contents and filenames
 - uuid type enforcement

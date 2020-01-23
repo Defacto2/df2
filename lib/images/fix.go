@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	dir      = directories.Init(false)
+	dir      directories.Dir
 	simulate = false
 )
 
@@ -33,6 +33,7 @@ func (i Img) String() string {
 // Fix generates any missing assets from downloads that images.
 func Fix(sim bool) error {
 	simulate = sim
+	dir = directories.Init(false)
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image"`)
