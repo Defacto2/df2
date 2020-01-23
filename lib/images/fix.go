@@ -50,8 +50,8 @@ func Fix(sim bool) error {
 		if !img.ext() {
 			continue
 		}
-		c++
 		if !img.check() {
+			c++
 			logs.Printf("%d. %v", c, img)
 			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
 				logs.Printf("%s\n", logs.X())
