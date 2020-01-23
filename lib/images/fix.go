@@ -62,11 +62,13 @@ func Fix(sim bool) error {
 				continue
 			}
 			Generate(filepath.Join(dir.UUID, img.UUID), img.UUID)
+			logs.Print("\n")
 		}
-		logs.Print("\n")
 	}
-	if simulate {
+	if simulate && c > 0 {
 		logs.Simulate()
+	} else if c == 0 {
+		logs.Println("all images have their assets")
 	}
 	return nil
 }
