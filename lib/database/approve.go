@@ -20,7 +20,8 @@ func Approve() {
 }
 
 func sqlSelect() string {
-	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`"
+	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,"
+	s += "`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`"
 	w := " WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 	return s + " FROM `files`" + w
 }
@@ -49,9 +50,7 @@ func (r record) String() string {
 	return fmt.Sprintf("%s item %04d (%v) %s %s", status, r.c, r.id, color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename))
 }
 
-// Queries parses all new proofs.
-// ow will overwrite any existing proof assets such as images.
-// all parses every proof not just records waiting for approval.
+// queries parses all records waiting for approval skipping those that are missing expected data or assets such as thumbnails.
 func queries() error {
 	db := Connect()
 	defer db.Close()
@@ -97,6 +96,9 @@ func queries() error {
 			continue
 		}
 		if !r.checkTags(string(values[9]), string(values[15])) {
+			continue
+		}
+		if !r.checkDownload(dir.UUID) {
 			continue
 		}
 		if !r.checkImage(dir.Img000) {
