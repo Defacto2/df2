@@ -33,29 +33,6 @@ func Test_sqlGroupsWhere(t *testing.T) {
 	}
 }
 
-func Test_sqlGroups(t *testing.T) {
-	type args struct {
-		name               string
-		includeSoftDeletes bool
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"all-", args{"all", false}, "(SELECT DISTINCT group_brand_for AS pubCombined FROM files WHERE Length(group_brand_for) <> 0 AND `deletedat` IS NULL) UNION (SELECT DISTINCT group_brand_by AS pubCombined FROM files WHERE Length(group_brand_by) <> 0 AND `deletedat` IS NULL) ORDER BY pubCombined"},
-		{"all+", args{"all", true}, "(SELECT DISTINCT group_brand_for AS pubCombined FROM files WHERE Length(group_brand_for) <> 0 ) UNION (SELECT DISTINCT group_brand_by AS pubCombined FROM files WHERE Length(group_brand_by) <> 0 ) ORDER BY pubCombined"},
-		{"ftp-", args{"ftp", false}, "SELECT DISTINCT group_brand_for AS pubCombined FROM files WHERE Length(group_brand_for) <> 0 AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL) ORDER BY pubCombined"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := sqlGroups(tt.args.name, tt.args.includeSoftDeletes); got != tt.want {
-				t.Errorf("sqlGroups() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
 func BenchmarkGroupsToHTML(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Request{"", true, true, true}.HTML("")
@@ -85,7 +62,7 @@ func TestMakeSlug(t *testing.T) {
 	}
 }
 
-func Test_removeInitialism(t *testing.T) {
+func Test_remInitialism(t *testing.T) {
 	type args struct {
 		s string
 	}
@@ -104,14 +81,14 @@ func Test_removeInitialism(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := removeInitialism(tt.args.s); got != tt.want {
-				t.Errorf("removeInitialism() = %v, want %v", got, tt.want)
+			if got := remInitialism(tt.args.s); got != tt.want {
+				t.Errorf("remInitialism() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestFixSpaces(t *testing.T) {
+func Test_remDupeSpaces(t *testing.T) {
 	type args struct {
 		s string
 	}
@@ -126,14 +103,14 @@ func TestFixSpaces(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FixSpaces(tt.args.s); got != tt.want {
-				t.Errorf("FixSpaces() = %v, want %v", got, tt.want)
+			if got := remDupeSpaces(tt.args.s); got != tt.want {
+				t.Errorf("remDupeSpaces() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_fixThe(t *testing.T) {
+func Test_dropThe(t *testing.T) {
 	type args struct {
 		g string
 	}
@@ -152,8 +129,8 @@ func Test_fixThe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := fixThe(tt.args.g); got != tt.want {
-				t.Errorf("fixThe() = %v, want %v", got, tt.want)
+			if got := dropThe(tt.args.g); got != tt.want {
+				t.Errorf("dropThe() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -176,6 +153,56 @@ func TestVariations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Variations(tt.args.name); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Variations() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_dropDot(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"empty", args{""}, ""},
+		{"no dots", args{"hello"}, "hello"},
+		{"dots", args{"hello."}, "hello"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := dropDot(tt.args.s); got != tt.want {
+				t.Errorf("dropDot() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestToClean(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{""}, ""},
+		{"", args{"the blah"}, "The Blah"},
+		{"", args{"in the blah"}, "In the Blah"},
+		{"", args{"TheBlah"}, "Theblah"},
+		{"", args{"MiRROR now"}, "Mirror Now"},
+		{"", args{"In the row now ii"}, "In the Row Now II"},
+		{"", args{"MiRROR now bbS"}, "Mirror Now BBS"},
+		{"", args{"this-is-a-slug-string"}, "This-Is-A-Slug-String"},
+		{"", args{"Group inc.,RAZOR TO 1911"}, "Group Inc,Razor to 1911"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToClean(tt.args.s); got != tt.want {
+				t.Errorf("ToClean() = %v, want %v", got, tt.want)
 			}
 		})
 	}

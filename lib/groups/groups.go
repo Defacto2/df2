@@ -12,7 +12,6 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/viper"
-	"gopkg.in/gookit/color.v1"
 )
 
 // Filters are group categories.
@@ -76,7 +75,7 @@ func Cronjob() {
 func (r Request) HTML(filename string) {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
-	grp, x := List(r.Filter)
+	grp, x := list(r.Filter)
 	f := r.Filter
 	if f == "" {
 		f = "all"
@@ -136,32 +135,8 @@ func (r Request) HTML(filename string) {
 	}
 }
 
-// Fix the formatting of group names.
-func Fix(simulate bool) {
-	grp, _ := List("")
-	c := 0
-	for i := range grp {
-		c = c + fixApply(simulate, grp[i])
-	}
-	switch {
-	case c > 0 && simulate:
-		println(c, "fixes required")
-		color.Notice.Println("use the --simulate=false flag to apply these fixes")
-	case c > 0:
-		println(c, "fixes applied")
-	default:
-		println("no fixes applied")
-	}
-}
-
-// FixSpaces removes duplicate spaces from a string.
-func FixSpaces(s string) string {
-	r := regexp.MustCompile(`\s+`)
-	return r.ReplaceAllString(s, " ")
-}
-
-// List organizations or groups filtered by a name.
-func List(name string) ([]string, int) {
+// list organizations or groups filtered by a name.
+func list(name string) ([]string, int) {
 	db := database.Connect()
 	defer db.Close()
 	s := sqlGroups(name, false)
@@ -188,8 +163,8 @@ func List(name string) ([]string, int) {
 
 // MakeSlug takes a name and makes it into a URL friendly slug.
 func MakeSlug(name string) string {
-	n := FixSpaces(name)
-	n = removeInitialism(n)
+	n := remDupeSpaces(name)
+	n = remInitialism(n)
 	n = strings.ReplaceAll(n, "-", "_")
 	n = strings.ReplaceAll(n, ", ", "*")
 	n = strings.ReplaceAll(n, " & ", " ampersand ")
@@ -205,7 +180,7 @@ func MakeSlug(name string) string {
 
 // Print list organizations or groups filtered by a name and summaries the results.
 func Print(r Request) {
-	grp, total := List(r.Filter)
+	grp, total := list(r.Filter)
 	println(total, "matching", r.Filter, "records found")
 	var a []string
 	for i := range grp {
@@ -272,65 +247,6 @@ func Wheres() []string {
 	return strings.Split(Filters, ",")
 }
 
-func fixes(g string) string {
-	f := FixSpaces(g)
-	f = strings.TrimSpace(f)
-	return fixThe(f)
-}
-
-func fixApply(simulate bool, g string) int {
-	f := fixes(g)
-	v := 0
-	if f != g && simulate {
-		logs.Printf("%s %q %s %s\n", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
-		v++
-	} else if f != g {
-		s := logs.Y()
-		v++
-		if x := fixGroup(g); !x {
-			s = logs.X()
-			v--
-		}
-		logs.Printf("%s %q %s %s\n", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
-	}
-	return v
-}
-
-func fixThe(g string) string {
-	a := strings.Split(g, " ")
-	if len(a) < 2 {
-		return g
-	}
-	l := a[len(a)-1]
-	if strings.ToLower(a[0]) == "the" && (l == "BBS" || l == "FTP") {
-		return strings.Join(a[1:], " ") // drop "the" prefix
-	}
-	return g
-}
-
-func fixGroup(g string) bool {
-	db := database.Connect()
-	defer db.Close()
-	var sql = [2]string{
-		"UPDATE files SET group_brand_for=? WHERE group_brand_for=?",
-		"UPDATE files SET group_brand_by=? WHERE group_brand_by=?",
-	}
-	for i := range sql {
-		update, err := db.Prepare(sql[i])
-		logs.Check(err)
-		if err != nil {
-			return false
-		}
-		_, err = update.Exec(fixes(g), g)
-		logs.Check(err)
-		if err != nil {
-			return false
-		}
-	}
-
-	return true
-}
-
 // initialism returns a group's initialism or acronym.
 // For example "Defacto2" would return "df2"
 func initialism(name string) string {
@@ -347,9 +263,9 @@ func initialism(name string) string {
 	return i
 }
 
-// removeInitialism removes a (bracketed initialism) from a string.
+// remInitialism removes a (bracketed initialism) from a string.
 // For example "Defacto2 (DF2)" would return "Defacto2".
-func removeInitialism(s string) string {
+func remInitialism(s string) string {
 	s = strings.TrimSpace(s)
 	a := strings.Split(s, " ")
 	l := a[len(a)-1]

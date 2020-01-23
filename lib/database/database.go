@@ -189,6 +189,32 @@ func LastUpdate() time.Time {
 	return updatedat
 }
 
+// RenGroup replaces all instances of the old group name with the new group name.
+func RenGroup(new, old string) (int64, error) {
+	db := Connect()
+	defer db.Close()
+	var sql = [2]string{
+		"UPDATE files SET group_brand_for=? WHERE group_brand_for=?",
+		"UPDATE files SET group_brand_by=? WHERE group_brand_by=?",
+	}
+	var ra int64
+	for i := range sql {
+		update, err := db.Prepare(sql[i])
+		if err != nil {
+			return 0, err
+		}
+		res, err := update.Exec(new, old)
+		if err != nil {
+			return 0, err
+		}
+		ra, err = res.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+	}
+	return ra, nil
+}
+
 // Total reports the number of records fetched by the supplied SQL query.
 func Total(s *string) int {
 	db := Connect()

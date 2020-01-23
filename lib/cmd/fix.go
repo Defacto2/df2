@@ -33,19 +33,20 @@ var fixApproveCmd = &cobra.Command{
 	},
 }
 
+var fixDatabaseCmd = &cobra.Command{
+	Use:   "database",
+	Short: "Repair malformed database entries (SLOW)",
+	Run: func(cmd *cobra.Command, args []string) {
+		database.Fix()
+		groups.Fix(simulate)
+	},
+}
+
 var fixDemozooCmd = &cobra.Command{
 	Use:   "demozoo",
 	Short: "Repair imported Demozoo data conflicts",
 	Run: func(cmd *cobra.Command, args []string) {
 		demozoo.Fix()
-	},
-}
-
-var fixGroupsCmd = &cobra.Command{
-	Use:   "groups",
-	Short: "Repair malformed group names",
-	Run: func(cmd *cobra.Command, args []string) {
-		groups.Fix(simulate)
 	},
 }
 
@@ -60,8 +61,8 @@ var fixImagesCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(fixCmd)
 	fixCmd.AddCommand(fixApproveCmd)
+	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
-	fixCmd.AddCommand(fixGroupsCmd)
 	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", true, "simulate the fixes and display the expected changes")
 }
