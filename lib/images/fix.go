@@ -51,7 +51,7 @@ func Fix(sim bool) error {
 			continue
 		}
 		c++
-		if !img.check(c) {
+		if !img.check() {
 			logs.Printf("%d. %v", c, img)
 			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
 				logs.Printf("%s\n", logs.X())
@@ -79,17 +79,10 @@ func (i Img) ext() bool {
 	return false
 }
 
-func (i Img) check(c int) bool {
-	if !check(i.UUID) {
-		return false
-	}
-	return true
-}
-
-func check(name string) bool {
+func (i Img) check() bool {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
-		if _, err := os.Stat(filepath.Join(path, name)); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(path, i.UUID+".png")); os.IsNotExist(err) {
 			return false
 		}
 	}
