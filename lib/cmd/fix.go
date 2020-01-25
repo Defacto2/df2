@@ -55,7 +55,8 @@ var fixImagesCmd = &cobra.Command{
 	Use:   "images",
 	Short: "Generate missing images",
 	Run: func(cmd *cobra.Command, args []string) {
-		images.Fix(simulate)
+		err := images.Fix(simulate)
+		logs.Check(err)
 	},
 }
 

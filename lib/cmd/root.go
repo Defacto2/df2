@@ -5,11 +5,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -25,31 +25,16 @@ Useful cobra funcs
 	rootCmd.SilenceUsage()
 */
 
-type configuration struct {
-	errors   bool   // flag a config file error
-	filename string // config file persistant flag
-	ignore   bool   // ignore config file error
-	nameFlag string // viper configuration path
-}
-
-var config = configuration{
-	errors: false,
-	ignore: false,
-}
 var simulate bool
 
-const (
-	configName string = ".df2.yaml" // default configuration filename
-	version    string = "0.0.4"     // df2 version
-)
+const version string = "0.0.4" // df2 version
 
 var (
-	panic     bool = false // debug log
-	quiet     bool = false // quiet disables most printing or output to terminal
-	home, _        = os.UserHomeDir()
-	filepath       = path.Join(home, configName)
-	fmtflags       = []string{"html", "text", "h", "t"}
-	copyright      = copyYears()
+	copyright       = copyYears()
+	configName      = ""
+	fmtflags        = []string{"html", "text", "h", "t"}
+	panic      bool = false // debug log
+	quiet      bool = false // quiet disables most printing or output to terminal
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -77,23 +62,7 @@ func Execute() {
 		}
 		os.Exit(100)
 	}
-	configErrCheck()
-}
-
-func configErrCheck() {
-	if !config.ignore {
-		configErrMsg()
-	}
-}
-
-func configErrMsg() {
-	if !quiet && config.errors {
-		fmt.Printf("%s %s\n", color.Warn.Sprint("no config file in use, please run:"),
-			color.Bold.Sprintf("%s config create", rootCmd.CommandPath()))
-		os.Exit(102)
-	} else if config.errors {
-		os.Exit(101)
-	}
+	config.ErrCheck()
 }
 
 func copyYears() string {
@@ -106,42 +75,11 @@ func copyYears() string {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&config.filename, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", configName))
+	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", config.ConfigName))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
 	err := rootCmd.PersistentFlags().MarkHidden("panic")
 	logs.Check(err)
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	initPanic(panic)
-	initQuiet(quiet)
-	if config.filename != "" {
-		viper.SetConfigFile(config.filename)
-	} else {
-		viper.AddConfigPath(home)
-		viper.SetConfigName(configName)
-	}
-	viper.AutomaticEnv() // read in environment variables that match
-	// if a config file is found, read it in
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			config.errors = true
-		}
-	} else if !quiet {
-		println(logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
-	}
-}
-
-// initPanic toggles panics for all logged errors.
-func initPanic(q bool) {
-	logs.Panic = q
-}
-
-// initQuiet quiets the terminal output.
-func initQuiet(q bool) {
-	logs.Quiet = q
 }
 
 // filterFlag compairs the value of the filter flag against the list of slice values.
@@ -166,4 +104,38 @@ func filterFlag(t interface{}, flag, val string) {
 			os.Exit(103)
 		}
 	}
+}
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig() {
+	cfg := config.Config
+	initPanic(panic)
+	initQuiet(quiet)
+	if configName != "" {
+		viper.SetConfigFile(configName)
+	} else {
+		home, err := os.UserHomeDir()
+		logs.Check(err)
+		viper.AddConfigPath(home)
+		viper.SetConfigName(config.ConfigName)
+	}
+	viper.AutomaticEnv() // read in environment variables that match
+	// if a config file is found, read it in
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			cfg.Errors = true
+		}
+	} else if !quiet {
+		println(logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
+	}
+}
+
+// initPanic toggles panics for all logged errors.
+func initPanic(q bool) {
+	logs.Panic = q
+}
+
+// initQuiet quiets the terminal output.
+func initQuiet(q bool) {
+	logs.Quiet = q
 }
