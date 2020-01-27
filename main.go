@@ -20,6 +20,7 @@ import "github.com/Defacto2/df2/lib/cmd"
 /*
 TODOs
 - ansilove with no thumbs
+- dz check for and update any metadata // titles, groups
 
 - strings to unicode runes for file contents and filenames
 - uuid type enforcement
@@ -28,3 +29,19 @@ TODOs
 func main() {
 	cmd.Execute()
 }
+
+/*
+   color.Info
+   color.Note
+   color.Light
+   color.Error
+   color.Danger
+   color.Debug
+   color.Notice
+   color.Success
+   color.Comment
+   color.Primary
+   color.Warning
+   color.Question
+   color.Secondary
+*/
