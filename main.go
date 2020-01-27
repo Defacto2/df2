@@ -18,7 +18,7 @@ package main
 import "github.com/Defacto2/df2/lib/cmd"
 
 /*
-TODOs
+TODO's
 - ansilove with no thumbs
 - dz check for and update any metadata // titles, groups
 

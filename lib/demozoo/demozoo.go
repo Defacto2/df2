@@ -53,7 +53,7 @@ func (req Request) Query(id string) error {
 
 func sqlSelect() string {
 	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`"
-	w := " WHERE `web_id_demozoo` IS NOT NULL AND `platform` = 'dos'"
+	w := " WHERE `web_id_demozoo` IS NOT NULL"
 	if prodID != "" {
 		switch {
 		case database.IsUUID(prodID):
@@ -123,6 +123,14 @@ func (req Request) Queries() error {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
+		switch string(values[6]) {
+		case "274202", "274203", "274204":
+			println("------------->", string(values[6]))
+		default:
+			if string(values[6]) != "" {
+				print("[" + string(values[6]) + "]")
+			}
+		}
 		if new := database.IsNew(values); !new && !req.All {
 			continue
 		}
