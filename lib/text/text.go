@@ -59,9 +59,12 @@ func Generate(name, id string) {
 		logs.Check(err)
 	}
 	out(s, err)
-	// resize png to 1500px height
-	// s, err = images.ToPng(o, images.NewExt(o, ".png"), 1500)
-	// out(s, err)
+	// cap images to the webp limit of 16383 pixels
+	if w, err := images.Width(o); w > 16383 {
+		out(fmt.Sprintf("width %dpx", w), err)
+		s, err = images.ToPng(o, images.NewExt(o, ".png"), 16383)
+		out(s, err)
+	}
 	s, err = images.ToWebp(o, images.NewExt(o, ".webp"))
 	out(s, err)
 	s, err = images.ToThumb(o, f.Img400, 400)

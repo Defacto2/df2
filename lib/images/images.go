@@ -77,6 +77,39 @@ func NewExt(name, extension string) string {
 	return fn + extension
 }
 
+// Info returns the image height, width and format.
+func Info(name string) (int, int, string, error) {
+	file, err := os.Open(name)
+	if err != nil {
+		return 0, 0, "", err
+	}
+	defer file.Close()
+	config, format, err := image.DecodeConfig(file)
+	if err != nil {
+		return 0, 0, "", err
+	}
+	return config.Height, config.Width, format, nil
+}
+
+// Width returns the image width in pixels.
+func Width(name string) (int, error) {
+	_, w, _, err := Info(name)
+	return w, err
+}
+
+func getImageDimension(imagePath string) (int, int) {
+	file, err := os.Open(imagePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+	}
+
+	image, _, err := image.DecodeConfig(file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", imagePath, err)
+	}
+	return image.Width, image.Height
+}
+
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
 func ToPng(src, dest string, maxDimension int) (string, error) {
