@@ -92,7 +92,11 @@ func ConnectErr() (*sql.DB, error) {
 
 // DateTime colours and formats a date and time string.
 func DateTime(value sql.RawBytes) string {
-	t, err := time.Parse(Datetime, string(value))
+	v := string(value)
+	if v == "" {
+		return ""
+	}
+	t, err := time.Parse(Datetime, v)
 	if err != nil {
 		logs.Log(err)
 		return "?"
