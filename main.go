@@ -21,6 +21,9 @@ import "github.com/Defacto2/df2/lib/cmd"
 TODO's
 - ansilove with no thumbs
 - dz check for and update any metadata // titles, groups
+-- also link any missing pouet ids
+--> df2 fix demozoo (SLOW)
+
 
 - strings to unicode runes for file contents and filenames
 - uuid type enforcement

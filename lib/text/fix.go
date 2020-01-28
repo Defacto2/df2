@@ -1,4 +1,4 @@
-package images
+package text
 
 import (
 	"fmt"
@@ -17,8 +17,8 @@ var (
 	simulate = false
 )
 
-// Img is an image object.
-type Img struct {
+// Txt is an image object.
+type Txt struct {
 	ID       uint
 	UUID     string
 	Filename string
@@ -26,34 +26,36 @@ type Img struct {
 	Filesize int
 }
 
-func (i Img) String() string {
-	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(i.ID), i.Filename, color.Info.Sprint(humanize.Bytes(uint64(i.Filesize))))
+func (t Txt) String() string {
+	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(t.ID), t.Filename, color.Info.Sprint(humanize.Bytes(uint64(t.Filesize))))
 }
 
-// Fix generates any missing assets from downloads that are images.
+// Fix generates any missing assets from downloads that are text based.
 func Fix(sim bool) error {
 	simulate = sim
 	dir = directories.Init(false)
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image"`)
+	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="text"`)
 	if err != nil {
 		return err
 	}
 	c := 0
 	for rows.Next() {
-		var img Img
-		err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize)
+		var txt Txt
+		err = rows.Scan(&txt.ID, &txt.UUID, &txt.Filename, &txt.Filesize)
 		if err != nil {
 			logs.Check(err)
 		}
-		if !img.ext() {
+		// TODO replace with function that handles archives
+		if !txt.ext() {
 			continue
 		}
-		if !img.check() {
+		if !txt.check() {
 			c++
-			logs.Printf("%d. %v", c, img)
-			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
+			logs.Printf("%d. %v", c, txt)
+			input := filepath.Join(dir.UUID, txt.UUID)
+			if _, err := os.Stat(input); os.IsNotExist(err) {
 				logs.Printf("%s\n", logs.X())
 				continue
 			}
@@ -61,7 +63,8 @@ func Fix(sim bool) error {
 				logs.Printf("%s\n", color.Question.Sprint("?"))
 				continue
 			}
-			Generate(filepath.Join(dir.UUID, img.UUID), img.UUID)
+			Generate(input, txt.UUID)
+			//images.Generate(input, txt.UUID)
 			logs.Print("\n")
 		}
 	}
@@ -73,18 +76,18 @@ func Fix(sim bool) error {
 	return nil
 }
 
-func (i Img) ext() bool {
-	switch filepath.Ext(i.Filename) {
-	case ".gif", ".jpg", ".jpeg", ".png":
+func (t Txt) ext() bool {
+	switch filepath.Ext(t.Filename) {
+	case ".txt", ".diz", ".doc", ".nfo":
 		return true
 	}
 	return false
 }
 
-func (i Img) check() bool {
+func (t Txt) check() bool {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
-		if _, err := os.Stat(filepath.Join(path, i.UUID+".png")); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(path, t.UUID+".png")); os.IsNotExist(err) {
 			return false
 		}
 	}

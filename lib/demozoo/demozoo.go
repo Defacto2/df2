@@ -123,14 +123,6 @@ func (req Request) Queries() error {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
-		switch string(values[6]) {
-		case "274202", "274203", "274204":
-			println("------------->", string(values[6]))
-		default:
-			if string(values[6]) != "" {
-				print("[" + string(values[6]) + "]")
-			}
-		}
 		if new := database.IsNew(values); !new && !req.All {
 			continue
 		}

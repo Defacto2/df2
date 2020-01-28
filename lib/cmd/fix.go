@@ -9,6 +9,7 @@ import (
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/text"
 	"github.com/spf13/cobra"
 )
 
@@ -60,11 +61,21 @@ var fixImagesCmd = &cobra.Command{
 	},
 }
 
+var fixTextCmd = &cobra.Command{
+	Use:   "text",
+	Short: "Generate missing text previews",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := text.Fix(simulate)
+		logs.Check(err)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(fixCmd)
 	fixCmd.AddCommand(fixApproveCmd)
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
 	fixCmd.AddCommand(fixImagesCmd)
+	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", true, "simulate the fixes and display the expected changes")
 }

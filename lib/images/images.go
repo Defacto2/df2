@@ -148,8 +148,10 @@ func ToThumb(file, saveDir string, size int) (string, error) {
 	if err := os.Rename(f, s); err != nil {
 		return "", err
 	}
-	if err := os.Remove(cp); err != nil {
-		return "", err
+	if _, err := os.Stat(cp); err == nil {
+		if err := os.Remove(cp); err != nil {
+			return "", err
+		}
 	}
 	return fmt.Sprintf("%s %vx%v %v", "✓", size, size, filesize(s)), nil
 }
