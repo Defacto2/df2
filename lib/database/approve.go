@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
+	"github.com/spf13/viper"
 )
 
 var verb = false
@@ -174,7 +177,31 @@ func (r *record) autoID(data string) uint {
 }
 
 func (r record) checkDownload(path string) bool {
-	if _, err := os.Stat(filepath.Join(fmt.Sprint(path), r.uuid)); os.IsNotExist(err) {
+	file := filepath.Join(fmt.Sprint(path), r.uuid)
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return r.recoverDownload(path)
+	}
+	return true
+}
+
+func (r record) recoverDownload(path string) bool {
+	src := viper.GetString("directory.incoming.files")
+	if src == "" {
+		return false
+	}
+	file := filepath.Join(src, r.filename)
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		printV("!incoming:" + file + " ")
+		return false
+	}
+	fc, err := fileCopy(src, path)
+	if err != nil {
+		printV("!filecopy ")
+		return false
+	}
+	printV(fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		printV("!!filecopy ")
 		return false
 	}
 	return true
@@ -261,4 +288,23 @@ func (r record) summary(rows int) {
 		logs.Println(t)
 		logs.Println(d)
 	}
+}
+
+// fileCopy copies a file to the destination.
+func fileCopy(name, dest string) (int64, error) {
+	src, err := os.Open(name)
+	if err != nil {
+		return 0, err
+	}
+	defer src.Close()
+	file, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	i, err := io.Copy(file, src)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }
