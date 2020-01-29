@@ -41,6 +41,13 @@ func (req Request) RefreshQueries() error {
 		logs.Print(r.String()) // counter and record intro
 		// confirm API request
 		code, status, api := Fetch(r.WebIDDemozoo)
+		if code == 404 {
+			r.WebIDDemozoo = 0
+			if err = r.Save(); err == nil {
+				logs.Printf("(%s)\n", download.StatusColor(code, status))
+			}
+			continue
+		}
 		if code < 200 || code > 299 {
 			logs.Printf("(%s)\n", download.StatusColor(code, status))
 			continue
@@ -116,7 +123,7 @@ func (r *Record) authors(a Authors) {
 	if len(a.audio) > 1 {
 		new := a.audio
 		old := r.CreditAudio
-		if !compare(new, old, "s") {
+		if !compare(new, old, "m") {
 			r.CreditAudio = new
 		}
 	}

@@ -35,10 +35,10 @@ type Record struct {
 	GroupBy        string
 	Title          string
 	Section        string
-	CreditText     []string //
-	CreditCode     []string //
-	CreditArt      []string //
-	CreditAudio    []string //
+	CreditText     []string
+	CreditCode     []string
+	CreditArt      []string
+	CreditAudio    []string
 }
 
 func (r Record) String() string {
@@ -159,6 +159,10 @@ func (r Record) sql() (string, []interface{}) {
 		set = append(set, "credit_audio=?")
 		j := strings.Join(r.CreditAudio, ",")
 		args = append(args, []interface{}{j}...)
+	}
+	if r.Platform != "" {
+		set = append(set, "platform=?")
+		args = append(args, []interface{}{r.Platform}...)
 	}
 	if len(set) == 0 {
 		return "", args

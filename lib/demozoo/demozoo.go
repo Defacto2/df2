@@ -193,6 +193,16 @@ func (req Request) Queries() error {
 			}
 		}
 		switch {
+		case r.Platform == "":
+			for _, p := range api.Platforms {
+				switch p.ID {
+				case 4:
+					r.Platform = "dos"
+				case 1:
+					r.Platform = "windows"
+				}
+				break
+			}
 		case r.Filesize == "", r.SumMD5 == "", r.Sum384 == "":
 			stat, err := os.Stat(r.AbsFile)
 			if err != nil {
