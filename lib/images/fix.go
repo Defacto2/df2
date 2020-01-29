@@ -61,7 +61,7 @@ func Fix(sim bool) error {
 				logs.Printf("%s\n", color.Question.Sprint("?"))
 				continue
 			}
-			Generate(filepath.Join(dir.UUID, img.UUID), img.UUID)
+			Generate(filepath.Join(dir.UUID, img.UUID), img.UUID, false)
 			logs.Print("\n")
 		}
 	}

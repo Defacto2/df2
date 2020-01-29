@@ -72,7 +72,7 @@ func Extract(name, uuid string) error {
 		}
 	}
 	if n := th.name; n != "" {
-		images.Generate(n, uuid)
+		images.Generate(n, uuid, true)
 	}
 	if n := tx.name; n != "" {
 		f := directories.Files(uuid)

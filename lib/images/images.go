@@ -45,7 +45,7 @@ func Duplicate(name, prefix string) (string, error) {
 }
 
 // Generate a collection of site images.
-func Generate(name, id string) {
+func Generate(name, id string, rem bool) {
 	var n string = name
 	out := func(s string, e error) {
 		if s != "" {
@@ -64,7 +64,9 @@ func Generate(name, id string) {
 	out(s, err)
 	s, err = ToThumb(n, f.Img150, 150)
 	out(s, err)
-	os.Remove(n)
+	if rem {
+		os.Remove(n)
+	}
 }
 
 // NewExt replaces or appends the extension to a file name.
