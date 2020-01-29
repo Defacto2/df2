@@ -50,8 +50,8 @@ func (c *content) filemime(f os.FileInfo) error {
 	return nil
 }
 
-// FileMove copies a file to the destination and then deletes the source.
-func FileMove(name, dest string) (int64, error) {
+// FileCopy copies a file to the destination.
+func FileCopy(name, dest string) (int64, error) {
 	src, err := os.Open(name)
 	if err != nil {
 		return 0, err
@@ -66,6 +66,12 @@ func FileMove(name, dest string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	return i, nil
+}
+
+// FileMove copies a file to the destination and then deletes the source.
+func FileMove(name, dest string) (int64, error) {
+	i, err := FileCopy(name, dest)
 	err = os.Remove(name)
 	if err != nil {
 		return 0, err
