@@ -86,45 +86,45 @@ func queries() error {
 			continue
 		}
 		r.uuid = string(values[1])
-		printV(fmt.Sprintf("%s item %04d (%v) %s %s ", logs.X(), rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
+		printV(fmt.Sprintf("\n%s item %04d (%v) %s %s ", logs.X(), rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if !r.checkFileName(string(values[4])) {
-			printV("!filename\n")
+			printV("!filename")
 			continue
 		}
 		if !r.checkFileSize(string(values[5])) {
-			printV("!filesize\n")
+			printV("!filesize")
 			continue
 		}
 		if !r.checkHash(string(values[10]), string(values[11])) {
-			printV("!hash\n")
+			printV("!hash")
 			continue
 		}
 		if !r.checkFileContent(string(values[7])) {
-			printV("!file content\n")
+			printV("!file content")
 			continue
 		}
 		if !r.checkGroups(string(values[14]), string(values[13])) {
-			printV("!group\n")
+			printV("!group")
 			continue
 		}
 		if !r.checkTags(string(values[9]), string(values[15])) {
-			printV("!tag\n")
-			continue
-		}
-		if !r.checkDownload(dir.UUID) {
-			printV("!download\n")
+			printV("!tag")
 			continue
 		}
 		if !r.checkImage(dir.Img000) {
-			printV("!000x\n")
+			printV("!000x")
 			continue
 		}
 		if !r.checkImage(dir.Img400) {
-			printV("!400x\n")
+			printV("!400x")
 			continue
 		}
 		if !r.checkImage(dir.Img150) {
-			printV("!150x\n")
+			printV("!150x")
+			continue
+		}
+		if !r.checkDownload(dir.UUID) {
+			printV("!download")
 			continue
 		}
 		r.save = true
@@ -138,6 +138,7 @@ func queries() error {
 		fmt.Println(r)
 	}
 	logs.Check(rows.Err())
+	printV("\n")
 	r.summary(rowCnt)
 	return nil
 }
