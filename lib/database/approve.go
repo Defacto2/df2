@@ -13,8 +13,11 @@ import (
 	"github.com/gookit/color"
 )
 
+var verb = false
+
 // Approve automatically checks and clears file records for live.
-func Approve() {
+func Approve(verbose bool) {
+	verb = verbose
 	err := queries()
 	logs.Check(err)
 }
@@ -80,34 +83,45 @@ func queries() error {
 			continue
 		}
 		r.uuid = string(values[1])
+		printV(fmt.Sprintf("%s item %04d (%v) %s %s ", logs.X(), rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if !r.checkFileName(string(values[4])) {
+			printV("!filename\n")
 			continue
 		}
 		if !r.checkFileSize(string(values[5])) {
+			printV("!filesize\n")
 			continue
 		}
 		if !r.checkHash(string(values[10]), string(values[11])) {
+			printV("!hash\n")
 			continue
 		}
 		if !r.checkFileContent(string(values[7])) {
+			printV("!file content\n")
 			continue
 		}
 		if !r.checkGroups(string(values[14]), string(values[13])) {
+			printV("!group\n")
 			continue
 		}
 		if !r.checkTags(string(values[9]), string(values[15])) {
+			printV("!tag\n")
 			continue
 		}
 		if !r.checkDownload(dir.UUID) {
+			printV("!download\n")
 			continue
 		}
 		if !r.checkImage(dir.Img000) {
+			printV("!000x\n")
 			continue
 		}
 		if !r.checkImage(dir.Img400) {
+			printV("!400x\n")
 			continue
 		}
 		if !r.checkImage(dir.Img150) {
+			printV("!150x\n")
 			continue
 		}
 		r.save = true
@@ -123,6 +137,20 @@ func queries() error {
 	logs.Check(rows.Err())
 	r.summary(rowCnt)
 	return nil
+}
+
+func printV(i interface{}) {
+	if !verb {
+		return
+	}
+	switch v := i.(type) {
+	case string:
+		if len(v) > 0 && v[0] == 33 {
+			logs.Printf("%s", color.Warn.Sprint(v))
+		} else {
+			logs.Printf("%s", v)
+		}
+	}
 }
 
 // approve sets the record to be publically viewable.
