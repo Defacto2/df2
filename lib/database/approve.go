@@ -194,7 +194,7 @@ func (r record) recoverDownload(path string) bool {
 		printV("!incoming:" + file + " ")
 		return false
 	}
-	fc, err := fileCopy(src, path)
+	fc, err := fileCopy(file, path)
 	if err != nil {
 		printV("!filecopy ")
 		logs.Log(err)
