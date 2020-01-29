@@ -14,10 +14,10 @@ type dzFlags struct {
 	overwrite bool   // overwrite all existing assets
 	ping      uint
 	download  uint
-	//extract   string // struct?
-	simulate bool
-	new      bool
-	extract  []string //map[string]string
+	simulate  bool
+	new       bool
+	extract   []string //map[string]string
+	refresh   bool
 }
 
 var dzoo dzFlags
@@ -32,8 +32,12 @@ var demozooCmd = &cobra.Command{
 		r := demozoo.Request{
 			All:       dzoo.all,
 			Overwrite: dzoo.overwrite,
+			Refresh:   dzoo.refresh,
 			Simulate:  dzoo.simulate}
 		switch {
+		case dzoo.refresh:
+			println("BONK!")
+			err = r.RefreshQueries()
 		case dzoo.id != "":
 			err = r.Query(dzoo.id)
 		case dzoo.download != 0:
@@ -75,6 +79,7 @@ func init() {
 	demozooCmd.Flags().BoolVar(&dzoo.all, "all", false, "scan for all demozoo entries, not just new submissions")
 	demozooCmd.Flags().BoolVarP(&dzoo.simulate, "simulate", "s", false, "simulate the fixes and display the expected changes")
 	demozooCmd.Flags().BoolVar(&dzoo.overwrite, "overwrite", false, "rescan archives and overwrite all existing assets\n")
+	demozooCmd.Flags().BoolVarP(&dzoo.refresh, "refresh", "r", false, "refresh all demozoo entries metadata (SLOW)\n")
 	demozooCmd.Flags().UintVarP(&dzoo.ping, "ping", "p", 0, "fetch and display a production record from the Demozoo.org API")
 	demozooCmd.Flags().UintVarP(&dzoo.download, "download", "d", 0, "fetch and download a production's link file via the Demozoo.org API\n")
 	demozooCmd.Flags().StringArrayVar(&dzoo.extract, "extract", make([]string, 0), `extracts and parses an archived file

@@ -37,6 +37,7 @@ func Fetch(id uint) (int, string, ProductionsAPIv1) {
 type Request struct {
 	All       bool // parse all demozoo entries
 	Overwrite bool // overwrite existing files
+	Refresh   bool // refresh all demozoo entries
 	Simulate  bool // simulate database save
 }
 
@@ -52,7 +53,9 @@ func (req Request) Query(id string) error {
 }
 
 func sqlSelect() string {
-	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`"
+	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,"
+	s += "`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,"
+	s += "`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 	w := " WHERE `web_id_demozoo` IS NOT NULL"
 	if prodID != "" {
 		switch {
@@ -86,8 +89,14 @@ func newRecord(c int, values []sql.RawBytes) Record {
 		Sum384:         string(values[10]),           // file_integrity_strong
 		SumMD5:         string(values[11]),           // file_integrity_weak
 		// web_id_pouet
-		GroupFor: string(values[13]),
-		GroupBy:  string(values[14]),
+		GroupFor:    string(values[13]),
+		GroupBy:     string(values[14]),
+		Title:       string(values[15]),
+		Section:     string(values[16]),
+		CreditArt:   strings.Split(string(values[17]), ","),
+		CreditAudio: strings.Split(string(values[18]), ","),
+		CreditCode:  strings.Split(string(values[19]), ","),
+		CreditText:  strings.Split(string(values[20]), ","),
 	}
 	if i, err := strconv.Atoi(string(values[6])); err == nil { // deletedat
 		r.WebIDDemozoo = uint(i)
@@ -123,7 +132,7 @@ func (req Request) Queries() error {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
-		if new := database.IsNew(values); !new && !req.All {
+		if new := database.IsNew(values); !new && !req.All && !req.Refresh {
 			continue
 		}
 		rw.count++
@@ -131,12 +140,19 @@ func (req Request) Queries() error {
 		logs.Print(r.String()) // counter and record intro
 		// confirm API request
 		code, status, api := Fetch(r.WebIDDemozoo)
+		if code == 404 {
+			r.WebIDDemozoo = 0
+			if err = r.Save(); err == nil {
+				logs.Printf("(%s)\n", download.StatusColor(code, status))
+			}
+			continue
+		}
 		if code < 200 || code > 299 {
 			logs.Printf("(%s)\n", download.StatusColor(code, status))
 			continue
 		}
 		// pouet id
-		if id, c := api.PouetID(); id > 0 && c < 300 {
+		if id, c := api.PouetID(true); id > 0 && c < 300 {
 			r.WebIDPouet = uint(id)
 		}
 		// confirm & handle missing UUID host download file

@@ -1,12 +1,7 @@
 package archive
 
 import (
-	"os"
-	"reflect"
 	"testing"
-	"time"
-
-	"github.com/gabriel-vasile/mimetype"
 )
 
 func TestDemozoo_String(t *testing.T) {
@@ -32,112 +27,6 @@ func TestDemozoo_String(t *testing.T) {
 			}
 			if got := d.String(); got != tt.want {
 				t.Errorf("Demozoo.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestExtractDemozoo(t *testing.T) {
-	type args struct {
-		name     string
-		uuid     string
-		varNames []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    Demozoo
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExtractDemozoo(tt.args.name, tt.args.uuid, &tt.args.varNames)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ExtractDemozoo() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ExtractDemozoo() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_content_filescan(t *testing.T) {
-	type fields struct {
-		name       string
-		file       int
-		ext        string
-		path       string
-		mime       *mimetype.MIME
-		modtime    time.Time
-		size       int64
-		executable bool
-		textfile   bool
-	}
-	type args struct {
-		f os.FileInfo
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &content{
-				name:       tt.fields.name,
-				file:       tt.fields.file,
-				ext:        tt.fields.ext,
-				path:       tt.fields.path,
-				mime:       tt.fields.mime,
-				modtime:    tt.fields.modtime,
-				size:       tt.fields.size,
-				executable: tt.fields.executable,
-				textfile:   tt.fields.textfile,
-			}
-			c.filescan(tt.args.f)
-		})
-	}
-}
-
-func Test_moveText(t *testing.T) {
-	type args struct {
-		name string
-		uuid string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := moveText(tt.args.name, tt.args.uuid); got != tt.want {
-				t.Errorf("moveText() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_finds_top(t *testing.T) {
-	tests := []struct {
-		name string
-		f    finds
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.f.top(); got != tt.want {
-				t.Errorf("finds.top() = %v, want %v", got, tt.want)
 			}
 		})
 	}

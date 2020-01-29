@@ -135,7 +135,12 @@ func (p *ProductionsAPIv1) Downloads() {
 			logs.Log(err)
 			continue
 		}
-		saveDest, err := filepath.Abs(filepath.Join("/home", "ben", save)) // TODO PATH arg instead of hardcoded
+		temp, err := ioutil.TempDir("", "dzdl")
+		if err != nil {
+			logs.Log(err)
+			continue
+		}
+		saveDest, err := filepath.Abs(filepath.Join(temp, save))
 		if err != nil {
 			logs.Log(err)
 			continue
@@ -149,10 +154,49 @@ func (p *ProductionsAPIv1) Downloads() {
 	}
 }
 
+// Groups returns the first two author_nicks that have is_group flagged.
+func (p *ProductionsAPIv1) Groups() [2]string {
+	g := [2]string{}
+	for i, n := range p.AuthorNicks {
+		if i > 1 || !n.Releaser.IsGroup {
+			continue
+		}
+		g[i] = n.Name
+	}
+	return g
+}
+
+type Authors struct {
+	text  []string // credit_text
+	code  []string // credit_program
+	art   []string // credit_illustration
+	audio []string // credit_audio
+}
+
+func (p *ProductionsAPIv1) Authors() Authors {
+	var a Authors
+	for _, n := range p.Credits {
+		if n.Nick.Releaser.IsGroup {
+			continue
+		}
+		switch strings.ToLower(n.Category) {
+		case "text":
+			a.text = append(a.text, n.Nick.Name)
+		case "code":
+			a.code = append(a.code, n.Nick.Name)
+		case "graphics":
+			a.art = append(a.art, n.Nick.Name)
+		case "music":
+			a.audio = append(a.audio, n.Nick.Name)
+		}
+	}
+	return a
+}
+
 // PouetID returns the ID value used by Pouet's which prod URL syntax
 // and its HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID() (int, int) {
+func (p *ProductionsAPIv1) PouetID(ping bool) (int, int) {
 	for _, l := range p.ExternalLinks {
 		if l.LinkClass != "PouetProduction" {
 			continue
@@ -162,8 +206,11 @@ func (p *ProductionsAPIv1) PouetID() (int, int) {
 			logs.Log(err)
 			continue
 		}
-		ping, _ := download.LinkPing(l.URL)
-		return id, ping.StatusCode
+		if ping {
+			ping, _ := download.LinkPing(l.URL)
+			return id, ping.StatusCode
+		}
+		return id, 0
 	}
 	return 0, 0
 }

@@ -33,6 +33,12 @@ type Record struct {
 	Platform       string
 	GroupFor       string
 	GroupBy        string
+	Title          string
+	Section        string
+	CreditText     []string //
+	CreditCode     []string //
+	CreditArt      []string //
+	CreditAudio    []string //
 }
 
 func (r Record) String() string {
@@ -118,6 +124,10 @@ func (r Record) sql() (string, []interface{}) {
 		set = append(set, "web_id_pouet=?")
 		args = append(args, []interface{}{r.WebIDPouet}...)
 	}
+	if r.WebIDDemozoo == 0 {
+		set = append(set, "web_id_demozoo=?")
+		args = append(args, []interface{}{""}...)
+	}
 	if r.DOSeeBinary != "" {
 		set = append(set, "dosee_run_program=?")
 		args = append(args, []interface{}{r.DOSeeBinary}...)
@@ -125,6 +135,30 @@ func (r Record) sql() (string, []interface{}) {
 	if r.Readme != "" {
 		set = append(set, "retrotxt_readme=?")
 		args = append(args, []interface{}{r.Readme}...)
+	}
+	if r.Title != "" {
+		set = append(set, "record_title=?")
+		args = append(args, []interface{}{r.Title}...)
+	}
+	if len(r.CreditText) > 0 {
+		set = append(set, "credit_text=?")
+		j := strings.Join(r.CreditText, ",")
+		args = append(args, []interface{}{j}...)
+	}
+	if len(r.CreditCode) > 0 {
+		set = append(set, "credit_program=?")
+		j := strings.Join(r.CreditCode, ",")
+		args = append(args, []interface{}{j}...)
+	}
+	if len(r.CreditArt) > 0 {
+		set = append(set, "credit_illustration=?")
+		j := strings.Join(r.CreditArt, ",")
+		args = append(args, []interface{}{j}...)
+	}
+	if len(r.CreditAudio) > 0 {
+		set = append(set, "credit_audio=?")
+		j := strings.Join(r.CreditAudio, ",")
+		args = append(args, []interface{}{j}...)
 	}
 	if len(set) == 0 {
 		return "", args
