@@ -197,11 +197,13 @@ func (r record) recoverDownload(path string) bool {
 	fc, err := fileCopy(src, path)
 	if err != nil {
 		printV("!filecopy ")
+		logs.Log(err)
 		return false
 	}
 	printV(fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		printV("!!filecopy ")
+		logs.Log(err)
 		return false
 	}
 	return true
