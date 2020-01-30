@@ -133,8 +133,22 @@ func Info() {
 		s := strings.Split(scanner.Text(), ":")
 		color.Cyan.Print(s[0])
 		color.Red.Print(":")
-		if len(s) > 1 {
-			logs.Printf("%s", strings.Join(s[1:], ""))
+		if len(s) <= 1 {
+			logs.Println()
+			continue
+		}
+		val := strings.Join(s[1:], "")
+		switch strings.TrimSpace(s[0]) {
+		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "root", "uuid":
+			if _, err := os.Stat(val); os.IsNotExist(err) {
+				logs.Printf("%s %s", val, logs.X())
+			} else {
+				logs.Printf("%s %s", val, logs.Y())
+			}
+		case "password":
+			logs.Print(color.Warn.Sprint(" **********"))
+		default:
+			logs.Printf("%s", val)
 		}
 		logs.Println()
 	}
