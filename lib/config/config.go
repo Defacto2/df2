@@ -141,14 +141,14 @@ func Info() {
 		switch strings.TrimSpace(s[0]) {
 		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "root", "uuid":
 			if _, err := os.Stat(val); os.IsNotExist(err) {
-				logs.Printf("%s %s", val, logs.X())
+				logs.Printf(" %s %s", val, logs.X())
 			} else {
-				logs.Printf("%s %s", val, logs.Y())
+				logs.Printf(" %s %s", val, logs.Y())
 			}
 		case "password":
 			logs.Print(color.Warn.Sprint(" **********"))
 		default:
-			logs.Printf("%s", val)
+			logs.Printf(" %s", val)
 		}
 		logs.Println()
 	}
