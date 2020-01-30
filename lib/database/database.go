@@ -90,6 +90,31 @@ func ConnectErr() (*sql.DB, error) {
 	return db, nil
 }
 
+// ConnectInfo will connect to the database and return any errors.
+func ConnectInfo() string {
+	config()
+	db, err := sql.Open("mysql", fmt.Sprint(&c))
+	defer db.Close()
+	if err != nil {
+		e := strings.Replace(err.Error(), c.Pass, "****", 1)
+		return fmt.Sprint(fmt.Errorf(e))
+	}
+	err = db.Ping()
+	if err != nil {
+		if err, ok := err.(*mysql.MySQLError); ok {
+			e := strings.Replace(err.Error(), c.User, color.Primary.Sprint(c.User), 1)
+			return fmt.Sprint(fmt.Errorf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e)))
+		}
+		if err, ok := err.(*net.OpError); ok {
+			if strings.Contains(err.Error(), "connect: connection refused") {
+				return fmt.Sprint(fmt.Errorf("%s '%v' %s", color.Danger.Sprint("database server"), color.Primary.Sprint(c.Server), color.Danger.Sprint("is either down or the port is blocked")))
+			}
+			return color.Danger.Sprint(err)
+		}
+	}
+	return ""
+}
+
 // DateTime colours and formats a date and time string.
 func DateTime(value sql.RawBytes) string {
 	v := string(value)

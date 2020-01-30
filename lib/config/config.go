@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
@@ -128,6 +129,7 @@ func Info() {
 	logs.Check(err)
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Config.filepath)
 	ErrCheck()
+	dbTest := database.ConnectInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {
 		s := strings.Split(scanner.Text(), ":")
@@ -139,6 +141,12 @@ func Info() {
 		}
 		val := strings.TrimSpace(strings.Join(s[1:], ""))
 		switch strings.TrimSpace(s[0]) {
+		case "connection":
+			if dbTest != "" {
+				logs.Printf("\n  %s %s", logs.X(), dbTest)
+			} else {
+				logs.Printf(" %s %s", color.Success.Sprint("up"), logs.Y())
+			}
 		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "root", "uuid":
 			if _, err := os.Stat(val); os.IsNotExist(err) {
 				logs.Printf(" %s %s", val, logs.X())
