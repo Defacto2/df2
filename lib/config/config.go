@@ -137,7 +137,7 @@ func Info() {
 			logs.Println()
 			continue
 		}
-		val := strings.Join(s[1:], "")
+		val := strings.TrimSpace(strings.Join(s[1:], ""))
 		switch strings.TrimSpace(s[0]) {
 		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "root", "uuid":
 			if _, err := os.Stat(val); os.IsNotExist(err) {
