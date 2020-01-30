@@ -17,28 +17,6 @@ package main
 
 import "github.com/Defacto2/df2/lib/cmd"
 
-/*
-TODO
-- strings to unicode runes for file contents and filenames
-- uuid type enforcement
-*/
-
 func main() {
 	cmd.Execute()
 }
-
-/*
-   color.Info
-   color.Note
-   color.Light
-   color.Error
-   color.Danger
-   color.Debug
-   color.Notice
-   color.Success
-   color.Comment
-   color.Primary
-   color.Warning
-   color.Question
-   color.Secondary
-*/

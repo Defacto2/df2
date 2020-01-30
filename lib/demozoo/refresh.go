@@ -64,11 +64,11 @@ func (req Request) RefreshQueries() error {
 		// example: https://demozoo.org/productions/158376/
 		if r.Section != "magazine" && r.Section == "magazine" {
 			grps := api.Groups()
-			if strings.ToLower(r.GroupFor) != strings.ToLower(grps[0]) {
+			if !strings.EqualFold(r.GroupFor, grps[0]) {
 				logs.Printf("for:%s ", color.Info.Sprint(grps[0]))
 				r.GroupFor = grps[0]
 			}
-			if strings.ToLower(r.GroupBy) != strings.ToLower(grps[1]) {
+			if !strings.EqualFold(r.GroupBy, grps[1]) {
 				if grps[1] == "" {
 					logs.Printf("by:%s ", color.Danger.Sprint(r.GroupBy))
 				} else {
@@ -78,7 +78,7 @@ func (req Request) RefreshQueries() error {
 			}
 		}
 		// title
-		if r.Section != "magazine" && strings.ToLower(r.Title) != strings.ToLower(api.Title) {
+		if r.Section != "magazine" && !strings.EqualFold(r.Title, api.Title) {
 			logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
 			r.Title = api.Title
 		}

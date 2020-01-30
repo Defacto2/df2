@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
@@ -17,11 +16,9 @@ import (
 
 type content struct {
 	name       string
-	file       int
 	ext        string
 	path       string
 	mime       *mimetype.MIME
-	modtime    time.Time
 	size       int64
 	executable bool
 	textfile   bool
@@ -72,6 +69,9 @@ func FileCopy(name, dest string) (int64, error) {
 // FileMove copies a file to the destination and then deletes the source.
 func FileMove(name, dest string) (int64, error) {
 	i, err := FileCopy(name, dest)
+	if err != nil {
+		return 0, err
+	}
 	err = os.Remove(name)
 	if err != nil {
 		return 0, err

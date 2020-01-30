@@ -99,19 +99,6 @@ func Width(name string) (int, error) {
 	return w, err
 }
 
-func getImageDimension(imagePath string) (int, int) {
-	file, err := os.Open(imagePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-	}
-
-	image, _, err := image.DecodeConfig(file)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %v\n", imagePath, err)
-	}
-	return image.Width, image.Height
-}
-
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
 func ToPng(src, dest string, maxDimension int) (string, error) {
