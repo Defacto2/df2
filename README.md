@@ -1,5 +1,7 @@
 # df2
 
+![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg)
+
 df2 is a command-line tool for managing and optimising the files and database of defacto2.net. It is broken down into five parts.
 
 **clean** used to discover and remove orphan files that exist on the server but have no matching database entries.
