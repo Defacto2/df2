@@ -133,6 +133,9 @@ func Info() {
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {
 		s := strings.Split(scanner.Text(), ":")
+		if s[0] == "directory" {
+			s[0] = "directories"
+		}
 		color.Cyan.Print(s[0])
 		color.Red.Print(":")
 		if len(s) <= 1 {
@@ -141,9 +144,9 @@ func Info() {
 		}
 		val := strings.TrimSpace(strings.Join(s[1:], ""))
 		switch strings.TrimSpace(s[0]) {
-		case "connection":
+		case "server":
 			if dbTest != "" {
-				logs.Printf("\n  %s %s", logs.X(), dbTest)
+				logs.Printf(" %s %s", logs.X(), dbTest)
 			} else {
 				logs.Printf(" %s %s", color.Success.Sprint("up"), logs.Y())
 			}
