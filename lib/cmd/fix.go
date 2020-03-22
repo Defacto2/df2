@@ -27,16 +27,6 @@ var fixCmd = &cobra.Command{
 	},
 }
 
-var fixApproveVerb bool
-
-var fixApproveCmd = &cobra.Command{
-	Use:   "approve",
-	Short: "Approve file records that qualify to go public",
-	Run: func(cmd *cobra.Command, args []string) {
-		database.Approve(fixApproveVerb)
-	},
-}
-
 var fixDatabaseCmd = &cobra.Command{
 	Use:   "database",
 	Short: "Repair malformed database entries (SLOW)",
@@ -74,8 +64,6 @@ var fixTextCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(fixCmd)
-	fixCmd.AddCommand(fixApproveCmd)
-	fixApproveCmd.Flags().BoolVarP(&fixApproveVerb, "verbose", "v", false, "display all file records that qualify to go public")
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
 	fixCmd.AddCommand(fixImagesCmd)
