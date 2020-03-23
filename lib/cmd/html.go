@@ -32,11 +32,11 @@ func init() {
 	groupCmd.Flags().BoolVarP(&gf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
 	groupCmd.Flags().BoolVarP(&gf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
 	groupCmd.Flags().BoolVarP(&gf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
-	groupCmd.Flags().StringVarP(&gf.format, "format", "t", "", "output format (default html)\noptions: html,text")
+	groupCmd.Flags().StringVarP(&gf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	groupCmd.Flags().BoolVarP(&gf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
 	htmlCmd.AddCommand(peopleCmd)
 	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Filters)
-	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: html,text")
+	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	htmlCmd.AddCommand(sitemapCmd)
 }
 
@@ -63,6 +63,8 @@ var groupCmd = &cobra.Command{
 		filterFlag(groups.Wheres(), "filter", gf.filter)
 		var req = groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
 		switch gf.format {
+		case "datalist", "dl", "d":
+			req.DataList("")
 		case "html", "h", "":
 			req.HTML("")
 		case "text", "t":
@@ -90,6 +92,8 @@ var peopleCmd = &cobra.Command{
 			req = people.Request{Filter: pf.filter, Progress: pf.progress}
 		}
 		switch pf.format {
+		case "datalist", "dl", "d":
+			people.DataList("", req)
 		case "html", "h", "":
 			people.HTML("", req)
 		case "text", "t":

@@ -27,12 +27,12 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.9.2" // df2 version
+const version string = "0.9.3" // df2 version
 
 var (
 	copyright       = copyYears()
 	configName      = ""
-	fmtflags        = []string{"html", "text", "h", "t"}
+	fmtflags        = []string{"datalist", "html", "text", "dl", "d", "h", "t"}
 	panic      bool = false // debug log
 	quiet      bool = false // quiet disables most printing or output to terminal
 )

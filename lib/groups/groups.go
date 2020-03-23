@@ -71,10 +71,21 @@ func Cronjob() {
 	}
 }
 
+// DataList prints an auto-complete list for HTML input elements.
+func (r Request) DataList(filename string) {
+	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
+	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}<option value="{{.Name}}" label="{{.Name}}">{{end}}`
+	r.parse(filename, tpl)
+}
+
 // HTML prints a snippet listing links to each group, with an optional file count.
 func (r Request) HTML(filename string) {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
+	r.parse(filename, tpl)
+}
+
+func (r Request) parse(filename string, tpl string) {
 	grp, x := list(r.Filter)
 	f := r.Filter
 	if f == "" {

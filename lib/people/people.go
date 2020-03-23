@@ -65,10 +65,21 @@ func List(role string) ([]string, int) {
 	return ppl, total
 }
 
+// DataList prints an auto-complete list for HTML input elements.
+func DataList(filename string, r Request) {
+	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
+	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
+	parse(filename, tpl, r)
+}
+
 // HTML prints a snippet listing links to each person.
 func HTML(filename string, r Request) {
-	// <h2><a href="/g/ben">Ben</a></h2><hr>
-	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
+	// <h2><a href="/p/ben">Ben</a></h2><hr>
+	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
+	parse(filename, tpl, r)
+}
+
+func parse(filename string, tpl string, r Request) {
 	grp, x := List(r.Filter)
 	f := r.Filter
 	if f == "" {
