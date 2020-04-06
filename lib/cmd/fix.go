@@ -29,7 +29,7 @@ var fixCmd = &cobra.Command{
 
 var fixDatabaseCmd = &cobra.Command{
 	Use:   "database",
-	Short: "Repair malformed database entries (SLOW)",
+	Short: "Repair malformed database entries",
 	Run: func(cmd *cobra.Command, args []string) {
 		database.Fix()
 		groups.Fix(simulate)
@@ -68,5 +68,5 @@ func init() {
 	fixCmd.AddCommand(fixDemozooCmd)
 	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.AddCommand(fixTextCmd)
-	fixCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", true, "simulate the fixes and display the expected changes")
+	fixCmd.PersistentFlags().BoolVarP(&simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
 }

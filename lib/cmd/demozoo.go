@@ -76,11 +76,11 @@ func init() {
 	demozooCmd.Flags().BoolVarP(&dzoo.new, "new", "n", false, "scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().StringVarP(&dzoo.id, "id", "i", "", "id or uuid to handle only one demozoo entry")
 	demozooCmd.Flags().BoolVar(&dzoo.all, "all", false, "scan for all demozoo entries, not just new submissions")
-	demozooCmd.Flags().BoolVarP(&dzoo.simulate, "simulate", "s", false, "simulate the fixes and display the expected changes")
+	demozooCmd.Flags().BoolVarP(&dzoo.simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
 	demozooCmd.Flags().BoolVar(&dzoo.overwrite, "overwrite", false, "rescan archives and overwrite all existing assets\n")
 	demozooCmd.Flags().BoolVarP(&dzoo.refresh, "refresh", "r", false, "refresh all demozoo entries metadata (SLOW)\n")
 	demozooCmd.Flags().UintVarP(&dzoo.ping, "ping", "p", 0, "fetch and display a production record from the Demozoo.org API")
-	demozooCmd.Flags().UintVarP(&dzoo.download, "download", "d", 0, "fetch and download a production's link file via the Demozoo.org API\n")
+	demozooCmd.Flags().UintVarP(&dzoo.download, "download", "g", 0, "fetch and download a production's link file via the Demozoo.org API\n")
 	demozooCmd.Flags().StringArrayVar(&dzoo.extract, "extract", make([]string, 0), `extracts and parses an archived file
 requires two flags: --extract [filename] --extract [uuid]`)
 	err = demozooCmd.MarkFlagFilename("extract")

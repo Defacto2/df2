@@ -18,5 +18,5 @@ var approveCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(approveCmd)
 	approveCmd.Flags().BoolVarP(&approveVerb, "verbose", "v", false, "display all file records that qualify to go public")
-	approveCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", true, "simulate the fixes and display the expected changes")
+	approveCmd.PersistentFlags().BoolVarP(&simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
 }

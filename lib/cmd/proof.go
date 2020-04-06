@@ -18,7 +18,7 @@ var proo proofFlags
 // proofCmd represents the proof command
 var proofCmd = &cobra.Command{
 	Use:   "proof",
-	Short: "Batch handler files tagged as #release-proof",
+	Short: "Handler for files tagged as #releaseproof",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
