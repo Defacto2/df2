@@ -88,6 +88,7 @@ func InitDefaults() {
 	viper.SetDefault("directory.150", "/opt/assets/150")
 	viper.SetDefault("directory.400", "/opt/assets/400")
 	viper.SetDefault("directory.html", "/opt/assets/html")
+	viper.SetDefault("directory.views", "/opt/assets/views")
 	viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
 	viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
 }

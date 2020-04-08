@@ -150,7 +150,7 @@ func Info() {
 			} else {
 				logs.Printf(" %s %s", color.Success.Sprint("up"), logs.Y())
 			}
-		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "root", "uuid":
+		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "root", "views", "uuid":
 			if _, err := os.Stat(val); os.IsNotExist(err) {
 				logs.Printf(" %s %s", val, logs.X())
 			} else {
