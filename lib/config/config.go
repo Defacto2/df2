@@ -8,43 +8,65 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
+
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
+	gap "github.com/muesli/go-app-paths"
+
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
 
 // ConfigName is the default configuration filename
-const ConfigName string = ".df2.yaml"
+const ConfigName string = "config.yaml"
 const cmdPath = "df2 config"
 
 // Settings configurations.
 type settings struct {
-	Errors   bool // flag a config file error
-	filepath string
+	Errors   bool   // flag a config file error, used by root.go initConfig()
 	ignore   bool   // ignore config file error
 	nameFlag string // viper configuration path
 }
 
 var (
-	home, _ = os.UserHomeDir()
+	scope = gap.NewScope(gap.User, "df2")
 	// Config settings.
 	Config = settings{
-		Errors:   false,
-		filepath: path.Join(home, ConfigName),
-		ignore:   false,
+		Errors: false,
+		ignore: false,
 	}
 )
+
+// Filepath is the absolute path and filename of the configuration file.
+func Filepath() string {
+	fp, err := scope.ConfigPath(ConfigName)
+	if err != nil {
+		h, _ := os.UserHomeDir()
+		return path.Join(h, ConfigName)
+	}
+	return fp
+}
 
 // Create a configuration file.
 func Create(ow bool) {
 	Config.ignore = true
 	if cfg := viper.ConfigFileUsed(); cfg != "" && !ow {
-		configExists(cmdPath, "create")
+		if _, err := os.Stat(cfg); !os.IsNotExist(err) {
+			configExists(cmdPath, "create")
+		}
+		p := filepath.Dir(cfg)
+		if _, err := os.Stat(p); os.IsNotExist(err) {
+			println(p)
+			if err := os.MkdirAll(p, 0700); err != nil {
+				logs.Log(err)
+				os.Exit(770)
+			}
+		}
 	}
 	writeConfig(false)
 }
@@ -115,7 +137,7 @@ func ErrCheck() {
 func errMsg() {
 	if Config.Errors && !logs.Quiet {
 		fmt.Printf("%s %s\n", color.Warn.Sprint("no config file in use, please run:"),
-			color.Bold.Sprintf("%s config create", "rootCmd.CommandPath()"))
+			color.Bold.Sprintf("df2 config create"))
 		os.Exit(102)
 	} else if Config.Errors {
 		os.Exit(101)
@@ -127,7 +149,7 @@ func Info() {
 	println("These are the default configurations used by this tool when no flags are given.\n")
 	sets, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
-	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Config.filepath)
+	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())
 	ErrCheck()
 	dbTest := database.ConnectInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
@@ -213,8 +235,8 @@ func Set(name string) {
 func configExists(name, suffix string) {
 	cmd := strings.TrimSuffix(name, suffix)
 	color.Warn.Println("a config file already is in use")
-	logs.Printf("to edit:\t%s\n", cmd+"edit")
-	logs.Printf("to remove:\t%s\n", cmd+"delete")
+	logs.Printf("to edit:\t%s %s\n", cmd, "edit")
+	logs.Printf("to remove:\t%s %s\n", cmd, "delete")
 	os.Exit(20)
 }
 
@@ -240,13 +262,13 @@ func configSave(value interface{}) {
 func writeConfig(update bool) {
 	bs, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
-	err = ioutil.WriteFile(Config.filepath, bs, 0600) // owner+wr
+	err = ioutil.WriteFile(Filepath(), bs, 0600) // owner+wr
 	logs.Check(err)
 	s := "created a new"
 	if update {
 		s = "updated the"
 	}
-	logs.Println(s+" config file", Config.filepath)
+	logs.Println(s+" config file", Filepath())
 }
 
 func recommend(value string) string {

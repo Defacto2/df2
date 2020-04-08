@@ -108,11 +108,11 @@ func filterFlag(t interface{}, flag, val string) {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	cfg := config.Config
 	initPanic(panic)
 	initQuiet(quiet)
-	if configName != "" {
-		viper.SetConfigFile(configName)
+	cf := config.Filepath()
+	if cf != "" {
+		viper.SetConfigFile(cf)
 	} else {
 		home, err := os.UserHomeDir()
 		logs.Check(err)
@@ -122,9 +122,7 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 	// if a config file is found, read it in
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			cfg.Errors = true
-		}
+		config.Config.Errors = true
 	} else if !quiet {
 		println(logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
 	}
