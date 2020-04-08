@@ -63,7 +63,7 @@ func Create(ow bool) {
 		if _, err := os.Stat(p); os.IsNotExist(err) {
 			println(p)
 			if err := os.MkdirAll(p, 0700); err != nil {
-				logs.Log(err)
+				logs.Check(err)
 				os.Exit(770)
 			}
 		}
@@ -151,6 +151,7 @@ func Info() {
 	logs.Check(err)
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())
 	ErrCheck()
+	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath())
 	dbTest := database.ConnectInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {

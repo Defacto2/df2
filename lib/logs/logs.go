@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
+	gap "github.com/muesli/go-app-paths"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -25,9 +27,12 @@ const (
 	AED string = "\r\003[2J"
 	// AEL is the ANSI Erase in Line sequence
 	AEL string = "\r\033[0K"
+	// Filename is the default error log filename
+	Filename string = "errors.log"
 )
 
 var (
+	scope = gap.NewScope(gap.User, "df2")
 	// Panic uses the panic function to handle all error logs.
 	Panic = false
 	// Quiet stops most writing to the standard output.
@@ -46,6 +51,7 @@ func Arg(arg string, args []string) {
 // Check logs any errors and exits to the operating system with error code 1.
 func Check(err error) {
 	if err != nil {
+		save(err)
 		switch Panic {
 		case true:
 			println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
@@ -64,6 +70,7 @@ func EL() {
 // Log an error but do not exit to the operating system.
 func Log(err error) {
 	if err != nil {
+		save(err)
 		switch Panic {
 		case true:
 			println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
@@ -72,6 +79,40 @@ func Log(err error) {
 			log.Printf("%s %s", color.Danger.Sprint("!"), err)
 		}
 	}
+}
+
+func save(err error) {
+	if err == nil {
+		return
+	}
+	path := Filepath()
+	p := filepath.Dir(path)
+	if _, e := os.Stat(p); os.IsNotExist(e) {
+		e2 := os.MkdirAll(p, 0700)
+		check(e2)
+	}
+	file, e := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	check(e)
+	defer file.Close()
+	log.SetOutput(file)
+	log.Fatal(err)
+}
+
+func check(e error) {
+	if e != nil {
+		log.Printf("%s %s", color.Danger.Sprint("!"), e)
+		os.Exit(19)
+	}
+}
+
+// Filepath is the absolute path and filename of the error log file.
+func Filepath() string {
+	fp, err := scope.LogPath(Filename)
+	if err != nil {
+		h, _ := os.UserHomeDir()
+		return path.Join(h, Filename)
+	}
+	return fp
 }
 
 // Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.

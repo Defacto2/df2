@@ -1,6 +1,9 @@
 package logs
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func Test_ProgressPct(t *testing.T) {
 	type args struct {
@@ -24,6 +27,24 @@ func Test_ProgressPct(t *testing.T) {
 			if got := ProgressPct(tt.args.name, tt.args.count, tt.args.total); got != tt.want {
 				t.Errorf("ProgressPct() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func Test_save(t *testing.T) {
+	type args struct {
+		err error
+	}
+	err := errors.New("oops: error world")
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"log", args{err}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			save(tt.args.err)
 		})
 	}
 }
