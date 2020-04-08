@@ -33,7 +33,8 @@ func Extract(name, uuid string) error {
 		return err
 	}
 	defer a.Close()
-	err = a.Extract(tempDir)
+	// TODO: use contents strings[] instead of scanning the directory
+	_, err = a.Extract(tempDir)
 	if err != nil {
 		return err
 	}

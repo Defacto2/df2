@@ -44,7 +44,8 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {
 		return dz, err
 	}
 	defer a.Close()
-	err = a.Extract(tempDir)
+	// TODO: use contents strings[] instead of scanning the directory
+	_, err = a.Extract(tempDir)
 	if err != nil {
 		return dz, err
 	}
