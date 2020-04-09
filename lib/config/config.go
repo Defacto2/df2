@@ -196,6 +196,16 @@ func Set(name string) {
 	Config.nameFlag = name
 	keys := viper.AllKeys()
 	sort.Strings(keys)
+	// prefix name alias
+	if strings.HasPrefix(name, "directories.") {
+		name = strings.Replace(name, "directories.", "directory.", 1)
+	}
+	// suffix aliases, name equaling "uuid" will match "directory.uuid"
+	for i, key := range keys {
+		if strings.Contains(key, "."+name) {
+			name = keys[i]
+		}
+	}
 	// sort.SearchStrings() - The slice must be sorted in ascending order.
 	if i := sort.SearchStrings(keys, name); i == len(keys) || keys[i] != name {
 		logs.Printf("%s\n%s %s\n",
