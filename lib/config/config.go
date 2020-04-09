@@ -193,7 +193,6 @@ func Set(name string) {
 	if viper.ConfigFileUsed() == "" {
 		configMissing(cmdPath, "set")
 	}
-	Config.nameFlag = name
 	keys := viper.AllKeys()
 	sort.Strings(keys)
 	// prefix name alias
@@ -214,6 +213,7 @@ func Set(name string) {
 			color.Bold.Sprint("df2 config info"))
 		os.Exit(202)
 	}
+	Config.nameFlag = name
 	s := viper.GetString(name)
 	switch s {
 	case "":

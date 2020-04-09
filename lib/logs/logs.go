@@ -265,6 +265,7 @@ func PromptDir() string {
 			fmt.Fprintln(os.Stderr, "will not save the change as this directory is not found:", Path(save))
 			os.Exit(14)
 		}
+		break // exit loop if the directory is found
 	}
 	scannerCheck(scanner)
 	return save
