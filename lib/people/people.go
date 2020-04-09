@@ -203,10 +203,8 @@ func sqlPeople(role string, includeSoftDeletes bool) string {
 
 // sqlPeopleDel returns a partial SQL WHERE to handle soft deleted entries.
 func sqlPeopleDel(includeSoftDeletes bool) string {
-	sql := ""
 	if includeSoftDeletes {
-		return sql
+		return ""
 	}
-	sql += "AND `deletedat` IS NULL"
-	return sql
+	return "AND `deletedat` IS NULL"
 }
