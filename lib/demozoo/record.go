@@ -42,9 +42,9 @@ type Record struct {
 }
 
 func (r Record) String() string {
-	return fmt.Sprintf("%s item %04d (%v) %v DZ:%v %v",
-		logs.Y(), r.count, r.ID,
-		color.Primary.Sprint(r.UUID), color.Note.Sprint(r.WebIDDemozoo),
+	return fmt.Sprintf("%s %04d. %v (%v) %v",
+		logs.Y(), r.count, color.Primary.Sprint(r.ID),
+		color.Info.Sprint(r.WebIDDemozoo),
 		r.CreatedAt)
 }
 
