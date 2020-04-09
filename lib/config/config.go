@@ -146,7 +146,7 @@ func errMsg() {
 
 // Info prints the content of a configuration file.
 func Info() {
-	println("These are the default configurations used by this tool when no flags are given.\n")
+	println("Default configurations in use when no flags are given.\n")
 	sets, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())
