@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// htmlCmd represents the html command
+// htmlCmd represents the output command
 var htmlCmd = &cobra.Command{
-	Use:   "html",
+	Use:   "output",
 	Short: "HTML and sitemap generator",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
@@ -51,10 +51,11 @@ type groupFlags struct {
 
 var gf groupFlags
 
-// groupCmd represents the html command
+// groupCmd represents the organisations command
 var groupCmd = &cobra.Command{
-	Use:   "group",
-	Short: "A HTML snippet generator to list groups",
+	Use:     "groups",
+	Aliases: []string{"g", "group"},
+	Short:   "A HTML snippet generator to list groups",
 	Run: func(cmd *cobra.Command, args []string) {
 		if gf.cronjob {
 			groups.Cronjob()
@@ -83,8 +84,9 @@ var pf pplFlags
 
 // peopleCmd represents the authors command
 var peopleCmd = &cobra.Command{
-	Use:   "people",
-	Short: "A HTML snippet generator to list people",
+	Use:     "people",
+	Aliases: []string{"p", "ppl"},
+	Short:   "A HTML snippet generator to list people",
 	Run: func(cmd *cobra.Command, args []string) {
 		filterFlag(people.Wheres(), "filter", pf.filter)
 		var req people.Request
@@ -104,8 +106,9 @@ var peopleCmd = &cobra.Command{
 
 // sitemapCmd represents the sitemap command
 var sitemapCmd = &cobra.Command{
-	Use:   "sitemap",
-	Short: "A site map generator",
+	Use:     "sitemap",
+	Aliases: []string{"m", "s", "map"},
+	Short:   "A site map generator",
 	Run: func(cmd *cobra.Command, args []string) {
 		sitemap.Create()
 	},
