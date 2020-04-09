@@ -111,21 +111,23 @@ func queries() error {
 			printV("!tag")
 			continue
 		}
-		if !r.checkImage(dir.Img000) {
-			printV("!000x")
-			continue
-		}
-		if !r.checkImage(dir.Img400) {
-			printV("!400x")
-			continue
-		}
-		if !r.checkImage(dir.Img150) {
-			printV("!150x")
-			continue
-		}
 		if !r.checkDownload(dir.UUID) {
 			printV("!download")
 			continue
+		}
+		if string(values[9]) != "audio" {
+			if !r.checkImage(dir.Img000) {
+				printV("!000x")
+				continue
+			}
+			if !r.checkImage(dir.Img400) {
+				printV("!400x")
+				continue
+			}
+			if !r.checkImage(dir.Img150) {
+				printV("!150x")
+				continue
+			}
 		}
 		r.save = true
 		if r.autoID(string(values[0])) == 0 {
