@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	gap "github.com/muesli/go-app-paths"
+	"golang.org/x/sys/unix"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -141,6 +142,24 @@ func Println(a ...interface{}) {
 		_, err := fmt.Println(a...)
 		Log(err)
 	}
+}
+
+// Printfcr obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
+func Printfcr(format string, a ...interface{}) {
+	switch Quiet {
+	case false:
+		fmt.Printf("\r%s\r", strings.Repeat(" ", int(getWinCol())))
+		_, err := fmt.Printf(format, a...)
+		Log(err)
+	}
+}
+
+func getWinCol() uint16 {
+	ws, err := unix.IoctlGetWinsize(int(os.Stdout.Fd()), unix.TIOCGWINSZ)
+	if err != nil {
+		return uint16(80) // 80 column fallback
+	}
+	return ws.Col
 }
 
 // ProgressPct returns the count of total remaining as a percentage.
