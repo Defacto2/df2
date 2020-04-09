@@ -95,7 +95,7 @@ func save(err error) {
 	check(e)
 	defer file.Close()
 	log.SetOutput(file)
-	log.Fatal(err)
+	log.Print(err)
 }
 
 func check(e error) {
