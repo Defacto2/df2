@@ -38,7 +38,7 @@ func (req Request) RefreshQueries() error {
 		logs.Check(err)
 		rw.count++
 		r := newRecord(rw.count, values)
-		logs.Print(r.String()) // counter and record intro
+		logs.Printfcr(r.String(0)) // counter and record intro
 		// confirm API request
 		code, status, api := Fetch(r.WebIDDemozoo)
 		if code == 404 {
@@ -87,14 +87,14 @@ func (req Request) RefreshQueries() error {
 		r.authors(credits)
 		// save results
 		if reflect.DeepEqual(newRecord(rw.count, values), r) {
-			logs.Printf("• skipped %v\n", logs.Y())
+			logs.Printf("• skipped %v", logs.Y())
 			continue
 		}
 		if err = r.Save(); err != nil {
 			logs.Printf("• saved %v ", logs.X())
 			logs.Log(err)
 		} else {
-			logs.Printf("• saved %v\n", logs.Y())
+			logs.Printf("• saved %v", logs.Y())
 		}
 	}
 	logs.Check(rows.Err())

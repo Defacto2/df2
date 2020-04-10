@@ -3,6 +3,7 @@ package demozoo
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -41,9 +42,14 @@ type Record struct {
 	CreditAudio    []string
 }
 
-func (r Record) String() string {
-	return fmt.Sprintf("%s %04d. %v (%v) %v",
-		logs.Y(), r.count, color.Primary.Sprint(r.ID),
+func (r Record) String(total int) string {
+	// programmatically calculate the padding character 0
+	d := 4
+	if total > 0 {
+		d = len(strconv.Itoa(total))
+	}
+	return fmt.Sprintf("%s %0*d. %v (%v) %v",
+		logs.Y(), d, r.count, color.Primary.Sprint(r.ID),
 		color.Info.Sprint(r.WebIDDemozoo),
 		r.CreatedAt)
 }

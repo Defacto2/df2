@@ -18,7 +18,6 @@ import (
 	"github.com/Defacto2/df2/lib/download"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
 
@@ -127,7 +126,24 @@ func (req Request) Queries() error {
 		scanArgs[i] = &values[i]
 	}
 	dir := directories.Init(false)
+	// count the total number of rows
+	total := 0
+	for rows.Next() {
+		err = rows.Scan(scanArgs...)
+		logs.Check(err)
+		if new := database.IsNew(values); !new && !req.All && !req.Refresh {
+			continue
+		}
+		total++
+	}
+	if total > 1 {
+		println("Total records", total)
+	}
 	// fetch the rows
+	rows, err = db.Query(sqlSelect())
+	if err != nil {
+		return err
+	}
 	rw := row{count: 0, missing: 0}
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
@@ -137,7 +153,7 @@ func (req Request) Queries() error {
 		}
 		rw.count++
 		r := newRecord(rw.count, values)
-		logs.Print(r.String()) // counter and record intro
+		logs.Printfcr(r.String(total)) // counter and record intro
 		// confirm API request
 		code, status, api := Fetch(r.WebIDDemozoo)
 		if code == 404 {
@@ -163,17 +179,16 @@ func (req Request) Queries() error {
 				logs.Print(color.Note.Sprint("no suitable downloads found\n"))
 				continue
 			}
-			logs.Printf("%s %s\n", color.Primary.Sprint(link), download.StatusColor(200, "200 OK"))
+			logs.Printfcr("%s%s %s", r.String(total), color.Primary.Sprint(link), download.StatusColor(200, "200 OK"))
 			head, err := download.LinkDownload(r.AbsFile, link)
 			if err != nil {
 				logs.Log(err)
 				continue
 			}
-			logs.EL()
-			logs.Print("\r")
 			// reset existing data due to the new download
+			logs.Printfcr(r.String(total))
 			r.Filename = name
-			logs.Printf(" • %s", r.Filename)
+			logs.Printf("• %s", r.Filename)
 			r.Filesize = ""
 			r.SumMD5 = ""
 			r.Sum384 = ""
@@ -185,12 +200,18 @@ func (req Request) Queries() error {
 				} else {
 					r.LastMod = t
 					if time.Now().Year() == t.Year() {
-						logs.Printf(" • mod %s", t.Format("2 Jan"))
+						logs.Printf(" • %s", t.Format("2 Jan"))
 					} else {
-						logs.Printf(" • mod %s", t.Format("Jan 06"))
+						logs.Printf(" • %s", t.Format("Jan 06"))
 					}
 				}
 			}
+		}
+		switch {
+		case r.Platform == "", r.Filesize == "", r.Sum384 == "", r.SumMD5 == "", r.FileZipContent == "":
+		default: // skip record as nothing needs updating
+			logs.Printf("skipped, no changes needed %v", logs.Y())
+			continue
 		}
 		switch {
 		case r.Platform == "":
@@ -210,7 +231,6 @@ func (req Request) Queries() error {
 				continue
 			}
 			r.Filesize = strconv.Itoa(int(stat.Size()))
-			logs.Printf(" • %s", humanize.Bytes(uint64(stat.Size())))
 			// file hashes
 			f, err := os.Open(r.AbsFile)
 			if err != nil {
@@ -224,14 +244,12 @@ func (req Request) Queries() error {
 				continue
 			}
 			r.SumMD5 = fmt.Sprintf("%x", h1.Sum(nil))
-			logs.Printf(" • md5 %s", logs.Truncate(r.SumMD5, 10))
 			h2 := sha512.New384()
 			if _, err := io.Copy(h2, f); err != nil {
 				logs.Log(err)
 				continue
 			}
 			r.Sum384 = fmt.Sprintf("%x", h2.Sum(nil))
-			logs.Printf(" • sha %s", logs.Truncate(r.Sum384, 10))
 			fallthrough
 		case r.FileZipContent == "":
 			if zip := r.fileZipContent(); zip {
@@ -244,31 +262,27 @@ func (req Request) Queries() error {
 				}
 				edz, err := archive.ExtractDemozoo(r.AbsFile, r.UUID, &names)
 				logs.Log(err)
-				c := strings.Split(r.FileZipContent, "\n")
-				logs.Printf(" • %d files", len(c))
 				if strings.ToLower(r.Platform) == "dos" && edz.DOSee != "" {
-					logs.Printf(" • dosee %q", edz.DOSee)
 					r.DOSeeBinary = edz.DOSee
 				}
 				if edz.NFO != "" {
-					logs.Printf(" • text %q", edz.NFO)
 					r.Readme = edz.NFO
 				}
 			}
-		default: // skip record as nothing needs updating
-			logs.Printf("skipped, no changes needed %v\n", logs.Y())
-			continue
 		}
 		// save results
+		if total < 2 {
+			break
+		}
 		switch req.Simulate {
 		case true:
-			logs.Printf(" • simulated %v\n", logs.Y())
+			logs.Printf(" • dry-run %v", logs.Y())
 		default:
 			if err = r.Save(); err != nil {
-				logs.Printf(" • saved %v ", logs.X())
+				logs.Printf(" %v \n", logs.X())
 				logs.Log(err)
 			} else {
-				logs.Printf(" • saved %v\n", logs.Y())
+				logs.Printf(" • saved %v", logs.Y())
 			}
 		}
 	}
@@ -286,7 +300,7 @@ func (req Request) Queries() error {
 
 func (rw row) summary() {
 	t := fmt.Sprintf("Total Demozoo items handled: %v", rw.count)
-	logs.Println(strings.Repeat("─", len(t)))
+	logs.Println("\n" + strings.Repeat("─", len(t)))
 	logs.Println(t)
 	if rw.missing > 0 {
 		logs.Println("UUID files not found:", rw.missing)
