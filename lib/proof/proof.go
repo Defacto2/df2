@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/archive"
@@ -35,6 +36,7 @@ type row struct {
 	base    string
 	count   int
 	missing int
+	total   int
 }
 
 var proofID string // ID used for proofs, either a UUID or ID string
@@ -73,7 +75,15 @@ func (req Request) Queries() error {
 	rw := row{
 		base:    logs.Path(dir.UUID),
 		count:   0,
-		missing: 0}
+		missing: 0,
+		total:   0}
+	for rows.Next() {
+		rw.total++
+	}
+	if rw.total > 1 {
+		println("Total records", rw.total)
+	}
+	rows, err = db.Query(sqlSelect())
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
@@ -93,9 +103,7 @@ func (req Request) Queries() error {
 			value = val(raw)
 			switch columns[i] {
 			case "id":
-				logs.Printf("%s item %04d (%v) ", logs.Y(), rw.count, value) // rw.count has 3 leading zeros
-			case "uuid":
-				logs.Printf("%v ", value)
+				logs.Printfcr("%s %0*d. %v ", color.Question.Sprint("→"), len(strconv.Itoa(rw.total)), rw.count, color.Primary.Sprint(r.ID))
 			case "createdat":
 				database.DateTime(raw)
 			case "filename":
@@ -103,10 +111,8 @@ func (req Request) Queries() error {
 			case "file_zip_content":
 				r.zip(raw, req.Overwrite)
 			default:
-				//fmt.Printf("  %v: %v\n", columns[i], value)
 			}
 		}
-		println()
 	}
 	logs.Check(rows.Err())
 	rw.summary()
@@ -121,7 +127,7 @@ func (r Record) approve() error {
 	logs.Check(err)
 	_, err = update.Exec(database.UpdateID, r.ID)
 	logs.Check(err)
-	print(fmt.Sprintf("  %s approved", logs.Y()))
+	print(fmt.Sprintf(" %s", logs.Y()))
 	return nil
 }
 
@@ -132,15 +138,15 @@ func (r Record) fileZipContent() bool {
 		logs.Log(err)
 		return false
 	}
-	updateZipContent(r.ID, strings.Join(a, "\n"))
+	updateZipContent(r.ID, len(a), strings.Join(a, "\n"))
 	return true
 }
 
-func (rw row) skip(r Record, hide bool) bool {
+func (rw *row) skip(r Record, hide bool) bool {
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
 		rw.missing++
 		if !hide {
-			fmt.Printf("%s item %04d (%v) missing %v\n", logs.X(), rw.count, r.ID, filepath.Join(rw.base, color.Danger.Sprint(r.UUID)))
+			fmt.Printf("%s %0*d. %v is missing %v %s\n", color.Question.Sprint("→"), len(strconv.Itoa(rw.total)), rw.count, color.Primary.Sprint(r.ID), filepath.Join(rw.base, color.Danger.Sprint(r.UUID)), logs.X())
 		}
 		return true
 	}
@@ -162,23 +168,20 @@ func sqlSelect() string {
 }
 
 func (rw row) summary() {
-	t := fmt.Sprintf("Total proofs handled: %v", rw.count)
+	t := fmt.Sprintf("Total proofs handled: %v", rw.count-rw.missing)
 	logs.Println(strings.Repeat("─", len(t)))
 	logs.Println(t)
-	if rw.missing > 0 {
-		logs.Println("UUID files not found:", rw.missing)
-	}
 }
 
 // updateZipContent sets the file_zip_content column to match content and platform to "image".
-func updateZipContent(id string, content string) {
+func updateZipContent(id string, items int, content string) {
 	db := database.Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
 	logs.Check(err)
 	_, err = update.Exec(content, database.UpdateID, "image", id)
 	logs.Check(err)
-	logs.Printf("%s file_zip_content", logs.Y())
+	logs.Printf("%d items", items)
 }
 
 func val(col sql.RawBytes) string {
@@ -190,7 +193,7 @@ func val(col sql.RawBytes) string {
 
 func (r Record) zip(col sql.RawBytes, overwrite bool) {
 	if col == nil || overwrite {
-		logs.Print("\n   • ")
+		logs.Print(" • ")
 		if u := r.fileZipContent(); !u {
 			return
 		}

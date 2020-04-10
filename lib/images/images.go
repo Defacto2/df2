@@ -45,7 +45,7 @@ func Duplicate(name, prefix string) (string, error) {
 }
 
 // Generate a collection of site images.
-func Generate(name, id string, rem bool) {
+func Generate(name, id string, remove bool) {
 	var n string = name
 	out := func(s string, e error) {
 		if s != "" {
@@ -64,7 +64,7 @@ func Generate(name, id string, rem bool) {
 	out(s, err)
 	s, err = ToThumb(n, f.Img150, 150)
 	out(s, err)
-	if rem {
+	if remove {
 		os.Remove(n)
 	}
 }
@@ -137,11 +137,11 @@ func ToPng(src, dest string, maxDimension int) (string, error) {
 		return "", err
 	}
 	defer out.Close()
-	s, err := buf.WriteTo(out)
+	_, err = buf.WriteTo(out)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s %v » png %v", "✓", strings.ToLower(ext), humanize.Bytes(uint64(s))), nil
+	return fmt.Sprintf("%v»png", strings.ToLower(ext)), nil
 }
 
 // ToThumb creates a thumb from an image that is size pixel in width and height.
@@ -175,7 +175,7 @@ func ToThumb(file, saveDir string, size int) (string, error) {
 			return "", err
 		}
 	}
-	return fmt.Sprintf("%s %vx%v %v", "✓", size, size, filesize(s)), nil
+	return fmt.Sprintf("»%vx", size), nil
 }
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
@@ -192,7 +192,7 @@ func ToWebp(src, dest string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s » webp %v", "✓", filesize(dest)), nil
+	return fmt.Sprint("»webp"), nil
 }
 
 func filesize(name string) string {

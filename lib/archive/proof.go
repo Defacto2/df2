@@ -10,7 +10,6 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
 	unarr "github.com/gen2brain/go-unarr"
 )
@@ -77,9 +76,9 @@ func Extract(name, uuid string) error {
 	}
 	if n := tx.name; n != "" {
 		f := directories.Files(uuid)
-		size, err := FileMove(n, f.UUID+".txt")
+		_, err := FileMove(n, f.UUID+".txt")
 		logs.Check(err)
-		print(fmt.Sprintf("  %s » ...%s.txt %s", logs.Y(), uuid[26:36], humanize.Bytes(uint64(size))))
+		print(fmt.Sprint("  »txt"))
 	}
 	if x := true; !x {
 		dir(tempDir)
