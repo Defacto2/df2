@@ -224,6 +224,8 @@ func (req Request) Queries() error {
 				}
 				break
 			}
+		}
+		switch {
 		case r.Filesize == "", r.SumMD5 == "", r.Sum384 == "":
 			stat, err := os.Stat(r.AbsFile)
 			if err != nil {
