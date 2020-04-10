@@ -69,12 +69,13 @@ func updatePlatforms(platforms *[]string) {
 		if err != nil {
 			logs.Log(err)
 		}
-		logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("⟫ platform"), color.Primary.Sprint(s))
+		logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(s))
 	}
 }
 
 func updateSections(sections *[]string) {
 	var sect Update
+	// apply lowercase to all section values
 	sect.Query = "UPDATE files SET section=? WHERE `section`=?"
 	for _, s := range *sections {
 		sect.Args = []interface{}{strings.ToLower(s), s}
@@ -82,6 +83,15 @@ func updateSections(sections *[]string) {
 		if err != nil {
 			logs.Log(err)
 		}
-		logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("⟫ section"), color.Primary.Sprint(s))
+		logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
 	}
+	// set all audio platform files to use intro section
+	// releaseadvert
+	sect.Query = "UPDATE files SET section=? WHERE `platform`=?"
+	sect.Args = []interface{}{"releaseadvert", "audio"}
+	res, err := sect.Execute()
+	if err != nil {
+		logs.Log(err)
+	}
+	logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
 }
