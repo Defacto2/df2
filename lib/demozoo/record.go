@@ -49,7 +49,7 @@ func (r Record) String(total int) string {
 		d = len(strconv.Itoa(total))
 	}
 	return fmt.Sprintf("%s %0*d. %v (%v) %v",
-		logs.Y(), d, r.count, color.Primary.Sprint(r.ID),
+		color.Question.Sprint("→"), d, r.count, color.Primary.Sprint(r.ID),
 		color.Info.Sprint(r.WebIDDemozoo),
 		r.CreatedAt)
 }
