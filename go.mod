@@ -22,18 +22,18 @@ require (
 	github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect
-	github.com/pierrec/lz4 v2.5.0+incompatible // indirect
+	github.com/pierrec/lz4 v2.5.1+incompatible // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v0.0.7
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.6.2
+	github.com/spf13/viper v1.6.3
 	github.com/ulikunitz/xz v0.5.7 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
-	golang.org/x/sys v0.0.0-20200408040146-ea54a3c99b9b
+	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/gookit/color.v1 v1.1.6
 	gopkg.in/ini.v1 v1.55.0 // indirect
