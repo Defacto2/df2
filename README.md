@@ -33,8 +33,8 @@ Available Commands:
   demozoo     Interact with Demozoo.org upload submissions
   fix         Fixes database entries and records
   help        Help about any command
-  html        HTML and sitemap generator
-  proof       Handler files tagged as #releaseproof
+  output      HTML, SQL and sitemap generator
+  proof       Handler for files tagged as #releaseproof
 
 Flags:
       --config string   config file (default is $HOME/.df2.yaml)
@@ -62,12 +62,38 @@ The `df2 fix text` command requires the installation of [AnsiLove/C](https://git
 
 To view and test the database and directory configurations.
 
-```
+```bash
 df2 config info
 ```
 
 To change the configuration.
 
-```
+```bash
 df2 config edit
+```
+
+### Development notes
+
+df2 uses [Go modules](https://github.com/golang/go/wiki/Modules) and Go v1.14.
+
+It requires the use of the `go xxx -mod=vendor` argument which is set as default from v.1.14 onwards.
+
+`go env` should return either `GO111MODULE=on` or `GO111MODULE=auto`.
+
+#### Updating dependencies
+
+```bash
+go list -m all # List all direct and indirect dependencies
+
+go list -u -m all # List all possible upgrades
+
+go get -u ./... # Update all (major)
+
+go get -u=patch ./... # Patch update all (minor)
+
+go build ./... # Build all
+
+go test ./... # Test all
+
+go mod tidy # clean go.mod by removing all unused dependencies
 ```
