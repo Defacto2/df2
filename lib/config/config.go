@@ -22,7 +22,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// ConfigName is the default configuration filename
+// ConfigName is the default configuration filename.
 const ConfigName string = "config.yaml"
 const cmdPath = "df2 config"
 

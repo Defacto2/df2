@@ -4,17 +4,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/people"
+	"github.com/Defacto2/df2/lib/recent"
 	"github.com/Defacto2/df2/lib/sitemap"
 	"github.com/spf13/cobra"
 )
 
-// htmlCmd represents the output command
-var htmlCmd = &cobra.Command{
+// outputCmd represents the output command
+var outputCmd = &cobra.Command{
 	Use:   "output",
-	Short: "HTML and sitemap generator",
+	Short: "HTML, SQL and sitemap generator",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			_ = cmd.Usage()
@@ -26,18 +28,36 @@ var htmlCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(htmlCmd)
-	htmlCmd.AddCommand(groupCmd)
+	rootCmd.AddCommand(outputCmd)
+	outputCmd.AddCommand(dataCmd)
+	dataCmd.Flags().UintVarP(&df.limit, "limit", "l", 0, "limit the number of rows returned")
+	outputCmd.AddCommand(groupCmd)
 	groupCmd.Flags().StringVarP(&gf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+groups.Filters)
 	groupCmd.Flags().BoolVarP(&gf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
 	groupCmd.Flags().BoolVarP(&gf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
 	groupCmd.Flags().BoolVarP(&gf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
 	groupCmd.Flags().StringVarP(&gf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	groupCmd.Flags().BoolVarP(&gf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
-	htmlCmd.AddCommand(peopleCmd)
+	outputCmd.AddCommand(peopleCmd)
 	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Filters)
 	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
-	htmlCmd.AddCommand(sitemapCmd)
+	outputCmd.AddCommand(recentCmd)
+	outputCmd.AddCommand(sitemapCmd)
+}
+
+type dataFlags struct {
+	limit uint
+}
+
+var df dataFlags
+
+var dataCmd = &cobra.Command{
+	Use:     "data",
+	Aliases: []string{"d", "sql"},
+	Short:   "An SQL dump generator to export files",
+	Run: func(cmd *cobra.Command, args []string) {
+		database.ExportFiles(df.limit, version)
+	},
 }
 
 type groupFlags struct {
@@ -104,7 +124,16 @@ var peopleCmd = &cobra.Command{
 	},
 }
 
-// sitemapCmd represents the sitemap command
+var recentCmd = &cobra.Command{
+	Use:     "recent",
+	Aliases: []string{"r"},
+	Short:   "A JSON snippet generator to list recent file additions",
+	Run: func(cmd *cobra.Command, args []string) {
+		x := recent.List()
+		fmt.Printf("\n%+v\n", x)
+	},
+}
+
 var sitemapCmd = &cobra.Command{
 	Use:     "sitemap",
 	Aliases: []string{"m", "s", "map"},
