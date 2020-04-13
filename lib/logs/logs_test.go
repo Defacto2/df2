@@ -35,7 +35,7 @@ func Test_save(t *testing.T) {
 	type args struct {
 		err error
 	}
-	err := errors.New("oops: error world")
+	err := errors.New("logs test: error world")
 	tests := []struct {
 		name string
 		args args

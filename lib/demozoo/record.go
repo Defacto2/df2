@@ -80,14 +80,15 @@ func (rw row) absNotExist(r Record) bool {
 
 // fileZipContent reads an archive and saves its content to the database
 func (r *Record) fileZipContent() bool {
+	const pfx = "demozoo record filezipcontent:"
 	if r.AbsFile == "" {
-		logs.Log(fmt.Errorf("r.absfile required by fileZipContent is empty"))
+		logs.Log(fmt.Errorf("%s r.absfile required by fileZipContent is empty", pfx))
 		return false
 	}
 	a, err := archive.Read(r.AbsFile)
 	if err != nil {
 		if err.Error() == "unarr: File not found" {
-			logs.Log(fmt.Errorf("file not found: %s", r.AbsFile))
+			logs.Log(fmt.Errorf("%s file not found %s", pfx, r.AbsFile))
 			return false
 		}
 		logs.Log(err)

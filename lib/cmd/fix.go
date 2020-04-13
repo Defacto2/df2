@@ -23,7 +23,7 @@ var fixCmd = &cobra.Command{
 			os.Exit(0)
 		}
 		_ = cmd.Usage()
-		logs.Check(fmt.Errorf("invalid command %v please use one of the available fix commands", args[0]))
+		logs.Check(fmt.Errorf("fix: invalid command %v please use one of the available fix commands", args[0]))
 	},
 }
 

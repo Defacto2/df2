@@ -223,15 +223,16 @@ func parsePouetProduction(rawurl string) (int, error) {
 	}
 	q := u.Query()
 	w := q.Get("which")
+	const pfx = "productions parse pouet: unexpected"
 	if w == "" {
-		return 0, fmt.Errorf("unexpected PouetProduction url syntax: %s", rawurl)
+		return 0, fmt.Errorf("%s url syntax %q", pfx, rawurl)
 	}
 	id, err := strconv.Atoi(w)
 	if err != nil {
-		return 0, fmt.Errorf("unexpected PouetProduction which= query syntax: %s", w)
+		return 0, fmt.Errorf("%s which= query syntax %q", pfx, w)
 	}
 	if id < 0 {
-		return 0, fmt.Errorf("unexpected PouetProduction which= query value: %s", w)
+		return 0, fmt.Errorf("%s which= query value %q", pfx, w)
 	}
 	return id, nil
 }

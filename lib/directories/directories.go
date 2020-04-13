@@ -82,7 +82,7 @@ func createDirectory(path string) bool {
 		return true
 	}
 	if src.Mode().IsRegular() {
-		logs.Log(fmt.Errorf("already exist as a file: %s", path))
+		logs.Log(fmt.Errorf("directories create: path already exist as a file: %s", path))
 		return false
 	}
 	return false
@@ -138,5 +138,5 @@ func randStringBytes(n int) string {
 
 // errPrefix gives user feedback with invalid params.
 func errPrefix(prefix uint) error {
-	return fmt.Errorf("invalid prefix %q as it must be between 0 - 9", prefix)
+	return fmt.Errorf("directories: invalid prefix %q as it must be between 0 - 9", prefix)
 }

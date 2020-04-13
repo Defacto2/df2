@@ -105,7 +105,7 @@ func copyYears() string {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is $HOME/%s)", config.ConfigName))
+	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is %s)", config.Filepath()))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
 	rootCmd.AddCommand(logCmd)

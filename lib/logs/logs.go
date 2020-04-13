@@ -74,7 +74,7 @@ func Log(err error) {
 		save(err)
 		switch Panic {
 		case true:
-			println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
+			println(fmt.Sprintf("error type %T\t: %v", err, err))
 			log.Panic(err)
 		default:
 			log.Printf("%s %s", color.Danger.Sprint("!"), err)
@@ -204,7 +204,7 @@ func Y() string {
 func File(config string, err error) {
 	var pathError *os.PathError
 	if errors.As(err, &pathError) {
-		log.Println(X(), "failed to create or open file:", Path(pathError.Path))
+		log.Println(X(), "logs file: failed to create or open file", Path(pathError.Path))
 		if config != "" {
 			Println("  to fix run:", color.Info.Sprintf("config set --name %v", config))
 		}

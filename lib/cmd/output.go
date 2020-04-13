@@ -16,14 +16,14 @@ import (
 // outputCmd represents the output command
 var outputCmd = &cobra.Command{
 	Use:   "output",
-	Short: "HTML, SQL and sitemap generator",
+	Short: "JSON, HTML, SQL and sitemap generator",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			_ = cmd.Usage()
 			os.Exit(0)
 		}
 		_ = cmd.Usage()
-		logs.Check(fmt.Errorf("invalid command %v please use one of the available fix commands", args[0]))
+		logs.Check(fmt.Errorf("output: invalid command %v please use one of the available fix commands", args[0]))
 	},
 }
 

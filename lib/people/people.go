@@ -124,7 +124,7 @@ func parse(filename string, tpl string, r Request) {
 		err = t.Execute(f, data)
 		logs.Check(err)
 	default:
-		logs.Check(fmt.Errorf("invalid filter %q used", r.Filter))
+		logs.Check(fmt.Errorf("people html parse: invalid filter %q used", r.Filter))
 	}
 }
 

@@ -134,7 +134,7 @@ func rows(table string, limit int) ([]string, error) {
 				}
 				result[i] = fmt.Sprintf("'%s'", t.Format(timestamp))
 			default:
-				return nil, fmt.Errorf("unsupported mysql column type %q with value %s", t, string(v))
+				return nil, fmt.Errorf("db export rows: unsupported mysql column type %q with value %s", t, string(v))
 			}
 		}
 		var r row = result

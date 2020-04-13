@@ -83,7 +83,7 @@ func Delete() {
 	switch logs.PromptYN("Remove the config file", false) {
 	case true:
 		if err := os.Remove(cfg); err != nil {
-			logs.Check(fmt.Errorf("could not remove %v %v", cfg, err))
+			logs.Check(fmt.Errorf("config delete: could not remove %v %v", cfg, err))
 		}
 		logs.Println("the config is gone")
 	}
@@ -136,7 +136,7 @@ func ErrCheck() {
 
 func errMsg() {
 	if Config.Errors && !logs.Quiet {
-		fmt.Printf("%s %s\n", color.Warn.Sprint("no config file in use, please run:"),
+		fmt.Printf("%s %s\n", color.Warn.Sprint("config: config file in use, please run"),
 			color.Bold.Sprintf("df2 config create"))
 		os.Exit(102)
 	} else if Config.Errors {
@@ -262,7 +262,7 @@ func configSave(value interface{}) {
 	switch value.(type) {
 	case int64, string:
 	default:
-		logs.Check(fmt.Errorf("unsupported value interface type"))
+		logs.Check(fmt.Errorf("config save: unsupported value interface type"))
 	}
 	viper.Set(Config.nameFlag, value)
 	logs.Printf("%s %s is now set to \"%v\"\n", logs.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))

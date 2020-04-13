@@ -52,7 +52,7 @@ func Generate(name, id string) {
 	f := directories.Files(id)
 	o := f.Img000 + ".png"
 	s, err := ToPng(n, f.Img000)
-	if err != nil && err.Error() == `exec: "ansilove": executable file not found in $PATH` {
+	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
 		fmt.Println("\n\nthis command requires the installation of AnsiLove/C")
 		fmt.Println("installation instructions: https://github.com/ansilove/ansilove")
 		fmt.Println()

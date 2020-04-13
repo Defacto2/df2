@@ -29,10 +29,13 @@ const Datetime string = "2006-01-02T15:04:05Z"
 
 // Connection information for a MySQL database.
 type Connection struct {
-	Name   string // database name
-	User   string // access username
-	Pass   string // access password
-	Server string // host server protocol, address and port
+	Name     string // database name
+	User     string // access username
+	Pass     string // access password
+	Server   string // host server protocol, address and port
+	Protocol string
+	Address  string
+	Port     string
 }
 
 // Empty is used as a blank value for search maps.
@@ -61,13 +64,14 @@ func Connect() *sql.DB {
 		println(color.Secondary.Sprint(strings.Replace(fmt.Sprint(&c), c.Pass, "****", 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
+		var p = color.Primary.Sprint
 		if err, ok := err.(*mysql.MySQLError); ok {
-			e := strings.Replace(err.Error(), c.User, color.Primary.Sprint(c.User), 1)
+			e := strings.Replace(err.Error(), c.User, p(c.User), 1)
 			logs.Check(fmt.Errorf("%s %v", color.Info.Sprint("MySQL"), e))
 		}
 		if err, ok := err.(*net.OpError); ok {
 			if strings.Contains(err.Error(), "connect: connection refused") {
-				logs.Check(fmt.Errorf("database server '%v' is either down or the port is blocked", color.Primary.Sprint(c.Server)))
+				logs.Check(fmt.Errorf("database server %v is either down or the %v %v port is blocked", p(c.Address), p(c.Protocol), p(c.Port)))
 			} else {
 				logs.Check(err)
 			}
@@ -340,9 +344,12 @@ func config() {
 		return
 	}
 	c = Connection{
-		Name: viper.GetString("connection.name"),
-		User: viper.GetString("connection.user"),
-		Pass: viper.GetString("connection.password"),
+		Name:     viper.GetString("connection.name"),
+		User:     viper.GetString("connection.user"),
+		Pass:     viper.GetString("connection.password"),
+		Protocol: viper.GetString("connection.server.protocol"),
+		Address:  viper.GetString("connection.server.host"),
+		Port:     viper.GetString("connection.server.port"),
 		Server: fmt.Sprintf("%v(%v:%v)", // example: tcp(localhost:3306)
 			viper.GetString("connection.server.protocol"),
 			viper.GetString("connection.server.host"),

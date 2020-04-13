@@ -142,7 +142,7 @@ func (r Request) parse(filename string, tpl string) {
 		err = t.Execute(f, data)
 		logs.Check(err)
 	default:
-		logs.Check(fmt.Errorf("invalid filter %q used", r.Filter))
+		logs.Check(fmt.Errorf("groups parse: invalid filter %q used", r.Filter))
 	}
 }
 

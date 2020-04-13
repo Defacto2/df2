@@ -54,7 +54,7 @@ func (p *Production) data() *ProductionsAPIv1 {
 // prodURL creates a production URL from a Demozoo ID.
 func prodURL(id int64) (string, error) {
 	if id < 0 {
-		return "", fmt.Errorf("unexpected negative id value %v", id)
+		return "", fmt.Errorf("demozoo production url: unexpected negative id value %v", id)
 	}
 	u, err := url.Parse(prodAPI) // base URL
 	if err != nil {

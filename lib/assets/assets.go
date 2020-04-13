@@ -101,7 +101,7 @@ func Clean(target string, delete, human bool) {
 	// output a summary of the results
 	logs.Println(color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v", humanize.Comma(int64(sum.count)), humanize.Comma(int64(rows))))
 	if sum.fails > 0 {
-		logs.Print(fmt.Sprintf("due to errors %v files could not be deleted\n", sum.fails))
+		logs.Print(fmt.Sprintf("assets clean: due to errors %v files could not be deleted\n", sum.fails))
 	}
 	if len(paths) > 1 && sum.bytes > 0 {
 		var pts string
@@ -270,7 +270,7 @@ func (s scan) scanPath() (results, error) {
 	if err != nil {
 		var e *os.PathError
 		if errors.As(err, &e) {
-			logs.Println(color.Warn.Sprint("no such directory"))
+			logs.Println(color.Warn.Sprint("assets scanpath: no such directory"))
 		} else {
 			return results{}, err
 		}
