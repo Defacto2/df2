@@ -33,11 +33,11 @@ Available Commands:
   demozoo     Interact with Demozoo.org upload submissions
   fix         Fixes database entries and records
   help        Help about any command
-  output      HTML, SQL and sitemap generator
+  output      JSON, HTML, SQL and sitemap generator
   proof       Handler for files tagged as #releaseproof
 
 Flags:
-      --config string   config file (default is $HOME/.df2.yaml)
+      --config string   config file (default is config.yaml)
   -h, --help            help for df2
   -q, --quiet           suspend feedback to the terminal
       --version         version for df2
