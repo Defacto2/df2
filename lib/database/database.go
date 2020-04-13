@@ -250,6 +250,48 @@ func LastUpdate() time.Time {
 	return updatedat
 }
 
+// ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
+func ObfuscateParam(param string) string {
+	rv := param // return value
+	// check to make sure param doesn't begin with a 0 digit
+	if rv0 := rv[0]; rv0 == '0' {
+		return rv
+	}
+	paramInt, err := strconv.Atoi(param) // convert param to an int type
+	if err != nil {
+		return rv
+	}
+	iEnd := len(rv) // count the number of digits in param
+	afloat64 := math.Pow10(iEnd) + float64(reverseInt(paramInt))
+	// keep a and b as int type
+	a := int(afloat64)
+	b := 0
+	for i := 1; i <= iEnd; i++ {
+		// slice individual digits from param and sum them
+		paramSlice, err := strconv.Atoi(string(param[iEnd-i]))
+		if err != nil {
+			return rv
+		}
+		b += paramSlice
+	}
+	// base 64 conversion
+	a ^= 461
+	b += 154
+	return strconv.FormatInt(int64(b), 16) + strconv.FormatInt(int64(a), 16)
+}
+
+// reverseInt swaps the direction of the value, 12345 would return 54321.
+func reverseInt(value int) int {
+	int := strconv.Itoa(value)
+	new := ""
+	for x := len(int); x > 0; x-- {
+		new += string(int[x-1])
+	}
+	newInt, err := strconv.Atoi(new)
+	logs.Check(err)
+	return newInt
+}
+
 // RenGroup replaces all instances of the old group name with the new group name.
 func RenGroup(new, old string) (int64, error) {
 	db := Connect()

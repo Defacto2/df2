@@ -42,6 +42,8 @@ func init() {
 	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Filters)
 	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	outputCmd.AddCommand(recentCmd)
+	recentCmd.Flags().BoolVarP(&rf.compress, "compress", "c", false, "remove insignificant whitespace characters")
+	recentCmd.Flags().UintVarP(&rf.limit, "limit", "l", 15, "limit the number of rows returned")
 	outputCmd.AddCommand(sitemapCmd)
 }
 
@@ -124,13 +126,19 @@ var peopleCmd = &cobra.Command{
 	},
 }
 
+type recentFlags struct {
+	compress bool
+	limit    uint
+}
+
+var rf recentFlags
+
 var recentCmd = &cobra.Command{
 	Use:     "recent",
 	Aliases: []string{"r"},
 	Short:   "A JSON snippet generator to list recent file additions",
 	Run: func(cmd *cobra.Command, args []string) {
-		x := recent.List()
-		fmt.Printf("\n%+v\n", x)
+		recent.List(rf.limit, rf.compress)
 	},
 }
 
