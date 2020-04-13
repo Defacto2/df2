@@ -15,6 +15,7 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/gookit/color v1.2.4
+	github.com/hako/durafmt v0.0.0-20191009132224-3f39dc1ed9f4
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/muesli/go-app-paths v0.2.1
