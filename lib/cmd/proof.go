@@ -23,9 +23,9 @@ var proofCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		r := proof.Request{
-			Overwrite: proo.overwrite,
-			All:       proo.all,
-			HideMiss:  proo.hideMissing}
+			Overwrite:   proo.overwrite,
+			AllProofs:   proo.all,
+			HideMissing: proo.hideMissing}
 		switch {
 		case proo.id != "":
 			err = r.Query(proo.id)
