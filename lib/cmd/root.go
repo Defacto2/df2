@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/lib/config"
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 	"github.com/hako/durafmt"
@@ -29,7 +31,7 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.9.10" // df2 version
+const version string = "0.9.11" // df2 version
 
 var (
 	copyright       = copyYears()
@@ -48,6 +50,33 @@ var rootCmd = &cobra.Command{
 		copyright,
 		color.Primary.Sprint("https://github.com/Defacto2/df2")),
 	Version: color.Primary.Sprint(version) + "\n",
+}
+
+var lookupCmd = &cobra.Command{
+	Use:   "lookup (id|uuid)",
+	Short: "Lookup the file URL of a database ID or UUID",
+	Example: `  id is a a unique numeric identifier
+  uuid is a unique 35-character hexadecimal string representation of a 128-bit integer
+  uuid character groups are 8-4-4-16 (xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxxxxxx)`,
+	Hidden: false,
+	Args: func(cmd *cobra.Command, args []string) error {
+		const help = ""
+		if len(args) != 1 {
+			return errors.New("lookup: requires an id or uuid argument")
+		}
+		if err := database.CheckID(args[0]); err == nil {
+			return nil
+		}
+		return fmt.Errorf("lookup: invalid id or uuid specified %q", args[0])
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		id, err := database.LookupID(args[0])
+		if err != nil {
+			fmt.Printf("%s\n", err)
+		} else {
+			fmt.Printf("https://defacto2.net/f/%v\n", database.ObfuscateParam(fmt.Sprint(id)))
+		}
+	},
 }
 
 var logCmd = &cobra.Command{
@@ -109,6 +138,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
 	rootCmd.AddCommand(logCmd)
+	rootCmd.AddCommand(lookupCmd)
 	err := rootCmd.PersistentFlags().MarkHidden("panic")
 	logs.Check(err)
 }

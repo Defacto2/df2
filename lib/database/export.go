@@ -11,6 +11,9 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
+// TODO: add --compress to zip or gzip, or --file=zip --file=gzip --file=sql
+// research the best compression format and make that the default/recommended
+
 const timestamp string = "2006-01-02 15:04:05"
 
 const templ = `

@@ -254,6 +254,32 @@ func LastUpdate() time.Time {
 	return updatedat
 }
 
+// LookupID returns the number of file entries associated with a group.
+func LookupID(value string) (uint, error) {
+	db := Connect()
+	defer db.Close()
+	var s string
+	var id uint
+	if v, err := strconv.Atoi(value); err == nil {
+		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
+		s = fmt.Sprintf("SELECT EXISTS(SELECT * FROM files WHERE id='%d')", v)
+		err = db.QueryRow(s).Scan(&id)
+		if err != nil {
+			return 0, fmt.Errorf("lookupid: %s", err)
+		} else if id == 0 {
+			return 0, fmt.Errorf("lookupid: unique id '%v' is does not exist in the database", v)
+		}
+		return uint(v), nil
+	}
+	value = strings.ToLower(value)
+	s = fmt.Sprintf("SELECT id FROM files WHERE uuid='%s'", value)
+	err := db.QueryRow(s).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("lookupid: uuid '%v' is does not exist in the database", value)
+	}
+	return id, nil
+}
+
 // ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
 func ObfuscateParam(param string) string {
 	rv := param // return value
