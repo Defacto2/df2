@@ -30,28 +30,28 @@ func (d Demozoo) String() string {
 func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {
 	var dz Demozoo
 	if err := database.CheckUUID(uuid); err != nil {
-		return dz, err
+		return dz, dzErr(err)
 	}
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
 	if err != nil {
-		return dz, err
+		return dz, dzErr(err)
 	}
 	defer os.RemoveAll(tempDir)
 	// extract archive
 	a, err := unarr.NewArchive(name)
 	if err != nil {
-		return dz, err
+		return dz, dzErr(err)
 	}
 	defer a.Close()
 	// TODO: use contents strings[] instead of scanning the directory
 	_, err = a.Extract(tempDir)
 	if err != nil {
-		return dz, err
+		return dz, dzErr(err)
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		return dz, err
+		return dz, dzErr(err)
 	}
 	var zips = make(contents)
 	for i, f := range files {
@@ -60,7 +60,7 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {
 		zip.filescan(f)
 		err = zip.filemime(f)
 		if err != nil {
-			return dz, err
+			return dz, dzErr(err)
 		}
 		zips[i] = zip
 	}
@@ -196,4 +196,8 @@ func findVariant(name, ext string, varNames *[]string) string {
 		}
 	}
 	return ""
+}
+
+func dzErr(err error) error {
+	return fmt.Errorf("archive demozoo extract: %v", err)
 }

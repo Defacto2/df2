@@ -18,28 +18,28 @@ import (
 // uuid is used to rename the extracted assets such as image previews.
 func Extract(name, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
-		return err
+		return extErr(err)
 	}
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
 	if err != nil {
-		return err
+		return extErr(err)
 	}
 	defer os.RemoveAll(tempDir)
 	// extract archive
 	a, err := unarr.NewArchive(name)
 	if err != nil {
-		return err
+		return extErr(err)
 	}
 	defer a.Close()
 	// TODO: use contents strings[] instead of scanning the directory
 	_, err = a.Extract(tempDir)
 	if err != nil {
-		return err
+		return extErr(err)
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		return err
+		return extErr(err)
 	}
 	th := taskInit()
 	tx := taskInit()
@@ -50,7 +50,7 @@ func Extract(name, uuid string) error {
 		fn := path.Join(tempDir, file.Name())
 		fmime, err := mimetype.DetectFile(fn)
 		if err != nil {
-			return err
+			return extErr(err)
 		}
 		switch fmime.Extension() {
 		case ".bmp", ".gif", ".jpg", ".png", ".tiff", ".webp":
@@ -94,4 +94,8 @@ type task struct {
 
 func taskInit() task {
 	return task{name: "", size: 0, cont: false}
+}
+
+func extErr(err error) error {
+	return fmt.Errorf("archive extract: %v", err)
 }

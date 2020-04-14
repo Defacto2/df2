@@ -34,7 +34,7 @@ func (c content) String() string {
 func (c *content) filemime(f os.FileInfo) error {
 	m, err := mimetype.DetectFile(c.path)
 	if err != nil {
-		return err
+		return genErr("filemime", err)
 	}
 	c.mime = m
 	// flag useful files
@@ -51,17 +51,17 @@ func (c *content) filemime(f os.FileInfo) error {
 func FileCopy(name, dest string) (int64, error) {
 	src, err := os.Open(name)
 	if err != nil {
-		return 0, err
+		return 0, genErr("filecopy", err)
 	}
 	defer src.Close()
 	file, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return 0, err
+		return 0, genErr("filecopy", err)
 	}
 	defer file.Close()
 	i, err := io.Copy(file, src)
 	if err != nil {
-		return 0, err
+		return 0, genErr("filecopy", err)
 	}
 	return i, nil
 }
@@ -70,11 +70,11 @@ func FileCopy(name, dest string) (int64, error) {
 func FileMove(name, dest string) (int64, error) {
 	i, err := FileCopy(name, dest)
 	if err != nil {
-		return 0, err
+		return 0, genErr("filemove", err)
 	}
 	err = os.Remove(name)
 	if err != nil {
-		return 0, err
+		return 0, genErr("filemove", err)
 	}
 	return i, nil
 }
@@ -95,12 +95,12 @@ func NewExt(name, extension string) string {
 func Read(name string) ([]string, error) {
 	a, err := unarr.NewArchive(name)
 	if err != nil {
-		return nil, err
+		return nil, genErr("read", err)
 	}
 	defer a.Close()
 	list, err := a.List()
 	if err != nil {
-		return nil, err
+		return nil, genErr("read", err)
 	}
 	return list, nil
 }
@@ -114,4 +114,8 @@ func dir(name string) {
 		logs.Log(err)
 		logs.Println(file.Name(), humanize.Bytes(uint64(file.Size())), mime)
 	}
+}
+
+func genErr(name string, err error) error {
+	return fmt.Errorf("archive %s: %v", name, err)
 }
