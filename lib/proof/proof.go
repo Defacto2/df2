@@ -27,9 +27,9 @@ type Record struct {
 
 // Request proofs.
 type Request struct {
-	Overwrite bool // overwrite existing files
-	All       bool // parse all proofs
-	HideMiss  bool // ignore missing uuid files
+	Overwrite   bool // overwrite existing files
+	AllProofs   bool // parse all proofs
+	HideMissing bool // ignore missing uuid files
 }
 
 type row struct {
@@ -42,18 +42,25 @@ type row struct {
 var proofID string // ID used for proofs, either a UUID or ID string
 
 // Query parses a single proof.
-func (req Request) Query(id string) error {
+func (request Request) Query(id string) error {
 	if err := database.CheckID(id); err != nil {
 		return err
 	}
 	proofID = id
-	return req.Queries()
+	return request.Queries()
+}
+
+func proofChk(text string) {
+	if proofID == "" {
+		return
+	}
+	println(text)
 }
 
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
-func (req Request) Queries() error {
+func (request Request) Queries() error {
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(sqlSelect())
@@ -80,21 +87,26 @@ func (req Request) Queries() error {
 	for rows.Next() {
 		rw.total++
 	}
-	if rw.total > 1 {
+	if rw.total < 1 {
+		proofChk(fmt.Sprintf("file record id '%s' does not exist", proofID))
+	} else if rw.total > 1 {
 		println("Total records", rw.total)
 	}
 	rows, err = db.Query(sqlSelect())
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
-		if new := database.IsNew(values); !new && !req.All {
+		if proofID != "" && request.Overwrite {
+			// skip IsNew check
+		} else if new := database.IsNew(values); !new && !request.AllProofs {
+			proofChk(fmt.Sprintf("skip file record id '%s' as it is not new", proofID))
 			continue
 		}
 		rw.count++
 		r := Record{ID: string(values[0]), UUID: string(values[1]), Name: string(values[4])}
 		r.File = filepath.Join(dir.UUID, r.UUID)
 		// ping file
-		if rw.skip(r, req.HideMiss) {
+		if rw.skip(r, request.HideMissing) {
 			continue
 		}
 		// iterate through each value
@@ -109,7 +121,7 @@ func (req Request) Queries() error {
 			case "filename":
 				logs.Printf("%v", value)
 			case "file_zip_content":
-				r.zip(raw, req.Overwrite)
+				r.zip(raw, request.Overwrite)
 			default:
 			}
 		}
@@ -168,6 +180,9 @@ func sqlSelect() string {
 }
 
 func (rw row) summary() {
+	if proofID != "" && rw.total < 1 {
+		return
+	}
 	t := fmt.Sprintf("Total proofs handled: %v", rw.count-rw.missing)
 	logs.Println(strings.Repeat("─", len(t)))
 	logs.Println(t)
