@@ -145,7 +145,7 @@ func (r Record) approve() error {
 
 // fileZipContent reads an archive and saves its content to the database
 func (r Record) fileZipContent() bool {
-	a, err := archive.Read(r.File)
+	a, err := archive.Read(r.File, r.Name)
 	if err != nil {
 		logs.Log(err)
 		return false
@@ -212,7 +212,7 @@ func (r Record) zip(col sql.RawBytes, overwrite bool) {
 		if u := r.fileZipContent(); !u {
 			return
 		}
-		if err := archive.Extract(r.File, r.UUID); err != nil {
+		if err := archive.Extract(r.File, r.Name, r.UUID); err != nil {
 			logs.Log(err)
 		} else {
 			err = r.approve()

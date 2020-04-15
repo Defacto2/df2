@@ -14,9 +14,23 @@ import (
 	unarr "github.com/gen2brain/go-unarr"
 )
 
-// Extract decompresses and parses a named archive.
+func extract(archive, tempDir string) error {
+	// extract archive
+	ua, err := unarr.NewArchive(archive)
+	if err != nil {
+		return extErr(err)
+	}
+	defer ua.Close()
+	_, err = ua.Extract(tempDir)
+	if err != nil {
+		return extErr(err)
+	}
+	return nil
+}
+
+// Extract decompresses and parses an archive.
 // uuid is used to rename the extracted assets such as image previews.
-func Extract(name, uuid string) error {
+func Extract(archive, filename, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
 		return extErr(err)
 	}
@@ -26,16 +40,11 @@ func Extract(name, uuid string) error {
 		return extErr(err)
 	}
 	defer os.RemoveAll(tempDir)
-	// extract archive
-	a, err := unarr.NewArchive(name)
+	err = extract(archive, tempDir)
 	if err != nil {
-		return extErr(err)
-	}
-	defer a.Close()
-	// TODO: use contents strings[] instead of scanning the directory
-	_, err = a.Extract(tempDir)
-	if err != nil {
-		return extErr(err)
+		if err = extractr(archive, filename, tempDir); err != nil {
+			return extErr(err)
+		}
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {

@@ -39,16 +39,17 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {
 	}
 	defer os.RemoveAll(tempDir)
 	// extract archive
-	a, err := unarr.NewArchive(name)
+	//
+	ua, err := unarr.NewArchive(name)
 	if err != nil {
 		return dz, dzErr(err)
 	}
-	defer a.Close()
-	// TODO: use contents strings[] instead of scanning the directory
-	_, err = a.Extract(tempDir)
+	defer ua.Close()
+	_, err = ua.Extract(tempDir)
 	if err != nil {
 		return dz, dzErr(err)
 	}
+	//
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
 		return dz, dzErr(err)

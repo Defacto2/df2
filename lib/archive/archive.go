@@ -90,12 +90,17 @@ func NewExt(name, extension string) string {
 }
 
 // Read returns a list of files within an rar, tar, zip or 7z archive.
-// In the future I would like to add support for the following archives
-// "tar.gz", "gz", "lzh", "lha", "cab", "arj", "arc".
-func Read(name string) ([]string, error) {
-	a, err := unarr.NewArchive(name)
+// archive is the absolute path to the archive file named as a uuid
+// filename is the original archive filename and file extension
+func Read(archive string, filename string) ([]string, error) {
+	a, err := unarr.NewArchive(archive)
 	if err != nil {
-		return nil, genErr("read", err)
+		// using archiver as a fallback
+		list, err := Readr(archive, filename)
+		if err != nil {
+			return nil, genErr("readr", err)
+		}
+		return list, nil
 	}
 	defer a.Close()
 	list, err := a.List()

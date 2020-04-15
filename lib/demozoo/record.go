@@ -85,7 +85,7 @@ func (r *Record) fileZipContent() bool {
 		logs.Log(fmt.Errorf("%s r.absfile required by fileZipContent is empty", pfx))
 		return false
 	}
-	a, err := archive.Read(r.AbsFile)
+	a, err := archive.Read(r.AbsFile, r.Filename)
 	if err != nil {
 		if err.Error() == "unarr: File not found" {
 			logs.Log(fmt.Errorf("%s file not found %s", pfx, r.AbsFile))
