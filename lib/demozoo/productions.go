@@ -166,13 +166,15 @@ func (p *ProductionsAPIv1) Groups() [2]string {
 	return g
 }
 
+// Authors contains Defacto2 people rolls.
 type Authors struct {
-	text  []string // credit_text
-	code  []string // credit_program
-	art   []string // credit_illustration
-	audio []string // credit_audio
+	text  []string // credit_text, writer
+	code  []string // credit_program, programmer/coder
+	art   []string // credit_illustration, artist/graphics
+	audio []string // credit_audio, musician/sound
 }
 
+// Authors parses Demozoo authors and reclassifies them into Defacto2 people rolls.
 func (p *ProductionsAPIv1) Authors() Authors {
 	var a Authors
 	for _, n := range p.Credits {
