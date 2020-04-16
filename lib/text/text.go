@@ -71,15 +71,23 @@ func Generate(name, id string) {
 	out(s, err)
 	s, err = images.ToThumb(o, f.Img150, 150)
 	out(s, err)
-	//os.Remove(n)
 }
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
 func ToPng(src, dest string) (string, error) {
+	if src == "" {
+		return "", fmt.Errorf("text topng: src argument requires a source directory path")
+	}
+	if dest == "" {
+		return "", fmt.Errorf("text topng: dest argument requires a destination filename path")
+	}
 	img := dest + ".png"
 	cmd := exec.Command("ansilove", "-r", "-o", img, src)
 	out, err := cmd.Output()
+	wd, _ := os.Getwd()
+	exe, _ := os.Executable()
+	fmt.Printf("%s - %s", wd, exe)
 	if err != nil {
 		return "", err
 	}
