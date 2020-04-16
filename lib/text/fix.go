@@ -84,6 +84,7 @@ func (t Txt) ext() bool {
 	return false
 }
 
+// check that [UUID].png exists in all three image subdirectories.
 func (t Txt) check() bool {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
