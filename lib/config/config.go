@@ -61,7 +61,7 @@ func Create(ow bool) {
 		}
 		p := filepath.Dir(cfg)
 		if _, err := os.Stat(p); os.IsNotExist(err) {
-			println(p)
+			logs.Println(p)
 			if err := os.MkdirAll(p, 0700); err != nil {
 				logs.Check(err)
 				os.Exit(770)
@@ -154,7 +154,7 @@ func errMsg() {
 
 // Info prints the content of a configuration file.
 func Info() {
-	println("Default configurations in use when no flags are given.\n")
+	logs.Println("Default configurations in use when no flags are given.\n")
 	sets, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())

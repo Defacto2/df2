@@ -137,7 +137,7 @@ func (req Request) Queries() error {
 		total++
 	}
 	if total > 1 {
-		println("Total records", total)
+		logs.Println("Total records", total)
 	}
 	// fetch the rows
 	rows, err = db.Query(sqlSelect())

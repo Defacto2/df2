@@ -85,9 +85,7 @@ func parse(filename string, tpl string, r Request) {
 	if f == "" {
 		f = "all"
 	}
-	if !logs.Quiet {
-		println(x, "matching", f, "records found")
-	}
+	logs.Println(x, "matching", f, "records found")
 	data := make([]Person, len(grp))
 	cap := ""
 	hr := false
@@ -133,9 +131,7 @@ func parse(filename string, tpl string, r Request) {
 // Print lists people filtered by a role and summaries the results.
 func Print(r Request) {
 	ppl, total := List(r.Filter)
-	if !logs.Quiet {
-		println(total, "matching", r.Filter, "records found")
-	}
+	logs.Println(total, "matching", r.Filter, "records found")
 	var a []string
 	for i := range ppl {
 		if r.Progress {

@@ -55,13 +55,13 @@ var demozooCmd = &cobra.Command{
 			d, err := archive.ExtractDemozoo(dzoo.extract[0], id.String(), &empty)
 			logs.Check(err)
 			if err == nil {
-				println(d.String())
+				logs.Println(d.String())
 			}
 		case len(dzoo.extract) > 1: // only use the first 2 flags
 			d, err := archive.ExtractDemozoo(dzoo.extract[0], dzoo.extract[1], &empty)
 			logs.Check(err)
 			if err == nil {
-				println(d.String())
+				logs.Println(d.String())
 			}
 		default:
 			err = cmd.Usage()

@@ -55,7 +55,7 @@ func Check(err error) {
 		save(err)
 		switch Panic {
 		case true:
-			println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
+			log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
 			log.Panic(err)
 		default:
 			log.Fatal(color.Danger.Sprint("ERROR: "), err)
@@ -74,7 +74,7 @@ func Log(err error) {
 		save(err)
 		switch Panic {
 		case true:
-			println(fmt.Sprintf("error type %T\t: %v", err, err))
+			log.Println(fmt.Sprintf("error type %T\t: %v", err, err))
 			log.Panic(err)
 		default:
 			log.Printf("%s %s", color.Danger.Sprint("!"), err)

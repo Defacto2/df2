@@ -54,7 +54,7 @@ func proofChk(text string) {
 	if proofID == "" {
 		return
 	}
-	println(text)
+	logs.Println(text)
 }
 
 // Queries parses all new proofs.
@@ -90,7 +90,7 @@ func (request Request) Queries() error {
 	if rw.total < 1 {
 		proofChk(fmt.Sprintf("file record id '%s' does not exist", proofID))
 	} else if !logs.Quiet && rw.total > 1 {
-		println("Total records", rw.total)
+		logs.Println("Total records", rw.total)
 	}
 	rows, err = db.Query(sqlSelect())
 	for rows.Next() {

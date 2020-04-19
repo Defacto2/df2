@@ -36,7 +36,7 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.9.14" // df2 version
+const version string = "0.9.15" // df2 version
 
 var (
 	copyright       = copyYears()
@@ -105,7 +105,7 @@ var logCmd = &cobra.Command{
 			}
 			// todo get system local timezone and set it here
 			// OR log file to use UTC
-			println(fmt.Sprintf("%v", t))
+			logs.Printf("%v\n", t)
 			duration := durafmt.Parse(time.Since(t)).LimitFirstN(1)
 			fmt.Printf("%v %v ago  %v %s\n", color.Secondary.Sprintf("%d.", c), duration, color.Info.Sprint(s[2]), strings.Join(s[3:], " "))
 		}
@@ -168,7 +168,7 @@ func Execute() {
 		e := err.Error()
 		switch {
 		case strings.Contains(e, "required flag(s) \"name\""):
-			println("see Examples for usage or run to list setting choices:", color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
+			logs.Println("see Examples for usage or run to list setting choices:", color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
 		}
 		os.Exit(100)
 	}
@@ -237,7 +237,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		config.Config.Errors = true
 	} else if !quiet {
-		println(logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
+		logs.Println(logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
 	}
 }
 

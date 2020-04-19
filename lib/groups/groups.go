@@ -64,7 +64,7 @@ func Cronjob() {
 	for i := range tags {
 		name := tags[i] + ".htm"
 		if update := database.FileUpdate(path.Join(viper.GetString("directory.html"), name), database.LastUpdate()); !update {
-			println(name + " has nothing to update")
+			logs.Println(name + " has nothing to update")
 		} else {
 			Request{tags[i], true, true, false}.HTML(name)
 		}
@@ -91,9 +91,7 @@ func (r Request) parse(filename string, tpl string) {
 	if f == "" {
 		f = "all"
 	}
-	if !logs.Quiet {
-		println(x, "matching", f, "records found")
-	}
+	logs.Println(x, "matching", f, "records found")
 	data := make([]Group, len(grp))
 	cap := ""
 	hr := false
@@ -194,7 +192,7 @@ func MakeSlug(name string) string {
 // Print list organizations or groups filtered by a name and summaries the results.
 func Print(r Request) {
 	grp, total := list(r.Filter)
-	println(total, "matching", r.Filter, "records found")
+	logs.Println(total, "matching", r.Filter, "records found")
 	var a []string
 	for i := range grp {
 		if r.Progress {

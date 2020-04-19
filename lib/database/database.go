@@ -61,7 +61,7 @@ func Connect() *sql.DB {
 	}
 	err = db.Ping() // ping the server to make sure the connection works
 	if err != nil {
-		println(color.Secondary.Sprint(strings.Replace(fmt.Sprint(&c), c.Pass, "****", 1)))
+		logs.Println(color.Secondary.Sprint(strings.Replace(fmt.Sprint(&c), c.Pass, "****", 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
 		var p = color.Primary.Sprint
@@ -353,7 +353,7 @@ func Total(s *string) int {
 	db := Connect()
 	rows, err := db.Query(*s)
 	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
-		println(s)
+		logs.Println(s)
 	}
 	logs.Check(err)
 	defer db.Close()
