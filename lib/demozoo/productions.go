@@ -243,7 +243,8 @@ func parsePouetProduction(rawurl string) (int, error) {
 func (p *ProductionsAPIv1) Print() {
 	js, err := json.MarshalIndent(&p, "", "  ")
 	logs.Check(err)
-	logs.Println(string(js))
+	// ignore --quiet
+	fmt.Println(string(js))
 }
 
 // mutateURL applies fixes to known problematic URLs.

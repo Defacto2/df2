@@ -91,13 +91,15 @@ func (r Request) parse(filename string, tpl string) {
 	if f == "" {
 		f = "all"
 	}
-	println(x, "matching", f, "records found")
+	if !logs.Quiet {
+		println(x, "matching", f, "records found")
+	}
 	data := make([]Group, len(grp))
 	cap := ""
 	hr := false
 	total := len(grp)
 	for i := range grp {
-		if r.Progress {
+		if !logs.Quiet && r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)
 		}
 		n := grp[i]

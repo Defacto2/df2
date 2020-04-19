@@ -13,7 +13,12 @@ import (
 
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/demozoo"
+	"github.com/Defacto2/df2/lib/groups"
+	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/proof"
+	"github.com/Defacto2/df2/lib/text"
 	"github.com/gookit/color"
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
@@ -31,7 +36,7 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.9.13" // df2 version
+const version string = "0.9.14" // df2 version
 
 var (
 	copyright       = copyYears()
@@ -98,12 +103,58 @@ var logCmd = &cobra.Command{
 				fmt.Printf("%d. %v\n", c, scanner.Text())
 				continue
 			}
+			// todo get system local timezone and set it here
+			// OR log file to use UTC
+			println(fmt.Sprintf("%v", t))
 			duration := durafmt.Parse(time.Since(t)).LimitFirstN(1)
 			fmt.Printf("%v %v ago  %v %s\n", color.Secondary.Sprintf("%d.", c), duration, color.Info.Sprint(s[2]), strings.Join(s[3:], " "))
 		}
 		if err := scanner.Err(); err != nil {
 			logs.Check(err)
 		}
+	},
+}
+
+var waitCmd = &cobra.Command{
+	Use:   "waiting",
+	Short: "Handler for files flagged as waiting to go live",
+	Long: `Runs a sequence of commands to handle files waiting to go live.
+
+  df2 demozoo --new
+      proof
+      fix images
+      fix text
+      fix demozoo
+      fix database`,
+	Run: func(cmd *cobra.Command, args []string) {
+		config.ErrCheck()
+		logs.Quiet = true
+		var err error
+		// demozoo handler
+		dz := demozoo.Request{
+			All:       false,
+			Overwrite: false,
+			Refresh:   false,
+			Simulate:  false}
+		err = dz.Queries()
+		logs.Check(err)
+		// proofs handler
+		p := proof.Request{
+			Overwrite:   false,
+			AllProofs:   false,
+			HideMissing: false}
+		err = p.Queries()
+		logs.Check(err)
+		// missing image previews
+		err = images.Fix(false)
+		logs.Check(err)
+		// missing text file previews
+		err = text.Fix(false)
+		logs.Check(err)
+		// fix database entries
+		demozoo.Fix()
+		database.Fix()
+		groups.Fix(false)
 	},
 }
 
@@ -139,6 +190,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
 	rootCmd.AddCommand(logCmd)
 	rootCmd.AddCommand(lookupCmd)
+	rootCmd.AddCommand(waitCmd)
 	err := rootCmd.PersistentFlags().MarkHidden("panic")
 	logs.Check(err)
 }

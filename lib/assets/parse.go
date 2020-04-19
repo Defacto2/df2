@@ -51,7 +51,9 @@ func parse(s *scan, list *[]os.FileInfo) results {
 			i.mod(file)
 			i.size(file)
 			i.bits(file)
-			fmt.Fprintf(w, "%v\t%v%v\t%v\t%v\t%v\n", i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
+			if !logs.Quiet {
+				fmt.Fprintf(w, "%v\t%v%v\t%v\t%v\t%v\n", i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
+			}
 		}
 		err := w.Flush()
 		logs.Check(err)

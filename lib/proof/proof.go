@@ -89,7 +89,7 @@ func (request Request) Queries() error {
 	}
 	if rw.total < 1 {
 		proofChk(fmt.Sprintf("file record id '%s' does not exist", proofID))
-	} else if rw.total > 1 {
+	} else if !logs.Quiet && rw.total > 1 {
 		println("Total records", rw.total)
 	}
 	rows, err = db.Query(sqlSelect())
