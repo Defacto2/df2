@@ -88,7 +88,6 @@ type scan struct {
 
 // Clean walks through and scans directories containing UUID files and erases any orphans that cannot be matched to the database.
 func Clean(target string, delete, human bool) {
-	//logs.Quiet = false
 	targets(target)
 	// connect to the database
 	rows, m := CreateUUIDMap()

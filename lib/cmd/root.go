@@ -128,7 +128,6 @@ var waitCmd = &cobra.Command{
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.ErrCheck()
-		logs.Quiet = true
 		var err error
 		// demozoo handler
 		dz := demozoo.Request{
