@@ -33,8 +33,10 @@ Available Commands:
   demozoo     Interact with Demozoo.org upload submissions
   fix         Fixes database entries and records
   help        Help about any command
+  lookup      Lookup the file URL of a database ID or UUID
   output      JSON, HTML, SQL and sitemap generator
   proof       Handler for files tagged as #releaseproof
+  waiting     Handler for files flagged as waiting to go live
 
 Flags:
       --config string   config file (default is config.yaml)
