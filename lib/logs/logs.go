@@ -86,6 +86,9 @@ func save(err error) {
 	if err == nil {
 		return
 	}
+	// use UTC date and times in the log file
+	log.SetFlags(log.Ldate | log.Ltime | log.LUTC)
+	fmt.Printf("\n%v\n", err)
 	path := Filepath()
 	p := filepath.Dir(path)
 	if _, e := os.Stat(p); os.IsNotExist(e) {

@@ -32,9 +32,6 @@ var logCmd = &cobra.Command{
 				fmt.Printf("%d. %v\n", c, scanner.Text())
 				continue
 			}
-			// todo get system local timezone and set it here
-			// OR log file to use UTC
-			logs.Printf("%v\n", t)
 			duration := durafmt.Parse(time.Since(t)).LimitFirstN(1)
 			fmt.Printf("%v %v ago  %v %s\n", color.Secondary.Sprintf("%d.", c), duration, color.Info.Sprint(s[2]), strings.Join(s[3:], " "))
 		}
