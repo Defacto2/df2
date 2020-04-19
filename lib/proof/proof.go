@@ -139,7 +139,7 @@ func (r Record) approve() error {
 	logs.Check(err)
 	_, err = update.Exec(database.UpdateID, r.ID)
 	logs.Check(err)
-	print(fmt.Sprintf(" %s", logs.Y()))
+	logs.Printf(" %s", logs.Y())
 	return nil
 }
 

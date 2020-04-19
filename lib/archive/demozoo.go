@@ -94,7 +94,7 @@ func moveText(name, uuid string) bool {
 	f := directories.Files(uuid)
 	size, err := FileMove(name, f.UUID+".txt")
 	logs.Check(err)
-	print(fmt.Sprintf(" • NFO » %s", humanize.Bytes(uint64(size))))
+	logs.Printf(" • NFO » %s", humanize.Bytes(uint64(size)))
 	return true
 }
 

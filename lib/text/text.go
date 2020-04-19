@@ -44,7 +44,7 @@ func Generate(name, id string) {
 	var n string = name
 	out := func(s string, e error) {
 		if s != "" {
-			print("  ", s)
+			logs.Print("  ", s)
 		} else {
 			logs.Log(e)
 		}

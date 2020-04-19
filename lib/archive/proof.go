@@ -87,7 +87,7 @@ func Extract(archive, filename, uuid string) error {
 		f := directories.Files(uuid)
 		_, err := FileMove(n, f.UUID+".txt")
 		logs.Check(err)
-		print(fmt.Sprint("  »txt"))
+		logs.Print("  »txt")
 	}
 	if x := true; !x {
 		dir(tempDir)
