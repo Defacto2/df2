@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var waitingCmd = &cobra.Command{
-	Use:   "waiting",
+var newCmd = &cobra.Command{
+	Use:   "new",
 	Short: "Handler for files flagged as waiting to go live",
 	Long: `Runs a sequence of commands to handle files waiting to go live.
 
@@ -62,5 +62,5 @@ var waitingCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(waitingCmd)
+	rootCmd.AddCommand(newCmd)
 }
