@@ -14,6 +14,8 @@ df2 is a command-line tool for managing and optimising the files and database of
 
 **html** generates HTML pages for groups, peoples and the site map.
 
+**new** handles new demozoo and proof submissions and repairs any malformed data.
+
 **proof** automates the parsing of files tagged as _releaseproof_.
 
 ---
@@ -34,9 +36,9 @@ Available Commands:
   fix         Fixes database entries and records
   help        Help about any command
   lookup      Lookup the file URL of a database ID or UUID
+  new         Handler for files flagged as waiting to go live
   output      JSON, HTML, SQL and sitemap generator
   proof       Handler for files tagged as #releaseproof
-  waiting     Handler for files flagged as waiting to go live
 
 Flags:
       --config string   config file (default is config.yaml)
@@ -48,6 +50,8 @@ Use "df2 [command] --help" for more information about a command.
 ```
 
 ### Compile and install
+
+This program does not compile or install on Windows due to [GCC](https://gcc.gnu.org/) and [x/sys/unix](https://pkg.go.dev/golang.org/x/sys/unix?tab=doc) requirements.
 
 ```bash
 git clone git@github.com:Defacto2/df2.git
