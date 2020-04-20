@@ -14,8 +14,9 @@ import (
 )
 
 var newCmd = &cobra.Command{
-	Use:   "new",
-	Short: "Handler for files flagged as waiting to go live",
+	Use:     "new",
+	Short:   "Handler for files flagged as waiting to go live",
+	Aliases: []string{"n"},
 	Long: `Runs a sequence of commands to handle files waiting to go live.
 
   df2 demozoo --new

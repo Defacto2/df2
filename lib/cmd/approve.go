@@ -8,8 +8,9 @@ import (
 var approveVerb bool
 
 var approveCmd = &cobra.Command{
-	Use:   "approve",
-	Short: "Approve the file records that are ready to go live",
+	Use:     "approve",
+	Short:   "Approve the file records that are ready to go live",
+	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
 		database.Approve(approveVerb)
 	},

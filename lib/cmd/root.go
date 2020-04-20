@@ -27,14 +27,14 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.9.17" // df2 version
+const version string = "0.9.18" // df2 version
 
 var (
-	copyright       = copyYears()
-	configName      = ""
-	fmtflags        = []string{"datalist", "html", "text", "dl", "d", "h", "t"}
-	panic      bool = false // debug log
-	quiet      bool = false // quiet disables most printing or output to terminal
+	copyright  string = cYear()
+	configName        = ""
+	fmtflags          = [7]string{"datalist", "html", "text", "dl", "d", "h", "t"}
+	panic      bool   = false // debug log
+	quiet      bool   = false // quiet disables most printing or output to terminal
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -74,8 +74,8 @@ func init() {
 	logs.Check(err)
 }
 
-// copyYears returns a © Copyright year, or a range of years.
-func copyYears() string {
+// cYear returns a © Copyright year, or a range of years.
+func cYear() string {
 	var y, c int = time.Now().Year(), 2020
 	if y == c {
 		return strconv.Itoa(c) // © 2020

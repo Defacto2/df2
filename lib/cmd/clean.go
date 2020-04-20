@@ -19,9 +19,9 @@ var (
 
 // cleanCmd represents the clean command
 var cleanCmd = &cobra.Command{
-	Use:   "clean",
-	Short: "Discover or clean orphan files",
-	Long:  ``,
+	Use:     "clean",
+	Short:   "Discover or clean orphan files",
+	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		directories.Init(makeDirs)
 		assets.Clean(target, delete, humanize)

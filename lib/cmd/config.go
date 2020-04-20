@@ -16,8 +16,9 @@ var cfgNameFlag string
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "Configure the settings for this tool",
+	Use:     "config",
+	Short:   "Configure the settings for this tool",
+	Aliases: []string{"cfg"},
 	Run: func(cmd *cobra.Command, args []string) {
 		err := cmd.Usage()
 		logs.Check(err)
@@ -28,41 +29,46 @@ var configCmd = &cobra.Command{
 }
 
 var configCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create a new config file",
+	Use:     "create",
+	Short:   "Create a new config file",
+	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		config.Create(cfgOWFlag)
 	},
 }
 
 var configDeleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Remove the config file",
+	Use:     "delete",
+	Short:   "Remove the config file",
+	Aliases: []string{"d"},
 	Run: func(cmd *cobra.Command, args []string) {
 		config.Delete()
 	},
 }
 
 var configEditCmd = &cobra.Command{
-	Use:   "edit",
-	Short: "Edit the config file",
+	Use:     "edit",
+	Short:   "Edit the config file",
+	Aliases: []string{"e"},
 	Run: func(cmd *cobra.Command, args []string) {
 		config.Edit()
 	},
 }
 
 var configInfoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "View settings configured by the config",
+	Use:     "info",
+	Short:   "View settings configured by the config",
+	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
 		config.Info()
 	},
 }
 
 var configSetCmd = &cobra.Command{
-	Use:   "set",
-	Short: "Change a configuration",
-	//todo add long with information on how to view settings
+	Use:     "set",
+	Short:   "Change a configuration",
+	Aliases: []string{"s"},
+	//TODO: add long with information on how to view settings
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {

@@ -14,9 +14,10 @@ import (
 )
 
 var logCmd = &cobra.Command{
-	Use:    "log",
-	Short:  "Display the df2 error log",
-	Hidden: true,
+	Use:     "log",
+	Short:   "Display the df2 error log",
+	Aliases: []string{},
+	Hidden:  true,
 	Run: func(cmd *cobra.Command, args []string) {
 		logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath())
 		f, err := os.Open(logs.Filepath())

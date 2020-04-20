@@ -15,8 +15,9 @@ import (
 
 // outputCmd represents the output command
 var outputCmd = &cobra.Command{
-	Use:   "output",
-	Short: "JSON, HTML, SQL and sitemap generator",
+	Use:     "output",
+	Short:   "JSON, HTML, SQL and sitemap generator",
+	Aliases: []string{"o"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			_ = cmd.Usage()

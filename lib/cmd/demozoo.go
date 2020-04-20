@@ -24,8 +24,9 @@ var dzoo dzFlags
 
 // demozooCmd represents the demozoo command
 var demozooCmd = &cobra.Command{
-	Use:   "demozoo",
-	Short: "Interact with Demozoo.org upload submissions",
+	Use:     "demozoo",
+	Short:   "Interact with Demozoo.org upload submissions",
+	Aliases: []string{"d", "dz"},
 	Run: func(cmd *cobra.Command, args []string) {
 		var empty []string
 		var err error
