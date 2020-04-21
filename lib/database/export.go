@@ -19,9 +19,9 @@ import (
 
 const timestamp string = "2006-01-02 15:04:05"
 
-// TODO implement export type and VER padding
+// TODO implement export type
 const templ = `
--- df2 v{{.VER}}     Defacto2 MySQL {{.TABLE}} dump
+-- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump
 -- source:        https://defacto2.net/sql
 -- documentation: https://github.com/Defacto2/database
 
@@ -243,7 +243,7 @@ func (f Flags) query() (*bytes.Buffer, error) {
 	}
 	var values colValues = vals
 	dat := Data{
-		f.Version,
+		f.ver(),
 		f.Table,
 		fmt.Sprint(names),
 		fmt.Sprint(values),
@@ -256,6 +256,14 @@ func (f Flags) query() (*bytes.Buffer, error) {
 	err = t.Execute(&b, dat)
 	logs.Check(err)
 	return &b, err
+}
+
+func (f Flags) ver() string {
+	pad := 9 - len(f.Version) // 9 is the maximum number of characters
+	if pad < 0 {
+		return f.Version
+	}
+	return fmt.Sprintf("%s%s", f.Version, strings.Repeat(" ", pad))
 }
 
 func now() string {
