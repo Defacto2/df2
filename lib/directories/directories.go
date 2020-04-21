@@ -24,6 +24,7 @@ type Dir struct {
 	File   string // path to webapp generated files such as JSON/XML
 	Emu    string // path to the DOSee emulation files
 	Backup string // path to the backup archives or previously removed files
+	SQL    string // path to the SQL data dumps
 	Img000 string // path to screencaptures and previews
 	Img150 string // path to 150x150 squared thumbnails
 	Img400 string // path to 400x400 squared thumbnails
@@ -40,6 +41,7 @@ func Init(create bool) Dir {
 	D.UUID = viper.GetString("directory.uuid")
 	D.Emu = viper.GetString("directory.emu")
 	D.Backup = viper.GetString("directory.backup")
+	D.SQL = viper.GetString("directory.sql")
 	D.Img000 = viper.GetString("directory.000")
 	D.Img400 = viper.GetString("directory.400")
 	D.Img150 = viper.GetString("directory.150")

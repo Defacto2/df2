@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
@@ -11,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/lib/recent"
 	"github.com/Defacto2/df2/lib/sitemap"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // outputCmd represents the output command
@@ -31,7 +33,13 @@ var outputCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(outputCmd)
 	outputCmd.AddCommand(dataCmd)
-	dataCmd.Flags().UintVarP(&df.limit, "limit", "l", 0, "limit the number of rows returned")
+	// TODO cronjob flag
+	dataCmd.Flags().BoolVarP(&df.Compress, "compress", "c", false, fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
+	dataCmd.Flags().UintVarP(&df.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
+	dataCmd.Flags().BoolVarP(&df.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
+	dataCmd.Flags().StringVarP(&df.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: %s", strings.Join(database.Tables, ",")))
+	// TODO implement in template
+	dataCmd.Flags().StringVarP(&df.Type, "type", "y", "update", "database export type\noptions: create or update")
 	outputCmd.AddCommand(groupCmd)
 	groupCmd.Flags().StringVarP(&gf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+groups.Filters)
 	groupCmd.Flags().BoolVarP(&gf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
@@ -48,18 +56,15 @@ func init() {
 	outputCmd.AddCommand(sitemapCmd)
 }
 
-type dataFlags struct {
-	limit uint
-}
-
-var df dataFlags
+var df database.Flags
 
 var dataCmd = &cobra.Command{
 	Use:     "data",
 	Aliases: []string{"d", "sql"},
 	Short:   "An SQL dump generator to export files",
 	Run: func(cmd *cobra.Command, args []string) {
-		database.ExportFiles(df.limit, version)
+		df.Version = version
+		df.Export()
 	},
 }
 

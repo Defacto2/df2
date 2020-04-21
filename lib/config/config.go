@@ -22,6 +22,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Directories are initialized and configured by InitDefaults() in lib/cmd.go
+
 // ConfigName is the default configuration filename.
 const ConfigName string = "config.yaml"
 const cmdPath = "df2 config"
@@ -181,7 +183,7 @@ func Info() {
 			} else {
 				logs.Printf(" %s %s", color.Success.Sprint("up"), logs.Y())
 			}
-		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "root", "views", "uuid":
+		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
 			if _, err := os.Stat(val); os.IsNotExist(err) {
 				logs.Printf(" %s %s", val, logs.X())
 			} else {

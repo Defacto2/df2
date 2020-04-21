@@ -88,6 +88,7 @@ func InitDefaults() {
 
 	viper.SetDefault("directory.root", "/opt/assets")
 	viper.SetDefault("directory.backup", "/opt/assets/backups")
+	viper.SetDefault("directory.sql", "/opt/assets/sql")
 	viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
 	viper.SetDefault("directory.uuid", "/opt/assets/downloads")
 	viper.SetDefault("directory.000", "/opt/assets/000")

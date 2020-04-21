@@ -1,18 +1,21 @@
 package database
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
+	"io"
 	"os"
+	"path"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/dustin/go-humanize"
+	"github.com/mholt/archiver/v3"
+	"github.com/spf13/viper"
 )
-
-// TODO: add --compress to zip or gzip, or --file=zip --file=gzip --file=sql
-// research the best compression format and make that the default/recommended
 
 const timestamp string = "2006-01-02 15:04:05"
 
@@ -40,6 +43,19 @@ type Data struct {
 	SQL    string
 	DUPE   string
 }
+
+// Flags are command line arguments
+type Flags struct {
+	Compress bool   // Compress and save the output
+	Limit    uint   // Limit the number of records
+	Save     bool   // Save the output uncompressed
+	Table    string // Table of the database to use
+	Type     string // Type of export (create|update)
+	Version  string // df2 app version pass-through
+}
+
+// Tables available in the database
+var Tables = []string{"files", "groups", "netresources", "users"}
 
 type colNames []string
 
@@ -146,21 +162,86 @@ func rows(table string, limit int) ([]string, error) {
 	return sql, nil
 }
 
-// ExportFiles outputs a MySQL 5.7 compatible SQL import files table statement.
-func ExportFiles(limit uint, ver string) {
-	col, err := columns("files")
+// Export saves or prints a MySQL 5.7 compatible SQL import table statement.
+func (f Flags) Export() {
+	var (
+		buf  *bytes.Buffer
+		err  error
+		file *os.File
+		name string
+	)
+	buf, err = f.query()
 	logs.Check(err)
+	name = path.Join(viper.GetString("directory.sql"), f.fileName())
+	switch {
+	case f.Compress:
+		name += ".bz2"
+		file, err = os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
+		logs.Check(err)
+		defer file.Close()
+		var bz2 = archiver.NewBz2()
+		err = bz2.Compress(buf, file)
+		logs.Check(err)
+		stat, err := file.Stat()
+		logs.Check(err)
+		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(stat.Size())), name)
+	case f.Save:
+		file, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
+		logs.Check(err)
+		defer file.Close()
+		wrote, err := io.Copy(file, buf)
+		logs.Check(err)
+		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(wrote)), name)
+	default:
+		io.WriteString(os.Stdout, buf.String())
+	}
+}
+
+func (f Flags) fileName() string {
+	l, y, t := "", "export", "table"
+	if f.Type != "" {
+		y = f.Type
+	}
+	if f.Limit > 0 {
+		l = fmt.Sprintf("%d_", f.Limit)
+	}
+	if f.Table != "" {
+		t = f.Table
+	}
+	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
+}
+
+func checkTable(table string) error {
+	for _, t := range Tables {
+		if strings.ToLower(table) == t {
+			return nil
+		}
+	}
+	return fmt.Errorf("export query: unsupported database table '%s', please choose either %v", table, strings.Join(Tables, ", "))
+}
+
+// query generates the SQL import table statement.
+func (f Flags) query() (*bytes.Buffer, error) {
+	if err := checkTable(f.Table); err != nil {
+		return nil, err
+	}
+	col, err := columns(f.Table)
+	if err != nil {
+		return nil, err
+	}
 	var names colNames = col
 	var dupes dupeKeys = col
-	l := int(limit)
-	if limit == 0 {
+	l := int(f.Limit)
+	if f.Limit == 0 {
 		l = -1 // list all
 	}
-	vals, err := rows("files", l)
-	logs.Check(err)
+	vals, err := rows(f.Table, l)
+	if err != nil {
+		return nil, err
+	}
 	var values colValues = vals
 	dat := Data{
-		ver,
+		f.Version,
 		fmt.Sprint(names),
 		fmt.Sprint(values),
 		fmt.Sprint(dupes)}
@@ -168,8 +249,10 @@ func ExportFiles(limit uint, ver string) {
 	fm := make(template.FuncMap)
 	fm["now"] = now // now()
 	t := template.Must(template.New("statement").Funcs(fm).Parse(fmt.Sprintf(`%s`, templ)))
-	err = t.Execute(os.Stdout, dat)
+	var b bytes.Buffer
+	err = t.Execute(&b, dat)
 	logs.Check(err)
+	return &b, err
 }
 
 func now() string {
