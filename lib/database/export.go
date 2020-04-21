@@ -31,8 +31,7 @@ SET foreign_key_checks = 0;
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
-{{.SQL}}
-ON DUPLICATE KEY UPDATE {{.DUPE}};
+{{.SQL}}{{.UPDATE}};
 
 -- {{now}}
 `
@@ -43,7 +42,7 @@ type Data struct {
 	TABLE  string
 	INSERT string
 	SQL    string
-	DUPE   string
+	UPDATE string
 }
 
 // Flags are command line arguments
@@ -78,7 +77,7 @@ func (dk dupeKeys) String() string {
 	for i, n := range dk {
 		dk[i] = fmt.Sprintf("`%s` = VALUES(`%s`)", n, n)
 	}
-	return strings.Join(dk, ",")
+	return fmt.Sprintf("\nON DUPLICATE KEY UPDATE %s", strings.Join(dk, ","))
 }
 
 type row []string
@@ -232,7 +231,7 @@ func (f Flags) query() (*bytes.Buffer, error) {
 		return nil, err
 	}
 	var names colNames = col
-	var dupes dupeKeys = col
+	//var dupes dupeKeys = col
 	l := int(f.Limit)
 	if f.Limit == 0 {
 		l = -1 // list all
@@ -247,7 +246,11 @@ func (f Flags) query() (*bytes.Buffer, error) {
 		f.Table,
 		fmt.Sprint(names),
 		fmt.Sprint(values),
-		fmt.Sprint(dupes)}
+		""}
+	if f.Type == "update" {
+		var dupes dupeKeys = col
+		dat.UPDATE = fmt.Sprint(dupes)
+	}
 	// template functions
 	fm := make(template.FuncMap)
 	fm["now"] = now // now()
