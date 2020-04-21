@@ -19,8 +19,9 @@ import (
 
 const timestamp string = "2006-01-02 15:04:05"
 
+// TODO implement export type and VER padding
 const templ = `
--- df2 v{{.VER}}     Defacto2 MySQL file dump
+-- df2 v{{.VER}}     Defacto2 MySQL {{.TABLE}} dump
 -- source:        https://defacto2.net/sql
 -- documentation: https://github.com/Defacto2/database
 
@@ -29,7 +30,7 @@ SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
-INSERT INTO files ({{.INSERT}}) VALUES
+INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
 {{.SQL}}
 ON DUPLICATE KEY UPDATE {{.DUPE}};
 
@@ -39,6 +40,7 @@ ON DUPLICATE KEY UPDATE {{.DUPE}};
 // Data container
 type Data struct {
 	VER    string
+	TABLE  string
 	INSERT string
 	SQL    string
 	DUPE   string
@@ -242,6 +244,7 @@ func (f Flags) query() (*bytes.Buffer, error) {
 	var values colValues = vals
 	dat := Data{
 		f.Version,
+		f.Table,
 		fmt.Sprint(names),
 		fmt.Sprint(values),
 		fmt.Sprint(dupes)}
