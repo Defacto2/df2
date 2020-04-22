@@ -16,6 +16,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`," +
+	"`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`" +
+	",`group_brand_for`,`group_brand_by`,`section`\n" +
+	"FROM `files`\n" +
+	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
+
 var verb = false
 
 // Approve automatically checks and clears file records for live.
@@ -23,13 +29,6 @@ func Approve(verbose bool) {
 	verb = verbose
 	err := queries()
 	logs.Check(err)
-}
-
-func sqlSelect() string {
-	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,"
-	s += "`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`"
-	w := " WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
-	return s + " FROM `files`" + w
 }
 
 type record struct {
@@ -60,7 +59,7 @@ func (r record) String() string {
 func queries() error {
 	db := Connect()
 	defer db.Close()
-	rows, err := db.Query(sqlSelect())
+	rows, err := db.Query(newFilesSQL)
 	if err != nil {
 		return err
 	}
