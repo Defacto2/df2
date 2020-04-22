@@ -19,32 +19,6 @@ import (
 
 const timestamp string = "2006-01-02 15:04:05"
 
-// TODO implement export type
-const templ = `
--- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump
--- source:        https://defacto2.net/sql
--- documentation: https://github.com/Defacto2/database
-
-SET NAMES utf8;
-SET time_zone = '+00:00';
-SET foreign_key_checks = 0;
-SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
-
-INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
-{{.SQL}}{{.UPDATE}};
-
--- {{now}}
-`
-
-// Data container
-type Data struct {
-	VER    string
-	TABLE  string
-	INSERT string
-	SQL    string
-	UPDATE string
-}
-
 // Flags are command line arguments
 type Flags struct {
 	Compress bool   // Compress and save the output
@@ -243,6 +217,7 @@ func (f Flags) query() (*bytes.Buffer, error) {
 	var values colValues = vals
 	dat := Data{
 		f.ver(),
+		f.create(),
 		f.Table,
 		fmt.Sprint(names),
 		fmt.Sprint(values),
@@ -259,6 +234,24 @@ func (f Flags) query() (*bytes.Buffer, error) {
 	err = t.Execute(&b, dat)
 	logs.Check(err)
 	return &b, err
+}
+
+func (f Flags) create() string {
+	if f.Type != "create" {
+		return ""
+	}
+	var templ string
+	switch f.Table {
+	case "files":
+		templ += newFilesTempl
+	case "groups":
+		templ += newGroupsTempl
+	case "netresources":
+		templ += newNetresourcesTempl
+	case "users":
+		templ += newUsersTempl
+	}
+	return templ
 }
 
 func (f Flags) ver() string {
