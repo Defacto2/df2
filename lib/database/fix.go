@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
@@ -60,6 +61,14 @@ func distinct(column string) ([]string, error) {
 	return r, nil
 }
 
+func print(res int64, str *string) {
+	if res == 0 {
+		logs.Printcr(*str)
+	} else {
+		logs.Println(*str)
+	}
+}
+
 func updatePlatforms(platforms *[]string) {
 	var plat Update
 	plat.Query = "UPDATE files SET platform=? WHERE `platform`=?"
@@ -69,7 +78,8 @@ func updatePlatforms(platforms *[]string) {
 		if err != nil {
 			logs.Log(err)
 		}
-		logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(s))
+		str := fmt.Sprintf("%s %s \"%s\"", color.Question.Sprint(res), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(s))
+		print(res, &str)
 	}
 }
 
@@ -83,7 +93,8 @@ func updateSections(sections *[]string) {
 		if err != nil {
 			logs.Log(err)
 		}
-		logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
+		str := fmt.Sprintf("%s %s \"%s\"", color.Question.Sprint(res), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
+		print(res, &str)
 	}
 	// set all audio platform files to use intro section
 	// releaseadvert
@@ -93,5 +104,6 @@ func updateSections(sections *[]string) {
 	if err != nil {
 		logs.Log(err)
 	}
-	logs.Printf("%s %s \"%s\"\n", color.Question.Sprint(res), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
+	str := fmt.Sprintf("%s %s \"%s\"", color.Question.Sprint(res), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
+	print(res, &str)
 }

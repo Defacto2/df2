@@ -129,6 +129,16 @@ func Print(a ...interface{}) {
 	}
 }
 
+// Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
+func Printcr(a ...interface{}) {
+	switch Quiet {
+	case false:
+		fmt.Printf("\r%s\r", strings.Repeat(" ", int(getWinCol())))
+		_, err := fmt.Print(a...)
+		Log(err)
+	}
+}
+
 // Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
 func Printf(format string, a ...interface{}) {
 	switch Quiet {

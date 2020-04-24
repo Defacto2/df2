@@ -1,11 +1,14 @@
 package groups
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/shomali11/parallelizer"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -14,22 +17,33 @@ var simulate bool = true
 // Fix any malformed group names found in the database.
 func Fix(sim bool) {
 	simulate = sim
-	groups, _ := list("")
+	names, nc := list("")
 	c := 0
-	for _, group := range groups {
-		if r := toClean(group); r {
-			c++
-		}
+	start := time.Now()
+	group := parallelizer.NewGroup(parallelizer.WithJobQueueSize(nc))
+	defer group.Close()
+	for _, name := range names {
+		group.Add(func() {
+			if r := toClean(name); r {
+				c++
+			}
+		})
 	}
+	err := group.Wait()
+	logs.Check(err)
 	switch {
 	case c > 0 && simulate:
-		logs.Println(c, "fixes required")
+		logs.Printcr(c, "fixes required")
 		logs.Simulate()
+	case c == 1:
+		logs.Printcr("1 fix applied")
 	case c > 0:
-		logs.Println(c, "fixes applied")
+		logs.Printcr(c, "fixes applied")
 	default:
-		logs.Println("no fixes applied")
+		logs.Printcr("no fixes needed")
 	}
+	elapsed := time.Since(start)
+	logs.Print(fmt.Sprintf(", time taken %s\n", elapsed))
 }
 
 // ToClean fixes any malformed strings.
