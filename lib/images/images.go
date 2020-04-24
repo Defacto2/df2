@@ -49,7 +49,7 @@ func Generate(name, id string, remove bool) {
 	var n string = name
 	out := func(s string, e error) {
 		if s != "" {
-			logs.Printf("  ", s)
+			logs.Printf("  %s", s)
 		} else {
 			logs.Log(e)
 		}
