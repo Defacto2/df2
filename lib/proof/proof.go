@@ -96,15 +96,11 @@ func (request Request) Queries() error {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
-		if proofID != "" && request.Overwrite {
-			// skip IsNew check
-		} else if new := database.IsNew(values); !new && !request.AllProofs {
-			proofChk(fmt.Sprintf("skip file record id '%s' as it is not new", proofID))
+		if request.skip(values) {
 			continue
 		}
 		rw.count++
-		r := Record{ID: string(values[0]), UUID: string(values[1]), Name: string(values[4])}
-		r.File = filepath.Join(dir.UUID, r.UUID)
+		var r = new(values, dir.UUID)
 		// ping file
 		if rw.skip(r, request.HideMissing) {
 			continue
@@ -113,9 +109,10 @@ func (request Request) Queries() error {
 		var value string
 		for i, raw := range values {
 			value = val(raw)
+			//print("->", value)
 			switch columns[i] {
 			case "id":
-				logs.Printfcr("%s %0*d. %v ", color.Question.Sprint("→"), len(strconv.Itoa(rw.total)), rw.count, color.Primary.Sprint(r.ID))
+				r.printID(rw.total, rw.count)
 			case "createdat":
 				database.DateTime(raw)
 			case "filename":
@@ -131,6 +128,30 @@ func (request Request) Queries() error {
 	return nil
 }
 
+func new(values []sql.RawBytes, path string) Record {
+	var r Record
+	r.ID = string(values[0])
+	r.UUID = string(values[1])
+	r.Name = string(values[4])
+	r.File = filepath.Join(path, r.UUID)
+	return r
+}
+
+func (r Record) printID(total, count int) {
+	logs.Printfcr("%s %0*d. %v ", color.Question.Sprint("→"), len(strconv.Itoa(total)), count, color.Primary.Sprint(r.ID))
+}
+
+// skip the value?
+func (request Request) skip(values []sql.RawBytes) bool {
+	if proofID != "" && request.Overwrite {
+		return false
+	} else if new := database.IsNew(values); !new && !request.AllProofs {
+		proofChk(fmt.Sprintf("skip file record id '%s' as it is not new", proofID))
+		return true
+	}
+	return false
+}
+
 // approve sets the record to be publically viewable.
 func (r Record) approve() error {
 	db := database.Connect()
@@ -143,7 +164,7 @@ func (r Record) approve() error {
 	return nil
 }
 
-// fileZipContent reads an archive and saves its content to the database
+// fileZipContent reads an archive and saves its content to the database.
 func (r Record) fileZipContent() bool {
 	a, err := archive.Read(r.File, r.Name)
 	if err != nil {
