@@ -23,6 +23,7 @@ const timestamp string = "2006-01-02 15:04:05"
 // Flags are command line arguments
 type Flags struct {
 	Compress bool   // Compress and save the output
+	CronJob  bool   //
 	Limit    uint   // Limit the number of records
 	Parallel bool   // Run --table=all queries in parallel
 	Save     bool   // Save the output uncompressed
@@ -192,6 +193,37 @@ func (f Flags) fileName() string {
 		t = f.Table
 	}
 	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
+}
+
+// ExportCronJob is intended for an operating system time-based job scheduler.
+// It creates both create and update types exports for the files table.
+func (f Flags) ExportCronJob() {
+	f.Compress = true
+	f.Limit = 0
+	f.Table = "files"
+	start := time.Now()
+	switch f.Parallel {
+	case true:
+		group := parallelizer.NewGroup()
+		defer group.Close()
+		group.Add(func() {
+			f.Type = "create"
+			f.ExportTable()
+		})
+		group.Add(func() {
+			f.Type = "update"
+			f.ExportTable()
+		})
+		err := group.Wait()
+		logs.Check(err)
+	default:
+		f.Type = "create"
+		f.ExportTable()
+		f.Type = "update"
+		f.ExportTable()
+	}
+	elapsed := time.Since(start)
+	println(fmt.Sprintf("cronjob export took %s", elapsed))
 }
 
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.

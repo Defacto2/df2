@@ -33,7 +33,7 @@ var outputCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(outputCmd)
 	outputCmd.AddCommand(dataCmd)
-	// TODO cronjob flag
+	dataCmd.Flags().BoolVar(&df.CronJob, "cronjob", false, "data backup for the cron time-based job scheduler\nall other flags are ignored")
 	dataCmd.Flags().BoolVarP(&df.Compress, "compress", "c", false, fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
 	dataCmd.Flags().UintVarP(&df.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
 	dataCmd.Flags().BoolVarP(&df.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
@@ -65,8 +65,10 @@ var dataCmd = &cobra.Command{
 	Short:   "An SQL dump generator to export files",
 	Run: func(cmd *cobra.Command, args []string) {
 		df.Version = version
-		switch df.Table {
-		case "all":
+		switch {
+		case df.CronJob:
+			df.ExportCronJob()
+		case df.Table == "all":
 			df.ExportDB()
 		default:
 			df.ExportTable()
