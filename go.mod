@@ -23,6 +23,7 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect
 	github.com/pierrec/lz4 v2.5.1+incompatible // indirect
+	github.com/shomali11/parallelizer v0.0.0-20190608135158-50acdcb89dff
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0

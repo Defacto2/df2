@@ -1,8 +1,16 @@
 package database
 
-// TODO impletemet --table=all flag that includes all templates inc newDBTempl
+// TableData is a container for the tableTmpl template
+type TableData struct {
+	VER    string
+	CREATE string
+	TABLE  string
+	INSERT string
+	SQL    string
+	UPDATE string
+}
 
-const templ = `
+const tableTmpl = `
 -- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump
 -- source:        https://defacto2.net/sql
 -- documentation: https://github.com/Defacto2/database
@@ -18,21 +26,39 @@ INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
 -- {{now}}
 `
 
-// Data container
-type Data struct {
+// Tables is a container for the tablesTmpl template
+type Tables struct {
 	VER    string
-	CREATE string
-	TABLE  string
-	INSERT string
-	SQL    string
-	UPDATE string
+	DB     string
+	CREATE []TablesData
 }
 
-// there is no escape feature for `raw literals` so these SQL CREATE statements append standard strings
+// TablesData is a data container for the tablesTmpl template
+type TablesData struct {
+	Columns string
+	Rows    string
+}
+
+const tablesTmpl = `
+-- df2 v{{.VER}} Defacto2 MySQL complete dump
+-- source:        https://defacto2.net/sql
+-- documentation: https://github.com/Defacto2/database
+
+SET NAMES utf8;
+SET time_zone = '+00:00';
+SET foreign_key_checks = 0;
+SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+{{.DB}}{{range .CREATE}}{{.Columns}}
+{{.Rows}}
+{{end}}
+-- {{now}}
+`
+
+// as there is no escape feature for `raw literals`, these SQL CREATE statements append standard strings
 
 const newDBTempl = "\nDROP DATABASE IF EXISTS `defacto2-inno`;\n" +
 	"CREATE DATABASE `defacto2-inno` /*!40100 DEFAULT CHARACTER SET utf8 */;\n" +
-	"USE `defacto2-inno`;\n\n"
+	"USE `defacto2-inno`;\n"
 
 const newFilesTempl = "\nDROP TABLE IF EXISTS `files`;\n" +
 	"CREATE TABLE `files` (\n" +

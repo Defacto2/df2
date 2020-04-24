@@ -36,9 +36,11 @@ func init() {
 	// TODO cronjob flag
 	dataCmd.Flags().BoolVarP(&df.Compress, "compress", "c", false, fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
 	dataCmd.Flags().UintVarP(&df.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
+	dataCmd.Flags().BoolVarP(&df.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
 	dataCmd.Flags().BoolVarP(&df.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
-	dataCmd.Flags().StringVarP(&df.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: %s", strings.Join(database.Tables, ",")))
+	dataCmd.Flags().StringVarP(&df.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", strings.Join(database.TblNames, ",")))
 	dataCmd.Flags().StringVarP(&df.Type, "type", "y", "update", "database export type\noptions: create or update")
+	dataCmd.Flags().MarkHidden("parallel")
 	outputCmd.AddCommand(groupCmd)
 	groupCmd.Flags().StringVarP(&gf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+groups.Filters)
 	groupCmd.Flags().BoolVarP(&gf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
@@ -63,7 +65,12 @@ var dataCmd = &cobra.Command{
 	Short:   "An SQL dump generator to export files",
 	Run: func(cmd *cobra.Command, args []string) {
 		df.Version = version
-		df.Export()
+		switch df.Table {
+		case "all":
+			df.ExportDB()
+		default:
+			df.ExportTable()
+		}
 	},
 }
 

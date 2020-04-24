@@ -14,6 +14,7 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
+	"github.com/shomali11/parallelizer"
 	"github.com/spf13/viper"
 )
 
@@ -23,14 +24,17 @@ const timestamp string = "2006-01-02 15:04:05"
 type Flags struct {
 	Compress bool   // Compress and save the output
 	Limit    uint   // Limit the number of records
+	Parallel bool   // Run --table=all queries in parallel
 	Save     bool   // Save the output uncompressed
 	Table    string // Table of the database to use
 	Type     string // Type of export (create|update)
 	Version  string // df2 app version pass-through
 }
 
-// Tables available in the database
-var Tables = []string{"files", "groups", "netresources", "users"}
+// TblNames are the available table in the database
+var TblNames = []string{"files", "groups", "netresources", "users"}
+
+// Format the values of these slices when used as a string
 
 type colNames []string
 
@@ -47,7 +51,7 @@ func (v colValues) String() string {
 type dupeKeys []string
 
 func (dk dupeKeys) String() string {
-	//`id` = VALUES(`id`)
+	//example output: `id` = VALUES(`id`)
 	for i, n := range dk {
 		dk[i] = fmt.Sprintf("`%s` = VALUES(`%s`)", n, n)
 	}
@@ -80,6 +84,7 @@ func columns(table string) ([]string, error) {
 	return columns, nil
 }
 
+// rows returns the values of table.
 func rows(table string, limit int) ([]string, error) {
 	stmt := fmt.Sprintf("SELECT * FROM `%s` LIMIT %d", table, limit)
 	if limit < 0 {
@@ -104,32 +109,15 @@ func rows(table string, limit int) ([]string, error) {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	result := make([]string, len(columns))
 	var sql []string
 	for rows.Next() {
+		result := make([]string, len(columns))
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
 		for i := range values {
-			t := strings.ToLower(types[i].DatabaseTypeName())
-			v := values[i]
-			switch {
-			case string(v) == "":
-				result[i] = "NULL"
-			case strings.Contains(t, "char"):
-				result[i] = fmt.Sprintf(`'%s'`, strings.ReplaceAll(fmt.Sprintf(`%s`, v), `'`, `\'`))
-			case strings.Contains(t, "int"):
-				result[i] = fmt.Sprintf("%s", v)
-			case t == "text":
-				result[i] = fmt.Sprintf(`'%q'`, strings.ReplaceAll(fmt.Sprintf(`%s`, v), `'`, `\'`))
-			case t == "datetime":
-				t, err := time.Parse(time.RFC3339, string(v))
-				if err != nil {
-					return nil, err
-				}
-				result[i] = fmt.Sprintf("'%s'", t.Format(timestamp))
-			default:
-				return nil, fmt.Errorf("db export rows: unsupported mysql column type %q with value %s", t, string(v))
-			}
+			result[i], err = format(values[i],
+				strings.ToLower(types[i].DatabaseTypeName()))
+			logs.Check(err)
 		}
 		var r row = result
 		sql = append(sql, fmt.Sprint(r))
@@ -137,16 +125,35 @@ func rows(table string, limit int) ([]string, error) {
 	return sql, nil
 }
 
-// Export saves or prints a MySQL 5.7 compatible SQL import table statement.
-func (f Flags) Export() {
+// format the value based on the database type name column type.
+func format(value sql.RawBytes, dtn string) (string, error) {
+	switch {
+	case string(value) == "":
+		return "NULL", nil
+	case strings.Contains(dtn, "char"):
+		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(fmt.Sprintf(`%s`, value), `'`, `\'`)), nil
+	case strings.Contains(dtn, "int"):
+		return fmt.Sprintf("%s", value), nil
+	case dtn == "text":
+		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(fmt.Sprintf(`%s`, value), `'`, `\'`)), nil
+	case dtn == "datetime":
+		t, err := time.Parse(time.RFC3339, string(value))
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("'%s'", t.Format(timestamp)), nil
+	default:
+		return "", fmt.Errorf("db export rows: unsupported mysql column type %q with value %s", dtn, string(value))
+	}
+}
+
+// write the buffer to stdout, an SQL file or a compressed SQL file.
+func (f Flags) write(buf *bytes.Buffer) {
 	var (
-		buf  *bytes.Buffer
 		err  error
 		file *os.File
 		name string
 	)
-	buf, err = f.query()
-	logs.Check(err)
 	name = path.Join(viper.GetString("directory.sql"), f.fileName())
 	switch {
 	case f.Compress:
@@ -172,6 +179,7 @@ func (f Flags) Export() {
 	}
 }
 
+// fileName to use when writing SQL to a file.
 func (f Flags) fileName() string {
 	l, y, t := "", "export", "table"
 	if f.Type != "" {
@@ -186,17 +194,25 @@ func (f Flags) fileName() string {
 	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
 }
 
+// ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
+func (f Flags) ExportTable() {
+	buf, err := f.queryTable()
+	logs.Check(err)
+	f.write(buf)
+}
+
+// checkTable validates table against the TblNames collection.
 func checkTable(table string) error {
-	for _, t := range Tables {
+	for _, t := range TblNames {
 		if strings.ToLower(table) == t {
 			return nil
 		}
 	}
-	return fmt.Errorf("export query: unsupported database table '%s', please choose either %v", table, strings.Join(Tables, ", "))
+	return fmt.Errorf("export query: unsupported database table '%s', please choose either %v", table, strings.Join(TblNames, ", "))
 }
 
 // query generates the SQL import table statement.
-func (f Flags) query() (*bytes.Buffer, error) {
+func (f Flags) queryTable() (*bytes.Buffer, error) {
 	if err := checkTable(f.Table); err != nil {
 		return nil, err
 	}
@@ -205,7 +221,6 @@ func (f Flags) query() (*bytes.Buffer, error) {
 		return nil, err
 	}
 	var names colNames = col
-	//var dupes dupeKeys = col
 	l := int(f.Limit)
 	if f.Limit == 0 {
 		l = -1 // list all
@@ -215,27 +230,25 @@ func (f Flags) query() (*bytes.Buffer, error) {
 		return nil, err
 	}
 	var values colValues = vals
-	dat := Data{
-		f.ver(),
-		f.create(),
-		f.Table,
-		fmt.Sprint(names),
-		fmt.Sprint(values),
-		""}
+	dat := TableData{
+		VER:    f.ver(),
+		CREATE: f.create(),
+		TABLE:  f.Table,
+		INSERT: fmt.Sprint(names),
+		SQL:    fmt.Sprint(values),
+		UPDATE: ""}
 	if f.Type == "update" {
 		var dupes dupeKeys = col
 		dat.UPDATE = fmt.Sprint(dupes)
 	}
-	// template functions
-	fm := make(template.FuncMap)
-	fm["now"] = now // now()
-	t := template.Must(template.New("statement").Funcs(fm).Parse(fmt.Sprintf(`%s`, templ)))
+	t := template.Must(template.New("statement").Funcs(tmplFunc()).Parse(fmt.Sprintf(`%s`, tableTmpl)))
 	var b bytes.Buffer
 	err = t.Execute(&b, dat)
 	logs.Check(err)
 	return &b, err
 }
 
+// create makes the CREATE template variable value.
 func (f Flags) create() string {
 	if f.Type != "create" {
 		return ""
@@ -254,15 +267,123 @@ func (f Flags) create() string {
 	return templ
 }
 
+// ExportDB saves or prints a MySQL 5.7 compatible SQL import database statement.
+func (f Flags) ExportDB() {
+	start := time.Now()
+	buf, err := f.queryTables()
+	logs.Check(err)
+	f.write(buf)
+	elapsed := time.Since(start)
+	println(fmt.Sprintf("sql exports took %s", elapsed))
+}
+
+// queryTables generates the SQL import database and tables statement.
+func (f Flags) queryTables() (*bytes.Buffer, error) {
+	var buf1, buf2, buf3, buf4 *bytes.Buffer
+	var err error
+	switch f.Parallel {
+	case true:
+		group := parallelizer.NewGroup()
+		defer group.Close()
+		group.Add(func() {
+			buf1 = f.reqDB("files")
+		})
+		group.Add(func() {
+			buf2 = f.reqDB("groups")
+		})
+		group.Add(func() {
+			buf3 = f.reqDB("netresources")
+		})
+		group.Add(func() {
+			buf4 = f.reqDB("users")
+		})
+		err = group.Wait()
+	default:
+		buf1 = f.reqDB("files")
+		buf2 = f.reqDB("groups")
+		buf3 = f.reqDB("netresources")
+		buf4 = f.reqDB("users")
+	}
+	var data = Tables{
+		VER: f.ver(),
+		DB:  newDBTempl,
+		CREATE: []TablesData{
+			{newFilesTempl, buf1.String()},
+			{newGroupsTempl, buf2.String()},
+			{newNetresourcesTempl, buf3.String()},
+			{newUsersTempl, buf4.String()},
+		},
+	}
+	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(tablesTmpl)
+	if err != nil {
+		panic(err)
+	}
+	var b bytes.Buffer
+	err = tmpl.Execute(&b, &data)
+	logs.Check(err)
+	return &b, err
+}
+
+// reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
+func (f Flags) reqDB(table string) *bytes.Buffer {
+	c1 := Flags{
+		Table: table,
+		Type:  "create",
+		Limit: f.Limit,
+	}
+	buf, err := c1.queryDB()
+	logs.Check(err)
+	return buf
+}
+
+// queryDB requests columns and values of f.Table to create an INSERT INTO ? VALUES ? SQL statement.
+func (f Flags) queryDB() (*bytes.Buffer, error) {
+	if err := checkTable(f.Table); err != nil {
+		return nil, err
+	}
+	col, err := columns(f.Table)
+	if err != nil {
+		return nil, err
+	}
+	var names colNames = col
+	l := int(f.Limit)
+	if f.Limit == 0 {
+		l = -1 // list all
+	}
+	vals, err := rows(f.Table, l)
+	if err != nil {
+		return nil, err
+	}
+	var values colValues = vals
+	data := TablesData{
+		Columns: fmt.Sprint(names),
+		Rows:    fmt.Sprint(values),
+	}
+	oof := fmt.Sprintf("INSERT INTO %s ({{.Columns}}) VALUES\n{{.Rows}};", f.Table)
+	tmpl, err := template.New("test").Parse(oof)
+	var b bytes.Buffer
+	err = tmpl.Execute(&b, data)
+	return &b, nil
+}
+
+// template functions.
+func tmplFunc() template.FuncMap {
+	fm := make(template.FuncMap)
+	fm["now"] = now // now()
+	return fm
+}
+
+// now returns the current UTC date and time in a MySQL timestamp format.
+func now() string {
+	var l, _ = time.LoadLocation("UTC")
+	return time.Now().In(l).Format(timestamp)
+}
+
+// ver pads the df2 tool version value for use in templates.
 func (f Flags) ver() string {
 	pad := 9 - len(f.Version) // 9 is the maximum number of characters
 	if pad < 0 {
 		return f.Version
 	}
 	return fmt.Sprintf("%s%s", f.Version, strings.Repeat(" ", pad))
-}
-
-func now() string {
-	var l, _ = time.LoadLocation("UTC")
-	return time.Now().In(l).Format(timestamp)
 }
