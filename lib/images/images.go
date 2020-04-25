@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -17,12 +18,15 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
+	gap "github.com/muesli/go-app-paths"
 	"github.com/nickalie/go-webpbin"
 	"github.com/yusukebe/go-pngquant"
 	_ "golang.org/x/image/bmp"  // register BMP decoding
 	_ "golang.org/x/image/tiff" // register TIFF decoding
 	_ "golang.org/x/image/webp" // register WebP decoding
 )
+
+var scope = gap.NewScope(gap.User, "df2")
 
 // Duplicate an image file and appends prefix to its name.
 func Duplicate(name, prefix string) (string, error) {
@@ -184,15 +188,28 @@ func ToWebp(src, dest string) (string, error) {
 	if m, _ := mimetype.DetectFile(src); m.Extension() == ".webp" {
 		return "", nil
 	}
+	//var skipDownload bool
+	//var dest = "vendor/webp"
 	err := webpbin.NewCWebP().
 		Quality(70).
 		InputFile(src).
 		OutputFile(dest).
+		Dest(vendorPath()).
 		Run()
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprint("»webp"), nil
+}
+
+// vendorPath is the absolute path to store webpbin vendor downloads.
+func vendorPath() string {
+	fp, err := scope.CacheDir()
+	if err != nil {
+		h, _ := os.UserHomeDir()
+		return path.Join(h, ".vendor/df2")
+	}
+	return fp
 }
 
 func filesize(name string) string {
