@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
@@ -32,11 +33,16 @@ type Request struct {
 	HideMissing bool // ignore missing uuid files
 }
 
-type row struct {
-	base    string
-	count   int
-	missing int
-	total   int
+type stat struct {
+	base      string          // formatted path to file downloads with UUID as filenames
+	basePath  string          // path to file downloads with UUID as filenames
+	columns   []string        // column names
+	count     int             // row index
+	missing   int             // missing UUID files count
+	overwrite bool            // --overwrite flag value
+	start     time.Time       //
+	total     int             // total rows
+	values    *[]sql.RawBytes // row values
 }
 
 var proofID string // ID used for proofs, either a UUID or ID string
@@ -57,10 +63,22 @@ func proofChk(text string) {
 	logs.Println(text)
 }
 
+func statInit() stat {
+	dir := directories.Init(false)
+	return stat{
+		base:     logs.Path(dir.UUID),
+		basePath: dir.UUID,
+		count:    0,
+		missing:  0,
+		start:    time.Now(),
+		total:    0}
+}
+
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
 func (request Request) Queries() error {
+	s := statInit()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(sqlSelect())
@@ -77,55 +95,53 @@ func (request Request) Queries() error {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	dir := directories.Init(false)
-	// fetch the rows
-	rw := row{
-		base:    logs.Path(dir.UUID),
-		count:   0,
-		missing: 0,
-		total:   0}
 	for rows.Next() {
-		rw.total++
+		s.total++
 	}
-	if rw.total < 1 {
+	if s.total < 1 {
 		proofChk(fmt.Sprintf("file record id '%s' does not exist", proofID))
-	} else if rw.total > 1 {
-		logs.Println("Total records", rw.total)
+	} else if s.total > 1 {
+		logs.Println("Total records", s.total)
 	}
 	rows, err = db.Query(sqlSelect())
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
-		if request.skip(values) {
+		if request.flagSkip(values) {
 			continue
 		}
-		rw.count++
-		var r = new(values, dir.UUID)
-		// ping file
-		if rw.skip(r, request.HideMissing) {
+		s.count++
+		var r = new(values, s.basePath)
+		if s.fileSkip(r, request.HideMissing) {
 			continue
 		}
-		// iterate through each value
-		var value string
-		for i, raw := range values {
-			value = val(raw)
-			//print("->", value)
-			switch columns[i] {
-			case "id":
-				r.printID(rw.total, rw.count)
-			case "createdat":
-				database.DateTime(raw)
-			case "filename":
-				logs.Printf("%v", value)
-			case "file_zip_content":
-				r.zip(raw, request.Overwrite)
-			default:
-			}
-		}
+		s.columns = columns
+		s.overwrite = request.Overwrite
+		s.values = &values
+		r.iterate(s)
 	}
 	logs.Check(rows.Err())
-	rw.summary()
+	s.summary()
 	return nil
+}
+
+// iterate through each value.
+func (r Record) iterate(s stat) {
+	var value string
+	for i, raw := range *s.values {
+		value = val(raw)
+		switch s.columns[i] {
+		case "id":
+			r.printID(s)
+		case "createdat":
+			database.DateTime(raw)
+		case "filename":
+			logs.Printf("%v", value)
+		case "file_zip_content":
+			r.zip(raw, s)
+		default:
+		}
+	}
 }
 
 func new(values []sql.RawBytes, path string) Record {
@@ -137,12 +153,16 @@ func new(values []sql.RawBytes, path string) Record {
 	return r
 }
 
-func (r Record) printID(total, count int) {
-	logs.Printfcr("%s %0*d. %v ", color.Question.Sprint("→"), len(strconv.Itoa(total)), count, color.Primary.Sprint(r.ID))
+func (r Record) printID(s stat) {
+	logs.Printfcr("%s %0*d. %v ",
+		color.Question.Sprint("→"),
+		len(strconv.Itoa(s.total)),
+		s.count,
+		color.Primary.Sprint(r.ID))
 }
 
-// skip the value?
-func (request Request) skip(values []sql.RawBytes) bool {
+// flagSkip uses argument flags to check if a record is to be ignored.
+func (request Request) flagSkip(values []sql.RawBytes) bool {
 	if proofID != "" && request.Overwrite {
 		return false
 	} else if new := database.IsNew(values); !new && !request.AllProofs {
@@ -175,11 +195,18 @@ func (r Record) fileZipContent() bool {
 	return true
 }
 
-func (rw *row) skip(r Record, hide bool) bool {
+// fileSkip checks if the file of the proof exists.
+func (s *stat) fileSkip(r Record, hide bool) bool {
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
-		rw.missing++
+		s.missing++
 		if !hide {
-			fmt.Printf("%s %0*d. %v is missing %v %s\n", color.Question.Sprint("→"), len(strconv.Itoa(rw.total)), rw.count, color.Primary.Sprint(r.ID), filepath.Join(rw.base, color.Danger.Sprint(r.UUID)), logs.X())
+			fmt.Printf("%s %0*d. %v is missing %v %s\n",
+				color.Question.Sprint("→"),
+				len(strconv.Itoa(s.total)),
+				s.count,
+				color.Primary.Sprint(r.ID),
+				filepath.Join(s.base, color.Danger.Sprint(r.UUID)),
+				logs.X())
 		}
 		return true
 	}
@@ -200,13 +227,17 @@ func sqlSelect() string {
 	return s + " FROM `files`" + w
 }
 
-func (rw row) summary() {
-	if proofID != "" && rw.total < 1 {
+func (s stat) summary() {
+	if proofID != "" && s.total < 1 {
 		return
 	}
-	t := fmt.Sprintf("Total proofs handled: %v", rw.count-rw.missing)
-	logs.Println(strings.Repeat("─", len(t)))
-	logs.Println(t)
+	total := s.count - s.missing
+	if total == 0 {
+		fmt.Print("nothing to do")
+	}
+	elapsed := time.Since(s.start)
+	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %s", total, elapsed)
+	logs.Printf("\n%s\n%s\n", strings.Repeat("─", len(t)), t)
 }
 
 // updateZipContent sets the file_zip_content column to match content and platform to "image".
@@ -227,8 +258,8 @@ func val(col sql.RawBytes) string {
 	return string(col)
 }
 
-func (r Record) zip(col sql.RawBytes, overwrite bool) {
-	if col == nil || overwrite {
+func (r Record) zip(col sql.RawBytes, s stat) {
+	if col == nil || s.overwrite {
 		logs.Print(" • ")
 		if u := r.fileZipContent(); !u {
 			return
