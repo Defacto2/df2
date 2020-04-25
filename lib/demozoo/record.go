@@ -70,9 +70,9 @@ func (r Record) Save() error {
 	return nil
 }
 
-func (rw row) absNotExist(r Record) bool {
+func (st stat) absNotExist(r Record) bool {
 	if s, err := os.Stat(r.AbsFile); os.IsNotExist(err) || s.IsDir() {
-		rw.missing++
+		st.missing++
 		return true
 	}
 	return false

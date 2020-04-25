@@ -67,7 +67,7 @@ func sqlSelect() string {
 	return s + " FROM `files`" + w
 }
 
-type row struct {
+type stat struct {
 	count   int
 	missing int
 }
@@ -110,6 +110,7 @@ func newRecord(c int, values []sql.RawBytes) Record {
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
 func (req Request) Queries() error {
+	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(sqlSelect())
@@ -144,15 +145,15 @@ func (req Request) Queries() error {
 	if err != nil {
 		return err
 	}
-	rw := row{count: 0, missing: 0}
+	st := stat{count: 0, missing: 0}
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
 		if new := database.IsNew(values); !new && !req.All && !req.Refresh {
 			continue
 		}
-		rw.count++
-		r := newRecord(rw.count, values)
+		st.count++
+		r := newRecord(st.count, values)
 		logs.Printfcr(r.String(total)) // counter and record intro
 		// confirm API request
 		code, status, api := Fetch(r.WebIDDemozoo)
@@ -173,7 +174,7 @@ func (req Request) Queries() error {
 		}
 		// confirm & handle missing UUID host download file
 		r.AbsFile = filepath.Join(dir.UUID, r.UUID)
-		if rw.absNotExist(r) || req.Overwrite {
+		if st.absNotExist(r) || req.Overwrite {
 			name, link := api.DownloadLink()
 			if len(link) == 0 {
 				logs.Print(color.Note.Sprint("no suitable downloads found\n"))
@@ -290,21 +291,21 @@ func (req Request) Queries() error {
 	}
 	logs.Check(rows.Err())
 	if prodID != "" {
-		if rw.count == 0 {
+		if st.count == 0 {
 			t := fmt.Sprintf("id %q is not a Demozoo sourced file record", prodID)
 			logs.Println(t)
 		}
 		return nil
 	}
-	rw.summary()
+	st.summary(time.Since(start))
 	return nil
 }
 
-func (rw row) summary() {
-	t := fmt.Sprintf("Total Demozoo items handled: %v", rw.count)
+func (st stat) summary(elapsed time.Duration) {
+	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %s", st.count, elapsed)
 	logs.Println("\n" + strings.Repeat("─", len(t)))
 	logs.Println(t)
-	if rw.missing > 0 {
-		logs.Println("UUID files not found:", rw.missing)
+	if st.missing > 0 {
+		logs.Println("UUID files not found:", st.missing)
 	}
 }

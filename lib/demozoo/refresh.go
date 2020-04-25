@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/download"
@@ -15,6 +16,7 @@ import (
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
 func (req Request) RefreshQueries() error {
+	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(sqlSelect())
@@ -30,76 +32,85 @@ func (req Request) RefreshQueries() error {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	//dir := directories.Init(false)
 	// fetch the rows
-	rw := row{count: 0, missing: 0}
+	st := stat{count: 0, missing: 0}
 	for rows.Next() {
-		err = rows.Scan(scanArgs...)
-		logs.Check(err)
-		rw.count++
-		r := newRecord(rw.count, values)
-		logs.Printfcr(r.String(0)) // counter and record intro
-		// confirm API request
-		code, status, api := Fetch(r.WebIDDemozoo)
-		if code == 404 {
-			r.WebIDDemozoo = 0
-			if err = r.Save(); err == nil {
-				logs.Printf("(%s)\n", download.StatusColor(code, status))
-			}
+		if skip := st.result(records{rows, scanArgs, values}); skip {
 			continue
-		}
-		if code < 200 || code > 299 {
-			logs.Printf("(%s)\n", download.StatusColor(code, status))
-			continue
-		}
-		// pouet id
-		pid, _ := api.PouetID(false)
-		if r.WebIDPouet != uint(pid) {
-			r.WebIDPouet = uint(pid)
-			logs.Printf("PN:%s ", color.Note.Sprint(pid))
-		}
-		// groups
-		// this is disabled due to different methodologies between Defacto2 and DZ
-		// DZ puts groups into the Title, DF2 needs the groups categories
-		// example: https://demozoo.org/productions/158376/
-		if r.Section != "magazine" && r.Section == "magazine" {
-			grps := api.Groups()
-			if !strings.EqualFold(r.GroupFor, grps[0]) {
-				logs.Printf("for:%s ", color.Info.Sprint(grps[0]))
-				r.GroupFor = grps[0]
-			}
-			if !strings.EqualFold(r.GroupBy, grps[1]) {
-				if grps[1] == "" {
-					logs.Printf("by:%s ", color.Danger.Sprint(r.GroupBy))
-				} else {
-					logs.Printf("by:%s ", color.Info.Sprint(grps[1]))
-				}
-				r.GroupBy = grps[1]
-			}
-		}
-		// title
-		if r.Section != "magazine" && !strings.EqualFold(r.Title, api.Title) {
-			logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
-			r.Title = api.Title
-		}
-		// credits
-		credits := api.Authors()
-		r.authors(credits)
-		// save results
-		if reflect.DeepEqual(newRecord(rw.count, values), r) {
-			logs.Printf("• skipped %v", logs.Y())
-			continue
-		}
-		if err = r.Save(); err != nil {
-			logs.Printf("• saved %v ", logs.X())
-			logs.Log(err)
-		} else {
-			logs.Printf("• saved %v", logs.Y())
 		}
 	}
 	logs.Check(rows.Err())
-	rw.summary()
+	st.summary(time.Since(start))
 	return nil
+}
+
+type records struct {
+	rows     *sql.Rows
+	scanArgs []interface{}
+	values   []sql.RawBytes
+}
+
+func (st *stat) result(rec records) (skip bool) {
+	err := rec.rows.Scan(rec.scanArgs...)
+	logs.Check(err)
+	st.count++
+	r := newRecord(st.count, rec.values)
+	logs.Printfcr(r.String(0)) // counter and record intro
+	code, status, api := Fetch(r.WebIDDemozoo)
+	if ok := r.confirm(code, status); !ok {
+		return true
+	}
+	r.pouet(api)
+	r.title(api)
+	r.authors(api.Authors())
+	// save results
+	if reflect.DeepEqual(newRecord(st.count, rec.values), r) {
+		logs.Printf("• skipped %v", logs.Y())
+		return true
+	}
+	if err = r.Save(); err != nil {
+		logs.Printf("• saved %v ", logs.X())
+		logs.Log(err)
+	} else {
+		logs.Printf("• saved %v", logs.Y())
+	}
+	return false
+}
+
+func (r *Record) confirm(code int, status string) bool {
+	if code == 404 {
+		r.WebIDDemozoo = 0
+		if err := r.Save(); err == nil {
+			logs.Printf("(%s)\n", download.StatusColor(code, status))
+		}
+		return false
+	}
+	if code < 200 || code > 299 {
+		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		return false
+	}
+	return true
+}
+
+func (r *Record) groups(api ProductionsAPIv1) {
+	// this is removed due to different methodologies between Defacto2 and DZ
+	// DZ puts groups into the Title, DF2 needs the groups categories
+	// example: https://demozoo.org/productions/158376/
+}
+
+func (r *Record) pouet(api ProductionsAPIv1) {
+	pid, _ := api.PouetID(false)
+	if r.WebIDPouet != uint(pid) {
+		r.WebIDPouet = uint(pid)
+		logs.Printf("PN:%s ", color.Note.Sprint(pid))
+	}
+}
+
+func (r *Record) title(api ProductionsAPIv1) {
+	if r.Section != "magazine" && !strings.EqualFold(r.Title, api.Title) {
+		logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
+		r.Title = api.Title
+	}
 }
 
 func (r *Record) authors(a Authors) {
