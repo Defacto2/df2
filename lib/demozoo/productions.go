@@ -85,8 +85,7 @@ type ProductionsAPIv1 struct {
 }
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink() (string, string) {
-	var save, link string
+func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 	var err error
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods
@@ -97,13 +96,13 @@ func (p *ProductionsAPIv1) DownloadLink() (string, string) {
 			continue
 		}
 		link = l.URL
-		save, err = saveName(l.URL)
+		name, err = saveName(l.URL)
 		if err != nil {
 			continue
 		}
 		break
 	}
-	return save, link
+	return name, link
 }
 
 // DownloadsAPIv1 are DownloadLinks for ProductionsAPIv1.
@@ -198,7 +197,7 @@ func (p *ProductionsAPIv1) Authors() Authors {
 // PouetID returns the ID value used by Pouet's which prod URL syntax
 // and its HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID(ping bool) (int, int) {
+func (p *ProductionsAPIv1) PouetID(ping bool) (id int, statusCode int) {
 	for _, l := range p.ExternalLinks {
 		if l.LinkClass != "PouetProduction" {
 			continue
@@ -218,7 +217,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (int, int) {
 }
 
 // parsePouetProduction takes a pouet prod URL and extracts the ID
-func parsePouetProduction(rawurl string) (int, error) {
+func parsePouetProduction(rawurl string) (id int, err error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return 0, err
@@ -229,7 +228,7 @@ func parsePouetProduction(rawurl string) (int, error) {
 	if w == "" {
 		return 0, fmt.Errorf("%s url syntax %q", pfx, rawurl)
 	}
-	id, err := strconv.Atoi(w)
+	id, err = strconv.Atoi(w)
 	if err != nil {
 		return 0, fmt.Errorf("%s which= query syntax %q", pfx, w)
 	}
@@ -290,14 +289,14 @@ func randomName() string {
 }
 
 // saveName gets a filename from the URL or generates a random filename.
-func saveName(rawurl string) (string, error) {
+func saveName(rawurl string) (name string, err error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return "", err
 	}
-	base := filepath.Base(u.Path)
-	if base == "." {
-		base = randomName()
+	name = filepath.Base(u.Path)
+	if name == "." {
+		name = randomName()
 	}
-	return base, nil
+	return name, nil
 }

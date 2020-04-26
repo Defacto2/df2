@@ -12,6 +12,12 @@ import (
 	"github.com/gookit/color"
 )
 
+type records struct {
+	rows     *sql.Rows
+	scanArgs []interface{}
+	values   []sql.RawBytes
+}
+
 // RefreshQueries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
@@ -19,7 +25,7 @@ func (req Request) RefreshQueries() error {
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(sqlSelect())
+	rows, err := db.Query(selectByID())
 	if err != nil {
 		return err
 	}
@@ -42,12 +48,6 @@ func (req Request) RefreshQueries() error {
 	logs.Check(rows.Err())
 	st.summary(time.Since(start))
 	return nil
-}
-
-type records struct {
-	rows     *sql.Rows
-	scanArgs []interface{}
-	values   []sql.RawBytes
 }
 
 func (st *stat) result(rec records) (skip bool) {
