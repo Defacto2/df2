@@ -99,11 +99,8 @@ func (r *Record) fileZipContent() (ok bool) {
 }
 
 func (r Record) sql() (string, []interface{}) {
-	fmt.Println("---> DO THE HONKS")
-
 	var set []string
 	var args []interface{}
-
 	if r.Filename != "" {
 		set = append(set, "filename=?")
 		args = append(args, []interface{}{r.Filename}...)
