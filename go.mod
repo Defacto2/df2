@@ -33,7 +33,7 @@ require (
 	github.com/ulikunitz/xz v0.5.7 // indirect
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
-	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
+	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/gookit/color.v1 v1.1.6
 	gopkg.in/ini.v1 v1.55.0 // indirect
