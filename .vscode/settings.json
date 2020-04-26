@@ -1,3 +1,7 @@
 {
-  "cSpell.words": ["Pouet", "Pouet's", "UUID", "defacto", "defacto2"]
+  "spellright.language": ["en"],
+  "spellright.documentTypes": ["markdown", "latex", "go"],
+  "spellright.addToSystemDictionary": true,
+  "spellright.notificationClass": "information",
+  "spellright.recheckOnSave": false
 }
