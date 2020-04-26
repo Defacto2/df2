@@ -1,10 +1,12 @@
 {
-  "spellright.language": ["en"],
-  "spellright.documentTypes": ["markdown", "latex"],
+  "spellright.language": [
+    "en"
+  ],
+  "spellright.documentTypes": [
+    "markdown",
+    "latex"
+  ],
   "spellright.addToSystemDictionary": true,
   "spellright.notificationClass": "information",
   "spellright.recheckOnSave": false,
-  "go.toolsEnvVars": {
-    "CGO_ENABLED": "0"
-  }
 }
