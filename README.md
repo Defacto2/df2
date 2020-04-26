@@ -82,9 +82,7 @@ df2 config edit
 
 df2 uses [Go modules](https://github.com/golang/go/wiki/Modules) and Go v1.14.
 
-It requires the use of the `go xxx -mod=vendor` argument which is set as default from v.1.14 onwards.
-
-`go env` should return either `GO111MODULE=on` or `GO111MODULE=auto`.
+Windows IDE users should have the `CGO_ENABLED=0` environment variable set for testing.
 
 #### Updating dependencies
 
