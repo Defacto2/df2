@@ -95,7 +95,6 @@ func (r *Record) fileZipContent() bool {
 		return false
 	}
 	r.FileZipContent = strings.Join(a, "\n")
-	//updateZipContent(r.ID, strings.Join(a, "\n"))
 	return true
 }
 

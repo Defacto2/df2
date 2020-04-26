@@ -228,7 +228,7 @@ func (r Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
 		return true
 	}
 	r.pingPouet(api)
-	r.AbsFile = filepath.Join(storage, r.UUID)
+	r.FilePath = filepath.Join(storage, r.UUID)
 	if skip := r.download(overwrite, api, st); skip {
 		return true
 	}
@@ -270,7 +270,7 @@ func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip b
 			return true
 		}
 		logs.Printfcr("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(200, "200 OK"))
-		head, err := download.LinkDownload(r.AbsFile, link)
+		head, err := download.LinkDownload(r.FilePath, link)
 		if err != nil {
 			logs.Log(err)
 			return true
@@ -337,14 +337,14 @@ func (r *Record) platform(api ProductionsAPIv1) {
 
 func (r *Record) fileMeta() (err error) {
 	// file size
-	stat, err := os.Stat(r.AbsFile)
+	stat, err := os.Stat(r.FilePath)
 	if err != nil {
 		return err
 		//continue
 	}
 	r.Filesize = strconv.Itoa(int(stat.Size()))
 	// file hashes
-	f, err := os.Open(r.AbsFile)
+	f, err := os.Open(r.FilePath)
 	if err != nil {
 		return err
 	}
@@ -364,7 +364,7 @@ func (r *Record) fileMeta() (err error) {
 
 func (r *Record) doseeMeta() {
 	var names = r.variations()
-	d, err := archive.ExtractDemozoo(r.AbsFile, r.UUID, &names)
+	d, err := archive.ExtractDemozoo(r.FilePath, r.UUID, &names)
 	logs.Log(err)
 	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
 		r.DOSeeBinary = d.DOSee
