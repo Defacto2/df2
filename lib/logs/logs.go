@@ -15,7 +15,6 @@ import (
 	"unicode/utf8"
 
 	gap "github.com/muesli/go-app-paths"
-	"golang.org/x/sys/unix"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -165,14 +164,6 @@ func Printfcr(format string, a ...interface{}) {
 		_, err := fmt.Printf(format, a...)
 		Log(err)
 	}
-}
-
-func getWinCol() uint16 {
-	ws, err := unix.IoctlGetWinsize(int(os.Stdout.Fd()), unix.TIOCGWINSZ)
-	if err != nil {
-		return uint16(80) // 80 column fallback
-	}
-	return ws.Col
 }
 
 // ProgressPct returns the count of total remaining as a percentage.
