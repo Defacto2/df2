@@ -44,6 +44,7 @@ var demozooCmd = &cobra.Command{
 			_, s, data := demozoo.Fetch(dzoo.download)
 			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.download, s)
 			data.Downloads()
+			logs.Print("\n")
 		case dzoo.ping != 0:
 			_, s, data := demozoo.Fetch(dzoo.ping)
 			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.ping, s)
