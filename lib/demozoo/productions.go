@@ -128,7 +128,6 @@ func (p *ProductionsAPIv1) Downloads() {
 			logs.Printf(" %s", ping.Status) // print the HTTP status
 			continue
 		}
-		logs.Print("\n")
 		save, err := saveName(l.URL)
 		if err != nil {
 			logs.Log(err)

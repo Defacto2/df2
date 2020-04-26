@@ -81,9 +81,9 @@ func (wc *WriteCounter) Write(p []byte) (int, error) {
 func (wc WriteCounter) printProgress() {
 	pct := percent(wc.Written, wc.Total)
 	if pct > 0 {
-		logs.Printf("\rdownloading %s (%d%%) from %s%s", humanize.Bytes(wc.Written), pct, wc.Name, logs.AEL)
+		logs.Printfcr("downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
 	} else {
-		logs.Printf("\rdownloading %s from %s%s", humanize.Bytes(wc.Written), wc.Name, logs.AEL)
+		logs.Printfcr("downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
 	}
 }
 
@@ -96,7 +96,7 @@ func percent(count uint64, total uint64) uint64 {
 
 // printProgress prints that the download progress is complete.
 func progressDone(name string, written int64) {
-	logs.Printf("%v download saved to: %v", humanize.Bytes(uint64(written)), name)
+	logs.Printfcr("%v download saved to: %v\n", humanize.Bytes(uint64(written)), name)
 }
 
 // LinkDownload downloads the URL and saves it as the named file.
