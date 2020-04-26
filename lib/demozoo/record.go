@@ -101,6 +101,7 @@ func (r *Record) fileZipContent() (ok bool) {
 func (r Record) sql() (string, []interface{}) {
 	var set []string
 	var args []interface{}
+	// an range map iternation is not used due to the varied comparisions
 	if r.Filename != "" {
 		set = append(set, "filename=?")
 		args = append(args, []interface{}{r.Filename}...)
@@ -129,7 +130,7 @@ func (r Record) sql() (string, []interface{}) {
 		set = append(set, "web_id_pouet=?")
 		args = append(args, []interface{}{r.WebIDPouet}...)
 	}
-	if r.WebIDDemozoo == 0 {
+	if r.WebIDDemozoo == 0 && len(set) > 0 {
 		set = append(set, "web_id_demozoo=?")
 		args = append(args, []interface{}{""}...)
 	}
