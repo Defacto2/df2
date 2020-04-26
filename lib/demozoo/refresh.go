@@ -41,7 +41,7 @@ func (req Request) RefreshQueries() error {
 	// fetch the rows
 	st := stat{count: 0, missing: 0}
 	for rows.Next() {
-		if skip := st.result(records{rows, scanArgs, values}); skip {
+		if skip := st.nextRefresh(records{rows, scanArgs, values}); skip {
 			continue
 		}
 	}
@@ -50,12 +50,12 @@ func (req Request) RefreshQueries() error {
 	return nil
 }
 
-func (st *stat) result(rec records) (skip bool) {
+func (st *stat) nextRefresh(rec records) (skip bool) {
 	err := rec.rows.Scan(rec.scanArgs...)
 	logs.Check(err)
 	st.count++
 	r := newRecord(st.count, rec.values)
-	logs.Printfcr(r.String(0)) // counter and record intro
+	logs.Printfcr(r.String(0))
 	code, status, api := Fetch(r.WebIDDemozoo)
 	if ok := r.confirm(code, status); !ok {
 		return true
@@ -63,7 +63,6 @@ func (st *stat) result(rec records) (skip bool) {
 	r.pouet(api)
 	r.title(api)
 	r.authors(api.Authors())
-	// save results
 	if reflect.DeepEqual(newRecord(st.count, rec.values), r) {
 		logs.Printf("• skipped %v", logs.Y())
 		return true
@@ -77,7 +76,7 @@ func (st *stat) result(rec records) (skip bool) {
 	return false
 }
 
-func (r *Record) confirm(code int, status string) bool {
+func (r *Record) confirm(code int, status string) (ok bool) {
 	if code == 404 {
 		r.WebIDDemozoo = 0
 		if err := r.Save(); err == nil {

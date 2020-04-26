@@ -149,7 +149,7 @@ func Test_saveName(t *testing.T) {
 func TestRecord_sql(t *testing.T) {
 	type fields struct {
 		count          int
-		AbsFile        string
+		FilePath       string
 		ID             string
 		UUID           string
 		WebIDDemozoo   uint
@@ -189,7 +189,7 @@ func TestRecord_sql(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := Record{
 				count:          tt.fields.count,
-				AbsFile:        tt.fields.AbsFile,
+				FilePath:       tt.fields.FilePath,
 				ID:             tt.fields.ID,
 				UUID:           tt.fields.UUID,
 				WebIDDemozoo:   tt.fields.WebIDDemozoo,

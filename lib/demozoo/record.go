@@ -16,8 +16,8 @@ import (
 // Record of a file item.
 type Record struct {
 	count          int
-	AbsFile        string // absolute path to file
-	ID             string // mysql auto increment id
+	FilePath       string // absolute path to file
+	ID             string // MySQL auto increment id
 	UUID           string // record unique id
 	WebIDDemozoo   uint   // demozoo production id
 	WebIDPouet     uint
@@ -43,7 +43,7 @@ type Record struct {
 }
 
 func (r Record) String(total int) string {
-	// programmatically calculate the padding character 0
+	// calculate the number of prefixed zero characters
 	d := 4
 	if total > 0 {
 		d = len(strconv.Itoa(total))
@@ -71,7 +71,7 @@ func (r Record) Save() error {
 }
 
 func (st stat) absNotExist(r Record) bool {
-	if s, err := os.Stat(r.AbsFile); os.IsNotExist(err) || s.IsDir() {
+	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
 		st.missing++
 		return true
 	}
@@ -81,14 +81,14 @@ func (st stat) absNotExist(r Record) bool {
 // fileZipContent reads an archive and saves its content to the database
 func (r *Record) fileZipContent() bool {
 	const pfx = "demozoo record filezipcontent:"
-	if r.AbsFile == "" {
-		logs.Log(fmt.Errorf("%s r.absfile required by fileZipContent is empty", pfx))
+	if r.FilePath == "" {
+		logs.Log(fmt.Errorf("%s r.filepath required by fileZipContent is empty", pfx))
 		return false
 	}
-	a, err := archive.Read(r.AbsFile, r.Filename)
+	a, err := archive.Read(r.FilePath, r.Filename)
 	if err != nil {
 		if err.Error() == "unarr: File not found" {
-			logs.Log(fmt.Errorf("%s file not found %s", pfx, r.AbsFile))
+			logs.Log(fmt.Errorf("%s file not found %s", pfx, r.FilePath))
 			return false
 		}
 		logs.Log(err)
@@ -100,6 +100,8 @@ func (r *Record) fileZipContent() bool {
 }
 
 func (r Record) sql() (string, []interface{}) {
+	fmt.Println("---> DO THE HONKS")
+
 	var set []string
 	var args []interface{}
 
