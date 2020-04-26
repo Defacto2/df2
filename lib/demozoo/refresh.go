@@ -18,10 +18,8 @@ type records struct {
 	values   []sql.RawBytes
 }
 
-// RefreshQueries parses all new proofs.
-// ow will overwrite any existing proof assets such as images.
-// all parses every proof not just records waiting for approval.
-func (req Request) RefreshQueries() error {
+// RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
+func RefreshMeta() error {
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
