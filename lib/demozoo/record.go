@@ -70,7 +70,7 @@ func (r Record) Save() error {
 	return nil
 }
 
-func (st stat) absNotExist(r Record) bool {
+func (st *stat) fileExist(r Record) (missing bool) {
 	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
 		st.missing++
 		return true
@@ -78,8 +78,8 @@ func (st stat) absNotExist(r Record) bool {
 	return false
 }
 
-// fileZipContent reads an archive and saves its content to the database
-func (r *Record) fileZipContent() bool {
+// fileZipContent reads an archive and saves its content to the database.
+func (r *Record) fileZipContent() (ok bool) {
 	const pfx = "demozoo record filezipcontent:"
 	if r.FilePath == "" {
 		logs.Log(fmt.Errorf("%s r.filepath required by fileZipContent is empty", pfx))
