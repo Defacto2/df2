@@ -56,7 +56,7 @@ func (dk dupeKeys) String() string {
 	for i, n := range dk {
 		dk[i] = fmt.Sprintf("`%s` = VALUES(`%s`)", n, n)
 	}
-	return fmt.Sprintf("\nON DUPLICATE KEY UPDATE %s", strings.Join(dk, ","))
+	return fmt.Sprintf("\nON DUPLICATE KEY UPDATE %s", strings.Join(dk, ", "))
 }
 
 type row []string
