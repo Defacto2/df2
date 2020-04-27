@@ -16,13 +16,12 @@ func extractr(archive, filename, tempDir string) error {
 
 // Readr returns a list of files within an rar, tar or zip archive.
 // It has offers compatibility with compression formats.
-func Readr(archive, filename string) ([]string, error) {
-	var list []string
-	err := Walkr(archive, filename, func(f archiver.File) error {
-		list = append(list, f.Name())
+func Readr(archive, filename string) (files []string, err error) {
+	err = Walkr(archive, filename, func(f archiver.File) error {
+		files = append(files, f.Name())
 		return nil
 	})
-	return list, err
+	return files, err
 }
 
 // Unarchiver unarchives the given archive file into the destination folder.

@@ -48,7 +48,7 @@ func (c *content) filemime(f os.FileInfo) error {
 }
 
 // FileCopy copies a file to the destination.
-func FileCopy(name, dest string) (int64, error) {
+func FileCopy(name, dest string) (written int64, err error) {
 	src, err := os.Open(name)
 	if err != nil {
 		return 0, genErr("filecopy", err)
@@ -59,16 +59,16 @@ func FileCopy(name, dest string) (int64, error) {
 		return 0, genErr("filecopy", err)
 	}
 	defer file.Close()
-	i, err := io.Copy(file, src)
+	written, err = io.Copy(file, src)
 	if err != nil {
 		return 0, genErr("filecopy", err)
 	}
-	return i, nil
+	return written, nil
 }
 
 // FileMove copies a file to the destination and then deletes the source.
-func FileMove(name, dest string) (int64, error) {
-	i, err := FileCopy(name, dest)
+func FileMove(name, dest string) (written int64, err error) {
+	written, err = FileCopy(name, dest)
 	if err != nil {
 		return 0, genErr("filemove", err)
 	}
@@ -76,11 +76,11 @@ func FileMove(name, dest string) (int64, error) {
 	if err != nil {
 		return 0, genErr("filemove", err)
 	}
-	return i, nil
+	return written, nil
 }
 
 // NewExt swaps or appends the extension to a filename.
-func NewExt(name, extension string) string {
+func NewExt(name, extension string) (filename string) {
 	e := filepath.Ext(name)
 	if e == "" {
 		return name + extension
@@ -92,22 +92,22 @@ func NewExt(name, extension string) string {
 // Read returns a list of files within an rar, tar, zip or 7z archive.
 // archive is the absolute path to the archive file named as a uuid
 // filename is the original archive filename and file extension
-func Read(archive string, filename string) ([]string, error) {
+func Read(archive string, filename string) (files []string, err error) {
 	a, err := unarr.NewArchive(archive)
 	if err != nil {
 		// using archiver as a fallback
-		list, err := Readr(archive, filename)
+		files, err = Readr(archive, filename)
 		if err != nil {
 			return nil, genErr("readr", err)
 		}
-		return list, nil
+		return files, nil
 	}
 	defer a.Close()
-	list, err := a.List()
+	files, err = a.List()
 	if err != nil {
 		return nil, genErr("read", err)
 	}
-	return list, nil
+	return files, nil
 }
 
 // dir lists the content of a directory.

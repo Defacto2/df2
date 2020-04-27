@@ -27,8 +27,8 @@ type item struct {
 }
 
 // parse is used by scanPath to remove matched orphans.
-func parse(s *scan, list *[]os.FileInfo) results {
-	var r = results{count: 0, fails: 0, bytes: 0}
+func parse(s *scan, list *[]os.FileInfo) (stat results) {
+	stat = results{count: 0, fails: 0, bytes: 0}
 	for _, file := range *list {
 		if file.IsDir() {
 			continue // ignore directories
@@ -42,12 +42,12 @@ func parse(s *scan, list *[]os.FileInfo) results {
 		// search the map `m` for `UUID`, the result is saved as a boolean to `exists`
 		_, exists := s.m[uuid]
 		if !exists {
-			r.totals(file)
+			stat.totals(file)
 			if s.delete {
 				i.path = path.Join(s.path, file.Name())
-				i.erase(r)
+				i.erase(stat)
 			}
-			i.count(r.count)
+			i.count(stat.count)
 			i.mod(file)
 			i.size(file)
 			i.bits(file)
@@ -58,7 +58,7 @@ func parse(s *scan, list *[]os.FileInfo) results {
 		err := w.Flush()
 		logs.Check(err)
 	}
-	return r
+	return stat
 }
 
 func (i *item) bits(f os.FileInfo) {

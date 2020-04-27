@@ -27,8 +27,7 @@ func (d Demozoo) String() string {
 }
 
 // ExtractDemozoo decompresses and parses archives fetched from Demozoo.org.
-func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {
-	var dz Demozoo
+func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err error) {
 	if err := database.CheckUUID(uuid); err != nil {
 		return dz, dzErr(err)
 	}
@@ -84,7 +83,7 @@ func (c *content) filescan(f os.FileInfo) {
 	c.path = path.Join(c.path, f.Name())
 }
 
-func moveText(name, uuid string) bool {
+func moveText(name, uuid string) (ok bool) {
 	if name == "" {
 		return false
 	}
