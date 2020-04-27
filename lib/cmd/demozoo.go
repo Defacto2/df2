@@ -38,8 +38,7 @@ var demozooCmd = &cobra.Command{
 			Refresh:   dzoo.refresh,
 			Simulate:  dzoo.simulate}
 		switch {
-		case dzoo.new:
-		case dzoo.all:
+		case dzoo.new, dzoo.all:
 			err = r.Queries()
 		case dzoo.id != "":
 			err = r.Query(dzoo.id)
