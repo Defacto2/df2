@@ -86,47 +86,8 @@ func queries() error {
 		}
 		r.uuid = string(values[1])
 		printV(fmt.Sprintf("\n%s item %04d (%v) %s %s ", logs.X(), rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
-		if !r.checkFileName(string(values[4])) {
-			printV("!filename")
+		if ok := r.check(values, &dir); !ok {
 			continue
-		}
-		if !r.checkFileSize(string(values[5])) {
-			printV("!filesize")
-			continue
-		}
-		if !r.checkHash(string(values[10]), string(values[11])) {
-			printV("!hash")
-			continue
-		}
-		if !r.checkFileContent(string(values[7])) {
-			printV("!file content")
-			continue
-		}
-		if !r.checkGroups(string(values[14]), string(values[13])) {
-			printV("!group")
-			continue
-		}
-		if !r.checkTags(string(values[9]), string(values[15])) {
-			printV("!tag")
-			continue
-		}
-		if !r.checkDownload(dir.UUID) {
-			printV("!download")
-			continue
-		}
-		if string(values[9]) != "audio" {
-			if !r.checkImage(dir.Img000) {
-				printV("!000x")
-				continue
-			}
-			if !r.checkImage(dir.Img400) {
-				printV("!400x")
-				continue
-			}
-			if !r.checkImage(dir.Img150) {
-				printV("!150x")
-				continue
-			}
 		}
 		r.save = true
 		if r.autoID(string(values[0])) == 0 {
@@ -142,6 +103,52 @@ func queries() error {
 	printV("\n")
 	r.summary(rowCnt)
 	return nil
+}
+
+func (r record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
+	if !r.checkFileName(string(values[4])) {
+		printV("!filename")
+		return false
+	}
+	if !r.checkFileSize(string(values[5])) {
+		printV("!filesize")
+		return false
+	}
+	if !r.checkHash(string(values[10]), string(values[11])) {
+		printV("!hash")
+		return false
+	}
+	if !r.checkFileContent(string(values[7])) {
+		printV("!file content")
+		return false
+	}
+	if !r.checkGroups(string(values[14]), string(values[13])) {
+		printV("!group")
+		return false
+	}
+	if !r.checkTags(string(values[9]), string(values[15])) {
+		printV("!tag")
+		return false
+	}
+	if !r.checkDownload(dir.UUID) {
+		printV("!download")
+		return false
+	}
+	if string(values[9]) != "audio" {
+		if !r.checkImage(dir.Img000) {
+			printV("!000x")
+			return false
+		}
+		if !r.checkImage(dir.Img400) {
+			printV("!400x")
+			return false
+		}
+		if !r.checkImage(dir.Img150) {
+			printV("!150x")
+			return false
+		}
+	}
+	return true
 }
 
 func printV(i interface{}) {
