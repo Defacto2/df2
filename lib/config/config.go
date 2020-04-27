@@ -37,13 +37,13 @@ var (
 )
 
 // Filepath is the absolute path and filename of the configuration file.
-func Filepath() string {
-	fp, err := scope.ConfigPath(ConfigName)
+func Filepath() (filepath string) {
+	filepath, err := scope.ConfigPath(ConfigName)
 	if err != nil {
 		h, _ := os.UserHomeDir()
 		return path.Join(h, ConfigName)
 	}
-	return fp
+	return filepath
 }
 
 func configMissing(name, suffix string) {

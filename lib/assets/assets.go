@@ -225,6 +225,7 @@ func backup(s *scan, list []os.FileInfo) {
 }
 
 func backupPart() (part map[string]string) {
+	part = make(map[string]string)
 	part[d.UUID] = "uuid"
 	part[d.Img150] = "img-150xthumbs"
 	part[d.Img400] = "img-400xthumbs"
@@ -246,6 +247,7 @@ func walkName(basepath, path string) (name string, err error) {
 
 // ignoreList is used by scanPath to filter files that should not be erased.
 func ignoreList(path string) (ignore files) {
+	ignore = make(files)
 	ignore["00000000-0000-0000-0000-000000000000"] = empty
 	ignore["blank.png"] = empty
 	if path == d.Emu {
