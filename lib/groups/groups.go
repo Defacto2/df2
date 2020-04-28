@@ -145,11 +145,13 @@ func (r Request) parse(filename string, tpl string) {
 	}
 }
 
-// list organizations or groups filtered by a name.
-func list(name string) (groups []string, total int) {
+// list all organizations or filtered groups.
+
+func list(filter string) (groups []string, total int) {
 	db := database.Connect()
 	defer db.Close()
-	s := sqlGroups(name, false)
+	s := sqlGroups(filter, false)
+	fmt.Printf("%s\n\n", s)
 	total = database.Total(&s)
 	// interate through records
 	rows, err := db.Query(s)
@@ -279,34 +281,34 @@ func remInitialism(s string) string {
 	return s
 }
 
-// sqlGroups returns a complete SQL WHERE statement where the groups are filtered by name.
-func sqlGroups(name string, includeSoftDeletes bool) string {
+// sqlGroups returns a complete SQL WHERE statement where the groups are filtered.
+func sqlGroups(filter string, includeSoftDeletes bool) (sql string) {
 	var inc, skip bool = includeSoftDeletes, false
 	for _, a := range Wheres() {
-		if a == name {
+		if a == filter {
 			skip = true
 		}
 	}
-	var sql string
-	var where = sqlGroupsWhere(name, inc)
+	var where = sqlGroupsWhere(filter, inc)
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
-		sql = "SELECT DISTINCT group_brand_for AS pubCombined "
-		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + where
+		sql = "SELECT DISTINCT group_brand_for AS pubCombined " +
+			"FROM files WHERE Length(group_brand_for) <> 0 " + where
 	default:
-		sql = "(SELECT DISTINCT group_brand_for AS pubCombined "
-		sql += "FROM files WHERE Length(group_brand_for) <> 0 " + where + ")"
-		sql += " UNION "
-		sql += "(SELECT DISTINCT group_brand_by AS pubCombined "
-		sql += "FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
+		sql = "(SELECT DISTINCT group_brand_for AS pubCombined " +
+			"FROM files WHERE Length(group_brand_for) <> 0 " + where + ")" +
+			" UNION " +
+			"(SELECT DISTINCT group_brand_by AS pubCombined " +
+			"FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
 	}
 	return sql + " ORDER BY pubCombined"
 }
 
-// sqlGroupsFilter returns a partial SQL WHERE statement to filer groups by name.
-func sqlGroupsFilter(name string) string {
-	var sql string
-	switch name {
+// sqlGroupsFilter returns a partial SQL WHERE statement to filter groups.
+func sqlGroupsFilter(filter string) (sql string) {
+	switch filter {
+	case "":
+		return sql
 	case "magazine":
 		sql = "section = 'magazine' AND"
 	case "bbs":
@@ -315,13 +317,15 @@ func sqlGroupsFilter(name string) string {
 		sql = "RIGHT(group_brand_for,4) = ' FTP' AND"
 	case "group": // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
 		sql = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
+	default:
+		logs.Check(fmt.Errorf("groups sqlGroupsFilter: unsupported filter option %q, leave blank or use either %v", filter, Filters))
 	}
 	return sql
 }
 
-// sqlGroupsWhere returns a partial SQL WHERE statement where groups are filtered by name.
-func sqlGroupsWhere(name string, includeSoftDeletes bool) string {
-	sql := sqlGroupsFilter(name)
+// sqlGroupsWhere returns a partial SQL WHERE statement where groups are filtered.
+func sqlGroupsWhere(filter string, includeSoftDeletes bool) string {
+	sql := sqlGroupsFilter(filter)
 	switch {
 	case sql != "" && includeSoftDeletes:
 		sql = "AND " + sql
