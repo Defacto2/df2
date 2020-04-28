@@ -44,11 +44,10 @@ type Group struct {
 }
 
 // Count returns the number of file entries associated with a group.
-func Count(name string) int {
+func Count(name string) (count int) {
 	db := database.Connect()
 	defer db.Close()
 	n := name
-	var count int
 	s := "SELECT COUNT(*) FROM files WHERE "
 	s += fmt.Sprintf("group_brand_for='%v' OR group_brand_for LIKE '%v,%%' OR group_brand_for LIKE '%%, %v,%%' OR group_brand_for LIKE '%%, %v'", n, n, n, n)
 	s += fmt.Sprintf(" OR group_brand_by='%v' OR group_brand_by LIKE '%v,%%' OR group_brand_by LIKE '%%, %v,%%' OR group_brand_by LIKE '%%, %v'", n, n, n, n)
@@ -147,29 +146,24 @@ func (r Request) parse(filename string, tpl string) {
 }
 
 // list organizations or groups filtered by a name.
-func list(name string) ([]string, int) {
+func list(name string) (groups []string, total int) {
 	db := database.Connect()
 	defer db.Close()
 	s := sqlGroups(name, false)
-	total := database.Total(&s)
+	total = database.Total(&s)
 	// interate through records
 	rows, err := db.Query(s)
 	logs.Check(err)
 	var grp sql.NullString
-	i := 0
-	g := ""
-	grps := []string{}
 	for rows.Next() {
 		err = rows.Scan(&grp)
 		logs.Check(err)
 		if _, err = grp.Value(); err != nil {
 			continue
 		}
-		i++
-		g = fmt.Sprintf("%v", grp.String)
-		grps = append(grps, g)
+		groups = append(groups, fmt.Sprintf("%v", grp.String))
 	}
-	return grps, total
+	return groups, total
 }
 
 // MakeSlug takes a name and makes it into a URL friendly slug.
@@ -221,36 +215,35 @@ func Print(r Request) {
 }
 
 // Variations creates format variations for a named group.
-func Variations(name string) []string {
-	var v []string
+func Variations(name string) (vars []string) {
 	if name == "" {
-		return v
+		return vars
 	}
 	name = strings.ToLower(name)
-	v = append(v, name)
+	vars = append(vars, name)
 	if name != "" {
 		s := strings.Split(name, " ")
 		a := strings.Join(s, "")
 		if name != a {
-			v = append(v, a)
+			vars = append(vars, a)
 		}
 		b := strings.Join(s, "-")
 		if name != b {
-			v = append(v, b)
+			vars = append(vars, b)
 		}
 		c := strings.Join(s, "_")
 		if name != c {
-			v = append(v, c)
+			vars = append(vars, c)
 		}
 		d := strings.Join(s, ".")
 		if name != d {
-			v = append(v, d)
+			vars = append(vars, d)
 		}
 		if init, err := Initialism(name); err == nil && init != "" {
-			v = append(v, strings.ToLower(init))
+			vars = append(vars, strings.ToLower(init))
 		}
 	}
-	return v
+	return vars
 }
 
 // Wheres are group categories.
