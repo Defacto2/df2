@@ -81,9 +81,9 @@ func Connect() *sql.DB {
 }
 
 // ConnectErr will connect to the database or return any errors.
-func ConnectErr() (*sql.DB, error) {
+func ConnectErr() (db *sql.DB, err error) {
 	config()
-	db, err := sql.Open("mysql", fmt.Sprint(&c))
+	db, err = sql.Open("mysql", fmt.Sprint(&c))
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
 		return nil, fmt.Errorf(e)
@@ -256,10 +256,9 @@ func FileUpdate(name string, database time.Time) bool {
 }
 
 // LastUpdate reports the time when the files database was last modified.
-func LastUpdate() time.Time {
+func LastUpdate() (updatedat time.Time) {
 	db := Connect()
 	defer db.Close()
-	var updatedat time.Time
 	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat` ORDER BY `updatedat` DESC LIMIT 1")
 	err := row.Scan(&updatedat)
 	logs.Check(err)
@@ -267,11 +266,10 @@ func LastUpdate() time.Time {
 }
 
 // LookupID returns the number of file entries associated with a group.
-func LookupID(value string) (uint, error) {
+func LookupID(value string) (id uint, err error) {
 	db := Connect()
 	defer db.Close()
 	var s string
-	var id uint
 	if v, err := strconv.Atoi(value); err == nil {
 		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
 		s = fmt.Sprintf("SELECT EXISTS(SELECT * FROM files WHERE id='%d')", v)
@@ -285,7 +283,7 @@ func LookupID(value string) (uint, error) {
 	}
 	value = strings.ToLower(value)
 	s = fmt.Sprintf("SELECT id FROM files WHERE uuid='%s'", value)
-	err := db.QueryRow(s).Scan(&id)
+	err = db.QueryRow(s).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("lookupid: uuid '%v' is does not exist in the database", value)
 	}
@@ -323,26 +321,25 @@ func ObfuscateParam(param string) string {
 }
 
 // reverseInt swaps the direction of the value, 12345 would return 54321.
-func reverseInt(value int) int {
+func reverseInt(value int) (reversed int) {
 	int := strconv.Itoa(value)
 	new := ""
 	for x := len(int); x > 0; x-- {
 		new += string(int[x-1])
 	}
-	newInt, err := strconv.Atoi(new)
+	reversed, err := strconv.Atoi(new)
 	logs.Check(err)
-	return newInt
+	return reversed
 }
 
 // RenGroup replaces all instances of the old group name with the new group name.
-func RenGroup(new, old string) (int64, error) {
+func RenGroup(new, old string) (count int64, err error) {
 	db := Connect()
 	defer db.Close()
 	var sql = [2]string{
 		"UPDATE files SET group_brand_for=? WHERE group_brand_for=?",
 		"UPDATE files SET group_brand_by=? WHERE group_brand_by=?",
 	}
-	var ra int64
 	for i := range sql {
 		update, err := db.Prepare(sql[i])
 		if err != nil {
@@ -352,16 +349,16 @@ func RenGroup(new, old string) (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		ra, err = res.RowsAffected()
+		count, err = res.RowsAffected()
 		if err != nil {
 			return 0, err
 		}
 	}
-	return ra, nil
+	return count, nil
 }
 
 // Total reports the number of records fetched by the supplied SQL query.
-func Total(s *string) int {
+func Total(s *string) (total int) {
 	db := Connect()
 	rows, err := db.Query(*s)
 	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
@@ -369,7 +366,7 @@ func Total(s *string) int {
 	}
 	logs.Check(err)
 	defer db.Close()
-	total := 0
+	total = 0
 	for rows.Next() {
 		total++
 	}

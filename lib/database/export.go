@@ -70,7 +70,7 @@ func (r row) String() string {
 }
 
 // columns returns the column names of table.
-func columns(table string) ([]string, error) {
+func columns(table string) (columns []string, err error) {
 	db := Connect()
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
@@ -78,7 +78,7 @@ func columns(table string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	columns, err := rows.Columns()
+	columns, err = rows.Columns()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func columns(table string) ([]string, error) {
 }
 
 // rows returns the values of table.
-func rows(table string, limit int) ([]string, error) {
+func rows(table string, limit int) (values []string, err error) {
 	stmt := fmt.Sprintf("SELECT * FROM `%s` LIMIT %d", table, limit)
 	if limit < 0 {
 		stmt = fmt.Sprintf("SELECT * FROM `%s`", table)
@@ -105,25 +105,24 @@ func rows(table string, limit int) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
+	vals := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]interface{}, len(vals))
+	for i := range vals {
+		scanArgs[i] = &vals[i]
 	}
-	var sql []string
 	for rows.Next() {
 		result := make([]string, len(columns))
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)
-		for i := range values {
-			result[i], err = format(values[i],
+		for i := range vals {
+			result[i], err = format(vals[i],
 				strings.ToLower(types[i].DatabaseTypeName()))
 			logs.Check(err)
 		}
 		var r row = result
-		sql = append(sql, fmt.Sprint(r))
+		values = append(values, fmt.Sprint(r))
 	}
-	return sql, nil
+	return values, nil
 }
 
 // format the value based on the database type name column type.
@@ -281,22 +280,21 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 }
 
 // create makes the CREATE template variable value.
-func (f Flags) create() string {
+func (f Flags) create() (value string) {
 	if f.Type != "create" {
 		return ""
 	}
-	var templ string
 	switch f.Table {
 	case "files":
-		templ += newFilesTempl
+		value += newFilesTempl
 	case "groups":
-		templ += newGroupsTempl
+		value += newGroupsTempl
 	case "netresources":
-		templ += newNetresourcesTempl
+		value += newNetresourcesTempl
 	case "users":
-		templ += newUsersTempl
+		value += newUsersTempl
 	}
-	return templ
+	return value
 }
 
 // ExportDB saves or prints a MySQL 5.7 compatible SQL import database statement.

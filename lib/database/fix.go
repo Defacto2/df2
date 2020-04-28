@@ -25,7 +25,7 @@ type Update struct {
 }
 
 // Execute Query and Args to update the database and returns the total number of changes.
-func (u Update) Execute() (int64, error) {
+func (u Update) Execute() (count int64, err error) {
 	db := Connect()
 	defer db.Close()
 	update, err := db.Prepare(u.Query)
@@ -36,29 +36,28 @@ func (u Update) Execute() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	ra, err := res.RowsAffected()
+	count, err = res.RowsAffected()
 	if err != nil {
 		return 0, err
 	}
-	return ra, nil
+	return count, nil
 }
 
-func distinct(column string) ([]string, error) {
-	var r []string
+func distinct(column string) (values []string, err error) {
 	var result string
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query("SELECT DISTINCT `" + column + "` AS `result` FROM `files` WHERE `" + column + "` != \"\"")
 	if err != nil {
-		return r, err
+		return values, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&result)
 		logs.Log(err)
-		r = append(r, result)
+		values = append(values, result)
 	}
-	return r, nil
+	return values, nil
 }
 
 func print(res int64, str *string) {

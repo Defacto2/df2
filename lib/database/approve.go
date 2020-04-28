@@ -52,10 +52,12 @@ func (r record) String() string {
 	if !r.save {
 		status = logs.X()
 	}
-	return fmt.Sprintf("%s item %04d (%v) %s %s", status, r.c, r.id, color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename))
+	return fmt.Sprintf("%s item %04d (%v) %s %s", status, r.c, r.id,
+		color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename))
 }
 
-// queries parses all records waiting for approval skipping those that are missing expected data or assets such as thumbnails.
+// queries parses all records waiting for approval skipping those that
+// are missing expected data or assets such as thumbnails.
 func queries() error {
 	db := Connect()
 	defer db.Close()
@@ -176,16 +178,17 @@ func (r record) approve() error {
 	return nil
 }
 
-func (r *record) autoID(data string) uint {
+func (r *record) autoID(data string) (id uint) {
 	i, err := strconv.Atoi(data)
 	if err != nil {
 		return 0
 	}
-	r.id = uint(i)
-	return uint(i)
+	id = uint(i)
+	r.id = id
+	return id
 }
 
-func (r record) checkDownload(path string) bool {
+func (r record) checkDownload(path string) (ok bool) {
 	file := filepath.Join(fmt.Sprint(path), r.uuid)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return r.recoverDownload(path)
@@ -193,7 +196,7 @@ func (r record) checkDownload(path string) bool {
 	return true
 }
 
-func (r record) recoverDownload(path string) bool {
+func (r record) recoverDownload(path string) (ok bool) {
 	src := viper.GetString("directory.incoming.files")
 	if src == "" {
 		return false
@@ -218,7 +221,7 @@ func (r record) recoverDownload(path string) bool {
 	return true
 }
 
-func (r *record) checkFileContent(fc string) bool {
+func (r *record) checkFileContent(fc string) (ok bool) {
 	r.zipContent = fc
 	switch filepath.Ext(r.filename) {
 	case ".7z", ".arj", ".rar", ".zip":
@@ -229,14 +232,14 @@ func (r *record) checkFileContent(fc string) bool {
 	return true
 }
 
-func (r *record) checkFileName(fn string) bool {
+func (r *record) checkFileName(fn string) (ok bool) {
 	if r.filename = string(fn); r.filename == "" {
 		return false
 	}
 	return true
 }
 
-func (r *record) checkFileSize(fs string) bool {
+func (r *record) checkFileSize(fs string) (ok bool) {
 	i, err := strconv.Atoi(fs)
 	if err != nil {
 		return false
@@ -245,7 +248,7 @@ func (r *record) checkFileSize(fs string) bool {
 	return true
 }
 
-func (r *record) checkGroups(g1, g2 string) bool {
+func (r *record) checkGroups(g1, g2 string) (ok bool) {
 	r.groupBy = g1
 	r.groupFor = g2
 	if r.groupBy == "" && r.groupFor == "" {
@@ -257,7 +260,7 @@ func (r *record) checkGroups(g1, g2 string) bool {
 	return true
 }
 
-func (r *record) checkHash(h1, h2 string) bool {
+func (r *record) checkHash(h1, h2 string) (ok bool) {
 	if r.hashStrong = string(h1); r.hashStrong == "" {
 		return false
 	}
@@ -267,14 +270,14 @@ func (r *record) checkHash(h1, h2 string) bool {
 	return true
 }
 
-func (r record) checkImage(path string) bool {
+func (r record) checkImage(path string) (ok bool) {
 	if _, err := os.Stat(r.imagePath(path)); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-func (r *record) checkTags(t1, t2 string) bool {
+func (r *record) checkTags(t1, t2 string) (ok bool) {
 	if r.platform = t1; r.platform == "" {
 		return false
 	}
@@ -302,7 +305,7 @@ func (r record) summary(rows int) {
 }
 
 // fileCopy copies a file to the destination.
-func fileCopy(name, dest string) (int64, error) {
+func fileCopy(name, dest string) (written int64, err error) {
 	src, err := os.Open(name)
 	if err != nil {
 		return 0, err
@@ -313,9 +316,9 @@ func fileCopy(name, dest string) (int64, error) {
 		return 0, err
 	}
 	defer file.Close()
-	i, err := io.Copy(file, src)
+	written, err = io.Copy(file, src)
 	if err != nil {
 		return 0, err
 	}
-	return i, nil
+	return written, nil
 }
