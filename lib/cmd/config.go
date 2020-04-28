@@ -4,9 +4,10 @@ package cmd
 
 import (
 	"github.com/Defacto2/df2/lib/config"
+	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var cfgOWFlag bool
@@ -76,32 +77,10 @@ var configSetCmd = &cobra.Command{
 	},
 }
 
-// InitDefaults initialises flag and configuration defaults.
-func InitDefaults() {
-	viper.SetDefault("connection.name", "defacto2-inno")
-	viper.SetDefault("connection.user", "root")
-	viper.SetDefault("connection.password", "password")
-
-	viper.SetDefault("connection.server.protocol", "tcp")
-	viper.SetDefault("connection.server.host", "localhost")
-	viper.SetDefault("connection.server.port", "3306")
-
-	viper.SetDefault("directory.root", "/opt/assets")
-	viper.SetDefault("directory.backup", "/opt/assets/backups")
-	viper.SetDefault("directory.sql", "/opt/assets/sql")
-	viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
-	viper.SetDefault("directory.uuid", "/opt/assets/downloads")
-	viper.SetDefault("directory.000", "/opt/assets/000")
-	viper.SetDefault("directory.150", "/opt/assets/150")
-	viper.SetDefault("directory.400", "/opt/assets/400")
-	viper.SetDefault("directory.html", "/opt/assets/html")
-	viper.SetDefault("directory.views", "/opt/assets/views")
-	viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
-	viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
-}
-
 func init() {
-	InitDefaults()
+	database.Init()
+	directories.Init(false)
+
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configCreateCmd)
 	configCreateCmd.Flags().BoolVarP(&cfgOWFlag, "overwrite", "y", false, "overwrite any existing config file")

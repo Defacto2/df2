@@ -51,6 +51,39 @@ func (c *Connection) String() string {
 	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
 }
 
+// Init initializes default connection settings.
+func Init() {
+	viper.SetDefault("connection.name", "defacto2-inno")
+	viper.SetDefault("connection.user", "root")
+	viper.SetDefault("connection.password", "password")
+	viper.SetDefault("connection.server.protocol", "tcp")
+	viper.SetDefault("connection.server.host", "localhost")
+	viper.SetDefault("connection.server.port", "3306")
+}
+
+// config initializes the database connection using stored settings.
+func config() {
+	// exit if Connection has already been initialized
+	if c != (Connection{}) {
+		return
+	}
+	if viper.GetString("connection.name") == "" {
+		Init()
+	}
+	c = Connection{
+		Name:     viper.GetString("connection.name"),
+		User:     viper.GetString("connection.user"),
+		Pass:     viper.GetString("connection.password"),
+		Protocol: viper.GetString("connection.server.protocol"),
+		Address:  viper.GetString("connection.server.host"),
+		Port:     viper.GetString("connection.server.port"),
+		Server: fmt.Sprintf("%v(%v:%v)", // example: tcp(localhost:3306)
+			viper.GetString("connection.server.protocol"),
+			viper.GetString("connection.server.host"),
+			viper.GetString("connection.server.port")),
+	}
+}
+
 // Connect will connect to the database and handle any errors.
 func Connect() *sql.DB {
 	config()
@@ -371,23 +404,4 @@ func Total(s *string) (total int) {
 		total++
 	}
 	return total
-}
-
-// config initializes the database connection using stored settings.
-func config() {
-	if c != (Connection{}) { // check for empty struct
-		return
-	}
-	c = Connection{
-		Name:     viper.GetString("connection.name"),
-		User:     viper.GetString("connection.user"),
-		Pass:     viper.GetString("connection.password"),
-		Protocol: viper.GetString("connection.server.protocol"),
-		Address:  viper.GetString("connection.server.host"),
-		Port:     viper.GetString("connection.server.port"),
-		Server: fmt.Sprintf("%v(%v:%v)", // example: tcp(localhost:3306)
-			viper.GetString("connection.server.protocol"),
-			viper.GetString("connection.server.host"),
-			viper.GetString("connection.server.port")),
-	}
 }

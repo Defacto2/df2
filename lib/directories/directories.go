@@ -37,6 +37,20 @@ var (
 
 // Init initializes the subdirectories and UUID structure.
 func Init(create bool) Dir {
+	if viper.GetString("directory.root") == "" {
+		viper.SetDefault("directory.root", "/opt/assets")
+		viper.SetDefault("directory.backup", "/opt/assets/backups")
+		viper.SetDefault("directory.sql", "/opt/assets/sql")
+		viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
+		viper.SetDefault("directory.uuid", "/opt/assets/downloads")
+		viper.SetDefault("directory.000", "/opt/assets/000")
+		viper.SetDefault("directory.150", "/opt/assets/150")
+		viper.SetDefault("directory.400", "/opt/assets/400")
+		viper.SetDefault("directory.html", "/opt/assets/html")
+		viper.SetDefault("directory.views", "/opt/assets/views")
+		viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
+		viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
+	}
 	D.Base = viper.GetString("directory.root")
 	D.UUID = viper.GetString("directory.uuid")
 	D.Emu = viper.GetString("directory.emu")
