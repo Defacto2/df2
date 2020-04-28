@@ -13,52 +13,46 @@ import (
 	"github.com/spf13/viper"
 )
 
-// random characters used in randStringBytes()
+// random characters used by randStringBytes()
 const random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
 
 // Dir is a collection of paths containing files.
 type Dir struct {
-	Base   string // base directory path that hosts these other subdirectories
-	UUID   string // path to file downloads with UUID as filenames
-	Image  string // path to image previews and thumbnails
-	File   string // path to webapp generated files such as JSON/XML
-	Emu    string // path to the DOSee emulation files
-	Backup string // path to the backup archives or previously removed files
-	SQL    string // path to the SQL data dumps
 	Img000 string // path to screencaptures and previews
 	Img150 string // path to 150x150 squared thumbnails
 	Img400 string // path to 400x400 squared thumbnails
+	Backup string // path to the backup archives or previously removed files
+	Emu    string // path to the DOSee emulation files
+	Base   string // base directory path that hosts these other subdirectories
+	UUID   string // path to file downloads with UUID as filenames
 }
 
-var (
-	// D are directory paths to UUID named files.
-	D = Dir{}
-)
+// D are directory paths.
+var D = Dir{}
 
 // Init initializes the subdirectories and UUID structure.
 func Init(create bool) Dir {
 	if viper.GetString("directory.root") == "" {
-		viper.SetDefault("directory.root", "/opt/assets")
-		viper.SetDefault("directory.backup", "/opt/assets/backups")
-		viper.SetDefault("directory.sql", "/opt/assets/sql")
-		viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
-		viper.SetDefault("directory.uuid", "/opt/assets/downloads")
 		viper.SetDefault("directory.000", "/opt/assets/000")
 		viper.SetDefault("directory.150", "/opt/assets/150")
 		viper.SetDefault("directory.400", "/opt/assets/400")
+		viper.SetDefault("directory.backup", "/opt/assets/backups")
+		viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
 		viper.SetDefault("directory.html", "/opt/assets/html")
-		viper.SetDefault("directory.views", "/opt/assets/views")
 		viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
 		viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
+		viper.SetDefault("directory.root", "/opt/assets")
+		viper.SetDefault("directory.sql", "/opt/assets/sql")
+		viper.SetDefault("directory.uuid", "/opt/assets/downloads")
+		viper.SetDefault("directory.views", "/opt/assets/views")
 	}
+	D.Img000 = viper.GetString("directory.000")
+	D.Img150 = viper.GetString("directory.150")
+	D.Img400 = viper.GetString("directory.400")
+	D.Backup = viper.GetString("directory.backup")
+	D.Emu = viper.GetString("directory.emu")
 	D.Base = viper.GetString("directory.root")
 	D.UUID = viper.GetString("directory.uuid")
-	D.Emu = viper.GetString("directory.emu")
-	D.Backup = viper.GetString("directory.backup")
-	D.SQL = viper.GetString("directory.sql")
-	D.Img000 = viper.GetString("directory.000")
-	D.Img400 = viper.GetString("directory.400")
-	D.Img150 = viper.GetString("directory.150")
 	if create {
 		createDirectories()
 		createPlaceHolders()
