@@ -118,7 +118,7 @@ func remDupeSpaces(s string) string {
 }
 
 // toClean fixes and saves a malformed group name.
-func toClean(g string) bool {
+func toClean(g string) (ok bool) {
 	f := ToClean(g)
 	if f == g {
 		return false
@@ -128,12 +128,12 @@ func toClean(g string) bool {
 		return true
 	}
 	s := logs.Y()
-	r := true
+	ok = true
 	var _, err = database.RenGroup(f, g)
 	if err != nil {
 		s = logs.X()
-		r = false
+		ok = false
 	}
 	logs.Printf("%s %q %s %s\n", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
-	return r
+	return ok
 }
