@@ -266,7 +266,7 @@ func mutateURL(u *url.URL) *url.URL {
 }
 
 // parse corrects any known errors with a Downloads API link.
-func (dl *DownloadsAPIv1) parse() bool {
+func (dl *DownloadsAPIv1) parse() (ok bool) {
 	u, err := url.Parse(dl.URL) // validate url
 	if err != nil {
 		return false
@@ -277,11 +277,11 @@ func (dl *DownloadsAPIv1) parse() bool {
 }
 
 // randomName generates a random temporary filename.
-func randomName() string {
+func randomName() (name string) {
 	tmpfile, err := ioutil.TempFile("", "df2-download")
 	logs.Check(err)
 	defer os.Remove(tmpfile.Name())
-	name := tmpfile.Name()
+	name = tmpfile.Name()
 	err = tmpfile.Close()
 	logs.Check(err)
 	return name

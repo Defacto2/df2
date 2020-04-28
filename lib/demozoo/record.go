@@ -98,9 +98,8 @@ func (r *Record) fileZipContent() (ok bool) {
 	return true
 }
 
-func (r Record) sql() (string, []interface{}) {
+func (r Record) sql() (query string, args []interface{}) {
 	var set []string
-	var args []interface{}
 	// an range map iternation is not used due to the varied comparisions
 	if r.Filename != "" {
 		set = append(set, "filename=?")
@@ -177,7 +176,7 @@ func (r Record) sql() (string, []interface{}) {
 	args = append(args, []interface{}{time.Now()}...)
 	set = append(set, "updatedby=?")
 	args = append(args, []interface{}{database.UpdateID}...)
-	query := "UPDATE files SET " + strings.Join(set, ",") + " WHERE id=?"
+	query = "UPDATE files SET " + strings.Join(set, ",") + " WHERE id=?"
 	args = append(args, []interface{}{r.ID}...)
 	return query, args
 }

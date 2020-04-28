@@ -53,14 +53,14 @@ func Init(create bool) Dir {
 }
 
 // Files initializes the full path filenames for a UUID.
-func Files(name string) Dir {
-	f := Init(false)
-	f.UUID = path.Join(f.UUID, name)
-	f.Emu = path.Join(f.Emu, name)
-	f.Img000 = path.Join(f.Img000, name)
-	f.Img400 = path.Join(f.Img400, name)
-	f.Img150 = path.Join(f.Img150, name)
-	return f
+func Files(name string) (dirs Dir) {
+	dirs = Init(false)
+	dirs.UUID = path.Join(dirs.UUID, name)
+	dirs.Emu = path.Join(dirs.Emu, name)
+	dirs.Img000 = path.Join(dirs.Img000, name)
+	dirs.Img400 = path.Join(dirs.Img400, name)
+	dirs.Img150 = path.Join(dirs.Img150, name)
+	return dirs
 }
 
 // createDirectories generates a series of UUID subdirectories.
@@ -75,7 +75,7 @@ func createDirectories() {
 }
 
 // createDirectory creates a UUID subdirectory provided to path.
-func createDirectory(path string) bool {
+func createDirectory(path string) (ok bool) {
 	src, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		if err := os.MkdirAll(path, 0755); err != nil {
