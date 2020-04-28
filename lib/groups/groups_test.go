@@ -26,7 +26,7 @@ func Test_sqlGroupsWhere(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := sqlGroupsWhere(tt.args.name, tt.args.incSoftDeletes); got != tt.want {
+			if got, _ := sqlGroupsWhere(tt.args.name, tt.args.incSoftDeletes); got != tt.want {
 				t.Errorf("sqlGroupsWhere() = %q, want %q", got, tt.want)
 			}
 		})
@@ -57,6 +57,24 @@ func TestMakeSlug(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := MakeSlug(tt.args.name); got != tt.want {
 				t.Errorf("MakeSlug() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_initialism(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantNew string
+	}{
+		{"", ""},
+		{"Defacto2", "DF2"},
+		{"not found", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotNew := initialism(tt.name); gotNew != tt.wantNew {
+				t.Errorf("initialism() = %v, want %v", gotNew, tt.wantNew)
 			}
 		})
 	}
@@ -208,19 +226,68 @@ func TestToClean(t *testing.T) {
 	}
 }
 
-func Test_initialism(t *testing.T) {
+func Test_list(t *testing.T) {
 	tests := []struct {
-		name    string
-		wantNew string
+		name      string
+		wantTotal int
 	}{
-		{"", ""},
-		{"Defacto2", "DF2"},
-		{"not found", ""},
+		{"bbs", 3000},
+		{"ftp", 400},
+		{"magazine", 100},
+		{"group", 2000},
+		{"", 5000},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotNew := initialism(tt.name); gotNew != tt.wantNew {
-				t.Errorf("initialism() = %v, want %v", gotNew, tt.wantNew)
+			gotGroups, gotTotal := list(tt.name)
+			if len(gotGroups) <= tt.wantTotal {
+				t.Errorf("list() gotGroups count = %v, want >= %v", len(gotGroups), tt.wantTotal)
+			}
+			if gotTotal <= tt.wantTotal {
+				t.Errorf("list() gotTotal = %v, want >= %v", gotTotal, tt.wantTotal)
+			}
+		})
+	}
+}
+
+func Test_sqlGroups(t *testing.T) {
+	type args struct {
+		filter             string
+		includeSoftDeletes bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"valid soft", args{"bbs", true}, false},
+		{"valid", args{"bbs", false}, false},
+		{"invalid", args{"invalid filter", false}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := sqlGroups(tt.args.filter, tt.args.includeSoftDeletes)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("sqlGroups() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
+func TestCount(t *testing.T) {
+	tests := []struct {
+		name      string
+		wantCount int
+	}{
+		{"", 0},
+		{"abcdefgh", 0},
+		{"Defacto2", 28},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotCount := Count(tt.name); gotCount != tt.wantCount {
+				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
 			}
 		})
 	}

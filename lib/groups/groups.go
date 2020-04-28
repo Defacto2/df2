@@ -48,9 +48,9 @@ func Count(name string) (count int) {
 	db := database.Connect()
 	defer db.Close()
 	n := name
-	s := "SELECT COUNT(*) FROM files WHERE "
-	s += fmt.Sprintf("group_brand_for='%v' OR group_brand_for LIKE '%v,%%' OR group_brand_for LIKE '%%, %v,%%' OR group_brand_for LIKE '%%, %v'", n, n, n, n)
-	s += fmt.Sprintf(" OR group_brand_by='%v' OR group_brand_by LIKE '%v,%%' OR group_brand_by LIKE '%%, %v,%%' OR group_brand_by LIKE '%%, %v'", n, n, n, n)
+	s := "SELECT COUNT(*) FROM files WHERE " +
+		fmt.Sprintf("group_brand_for='%v' OR group_brand_for LIKE '%v,%%' OR group_brand_for LIKE '%%, %v,%%' OR group_brand_for LIKE '%%, %v'", n, n, n, n) +
+		fmt.Sprintf(" OR group_brand_by='%v' OR group_brand_by LIKE '%v,%%' OR group_brand_by LIKE '%%, %v,%%' OR group_brand_by LIKE '%%, %v'", n, n, n, n)
 	row := db.QueryRow(s)
 	err := row.Scan(&count)
 	logs.Check(err)
@@ -146,11 +146,11 @@ func (r Request) parse(filename string, tpl string) {
 }
 
 // list all organizations or filtered groups.
-
 func list(filter string) (groups []string, total int) {
 	db := database.Connect()
 	defer db.Close()
-	s := sqlGroups(filter, false)
+	s, err := sqlGroups(filter, false)
+	logs.Check(err)
 	fmt.Printf("%s\n\n", s)
 	total = database.Total(&s)
 	// interate through records
@@ -282,14 +282,17 @@ func remInitialism(s string) string {
 }
 
 // sqlGroups returns a complete SQL WHERE statement where the groups are filtered.
-func sqlGroups(filter string, includeSoftDeletes bool) (sql string) {
+func sqlGroups(filter string, includeSoftDeletes bool) (sql string, err error) {
 	var inc, skip bool = includeSoftDeletes, false
 	for _, a := range Wheres() {
 		if a == filter {
 			skip = true
 		}
 	}
-	var where = sqlGroupsWhere(filter, inc)
+	where, err := sqlGroupsWhere(filter, inc)
+	if err != nil {
+		return sql, err
+	}
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
 		sql = "SELECT DISTINCT group_brand_for AS pubCombined " +
@@ -301,14 +304,14 @@ func sqlGroups(filter string, includeSoftDeletes bool) (sql string) {
 			"(SELECT DISTINCT group_brand_by AS pubCombined " +
 			"FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
 	}
-	return sql + " ORDER BY pubCombined"
+	return sql + " ORDER BY pubCombined", err
 }
 
 // sqlGroupsFilter returns a partial SQL WHERE statement to filter groups.
-func sqlGroupsFilter(filter string) (sql string) {
+func sqlGroupsFilter(filter string) (sql string, err error) {
 	switch filter {
 	case "":
-		return sql
+		return sql, err
 	case "magazine":
 		sql = "section = 'magazine' AND"
 	case "bbs":
@@ -318,14 +321,17 @@ func sqlGroupsFilter(filter string) (sql string) {
 	case "group": // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
 		sql = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
 	default:
-		logs.Check(fmt.Errorf("groups sqlGroupsFilter: unsupported filter option %q, leave blank or use either %v", filter, Filters))
+		err = fmt.Errorf("groups sqlGroupsFilter: unsupported filter option %q, leave blank or use either %v", filter, Filters)
 	}
-	return sql
+	return sql, err
 }
 
 // sqlGroupsWhere returns a partial SQL WHERE statement where groups are filtered.
-func sqlGroupsWhere(filter string, includeSoftDeletes bool) string {
-	sql := sqlGroupsFilter(filter)
+func sqlGroupsWhere(filter string, includeSoftDeletes bool) (sql string, err error) {
+	sql, err = sqlGroupsFilter(filter)
+	if err != nil {
+		return sql, err
+	}
 	switch {
 	case sql != "" && includeSoftDeletes:
 		sql = "AND " + sql
@@ -338,7 +344,7 @@ func sqlGroupsWhere(filter string, includeSoftDeletes bool) string {
 	l := len(sql)
 	if l > 4 && sql[l-4:] == " AND" {
 		logs.Printf("%q|", sql[l-4:])
-		return sql[:l-4]
+		return sql[:l-4], err
 	}
-	return sql
+	return sql, err
 }
