@@ -207,3 +207,21 @@ func TestToClean(t *testing.T) {
 		})
 	}
 }
+
+func Test_initialism(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantNew string
+	}{
+		{"", ""},
+		{"Defacto2", "DF2"},
+		{"not found", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotNew := initialism(tt.name); gotNew != tt.wantNew {
+				t.Errorf("initialism() = %v, want %v", gotNew, tt.wantNew)
+			}
+		})
+	}
+}
