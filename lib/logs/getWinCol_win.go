@@ -2,6 +2,6 @@
 
 package logs
 
-func getWinCol() uint16 {
+func getWinCol() (columns uint16) {
 	return uint16(80) // 80 column fallback
 }
