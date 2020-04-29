@@ -177,9 +177,12 @@ func ProgressPct(name string, count, total int) float64 {
 	return r
 }
 
-// ProgressSum returns the count of total remaining. TODO toggle with a configuration setting
-func ProgressSum(count, total int) {
-	fmt.Printf("\rBuilding %d/%d", count, total)
+// ProgressSum returns the count of total remaining.
+// TODO: toggle with a configuration setting
+func ProgressSum(count, total int) (sum string) {
+	sum = fmt.Sprintf("%d/%d", count, total)
+	fmt.Printf("\rBuilding %s", sum)
+	return sum
 }
 
 // Sec prints a secondary notice.
