@@ -15,9 +15,9 @@ import (
 var simulate bool = true
 
 // Fix any malformed group names found in the database.
-func Fix(sim bool) {
-	simulate = sim
-	names, nc := list("")
+func Fix(simulate bool) {
+	names, nc, err := list("")
+	logs.Check(err)
 	c := 0
 	start := time.Now()
 	group := parallelizer.NewGroup(parallelizer.WithJobQueueSize(nc))
@@ -29,7 +29,7 @@ func Fix(sim bool) {
 			}
 		})
 	}
-	err := group.Wait()
+	err = group.Wait()
 	logs.Check(err)
 	switch {
 	case c > 0 && simulate:

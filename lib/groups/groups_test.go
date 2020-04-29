@@ -1,6 +1,8 @@
 package groups
 
 import (
+	"os"
+	"path"
 	"reflect"
 	"testing"
 )
@@ -230,20 +232,26 @@ func Test_list(t *testing.T) {
 	tests := []struct {
 		name      string
 		wantTotal int
+		wantErr   bool
 	}{
-		{"bbs", 3000},
-		{"ftp", 400},
-		{"magazine", 100},
-		{"group", 2000},
-		{"", 5000},
+		{"bbs", 3000, false},
+		{"ftp", 400, false},
+		{"magazine", 100, false},
+		{"group", 2000, false},
+		{"", 5000, false},
+		{"error", 0, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotGroups, gotTotal := list(tt.name)
-			if len(gotGroups) <= tt.wantTotal {
+			gotGroups, gotTotal, err := list(tt.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("list() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if len(gotGroups) < tt.wantTotal {
 				t.Errorf("list() gotGroups count = %v, want >= %v", len(gotGroups), tt.wantTotal)
 			}
-			if gotTotal <= tt.wantTotal {
+			if gotTotal < tt.wantTotal {
 				t.Errorf("list() gotTotal = %v, want >= %v", gotTotal, tt.wantTotal)
 			}
 		})
@@ -288,6 +296,124 @@ func TestCount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotCount := Count(tt.name); gotCount != tt.wantCount {
 				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
+			}
+		})
+	}
+}
+
+func Test_hrElement(t *testing.T) {
+	type args struct {
+		cap   string
+		group string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 bool
+	}{
+		{"empty", args{"", ""}, "", false},
+		{"Defacto2", args{"", "Defacto2"}, "D", false},
+		{"Defacto2", args{"D", "Defacto2"}, "D", false},
+		{"Defacto2", args{"C", "Defacto2"}, "D", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := hrElement(tt.args.cap, tt.args.group)
+			if got != tt.want {
+				t.Errorf("hrElement() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("hrElement() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func TestRequest_files(t *testing.T) {
+	type args struct {
+		group string
+	}
+	tests := []struct {
+		name      string
+		r         Request
+		args      args
+		wantTotal int
+	}{
+		{"empty", Request{}, args{""}, 0},
+		{"none", Request{Counts: false}, args{"Defacto2"}, 0},
+		{"Defacto2", Request{Counts: true}, args{"Defacto2"}, 28},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotTotal := tt.r.files(tt.args.group); gotTotal != tt.wantTotal {
+				t.Errorf("Request.files() = %v, want %v", gotTotal, tt.wantTotal)
+			}
+		})
+	}
+}
+
+func TestRequest_initialism(t *testing.T) {
+	type args struct {
+		group string
+	}
+	tests := []struct {
+		name     string
+		r        Request
+		args     args
+		wantName string
+	}{
+		{"empty", Request{}, args{""}, ""},
+		{"none", Request{Initialisms: false}, args{"Defacto2"}, ""},
+		{"Defacto2", Request{Initialisms: true}, args{"Defacto2"}, "DF2"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotName := tt.r.initialism(tt.args.group); gotName != tt.wantName {
+				t.Errorf("Request.initialism() = %v, want %v", gotName, tt.wantName)
+			}
+		})
+	}
+}
+
+func TestRequest_parse(t *testing.T) {
+	type args struct {
+		filename string
+		templ    string
+	}
+	tests := []struct {
+		name    string
+		r       Request
+		args    args
+		wantErr bool
+	}{
+		{"empty", Request{}, args{"", ""}, false},
+		{"empty", Request{}, args{os.TempDir(), ""}, true},
+		{"empty", Request{}, args{"", "invalidTemplate"}, false},
+		{"empty", Request{Filter: "bbs"}, args{path.Join(os.TempDir(), "dump.test"), ""}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.r.parse(tt.args.filename, tt.args.templ); (err != nil) != tt.wantErr {
+				t.Errorf("Request.parse() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPrint(t *testing.T) {
+	tests := []struct {
+		name      string
+		r         Request
+		wantTotal int
+	}{
+		{"", Request{}, 6000},
+		{"bbs", Request{Filter: "bbs"}, 3000},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotTotal := Print(tt.r); gotTotal < tt.wantTotal {
+				t.Errorf("Print() = %v, want > %v", gotTotal, tt.wantTotal)
 			}
 		})
 	}

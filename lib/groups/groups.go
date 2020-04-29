@@ -74,98 +74,129 @@ func Cronjob() {
 func (r Request) DataList(filename string) {
 	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
 	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}<option value="{{.Name}}" label="{{.Name}}">{{end}}`
-	r.parse(filename, tpl)
+	err := r.parse(filename, tpl)
+	logs.Check(err)
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
 func (r Request) HTML(filename string) {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
-	r.parse(filename, tpl)
+	err := r.parse(filename, tpl)
+	logs.Check(err)
 }
 
-func (r Request) parse(filename string, tpl string) {
-	grp, x := list(r.Filter)
-	f := r.Filter
-	if f == "" {
-		f = "all"
-	}
-	logs.Println(x, "matching", f, "records found")
-	data := make([]Group, len(grp))
-	cap := ""
+func hrElement(letter, group string) (string, bool) {
 	hr := false
-	total := len(grp)
-	for i := range grp {
+	if group == "" {
+		return "", hr
+	}
+	switch g := group[:1]; {
+	case letter == "":
+		letter = g
+	case letter != g:
+		letter = g
+		hr = true
+	}
+	return letter, hr
+}
+
+func (r Request) files(group string) (total int) {
+	if r.Counts {
+		return Count(group)
+	}
+	return 0
+}
+
+func (r Request) initialism(group string) (name string) {
+	if r.Initialisms {
+		return initialism(group)
+	}
+	return ""
+}
+
+func (r Request) iterate(groups []string) *[]Group {
+	total := len(groups)
+	data := make([]Group, total)
+	var lastLetter = ""
+	var hr = false
+	for i, grp := range groups {
 		if !logs.Quiet && r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)
 		}
-		n := grp[i]
-		// hr element
-		switch c := n[:1]; {
-		case cap == "":
-			cap = c
-		case c != cap:
-			cap = c
-			hr = true
-		default:
-			hr = false
-		}
-		// file totals
-		c := 0
-		if r.Counts {
-			c = Count(n)
-		}
-		// initialism
-		in := ""
-		if r.Initialisms {
-			in = initialism(n)
-		}
+		lastLetter, hr = hrElement(lastLetter, grp)
 		data[i] = Group{
-			ID:         MakeSlug(n),
-			Name:       n,
-			Count:      c,
-			Initialism: in,
+			ID:         MakeSlug(grp),
+			Name:       grp,
+			Count:      r.files(grp),
+			Initialism: r.initialism(grp),
 			Hr:         hr,
 		}
 	}
-	t, err := template.New("h2").Parse(tpl)
-	logs.Check(err)
+	return &data
+}
+
+func (r Request) parse(filename string, templ string) (err error) {
+	groups, total, err := list(r.Filter)
+	if err != nil {
+		return err
+	}
+	if f := r.Filter; f == "" {
+		logs.Println(total, "matching (all) records found")
+	} else {
+		logs.Println(total, "matching", f, "records found")
+	}
+	data := r.iterate(groups)
+	t, err := template.New("h2").Parse(templ)
+	if err != nil {
+		return err
+	}
 	switch {
 	case filename == "":
-		err = t.Execute(os.Stdout, data)
-		logs.Check(err)
+		if err = t.Execute(os.Stdout, &data); err != nil {
+			return err
+		}
 	case r.Filter == "bbs", r.Filter == "ftp", r.Filter == "group", r.Filter == "magazine":
 		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
-		logs.Check(err)
+		if err != nil {
+			return err
+		}
 		defer f.Close()
-		err = t.Execute(f, data)
-		logs.Check(err)
+		if err = t.Execute(f, &data); err != nil {
+			return err
+		}
 	default:
-		logs.Check(fmt.Errorf("groups parse: invalid filter %q used", r.Filter))
+		return fmt.Errorf("groups parse: invalid filter %q used", r.Filter)
 	}
+	return nil
 }
 
 // list all organizations or filtered groups.
-func list(filter string) (groups []string, total int) {
+func list(filter string) (groups []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
 	s, err := sqlGroups(filter, false)
-	logs.Check(err)
+	if err != nil {
+		return groups, total, err
+	}
 	fmt.Printf("%s\n\n", s)
 	total = database.Total(&s)
 	// interate through records
 	rows, err := db.Query(s)
-	logs.Check(err)
+	if err != nil {
+		return groups, total, err
+	}
 	var grp sql.NullString
 	for rows.Next() {
-		err = rows.Scan(&grp)
-		logs.Check(err)
+		if err = rows.Scan(&grp); err != nil {
+			return groups, total, err
+		}
 		if _, err = grp.Value(); err != nil {
 			continue
 		}
 		groups = append(groups, fmt.Sprintf("%v", grp.String))
 	}
-	return groups, total
+	return groups, total, err
 }
 
 // MakeSlug takes a name and makes it into a URL friendly slug.
@@ -186,8 +217,9 @@ func MakeSlug(name string) string {
 }
 
 // Print list organizations or groups filtered by a name and summaries the results.
-func Print(r Request) {
-	grp, total := list(r.Filter)
+func Print(r Request) (total int) {
+	grp, total, err := list(r.Filter)
+	logs.Check(err)
 	logs.Println(total, "matching", r.Filter, "records found")
 	var a []string
 	for i := range grp {
@@ -214,6 +246,7 @@ func Print(r Request) {
 	logs.Println()
 	logs.Println(strings.Join(a, ", "))
 	logs.Println("Total groups", total)
+	return total
 }
 
 // Variations creates format variations for a named group.
