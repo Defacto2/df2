@@ -62,11 +62,6 @@ func Check(err error) {
 	}
 }
 
-// EL prints the ANSI command Erase in Line.
-func EL() {
-	Print(AEL)
-}
-
 // Log an error but do not exit to the operating system.
 func Log(err error) {
 	if err != nil {
