@@ -65,7 +65,7 @@ func Generate(name, id string) {
 		s, err = images.ToPng(o, images.NewExt(o, ".png"), 16383)
 		out(s, err)
 	}
-	s, err = images.ToWebp(o, images.NewExt(o, ".webp"))
+	s, err = images.ToWebp(o, images.NewExt(o, ".webp"), true)
 	out(s, err)
 	s, err = images.ToThumb(o, f.Img400, 400)
 	out(s, err)

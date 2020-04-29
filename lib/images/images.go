@@ -28,24 +28,25 @@ import (
 
 var scope = gap.NewScope(gap.User, "df2")
 
-// Duplicate an image file and appends prefix to its name.
-func Duplicate(name, prefix string) (string, error) {
-	src, err := os.Open(name)
+// Duplicate an image file and appends suffix to its name.
+func Duplicate(filename, suffix string) (name string, err error) {
+	src, err := os.Open(filename)
 	if err != nil {
-		return "", err
+		return name, err
 	}
 	defer src.Close()
-	ext := filepath.Ext(name)
-	fn := strings.TrimSuffix(name, ext)
-	dest, err := os.OpenFile(fn+prefix+ext, os.O_RDWR|os.O_CREATE, 0666)
+	ext := filepath.Ext(filename)
+	fn := strings.TrimSuffix(filename, ext)
+	dest, err := os.OpenFile(fn+suffix+ext, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return "", err
+		return name, err
 	}
 	defer dest.Close()
 	if _, err = io.Copy(dest, src); err != nil {
-		return "", err
+		return name, err
 	}
-	return fn + prefix + ext, nil
+	name = fmt.Sprintf("%s%s%s", fn, suffix, ext)
+	return name, err
 }
 
 // Generate a collection of site images.
@@ -62,7 +63,7 @@ func Generate(name, id string, remove bool) {
 	// these funcs use dependencies that are not thread safe
 	s, err := ToPng(n, NewExt(f.Img000, ".png"), 1500)
 	out(s, err)
-	s, err = ToWebp(n, NewExt(f.Img000, ".webp"))
+	s, err = ToWebp(n, NewExt(f.Img000, ".webp"), true)
 	out(s, err)
 	s, err = ToThumb(n, f.Img400, 400)
 	out(s, err)
@@ -74,47 +75,47 @@ func Generate(name, id string, remove bool) {
 }
 
 // NewExt replaces or appends the extension to a file name.
-func NewExt(name, extension string) string {
-	e := filepath.Ext(name)
+func NewExt(path, extension string) (name string) {
+	e := filepath.Ext(path)
 	if e == "" {
-		return name + extension
+		return path + extension
 	}
-	fn := strings.TrimSuffix(name, e)
+	fn := strings.TrimSuffix(path, e)
 	return fn + extension
 }
 
-// Info returns the image height, width and format.
-func Info(name string) (int, int, string, error) {
+// Info returns the image metadata.
+func Info(name string) (height int, width int, format string, err error) {
 	file, err := os.Open(name)
 	if err != nil {
-		return 0, 0, "", err
+		return height, width, format, err
 	}
 	defer file.Close()
 	config, format, err := image.DecodeConfig(file)
 	if err != nil {
-		return 0, 0, "", err
+		return height, width, format, err
 	}
 	return config.Height, config.Width, format, nil
 }
 
 // Width returns the image width in pixels.
-func Width(name string) (int, error) {
-	_, w, _, err := Info(name)
-	return w, err
+func Width(name string) (width int, err error) {
+	_, width, _, err = Info(name)
+	return width, err
 }
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
-func ToPng(src, dest string, maxDimension int) (string, error) {
+func ToPng(src, dest string, maxDimension int) (print string, err error) {
 	in, err := os.Open(src)
 	if err != nil {
-		return "", err
+		return print, err
 	}
 	defer in.Close()
 	// image.Decode will determine the format
 	img, ext, err := image.Decode(in)
 	if err != nil {
-		return "", err
+		return print, err
 	}
 	// cap image size
 	if maxDimension > 0 {
@@ -123,7 +124,7 @@ func ToPng(src, dest string, maxDimension int) (string, error) {
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
 	img, err = pngquant.Compress(img, "4")
 	if err != nil {
-		return "", err
+		return print, err
 	}
 	// adjust any configs to the PNG image encoder
 	cfg := png.Encoder{
@@ -131,73 +132,72 @@ func ToPng(src, dest string, maxDimension int) (string, error) {
 	}
 	// write the PNG data to img
 	buf := new(bytes.Buffer)
-	err = cfg.Encode(buf, img)
-	if err != nil {
-		return "", err
+	if err = cfg.Encode(buf, img); err != nil {
+		return print, err
 	}
 	// save the PNG to a file
 	out, err := os.Create(dest)
 	if err != nil {
-		return "", err
+		return print, err
 	}
 	defer out.Close()
-	_, err = buf.WriteTo(out)
-	if err != nil {
-		return "", err
+	if _, err := buf.WriteTo(out); err != nil {
+		return print, err
 	}
 	return fmt.Sprintf("%v»png", strings.ToLower(ext)), nil
 }
 
-// ToThumb creates a thumb from an image that is size pixel in width and height.
-func ToThumb(file, saveDir string, size int) (string, error) {
-	pfx := "_" + fmt.Sprintf("%v", size) + "x"
-	cp, err := Duplicate(file, pfx)
+// ToThumb creates a thumb from an image that is pixel squared in size.
+func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
+	pfx := "_" + fmt.Sprintf("%v", sizeSquared) + "x"
+	cp, err := Duplicate(src, pfx)
 	if err != nil {
-		return "", err
+		return print, err
 	}
 	in, err := imaging.Open(cp)
 	if err != nil {
-		return "", err
+		return print, err
 	}
-	in = imaging.Resize(in, size, 0, imaging.Lanczos)
-	in = imaging.CropAnchor(in, size, size, imaging.Center)
+	in = imaging.Resize(in, sizeSquared, 0, imaging.Lanczos)
+	in = imaging.CropAnchor(in, sizeSquared, sizeSquared, imaging.Center)
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
 	in, err = pngquant.Compress(in, "4")
 	if err != nil {
-		return "", err
+		return print, err
 	}
 	f := NewExt(cp, ".png")
 	if err := imaging.Save(in, f); err != nil {
-		return "", err
+		return print, err
 	}
-	s := NewExt(saveDir, ".png")
+	s := NewExt(dest, ".png")
 	if err := os.Rename(f, s); err != nil {
-		return "", err
+		return print, err
 	}
 	if _, err := os.Stat(cp); err == nil {
 		if err := os.Remove(cp); err != nil {
-			return "", err
+			return print, err
 		}
 	}
-	return fmt.Sprintf("»%vx", size), nil
+	return fmt.Sprintf("»%vx", sizeSquared), nil
 }
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
-func ToWebp(src, dest string) (string, error) {
-	// skip if already a webp image
-	if m, _ := mimetype.DetectFile(src); m.Extension() == ".webp" {
-		return "", nil
+func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
+	// skip if already a webp image, or handle all other errors
+	if m, err := mimetype.DetectFile(src); m.Extension() == ".webp" {
+		return print, err
+	} else if err != nil {
+		return print, err
 	}
-	//var skipDownload bool
-	//var dest = "vendor/webp"
-	err := webpbin.NewCWebP().
+	webp := webpbin.NewCWebP().
 		Quality(70).
 		InputFile(src).
-		OutputFile(dest).
-		Dest(vendorPath()).
-		Run()
-	if err != nil {
-		return "", err
+		OutputFile(dest)
+	if vendorTempDir {
+		webp.Dest(vendorPath())
+	}
+	if err = webp.Run(); err != nil {
+		return print, err
 	}
 	return fmt.Sprint("»webp"), nil
 }

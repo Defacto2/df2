@@ -64,6 +64,8 @@ df2 --version
 
 The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) to the system PATH.
 
+Image conversion for WebP support needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html).
+
 ### Configuration
 
 To view and test the database and directory configurations.

@@ -31,8 +31,7 @@ func (i Img) String() string {
 }
 
 // Fix generates any missing assets from downloads that are images.
-func Fix(sim bool) error {
-	simulate = sim
+func Fix(simulate bool) error {
 	dir = directories.Init(false)
 	db := database.Connect()
 	defer db.Close()
@@ -43,11 +42,10 @@ func Fix(sim bool) error {
 	c := 0
 	for rows.Next() {
 		var img Img
-		err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize)
-		if err != nil {
+		if err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize); err != nil {
 			logs.Check(err)
 		}
-		if !img.ext() {
+		if !img.validExt() {
 			continue
 		}
 		if !img.check() {
@@ -56,6 +54,8 @@ func Fix(sim bool) error {
 			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
 				logs.Printf("%s\n", logs.X())
 				continue
+			} else if err != nil {
+				return err
 			}
 			if simulate {
 				logs.Printf("%s\n", color.Question.Sprint("?"))
@@ -73,7 +73,7 @@ func Fix(sim bool) error {
 	return nil
 }
 
-func (i Img) ext() bool {
+func (i Img) validExt() (ok bool) {
 	switch filepath.Ext(i.Filename) {
 	case ".gif", ".jpg", ".jpeg", ".png":
 		return true
@@ -81,12 +81,12 @@ func (i Img) ext() bool {
 	return false
 }
 
-func (i Img) check() bool {
+func (i Img) check() (ok bool) {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
-		if _, err := os.Stat(filepath.Join(path, i.UUID+".png")); os.IsNotExist(err) {
-			return false
+		if _, err := os.Stat(filepath.Join(path, i.UUID+".png")); !os.IsNotExist(err) {
+			return true
 		}
 	}
-	return true
+	return false
 }
