@@ -51,7 +51,7 @@ func Arg(arg string, args []string) {
 // Check logs any errors and exits to the operating system with error code 1.
 func Check(err error) {
 	if err != nil {
-		save(err)
+		save(err, "")
 		switch Panic {
 		case true:
 			log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
@@ -65,7 +65,7 @@ func Check(err error) {
 // Log an error but do not exit to the operating system.
 func Log(err error) {
 	if err != nil {
-		save(err)
+		save(err, "")
 		switch Panic {
 		case true:
 			log.Println(fmt.Sprintf("error type %T\t: %v", err, err))
@@ -76,14 +76,17 @@ func Log(err error) {
 	}
 }
 
-func save(err error) {
-	if err == nil {
-		return
+// save an error to the logs.
+// path is available for unit tests.
+func save(err error, path string) (ok bool) {
+	if err == nil || fmt.Sprintf("%v", err) == "" {
+		return false
 	}
 	// use UTC date and times in the log file
 	log.SetFlags(log.Ldate | log.Ltime | log.LUTC)
-	fmt.Printf("\n%v\n", err)
-	path := Filepath()
+	if path == "" {
+		path = Filepath()
+	}
 	p := filepath.Dir(path)
 	if _, e := os.Stat(p); os.IsNotExist(e) {
 		e2 := os.MkdirAll(p, 0700)
@@ -95,6 +98,7 @@ func save(err error) {
 	log.SetOutput(file)
 	log.Print(err)
 	log.SetOutput(os.Stderr)
+	return true
 }
 
 func check(e error) {
