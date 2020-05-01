@@ -367,7 +367,10 @@ func PromptYN(query string, yesDefault bool) bool {
 
 // Truncate shortens a string to len characters.
 func Truncate(text string, len int) string {
-	var new string = "…"
+	if len < 1 {
+		return text
+	}
+	const new string = "…"
 	if utf8.RuneCountInString(text) <= len {
 		return text
 	}
