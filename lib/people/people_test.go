@@ -112,3 +112,59 @@ func TestList(t *testing.T) {
 		})
 	}
 }
+
+func TestDataList(t *testing.T) {
+	type args struct {
+		filename string
+		r        Request
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"error", args{"", Request{"error", false, false}}},
+		{"ok", args{"", Request{"", false, false}}},
+		{"progress", args{"", Request{"", false, true}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			DataList(tt.args.filename, tt.args.r)
+		})
+	}
+}
+
+func TestHTML(t *testing.T) {
+	type args struct {
+		filename string
+		r        Request
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"error", args{"", Request{"error", false, false}}},
+		{"ok", args{"", Request{"", false, false}}},
+		{"progress", args{"", Request{"", false, true}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			HTML(tt.args.filename, tt.args.r)
+		})
+	}
+}
+
+func TestPrint(t *testing.T) {
+	tests := []struct {
+		name string
+		r    Request
+	}{
+		{"empty", Request{}},
+		{"regular", Request{"writer", false, true}},
+		{"error", Request{"error", false, true}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Print(tt.r)
+		})
+	}
+}
