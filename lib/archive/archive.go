@@ -54,12 +54,12 @@ func FileCopy(name, dest string) (written int64, err error) {
 		return 0, genErr("filecopy", err)
 	}
 	defer src.Close()
-	file, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0666)
+	dst, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return 0, genErr("filecopy", err)
 	}
-	defer file.Close()
-	written, err = io.Copy(file, src)
+	defer dst.Close()
+	written, err = io.Copy(dst, src)
 	if err != nil {
 		return 0, genErr("filecopy", err)
 	}
@@ -71,12 +71,13 @@ func FileMove(name, dest string) (written int64, err error) {
 	if name == dest {
 		return written, err
 	}
-	written, err = FileCopy(name, dest)
-	if err != nil {
+	if written, err = FileCopy(name, dest); err != nil {
 		return 0, genErr("filemove", err)
 	}
-	err = os.Remove(name)
-	if err != nil {
+	if _, err = os.Stat(dest); os.IsNotExist(err) {
+		return 0, err
+	}
+	if err = os.Remove(name); err != nil {
 		return 0, genErr("filemove", err)
 	}
 	return written, err
