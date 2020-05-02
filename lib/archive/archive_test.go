@@ -96,7 +96,6 @@ func TestFileMove(t *testing.T) {
 		name string
 		dest string
 	}
-	println(testDir("text/test.txt~"))
 	tests := []struct {
 		name        string
 		args        args

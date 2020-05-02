@@ -38,7 +38,6 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err erro
 	}
 	defer os.RemoveAll(tempDir)
 	// extract archive
-	//
 	ua, err := unarr.NewArchive(name)
 	if err != nil {
 		return dz, dzErr(err)
