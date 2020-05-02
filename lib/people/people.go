@@ -180,10 +180,9 @@ func roles(r string) string {
 }
 
 // sqlPeople returns a complete SQL WHERE statement where the people are filtered by a role.
-func sqlPeople(role string, includeSoftDeletes bool) string {
+func sqlPeople(role string, includeSoftDeletes bool) (sql string) {
 	inc := includeSoftDeletes
 	f := roles(role)
-	var sql string
 	if strings.ContainsAny(f, "w") {
 		sql += " UNION (SELECT DISTINCT credit_text AS pubCombined FROM files WHERE Length(credit_text) <> 0 " + sqlPeopleDel(inc) + ")"
 	}

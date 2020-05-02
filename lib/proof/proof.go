@@ -162,7 +162,7 @@ func (r Record) printID(s stat) {
 }
 
 // flagSkip uses argument flags to check if a record is to be ignored.
-func (request Request) flagSkip(values []sql.RawBytes) bool {
+func (request Request) flagSkip(values []sql.RawBytes) (skip bool) {
 	if proofID != "" && request.Overwrite {
 		return false
 	} else if new := database.IsNew(values); !new && !request.AllProofs {
@@ -185,7 +185,7 @@ func (r Record) approve() error {
 }
 
 // fileZipContent reads an archive and saves its content to the database.
-func (r Record) fileZipContent() bool {
+func (r Record) fileZipContent() (ok bool) {
 	a, err := archive.Read(r.File, r.Name)
 	if err != nil {
 		logs.Log(err)
@@ -196,7 +196,7 @@ func (r Record) fileZipContent() bool {
 }
 
 // fileSkip checks if the file of the proof exists.
-func (s *stat) fileSkip(r Record, hide bool) bool {
+func (s *stat) fileSkip(r Record, hide bool) (skip bool) {
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
 		s.missing++
 		if !hide {
