@@ -68,6 +68,9 @@ func FileCopy(name, dest string) (written int64, err error) {
 
 // FileMove copies a file to the destination and then deletes the source.
 func FileMove(name, dest string) (written int64, err error) {
+	if name == dest {
+		return written, err
+	}
 	written, err = FileCopy(name, dest)
 	if err != nil {
 		return 0, genErr("filemove", err)
@@ -76,7 +79,7 @@ func FileMove(name, dest string) (written int64, err error) {
 	if err != nil {
 		return 0, genErr("filemove", err)
 	}
-	return written, nil
+	return written, err
 }
 
 // NewExt swaps or appends the extension to a filename.
