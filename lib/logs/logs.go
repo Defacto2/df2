@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -347,13 +348,18 @@ func PromptString(keep string) string {
 
 // PromptYN asks the user for a yes or no input.
 func PromptYN(query string, yesDefault bool) bool {
-	var input string
 	var y, n string = "Y", "n"
 	if !yesDefault {
 		y, n = "y", "N"
 	}
 	fmt.Printf("%s? [%s/%s] ", query, y, n)
-	fmt.Scanln(&input)
+	//fmt.Scanln(&input)
+	input, err := promptRead(os.Stdin)
+	Check(err)
+	return promptyn(input, yesDefault)
+}
+
+func promptyn(input string, yesDefault bool) bool {
 	switch input {
 	case "":
 		if yesDefault {
@@ -363,6 +369,16 @@ func PromptYN(query string, yesDefault bool) bool {
 		return true
 	}
 	return false
+}
+
+func promptRead(stdin io.Reader) (input string, err error) {
+	reader := bufio.NewReader(stdin)
+	input, err = reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if err != nil && err != io.EOF {
+		return input, err
+	}
+	return input, nil
 }
 
 // Truncate shortens a string to len characters.
