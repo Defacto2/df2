@@ -40,18 +40,19 @@ type Person struct {
 const Filters = "artists,coders,musicians,writers"
 
 // List people filtered by a role.
-func List(role string) ([]string, int) {
+func List(role string) (people []string, total int) {
 	db := database.Connect()
 	defer db.Close()
 	s := sqlPeople(role, false)
-	total := database.Total(&s)
+	if s == "" {
+		return people, total
+	}
+	total = database.Total(&s)
 	// interate through records
 	rows, err := db.Query(s)
 	logs.Check(err)
 	var persons sql.NullString
 	i := 0
-	g := ""
-	ppl := []string{}
 	for rows.Next() {
 		err = rows.Scan(&persons)
 		logs.Check(err)
@@ -59,10 +60,9 @@ func List(role string) ([]string, int) {
 			continue
 		}
 		i++
-		g = fmt.Sprintf("%v", persons.String)
-		ppl = append(ppl, g)
+		people = append(people, fmt.Sprintf("%v", persons.String))
 	}
-	return ppl, total
+	return people, total
 }
 
 // DataList prints an auto-complete list for HTML input elements.
@@ -195,6 +195,9 @@ func sqlPeople(role string, includeSoftDeletes bool) string {
 	}
 	if strings.ContainsAny(f, "a") {
 		sql += " UNION (SELECT DISTINCT credit_illustration AS pubCombined FROM files WHERE Length(credit_illustration) <> 0 " + sqlPeopleDel(inc) + ")"
+	}
+	if sql == "" {
+		return sql
 	}
 	sql += " ORDER BY pubCombined"
 	sql = strings.Replace(sql, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
