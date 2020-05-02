@@ -35,3 +35,21 @@ func TestToPng(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerate(t *testing.T) {
+	type args struct {
+		name string
+		id   string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"test", args{"", ""}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Generate(tt.args.name, tt.args.id)
+		})
+	}
+}

@@ -31,8 +31,7 @@ func (t Txt) String() string {
 }
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix(sim bool) error {
-	simulate = sim
+func Fix(simulate bool) error {
 	dir = directories.Init(false)
 	db := database.Connect()
 	defer db.Close()
