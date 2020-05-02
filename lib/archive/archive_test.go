@@ -3,6 +3,7 @@ package archive
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/gabriel-vasile/mimetype"
@@ -116,6 +117,71 @@ func TestFileMove(t *testing.T) {
 			if gotWritten != tt.wantWritten {
 				t.Errorf("FileMove() = %v, want %v", gotWritten, tt.wantWritten)
 			}
+		})
+	}
+}
+
+func TestNewExt(t *testing.T) {
+	type args struct {
+		name      string
+		extension string
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantFilename string
+	}{
+		{"empty", args{"", ""}, ""},
+		{"ok", args{"hello.world", ".text"}, "hello.text"},
+		{"two", args{"hello.world.txt", ".pdf"}, "hello.world.pdf"},
+		{"ok", args{"hello.world", "text"}, "hellotext"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotFilename := NewExt(tt.args.name, tt.args.extension); gotFilename != tt.wantFilename {
+				t.Errorf("NewExt() = %v, want %v", gotFilename, tt.wantFilename)
+			}
+		})
+	}
+}
+
+func TestRead(t *testing.T) {
+	type args struct {
+		archive  string
+		filename string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantFiles []string
+		wantErr   bool
+	}{
+		{"empty", args{"", ""}, nil, true},
+		{"zip", args{testDir("demozoo/test.zip"), "test.zip"}, []string{"test.png", "test.txt"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFiles, err := Read(tt.args.archive, tt.args.filename)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
+				t.Errorf("Read() = %v, want %v", gotFiles, tt.wantFiles)
+			}
+		})
+	}
+}
+
+func Test_dir(t *testing.T) {
+	tests := []struct {
+		name string
+	}{
+		{testDir("")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir(tt.name)
 		})
 	}
 }
