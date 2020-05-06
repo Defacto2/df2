@@ -213,8 +213,8 @@ func TestToWebxp(t *testing.T) {
 	}{
 		{"empty", args{"", ""}, true},
 		{"invalid src", args{"blahblahblah", ""}, true},
+		{"gif", args{testImg("gif"), testDest("webp")}, true},
 		{"jpg", args{testImg("jpg"), testDest("webp")}, false},
-		{"gif", args{testImg("gif"), testDest("webp")}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -240,8 +240,8 @@ func TestToWebp(t *testing.T) {
 	}{
 		{"empty", args{"", ""}, "", true},
 		{"invalid src", args{"blahblahblah", ""}, "", true},
+		{"gif", args{testImg("gif"), testDest("webp")}, "", true},
 		{"jpg", args{testImg("jpg"), testDest("webp")}, "»webp", false},
-		{"gif", args{testImg("gif"), testDest("webp")}, "»webpx", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
