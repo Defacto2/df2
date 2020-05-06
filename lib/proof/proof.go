@@ -99,7 +99,7 @@ func (request Request) Queries() error {
 		s.total++
 	}
 	if s.total < 1 {
-		proofChk(fmt.Sprintf("file record id '%s' does not exist", proofID))
+		proofChk(fmt.Sprintf("file record id '%s' does not exist or is not a release proof", proofID))
 	} else if s.total > 1 {
 		logs.Println("Total records", s.total)
 	}
