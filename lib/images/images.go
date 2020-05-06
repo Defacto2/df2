@@ -182,6 +182,7 @@ func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
 }
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
+// Input format can be either PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
 func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
 	// skip if already a webp image, or handle all other errors
 	if m, err := mimetype.DetectFile(src); m.Extension() == ".webp" {
