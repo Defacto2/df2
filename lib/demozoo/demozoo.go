@@ -215,7 +215,7 @@ func (st *stat) nextResult(rec records, req Request) (skip bool) {
 }
 
 func (req Request) flags() (skip bool) {
-	if !req.All && !req.Refresh {
+	if !req.All && !req.Refresh && !req.Overwrite {
 		return true
 	}
 	return false
