@@ -263,6 +263,12 @@ func TestToWebp(t *testing.T) {
 			if gotPrint != tt.wantPrint {
 				t.Errorf("ToWebp() = %v, want %v", gotPrint, tt.wantPrint)
 			}
+			if gotPrint != "" {
+				// cleanup
+				if err := os.Remove(testDest("webp")); err != nil {
+					t.Fatal(err)
+				}
+			}
 		})
 	}
 }
