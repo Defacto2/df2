@@ -39,6 +39,7 @@ type Request struct {
 // query statistics
 type stat struct {
 	count   int
+	fetched int
 	missing int
 	total   int
 }
@@ -130,6 +131,7 @@ func (req Request) Queries() error {
 		return err
 	}
 	for rows.Next() {
+		st.fetched++
 		if skip := st.nextResult(records{rows, scanArgs, values}, req); skip {
 			continue
 		}
@@ -150,7 +152,12 @@ func (req Request) Queries() error {
 	logs.Check(rows.Err())
 	if prodID != "" {
 		if st.count == 0 {
-			t := fmt.Sprintf("id %q is not a Demozoo sourced file record", prodID)
+			var t string
+			if st.fetched == 0 {
+				t = fmt.Sprintf("id %q is not a Demozoo sourced file record", prodID)
+			} else {
+				t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", prodID, prodID)
+			}
 			logs.Println(t)
 		}
 		return nil
