@@ -302,7 +302,7 @@ func (r *Record) downloadReset(name string) {
 func (r *Record) lastMod(head http.Header) {
 	if lm := head.Get("Last-Modified"); len(lm) > 0 {
 		if t, err := time.Parse(download.RFC5322, lm); err != nil {
-			logs.Log(err)
+			logs.Printf(" • last-mod value %q ?", lm)
 		} else {
 			r.LastMod = t
 			if time.Now().Year() == t.Year() {
