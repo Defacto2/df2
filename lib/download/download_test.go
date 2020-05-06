@@ -2,9 +2,16 @@ package download
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
+
+func testTemp() string {
+	dir, _ := os.Getwd()
+	return filepath.Join(dir, "../../tests/download")
+}
 
 func Test_timeout(t *testing.T) {
 	td := func(v int) time.Duration {
@@ -106,15 +113,20 @@ func TestLinkDownload(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"empty", args{"temp", ""}, true},
-		{"ftp", args{"temp", "ftp://example.com"}, true},
-		{"fake", args{"temp", "https://thisisnotaurl-example.com"}, true},
-		{"exp", args{"temp", "http://example.com"}, false},
+		{"empty", args{testTemp(), ""}, true},
+		{"ftp", args{testTemp(), "ftp://example.com"}, true},
+		{"fake", args{testTemp(), "https://thisisnotaurl-example.com"}, true},
+		{"exp", args{testTemp(), "http://example.com"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, err := LinkDownload(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("LinkDownload() error = %v, wantErr %v", err, tt.wantErr)
+			} else {
+				// cleanup
+				if err := os.Remove(testTemp()); err != nil {
+					t.Fatal(err)
+				}
 			}
 		})
 	}
@@ -155,15 +167,20 @@ func TestLinkDownloadQ(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"empty", args{"temp", ""}, true},
-		{"ftp", args{"temp", "ftp://example.com"}, true},
-		{"fake", args{"temp", "https://thisisnotaurl-example.com"}, true},
-		{"exp", args{"temp", "http://example.com"}, false},
+		{"empty", args{testTemp(), ""}, true},
+		{"ftp", args{testTemp(), "ftp://example.com"}, true},
+		{"fake", args{testTemp(), "https://thisisnotaurl-example.com"}, true},
+		{"exp", args{testTemp(), "http://example.com"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, err := LinkDownloadQ(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("LinkDownloadQ() error = %v, wantErr %v", err, tt.wantErr)
+			} else {
+				// cleanup
+				if err := os.Remove(testTemp()); err != nil {
+					t.Fatal(err)
+				}
 			}
 		})
 	}
