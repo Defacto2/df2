@@ -117,7 +117,7 @@ func toClean(g string) (ok bool) {
 		return false
 	}
 	if simulate {
-		logs.Printf("%s %q %s %s\n", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
+		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
 		return true
 	}
 	s := logs.Y()
@@ -127,6 +127,6 @@ func toClean(g string) (ok bool) {
 		s = logs.X()
 		ok = false
 	}
-	logs.Printf("%s %q %s %s\n", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
+	logs.Printf("\n%s %q %s %s", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
 	return ok
 }
