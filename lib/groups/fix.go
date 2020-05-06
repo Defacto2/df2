@@ -11,10 +11,11 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
-var simulate bool = true
+var sim bool = true
 
 // Fix any malformed group names found in the database.
 func Fix(simulate bool) {
+	sim = simulate
 	names, _, err := list("")
 	logs.Check(err)
 	c := 0
@@ -116,7 +117,7 @@ func toClean(g string) (ok bool) {
 	if f == g {
 		return false
 	}
-	if simulate {
+	if sim {
 		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
 		return true
 	}

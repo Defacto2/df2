@@ -14,7 +14,7 @@ func Test_toClean(t *testing.T) {
 		{"d_f", true},
 		{"D2", false},
 	}
-	simulate = false
+	sim = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotOk := toClean(tt.name); gotOk != tt.wantOk {

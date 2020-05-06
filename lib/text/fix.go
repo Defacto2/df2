@@ -12,10 +12,7 @@ import (
 	"github.com/gookit/color"
 )
 
-var (
-	dir      directories.Dir
-	simulate = false
-)
+var dir directories.Dir
 
 // Txt is an image object.
 type Txt struct {
