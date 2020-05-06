@@ -122,7 +122,7 @@ func (sum *results) calculate(s scan) {
 	sum.fails += r.fails
 }
 
-func targets(target string) int {
+func targets(target string) (count int) {
 	if d.Base == "" {
 		d = directories.Init(false)
 	}
@@ -141,23 +141,20 @@ func targets(target string) int {
 }
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
-func CreateUUIDMap() (int, database.IDs) {
+func CreateUUIDMap() (total int, uuids database.IDs) {
 	db := database.Connect()
 	defer db.Close()
 	// query database
 	var id, uuid string
 	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
 	logs.Check(err)
-	m := database.IDs{} // this map is to store all the UUID values used in the database
-	// handle query results
-	rc := 0 // row count
 	for rows.Next() {
 		err = rows.Scan(&id, &uuid)
 		logs.Check(err)
-		m[uuid] = database.Empty{} // store record `uuid` value as a key name in the map `m` with an empty value
-		rc++
+		uuids[uuid] = database.Empty{} // store record `uuid` value as a key name in the map `m` with an empty value
+		total++
 	}
-	return rc, m
+	return total, uuids
 }
 
 func (s *scan) archive(list []os.FileInfo) map[string]struct{} {
