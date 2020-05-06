@@ -64,7 +64,7 @@ func print(res int64, str *string) {
 	if res == 0 {
 		logs.Printcr(*str)
 	} else {
-		logs.Println(*str)
+		logs.Println("\n" + *str)
 	}
 }
 

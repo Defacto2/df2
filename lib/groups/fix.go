@@ -8,7 +8,6 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/shomali11/parallelizer"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -16,29 +15,23 @@ var simulate bool = true
 
 // Fix any malformed group names found in the database.
 func Fix(simulate bool) {
-	names, nc, err := list("")
+	names, _, err := list("")
 	logs.Check(err)
 	c := 0
 	start := time.Now()
-	group := parallelizer.NewGroup(parallelizer.WithJobQueueSize(nc))
-	defer group.Close()
 	for _, name := range names {
-		group.Add(func() {
-			if r := toClean(name); r {
-				c++
-			}
-		})
+		if r := toClean(name); r {
+			c++
+		}
 	}
-	err = group.Wait()
-	logs.Check(err)
 	switch {
 	case c > 0 && simulate:
-		logs.Printcr(c, "fixes required")
+		logs.Printfcr("%d fixes required", c)
 		logs.Simulate()
 	case c == 1:
 		logs.Printcr("1 fix applied")
 	case c > 0:
-		logs.Printcr(c, "fixes applied")
+		logs.Printfcr("%d fixes applied", c)
 	default:
 		logs.Printcr("no fixes needed")
 	}
