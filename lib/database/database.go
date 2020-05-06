@@ -323,6 +323,29 @@ func LookupID(value string) (id uint, err error) {
 	return id, nil
 }
 
+func LookupFile(value string) (filename string, err error) {
+	db := Connect()
+	defer db.Close()
+	var s string
+	if v, err := strconv.Atoi(value); err == nil {
+		s = fmt.Sprintf("SELECT filename FROM files WHERE id='%d'", v)
+		err = db.QueryRow(s).Scan(&filename)
+		if err != nil {
+			return "", fmt.Errorf("lookupfile: %s", err)
+		} else if filename == "" {
+			return "", fmt.Errorf("lookupfile: unique id '%v' is does not exist in the database", v)
+		}
+		return filename, err
+	}
+	value = strings.ToLower(value)
+	s = fmt.Sprintf("SELECT filename FROM files WHERE uuid='%s'", value)
+	err = db.QueryRow(s).Scan(&filename)
+	if err != nil {
+		return "", fmt.Errorf("lookupfile: uuid '%v' is does not exist in the database", value)
+	}
+	return filename, err
+}
+
 // ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
 func ObfuscateParam(param string) string {
 	rv := param // return value
