@@ -192,10 +192,15 @@ func TestToThumb(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ToThumb(tt.args.src, tt.args.dest, tt.args.sizeSquared)
+			str, err := ToThumb(tt.args.src, tt.args.dest, tt.args.sizeSquared)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToThumb() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			} else if str != "" {
+				// cleanup
+				if err := os.Remove(testSqr("png")); err != nil {
+					t.Fatal(err)
+				}
 			}
 		})
 	}
