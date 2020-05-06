@@ -15,7 +15,7 @@ import (
 
 // Info prints the content of a configuration file.
 func Info() {
-	logs.Println("Default configurations in use when no flags are given.\n")
+	logs.Print("\nDefault configurations in use when no flags are given.\n\n")
 	sets, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())

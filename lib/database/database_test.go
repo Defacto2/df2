@@ -3,11 +3,13 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
+	"github.com/gookit/color"
 )
 
 func TestIsID(t *testing.T) {
@@ -66,20 +68,22 @@ func TestDateTime(t *testing.T) {
 		value sql.RawBytes
 	}
 	now := time.Now()
+	color.Enable = false
 	tests := []struct {
 		name string
 		args args
 		want string
 	}{
-		{"empty", args{[]byte("")}, "?"},
+		{"empty", args{[]byte("")}, ""},
 		{"nottime", args{[]byte("hello world")}, "?"},
 		{"invalid", args{[]byte("01-01-2000 00:00:00")}, "?"},
-		{"old", args{[]byte("2000-01-01T00:00:00Z")}, "01 Jan 2000  "},
-		{"new", args{[]byte(fmt.Sprintf("%v-01-01T00:00:00Z", now.Year()))}, "01 Jan 00:00 "},
+		{"old", args{[]byte("2000-01-01T00:00:00Z")}, "01 Jan 2000"},
+		{"new", args{[]byte(fmt.Sprintf("%v-01-01T00:00:00Z", now.Year()))},
+			fmt.Sprintf("01 Jan %d", now.Year())},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := DateTime(tt.args.value); got != tt.want {
+			if got := strings.TrimSpace(DateTime(tt.args.value)); got != tt.want {
 				t.Errorf("DateTime() = %q, want %q", got, tt.want)
 			}
 		})
