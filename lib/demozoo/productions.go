@@ -87,16 +87,20 @@ type ProductionsAPIv1 struct {
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
 func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
+	total := len(p.DownloadLinks)
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods
 		if ok := l.parse(); !ok {
+			continue
+		}
+		// skip defacto2 links if others are avaliable
+		if u, _ := url.Parse(l.URL); total > 1 && u.Hostname() == "defacto2.net" {
 			continue
 		}
 		ping, err := download.LinkPing(l.URL)
 		if err != nil || ping.StatusCode != 200 {
 			continue
 		}
-		link = l.URL
 		name = filename(ping.Header)
 		if name == "" {
 			name, err = saveName(l.URL)
@@ -104,6 +108,7 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 				continue
 			}
 		}
+		link = l.URL
 		break
 	}
 	return name, link
