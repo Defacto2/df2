@@ -184,3 +184,41 @@ func Test_dir(t *testing.T) {
 		})
 	}
 }
+
+func TestRestore(t *testing.T) {
+	type args struct {
+		source      string
+		filename    string
+		destination string
+	}
+	gz := filepath.Join(testDir("demozoo"), "test.tar.gz")
+	tar := filepath.Join(testDir("demozoo"), "test.tar")
+	z7 := filepath.Join(testDir("demozoo"), "test.7z")
+	zip := filepath.Join(testDir("demozoo"), "test.zip")
+	res := []string{"test.png", "test.txt"}
+	tests := []struct {
+		name      string
+		args      args
+		wantFiles []string
+		wantErr   bool
+	}{
+		{"empty", args{}, nil, true},
+		{"err", args{"/dev/null/fake.zip", "fake.zip", tmp}, nil, true},
+		{"zip", args{zip, "test.zip", tmp}, res, false},
+		{"tar", args{tar, "test.tar", tmp}, res, false},
+		{"gz", args{gz, "test.tar.gz", tmp}, res, false},
+		{"7z", args{z7, "test.7z", tmp}, res, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFiles, err := Restore(tt.args.source, tt.args.filename, tt.args.destination)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
+				t.Errorf("Restore() = %v, want %v", gotFiles, tt.wantFiles)
+			}
+		})
+	}
+}

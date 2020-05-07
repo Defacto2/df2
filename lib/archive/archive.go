@@ -114,6 +114,26 @@ func Read(archive string, filename string) (files []string, err error) {
 	return files, nil
 }
 
+// Restore unpacks or decompresses a given archive file to the destination.
+// The archive format is selected implicitly.
+// Restore relies on the filename extension to determine which
+// decompression format to use, which must be supplied using filename.
+func Restore(source, filename, destination string) (files []string, err error) {
+	a, err := unarr.NewArchive(source)
+	if err != nil {
+		if err = Unarchiver(source, filename, destination); err != nil {
+			return nil, genErr("unarchiver", err)
+		}
+		if files, err = Readr(source, filename); err != nil {
+			return nil, genErr("readr", err)
+		}
+	} else {
+		defer a.Close()
+		files, err = a.Extract(destination)
+	}
+	return files, nil
+}
+
 // dir lists the content of a directory.
 func dir(name string) {
 	files, err := ioutil.ReadDir(name)

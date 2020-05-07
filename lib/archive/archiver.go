@@ -29,15 +29,70 @@ func Readr(archive, filename string) (files []string, err error) {
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
 func Unarchiver(source, filename, destination string) error {
-	uaIface, err := archiver.ByExtension(filename)
+	f, err := archiver.ByExtension(filename)
 	if err != nil {
 		return err
 	}
-	u, ok := uaIface.(archiver.Unarchiver)
-	if !ok {
-		return fmt.Errorf("format specified by source filename is not an archive format: %s (%T)", filename, uaIface)
+	if err := configure(f); err != nil {
+		return err
 	}
-	return u.Unarchive(source, destination)
+	un, ok := f.(archiver.Unarchiver)
+	if !ok {
+		return fmt.Errorf("format specified by source filename is not an archive format: %s (%T)", filename, f)
+	}
+	return un.Unarchive(source, destination)
+}
+
+func configure(f interface{}) (err error) {
+	tar := &archiver.Tar{
+		OverwriteExisting:      true,
+		MkdirAll:               true,
+		ImplicitTopLevelFolder: true,
+		ContinueOnError:        false,
+	}
+	switch v := f.(type) {
+	case *archiver.Rar:
+		v.OverwriteExisting = true
+		v.MkdirAll = true
+		v.ImplicitTopLevelFolder = true
+		v.ContinueOnError = false
+		//v.Password = os.Getenv("ARCHIVE_PASSWORD")
+	case *archiver.Tar:
+		v = tar
+	// case *archiver.TarBrotli:
+	// 	v.Tar = tar
+	case *archiver.TarBz2:
+		v.Tar = tar
+	case *archiver.TarGz:
+		v.Tar = tar
+	case *archiver.TarLz4:
+		v.Tar = tar
+	case *archiver.TarSz:
+		v.Tar = tar
+	case *archiver.TarXz:
+		v.Tar = tar
+	// case *archiver.TarZstd:
+	// 	v.Tar = tar
+	case *archiver.Zip:
+		v.OverwriteExisting = true
+		v.MkdirAll = true
+		v.SelectiveCompression = true
+		v.ImplicitTopLevelFolder = true
+		v.ContinueOnError = false
+	case *archiver.Gz:
+	//case *archiver.Brotli:
+	case *archiver.Bz2:
+	case *archiver.Lz4:
+	case *archiver.Snappy:
+		// nothing to customize
+	case *archiver.Xz:
+		// nothing to customize
+	//case *archiver.Zstd:
+	// nothing to customize
+	default:
+		err = fmt.Errorf("config does not support customization: %s", f)
+	}
+	return err
 }
 
 // Walkr calls walkFn for each file within the given archive file.

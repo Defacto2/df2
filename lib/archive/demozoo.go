@@ -13,7 +13,6 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
-	unarr "github.com/gen2brain/go-unarr"
 )
 
 // Demozoo data extracted from an archive.
@@ -37,17 +36,11 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err erro
 		return dz, dzErr(err)
 	}
 	defer os.RemoveAll(tempDir)
-	// extract archive
-	ua, err := unarr.NewArchive(name)
+	filename, err := database.LookupFile(uuid)
+	_, err = Restore(name, filename, tempDir)
 	if err != nil {
 		return dz, dzErr(err)
 	}
-	defer ua.Close()
-	_, err = ua.Extract(tempDir)
-	if err != nil {
-		return dz, dzErr(err)
-	}
-	//
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
 		return dz, dzErr(err)
