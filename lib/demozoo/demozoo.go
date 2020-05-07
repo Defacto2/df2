@@ -135,13 +135,13 @@ func (req Request) Queries() error {
 		if skip := st.nextResult(records{rows, scanArgs, values}, req); skip {
 			continue
 		}
-		r := newRecord(st.count, values)
+		var r = newRecord(st.count, values)
 		logs.Printfcr(r.String(st.total))
 		if skip := r.parseAPI(st, req.Overwrite, storage); skip {
 			continue
 		}
 		switch {
-		case st.total <= 1:
+		case st.total == 0:
 			break
 		case req.Simulate:
 			logs.Printf(" • dry-run %v", logs.Y())
@@ -229,7 +229,7 @@ func (req Request) flags() (skip bool) {
 }
 
 // parseAPI confirms and parses the API request.
-func (r Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
+func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
 	code, status, api := Fetch(r.WebIDDemozoo)
 	if ok := r.confirm(code, status); !ok {
 		return true
