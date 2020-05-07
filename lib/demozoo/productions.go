@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -86,19 +87,22 @@ type ProductionsAPIv1 struct {
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
 func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
-	var err error
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods
 		if ok := l.parse(); !ok {
 			continue
 		}
-		if ping, err := download.LinkPing(l.URL); err != nil || ping.StatusCode != 200 {
+		ping, err := download.LinkPing(l.URL)
+		if err != nil || ping.StatusCode != 200 {
 			continue
 		}
 		link = l.URL
-		name, err = saveName(l.URL)
-		if err != nil {
-			continue
+		name = filename(ping.Header)
+		if name == "" {
+			name, err = saveName(l.URL)
+			if err != nil {
+				continue
+			}
 		}
 		break
 	}
@@ -298,4 +302,24 @@ func saveName(rawurl string) (name string, err error) {
 		name = randomName()
 	}
 	return name, nil
+}
+
+func filename(h http.Header) (filename string) {
+	gh := h.Get("Content-Disposition")
+	if gh == "" {
+		return filename
+	}
+	rh := strings.Split(gh, ";")
+	for _, v := range rh {
+		r := strings.Split(v, "=")
+		r[0] = strings.TrimSpace(r[0])
+		if len(r) != 2 {
+			continue
+		}
+		switch r[0] {
+		case "filename*", "filename":
+			return r[1]
+		}
+	}
+	return filename
 }
