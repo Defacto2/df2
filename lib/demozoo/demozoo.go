@@ -34,6 +34,7 @@ type Request struct {
 	Overwrite bool // overwrite existing files
 	Refresh   bool // refresh all demozoo entries
 	Simulate  bool // simulate database save
+	unitTest  bool // intended for demozoo_test to break loop after two records
 }
 
 // query statistics
@@ -155,6 +156,7 @@ func (req Request) Queries() error {
 		default:
 			r.save()
 		}
+		println()
 	}
 	logs.Check(rows.Err())
 	if prodID != "" {
