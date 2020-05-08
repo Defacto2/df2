@@ -327,6 +327,7 @@ func (r *Record) lastMod(head http.Header) {
 func (r Record) check() (update bool) {
 	switch {
 	case
+		r.Filename == "",
 		r.Platform == "",
 		r.Filesize == "",
 		r.Sum384 == "",
