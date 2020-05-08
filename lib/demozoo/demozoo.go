@@ -135,6 +135,7 @@ func (req Request) Queries() error {
 		return err
 	}
 	for rows.Next() {
+		println()
 		st.fetched++
 		if skip := st.nextResult(records{rows, scanArgs, values}, req); skip {
 			continue
@@ -156,7 +157,6 @@ func (req Request) Queries() error {
 		default:
 			r.save()
 		}
-		println()
 	}
 	logs.Check(rows.Err())
 	if prodID != "" {
