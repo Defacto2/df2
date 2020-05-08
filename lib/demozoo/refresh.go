@@ -52,7 +52,8 @@ func (st *stat) nextRefresh(rec records) (skip bool) {
 	err := rec.rows.Scan(rec.scanArgs...)
 	logs.Check(err)
 	st.count++
-	r := newRecord(st.count, rec.values)
+	r, err := newRecord(st.count, rec.values)
+	logs.Check(err)
 	logs.Printfcr(r.String(0))
 	code, status, api := Fetch(r.WebIDDemozoo)
 	if ok := r.confirm(code, status); !ok {
@@ -61,7 +62,9 @@ func (st *stat) nextRefresh(rec records) (skip bool) {
 	r.pouet(api)
 	r.title(api)
 	r.authors(api.Authors())
-	if reflect.DeepEqual(newRecord(st.count, rec.values), r) {
+	new, err := newRecord(st.count, rec.values)
+	logs.Check(err)
+	if reflect.DeepEqual(new, r) {
 		logs.Printf("• skipped %v", logs.Y())
 		return true
 	}

@@ -65,7 +65,10 @@ func (req Request) Query(id string) (err error) {
 }
 
 // newRecord initialises a new file record.
-func newRecord(c int, values []sql.RawBytes) (r Record) {
+func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
+	if l := len(values); l < 21 {
+		return r, fmt.Errorf("demozoo newRecord: unexpected number of of values, want 21 but got %d", l)
+	}
 	r = Record{
 		count: c,
 		ID:    string(values[0]), // id
@@ -96,7 +99,7 @@ func newRecord(c int, values []sql.RawBytes) (r Record) {
 	if i, err := strconv.Atoi(string(values[12])); err == nil {
 		r.WebIDPouet = uint(i)
 	}
-	return r
+	return r, nil
 }
 
 // Queries parses all new proofs.
@@ -135,7 +138,11 @@ func (req Request) Queries() error {
 		if skip := st.nextResult(records{rows, scanArgs, values}, req); skip {
 			continue
 		}
-		var r = newRecord(st.count, values)
+		r, err := newRecord(st.count, values)
+		if err != nil {
+			logs.Log(err)
+			continue
+		}
 		logs.Printfcr(r.String(st.total))
 		if skip := r.parseAPI(st, req.Overwrite, storage); skip {
 			continue
