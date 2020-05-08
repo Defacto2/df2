@@ -256,6 +256,7 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
 	}
 	switch {
 	case
+		r.Filename == "",
 		r.Filesize == "",
 		r.SumMD5 == "",
 		r.Sum384 == "":
@@ -353,12 +354,11 @@ func (r *Record) platform(api ProductionsAPIv1) {
 }
 
 func (r *Record) fileMeta() (err error) {
-	// file size
 	stat, err := os.Stat(r.FilePath)
 	if err != nil {
 		return err
-		//continue
 	}
+	r.Filename = stat.Name()
 	r.Filesize = strconv.Itoa(int(stat.Size()))
 	// file hashes
 	f, err := os.Open(r.FilePath)
