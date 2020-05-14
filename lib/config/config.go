@@ -3,7 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
@@ -37,13 +37,13 @@ var (
 )
 
 // Filepath is the absolute path and filename of the configuration file.
-func Filepath() (filepath string) {
-	filepath, err := scope.ConfigPath(ConfigName)
+func Filepath() (dir string) {
+	dir, err := scope.ConfigPath(ConfigName)
 	if err != nil {
 		h, _ := os.UserHomeDir()
-		return path.Join(h, ConfigName)
+		return filepath.Join(h, ConfigName)
 	}
-	return filepath
+	return dir
 }
 
 func configMissing(name, suffix string) {
