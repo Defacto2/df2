@@ -239,6 +239,11 @@ func (req Request) flags() (skip bool) {
 
 // parseAPI confirms and parses the API request.
 func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
+	if database.CheckUUID(r.Filename) == nil {
+		// handle anomaly where the Filename was incorrectly given UUID
+		fmt.Println("Clearing filename which is incorrectly set as", r.Filename)
+		r.Filename = ""
+	}
 	code, status, api := Fetch(r.WebIDDemozoo)
 	if ok := r.confirm(code, status); !ok {
 		return true
@@ -256,7 +261,17 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
 	}
 	switch {
 	case
-		r.Filename == "",
+		r.Filename == "":
+		// handle an unusual case where filename is missing but all other metadata exists
+		n, _ := api.DownloadLink()
+		if n != "" {
+			fmt.Print(n)
+			r.Filename = n
+		} else {
+			fmt.Println("Filename is empty but could not find a suitable value")
+		}
+		fallthrough
+	case
 		r.Filesize == "",
 		r.SumMD5 == "",
 		r.Sum384 == "":
@@ -358,7 +373,6 @@ func (r *Record) fileMeta() (err error) {
 	if err != nil {
 		return err
 	}
-	r.Filename = stat.Name()
 	r.Filesize = strconv.Itoa(int(stat.Size()))
 	// file hashes
 	f, err := os.Open(r.FilePath)
