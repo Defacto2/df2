@@ -296,6 +296,10 @@ func (r *Record) pingPouet(api ProductionsAPIv1) {
 
 func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip bool) {
 	if st.fileExist(*r) || overwrite {
+		if r.UUID == "" {
+			fmt.Println("ERROR: UUID is empty, cannot continue")
+			return true
+		}
 		name, link := api.DownloadLink()
 		if len(link) == 0 {
 			logs.Print(color.Note.Sprint("no suitable downloads found\n"))
