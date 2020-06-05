@@ -5,11 +5,13 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/lib/config"
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -27,7 +29,7 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.12.0" // df2 version
+const version string = "0.13.0" // df2 version
 
 var (
 	copyright  string = cYear()
@@ -45,12 +47,12 @@ var rootCmd = &cobra.Command{
 		color.Info.Sprint("A tool to optimise and manage defacto2.net"),
 		copyright,
 		color.Primary.Sprint("https://github.com/Defacto2/df2")),
-	Version: color.Primary.Sprint(version) + "\n",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	initVer()
 	rootCmd.SetVersionTemplate(`df2 tool version {{.Version}}`)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -137,4 +139,21 @@ func initPanic(q bool) {
 // initQuiet quiets the terminal output.
 func initQuiet(q bool) {
 	logs.Quiet = q
+}
+
+func initVer() {
+	var ansilove, webp, db = color.Error.Sprint("missing"),
+		color.Error.Sprint("missing"),
+		color.Error.Sprint("disconnected")
+	if err := database.ConnectInfo(); err == "" {
+		db = color.Success.Sprint("okay")
+	}
+	if _, err := exec.LookPath("ansilove"); err == nil {
+		ansilove = color.Success.Sprint("okay")
+	}
+	if _, err := exec.LookPath("webpng"); err == nil {
+		webp = color.Success.Sprint("okay")
+	}
+	rootCmd.Version = fmt.Sprintf("%v\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\ndatabase: %v\nansilove: %v\nwebp lib: %v\n",
+		color.Primary.Sprint(version), db, ansilove, webp)
 }
