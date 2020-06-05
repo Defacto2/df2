@@ -56,7 +56,7 @@ This program does not compile or install on Windows due to [GCC](https://gcc.gnu
 ```bash
 git clone git@github.com:Defacto2/df2.git
 cd df2
-go install
+go install --race
 df2 --version
 ```
 
