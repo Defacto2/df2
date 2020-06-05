@@ -2,6 +2,7 @@ package demozoo
 
 import (
 	"database/sql"
+	"fmt"
 	"net/url"
 	"reflect"
 	"strings"
@@ -97,7 +98,7 @@ func Test_prodURL(t *testing.T) {
 func Test_randomName(t *testing.T) {
 	rand := func() bool {
 		r := randomName()
-		println(r)
+		fmt.Println(r)
 		return strings.Contains(r, "df2-download")
 	}
 	tests := []struct {

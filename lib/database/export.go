@@ -222,7 +222,7 @@ func (f Flags) ExportCronJob() {
 		f.ExportTable()
 	}
 	elapsed := time.Since(start)
-	println(fmt.Sprintf("cronjob export took %s", elapsed))
+	fmt.Println(fmt.Sprintf("cronjob export took %s", elapsed))
 }
 
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
@@ -304,7 +304,7 @@ func (f Flags) ExportDB() {
 	logs.Check(err)
 	f.write(buf)
 	elapsed := time.Since(start)
-	println(fmt.Sprintf("sql exports took %s", elapsed))
+	fmt.Println(fmt.Sprintf("sql exports took %s", elapsed))
 }
 
 // queryTables generates the SQL import database and tables statement.

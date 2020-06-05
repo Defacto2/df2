@@ -135,7 +135,7 @@ func (req Request) Queries() error {
 		return err
 	}
 	for rows.Next() {
-		println()
+		fmt.Println()
 		st.fetched++
 		if skip := st.nextResult(records{rows, scanArgs, values}, req); skip {
 			continue
@@ -297,7 +297,7 @@ func (r *Record) pingPouet(api ProductionsAPIv1) {
 func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip bool) {
 	if st.fileExist(*r) || overwrite {
 		if r.UUID == "" {
-			fmt.Println("ERROR: UUID is empty, cannot continue")
+			fmt.Print(color.Error.Sprint("UUID is empty, cannot continue"))
 			return true
 		}
 		name, link := api.DownloadLink()
