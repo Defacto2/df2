@@ -51,8 +51,8 @@ func (c *Connection) String() string {
 	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
 }
 
-// Init initializes default connection settings.
-func Init() {
+// defaults initializes default connection settings.
+func defaults() {
 	viper.SetDefault("connection.name", "defacto2-inno")
 	viper.SetDefault("connection.user", "root")
 	viper.SetDefault("connection.password", "password")
@@ -61,14 +61,13 @@ func Init() {
 	viper.SetDefault("connection.server.port", "3306")
 }
 
-// config initializes the database connection using stored settings.
-func config() {
-	// exit if Connection has already been initialized
-	if c != (Connection{}) {
-		return
-	}
+// Init initializes the database connection using stored settings.
+func Init() {
+	// load config from file or use defaults
 	if viper.GetString("connection.name") == "" {
-		Init()
+		if err := viper.ReadInConfig(); err != nil {
+			defaults()
+		}
 	}
 	c = Connection{
 		Name:     viper.GetString("connection.name"),
@@ -86,7 +85,7 @@ func config() {
 
 // Connect will connect to the database and handle any errors.
 func Connect() *sql.DB {
-	config()
+	Init()
 	db, err := sql.Open("mysql", fmt.Sprint(&c))
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
@@ -115,7 +114,7 @@ func Connect() *sql.DB {
 
 // ConnectErr will connect to the database or return any errors.
 func ConnectErr() (db *sql.DB, err error) {
-	config()
+	Init()
 	db, err = sql.Open("mysql", fmt.Sprint(&c))
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
@@ -130,7 +129,7 @@ func ConnectErr() (db *sql.DB, err error) {
 
 // ConnectInfo will connect to the database and return any errors.
 func ConnectInfo() string {
-	config()
+	Init()
 	db, err := sql.Open("mysql", fmt.Sprint(&c))
 	defer db.Close()
 	if err != nil {

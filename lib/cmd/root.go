@@ -29,7 +29,7 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.13.0" // df2 version
+const version string = "0.14.0" // df2 version
 
 var (
 	copyright  string = cYear()
@@ -68,7 +68,8 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize()
+	initConfig()
 	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is %s)", config.Filepath()))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")

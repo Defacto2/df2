@@ -80,7 +80,6 @@ var configSetCmd = &cobra.Command{
 func init() {
 	database.Init()
 	directories.Init(false)
-
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configCreateCmd)
 	configCreateCmd.Flags().BoolVarP(&cfgOWFlag, "overwrite", "y", false, "overwrite any existing config file")
