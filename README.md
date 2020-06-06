@@ -2,21 +2,25 @@
 
 ![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg)
 
-df2 is a command-line tool for managing and optimising the files and database of defacto2.net. It is broken down into five parts.
+df2 is a command-line tool for managing plus optimising the files and database of defacto2.net. It is broken down into five parts.
 
-**approve** approves all validated file records that are ready to go live.
+**approve** all validated file records that are ready to go live.
 
-**clean** used to discover and remove orphan files that exist on the server but have no matching database entries.
+**clean** discover and remove orphan files that exist on the server but have no matching database entries.
 
-**demozoo** interacts with the Demozoo.org API to synchronise data and fetch linked download files.
+**config** adjust the default settings for this `df2` tool.
 
-**fix** repairs malformed data and generates missing assets from distinct sources plus batch-approve pre-screened files.
+**demozoo** interacts with the [Demozoo.org API](http://demozoo.org/api/v1/) to synchronise data and fetch linked download files.
 
-**html** generates HTML pages for groups, peoples and the site map.
+**fix** malformed data and generates missing assets from distinct sources.
 
-**new** handles new demozoo and proof submissions and repairs any malformed data.
+**lookup** a website record URL by its database ID or UUID.
 
-**proof** automates the parsing of files tagged as _releaseproof_.
+**new** checks Demozoo and _#releaseproof_ submissions, fetches downloads, generate previews and repairs any malformed data.
+
+**output** generates webpages for groups, peoples and the site map.
+
+**proof** automates the parsing of files tagged as _#releaseproof_.
 
 ---
 
@@ -51,11 +55,11 @@ Use "df2 [command] --help" for more information about a command.
 
 ### Compile and install
 
-This program does not compile or install on Windows due to [GCC](https://gcc.gnu.org/) and [x/sys/unix](https://pkg.go.dev/golang.org/x/sys/unix?tab=doc) requirements.
+Requires [Go v1.14+](https://golang.org/doc/install) installed and it will not compile or install on Windows due to [GCC](https://gcc.gnu.org/) and [x/sys/unix](https://pkg.go.dev/golang.org/x/sys/unix?tab=doc) requirements.
 
 ```bash
-git clone git@github.com:Defacto2/df2.git
-cd df2
+cd $(mktemp -d)
+git clone git@github.com:Defacto2/df2.git .
 go install -race
 df2 --version
 ```
@@ -64,7 +68,7 @@ df2 --version
 
 The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) to the system PATH.
 
-Image conversion for WebP support needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html).
+Image conversion for [WebP support](https://en.wikipedia.org/wiki/WebP) needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html).
 
 ### Configuration
 
