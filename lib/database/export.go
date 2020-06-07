@@ -313,22 +313,26 @@ func (f Flags) queryTables() (*bytes.Buffer, error) {
 	var buf1, buf2, buf3, buf4 *bytes.Buffer
 	var err error
 	switch f.Parallel {
-	// case true:
-	// 	group := parallelizer.NewGroup()
-	// 	defer group.Close()
-	// 	group.Add(func() {
-	// 		buf1 = f.reqDB("files")
-	// 	})
-	// 	group.Add(func() {
-	// 		buf2 = f.reqDB("groups")
-	// 	})
-	// 	group.Add(func() {
-	// 		buf3 = f.reqDB("netresources")
-	// 	})
-	// 	group.Add(func() {
-	// 		buf4 = f.reqDB("users")
-	// 	})
-	// 	err = group.Wait()
+	case true:
+		var wg sync.WaitGroup
+		wg.Add(4)
+		go func(f Flags) {
+			defer wg.Done()
+			buf1 = f.reqDB("files")
+		}(f)
+		go func(f Flags) {
+			defer wg.Done()
+			buf2 = f.reqDB("groups")
+		}(f)
+		go func(f Flags) {
+			defer wg.Done()
+			buf3 = f.reqDB("groups")
+		}(f)
+		go func(f Flags) {
+			defer wg.Done()
+			buf4 = f.reqDB("users")
+		}(f)
+		wg.Wait()
 	default:
 		buf1 = f.reqDB("files")
 		buf2 = f.reqDB("groups")
