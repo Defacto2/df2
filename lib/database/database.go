@@ -295,7 +295,7 @@ func LastUpdate() (updatedat time.Time) {
 	return updatedat
 }
 
-// LookupID returns the number of file entries associated with a group.
+// LookupID returns the ID from a supplied UUID or database ID value.
 func LookupID(value string) (id uint, err error) {
 	db := Connect()
 	defer db.Close()

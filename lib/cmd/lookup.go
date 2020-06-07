@@ -9,8 +9,8 @@ import (
 )
 
 var lookupCmd = &cobra.Command{
-	Use:     "lookup (id|uuid)",
-	Short:   "Lookup the file URL of a database ID or UUID",
+	Use:     "lookup (ids|uuids)",
+	Short:   "Lookup the file URLs of database ID or UUID",
 	Aliases: []string{"l"},
 	Example: `  id is a a unique numeric identifier
   uuid is a unique 35-character hexadecimal string representation of a 128-bit integer
@@ -18,20 +18,24 @@ var lookupCmd = &cobra.Command{
 	Hidden: false,
 	Args: func(cmd *cobra.Command, args []string) error {
 		const help = ""
-		if len(args) != 1 {
+		if len(args) < 1 {
 			return errors.New("lookup: requires an id or uuid argument")
 		}
-		if err := database.CheckID(args[0]); err == nil {
-			return nil
+		for _, a := range args {
+			if err := database.CheckID(a); err != nil {
+				return fmt.Errorf("lookup: invalid id or uuid specified %q", a)
+			}
 		}
-		return fmt.Errorf("lookup: invalid id or uuid specified %q", args[0])
+		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		id, err := database.LookupID(args[0])
-		if err != nil {
-			fmt.Printf("%s\n", err)
-		} else {
-			fmt.Printf("https://defacto2.net/f/%v\n", database.ObfuscateParam(fmt.Sprint(id)))
+		for _, a := range args {
+			id, err := database.LookupID(a)
+			if err != nil {
+				fmt.Printf("%s\n", err)
+			} else {
+				fmt.Printf("https://defacto2.net/f/%v\n", database.ObfuscateParam(fmt.Sprint(id)))
+			}
 		}
 	},
 }
