@@ -149,6 +149,7 @@ func CreateUUIDMap() (total int, uuids database.IDs) {
 	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
 	logs.Check(err)
 	for rows.Next() {
+		uuids = make(database.IDs, len(uuids)+1)
 		err = rows.Scan(&id, &uuid)
 		logs.Check(err)
 		uuids[uuid] = database.Empty{} // store record `uuid` value as a key name in the map `m` with an empty value
