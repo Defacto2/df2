@@ -8,13 +8,13 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
-	"github.com/shomali11/parallelizer"
 	"github.com/spf13/viper"
 )
 
@@ -203,18 +203,19 @@ func (f Flags) ExportCronJob() {
 	start := time.Now()
 	switch f.Parallel {
 	case true:
-		group := parallelizer.NewGroup()
-		defer group.Close()
-		group.Add(func() {
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func(f Flags) {
+			defer wg.Done()
 			f.Type = "create"
 			f.ExportTable()
-		})
-		group.Add(func() {
+		}(f)
+		go func(f Flags) {
+			defer wg.Done()
 			f.Type = "update"
 			f.ExportTable()
-		})
-		err := group.Wait()
-		logs.Check(err)
+		}(f)
+		wg.Wait()
 	default:
 		f.Type = "create"
 		f.ExportTable()
@@ -312,22 +313,22 @@ func (f Flags) queryTables() (*bytes.Buffer, error) {
 	var buf1, buf2, buf3, buf4 *bytes.Buffer
 	var err error
 	switch f.Parallel {
-	case true:
-		group := parallelizer.NewGroup()
-		defer group.Close()
-		group.Add(func() {
-			buf1 = f.reqDB("files")
-		})
-		group.Add(func() {
-			buf2 = f.reqDB("groups")
-		})
-		group.Add(func() {
-			buf3 = f.reqDB("netresources")
-		})
-		group.Add(func() {
-			buf4 = f.reqDB("users")
-		})
-		err = group.Wait()
+	// case true:
+	// 	group := parallelizer.NewGroup()
+	// 	defer group.Close()
+	// 	group.Add(func() {
+	// 		buf1 = f.reqDB("files")
+	// 	})
+	// 	group.Add(func() {
+	// 		buf2 = f.reqDB("groups")
+	// 	})
+	// 	group.Add(func() {
+	// 		buf3 = f.reqDB("netresources")
+	// 	})
+	// 	group.Add(func() {
+	// 		buf4 = f.reqDB("users")
+	// 	})
+	// 	err = group.Wait()
 	default:
 		buf1 = f.reqDB("files")
 		buf2 = f.reqDB("groups")

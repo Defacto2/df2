@@ -41,8 +41,9 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "df2",
-	Short: "A tool to optimise and manage defacto2.net",
+	Use:     "df2",
+	Example: "  df2 new",
+	Short:   "A tool to optimise and manage defacto2.net",
 	Long: fmt.Sprintf("%s\nCopyright © %v Ben Garrett\n%v",
 		color.Info.Sprint("A tool to optimise and manage defacto2.net"),
 		copyright,

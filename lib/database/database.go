@@ -45,8 +45,6 @@ type Empty struct{}
 // IDs are unique UUID values used by the database and filenames.
 type IDs map[string]struct{}
 
-var c = Connection{} // connection details
-
 func (c *Connection) String() string {
 	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
 }
@@ -62,14 +60,14 @@ func defaults() {
 }
 
 // Init initializes the database connection using stored settings.
-func Init() {
+func Init() Connection {
 	// load config from file or use defaults
 	if viper.GetString("connection.name") == "" {
 		if err := viper.ReadInConfig(); err != nil {
 			defaults()
 		}
 	}
-	c = Connection{
+	return Connection{
 		Name:     viper.GetString("connection.name"),
 		User:     viper.GetString("connection.user"),
 		Pass:     viper.GetString("connection.password"),
@@ -85,7 +83,7 @@ func Init() {
 
 // Connect will connect to the database and handle any errors.
 func Connect() *sql.DB {
-	Init()
+	c := Init()
 	db, err := sql.Open("mysql", fmt.Sprint(&c))
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
@@ -114,7 +112,7 @@ func Connect() *sql.DB {
 
 // ConnectErr will connect to the database or return any errors.
 func ConnectErr() (db *sql.DB, err error) {
-	Init()
+	c := Init()
 	db, err = sql.Open("mysql", fmt.Sprint(&c))
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
@@ -129,7 +127,7 @@ func ConnectErr() (db *sql.DB, err error) {
 
 // ConnectInfo will connect to the database and return any errors.
 func ConnectInfo() string {
-	Init()
+	c := Init()
 	db, err := sql.Open("mysql", fmt.Sprint(&c))
 	defer db.Close()
 	if err != nil {
@@ -322,6 +320,7 @@ func LookupID(value string) (id uint, err error) {
 	return id, nil
 }
 
+// LookupFile returns the filename from a supplied UUID or database ID value.
 func LookupFile(value string) (filename string, err error) {
 	db := Connect()
 	defer db.Close()
