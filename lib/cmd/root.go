@@ -29,7 +29,7 @@ Useful cobra funcs
 
 var simulate bool
 
-const version string = "0.16.0" // df2 version
+const version string = "1.0.0" // df2 version
 
 var (
 	copyright  string = cYear()
