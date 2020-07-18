@@ -101,6 +101,7 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 		if err != nil || ping.StatusCode != 200 {
 			continue
 		}
+		defer ping.Body.Close()
 		name = filename(ping.Header)
 		if name == "" {
 			name, err = saveName(l.URL)
@@ -133,6 +134,7 @@ func (p *ProductionsAPIv1) Downloads() {
 			logs.Log(err)
 			continue
 		}
+		defer ping.Body.Close()
 		if ping.StatusCode != 200 {
 			logs.Printf(" %s", ping.Status) // print the HTTP status
 			continue
@@ -217,6 +219,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id int, statusCode int) {
 		}
 		if ping {
 			ping, _ := download.LinkPing(l.URL)
+			defer ping.Body.Close()
 			return id, ping.StatusCode
 		}
 		return id, 0

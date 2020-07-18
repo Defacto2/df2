@@ -148,7 +148,10 @@ func TestLinkPing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := LinkPing(tt.args.url)
+			ping, err := LinkPing(tt.args.url)
+			defer func() {
+				ping.Body.Close()
+			}()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LinkPing() error = %v, wantErr %v", err, tt.wantErr)
 				return

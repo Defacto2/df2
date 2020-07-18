@@ -45,6 +45,9 @@ func (r *Request) Body() error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		res.Body.Close()
+	}()
 	r.Status = res.Status
 	r.StatusCode = res.StatusCode
 	r.Read, err = ioutil.ReadAll(res.Body)
