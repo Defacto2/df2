@@ -115,6 +115,9 @@ func (req Request) Queries() error {
 	if err != nil {
 		return err
 	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
 	columns, err := rows.Columns()
 	if err != nil {
 		return err

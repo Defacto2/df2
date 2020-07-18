@@ -78,6 +78,9 @@ func columns(table string) (columns []string, err error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	columns, err = rows.Columns()
 	if err != nil {
 		return nil, err
@@ -95,6 +98,9 @@ func rows(table string, limit int) (values []string, err error) {
 	defer db.Close()
 	rows, err := db.Query(stmt)
 	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	columns, err := rows.Columns()

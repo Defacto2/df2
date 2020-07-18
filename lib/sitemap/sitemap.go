@@ -76,6 +76,7 @@ func Create() {
 	db := database.Connect()
 	rows, err := db.Query("SELECT `id`,`createdat`,`updatedat` FROM `files` WHERE `deletedat` IS NULL")
 	logs.Check(err)
+	logs.Check(rows.Err())
 	defer db.Close()
 
 	v := &Urlset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}

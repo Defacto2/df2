@@ -185,6 +185,9 @@ func list(filter string) (groups []string, total int, err error) {
 	if err != nil {
 		return groups, total, err
 	}
+	if err := rows.Err(); err != nil {
+		return groups, total, err
+	}
 	var grp sql.NullString
 	for rows.Next() {
 		if err = rows.Scan(&grp); err != nil {

@@ -75,6 +75,7 @@ func List(limit uint, compress bool) {
 	defer db.Close()
 	rows, err := db.Query(sqlRecent(limit, false))
 	logs.Check(err)
+	logs.Check(rows.Err())
 	columns, err := rows.Columns()
 	logs.Check(err)
 	values := make([]sql.RawBytes, len(columns))

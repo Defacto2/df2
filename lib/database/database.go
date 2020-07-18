@@ -192,6 +192,7 @@ func ColumnTypes(table string) {
 	// LIMIT 0 quickly returns an empty set
 	rows, err := db.Query(fmt.Sprintf("SELECT * FROM `%s` LIMIT 0", table))
 	logs.Check(err)
+	logs.Check(rows.Err())
 	colTypes, _ := rows.ColumnTypes()
 	logs.Check(err)
 	const padding = 3
@@ -417,6 +418,7 @@ func RenGroup(new, old string) (count int64, err error) {
 func Total(s *string) (total int) {
 	db := Connect()
 	rows, err := db.Query(*s)
+	logs.Check(rows.Err())
 	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
 		logs.Println(s)
 	}

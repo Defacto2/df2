@@ -51,6 +51,7 @@ func List(role string) (people []string, total int) {
 	// interate through records
 	rows, err := db.Query(s)
 	logs.Check(err)
+	logs.Check(rows.Err())
 	var persons sql.NullString
 	i := 0
 	for rows.Next() {
