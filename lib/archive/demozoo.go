@@ -169,9 +169,9 @@ func findNFO(name string, files contents, varNames *[]string) string {
 			finds[file.name] = 6
 		case fn == base+".diz": // [archive name].diz
 			finds[file.name] = 7
-		case fn == base+".txt": // [random].txt
+		case fn == ".txt": // [random].txt
 			finds[file.name] = 8
-		case fn == base+".diz": // [random].diz
+		case fn == ".diz": // [random].diz
 			finds[file.name] = 9
 		default: // currently lacking is [group name].nfo and [group name].txt priorities
 		}

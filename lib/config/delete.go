@@ -17,8 +17,7 @@ func Delete() {
 	if _, err := os.Stat(cfg); os.IsNotExist(err) {
 		configMissing("delete")
 	}
-	switch logs.PromptYN("Remove the config file", false) {
-	case true:
+	if ok := logs.PromptYN("Remove the config file", false); ok {
 		if err := os.Remove(cfg); err != nil {
 			logs.Check(fmt.Errorf("config delete: could not remove %v %v", cfg, err))
 		}

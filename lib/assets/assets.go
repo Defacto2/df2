@@ -50,7 +50,7 @@ func AddTarFile(path, name string, tw *tar.Writer) error {
 		return err
 	}
 	if fi.IsDir() && !os.IsPathSeparator(name[len(name)-1]) {
-		name = name + "/"
+		name += "/"
 	}
 	if hdr.Typeflag == tar.TypeReg && name == "." {
 		// archiving a single file

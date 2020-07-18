@@ -18,18 +18,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-/*
-Useful cobra funcs
-	rootCmd.CommandPath() || rootCmd.Use || rootCmd.Name() // df2
-	rootCmd.ResetCommands()
-	rootCmd.ResetFlags()
-	rootCmd.SilenceErrors()
-	rootCmd.SilenceUsage()
-*/
-
 var simulate bool
 
-const version string = "1.0.0" // df2 version
+const version string = "1.1.0" // df2 version
 
 var (
 	copyright  string = cYear()
@@ -59,8 +50,7 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(color.Warn.Sprintf("%s", err))
 		e := err.Error()
-		switch {
-		case strings.Contains(e, "required flag(s) \"name\""):
+		if strings.Contains(e, "required flag(s) \"name\"") {
 			logs.Println("see Examples for usage or run to list setting choices:", color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
 		}
 		os.Exit(100)
@@ -92,16 +82,15 @@ func filterFlag(t interface{}, flag, val string) {
 	if val == "" {
 		return
 	}
-	switch t := t.(type) {
-	case []string:
-		ok := false
+	if t, ok := t.([]string); ok {
+		var sup bool
 		for _, value := range t {
 			if value == val || (val == value[:1]) {
-				ok = true
+				sup = true
 				break
 			}
 		}
-		if !ok {
+		if !sup {
 			fmt.Printf("%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
 				color.Bold.Sprintf("%q", val),
 				color.Warn.Sprint("available flag values"),

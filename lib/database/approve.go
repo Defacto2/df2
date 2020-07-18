@@ -157,8 +157,7 @@ func printV(i interface{}) {
 	if !verb {
 		return
 	}
-	switch v := i.(type) {
-	case string:
+	if v, ok := i.(string); ok {
 		if len(v) > 0 && v[0] == 33 {
 			logs.Printf("%s", color.Warn.Sprint(v))
 		} else {

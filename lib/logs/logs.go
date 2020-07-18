@@ -121,8 +121,7 @@ func Filepath() string {
 
 // Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
 func Print(a ...interface{}) {
-	switch Quiet {
-	case false:
+	if !Quiet {
 		_, err := fmt.Print(a...)
 		Log(err)
 	}
@@ -130,8 +129,7 @@ func Print(a ...interface{}) {
 
 // Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
 func Printcr(a ...interface{}) {
-	switch Quiet {
-	case false:
+	if !Quiet {
 		fmt.Printf("\r%s\r", strings.Repeat(" ", int(getWinCol())))
 		_, err := fmt.Print(a...)
 		Log(err)
@@ -140,8 +138,7 @@ func Printcr(a ...interface{}) {
 
 // Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
 func Printf(format string, a ...interface{}) {
-	switch Quiet {
-	case false:
+	if !Quiet {
 		_, err := fmt.Printf(format, a...)
 		Log(err)
 	}
@@ -149,8 +146,7 @@ func Printf(format string, a ...interface{}) {
 
 // Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
 func Println(a ...interface{}) {
-	switch Quiet {
-	case false:
+	if !Quiet {
 		_, err := fmt.Println(a...)
 		Log(err)
 	}
@@ -158,8 +154,7 @@ func Println(a ...interface{}) {
 
 // Printfcr obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
 func Printfcr(format string, a ...interface{}) {
-	switch Quiet {
-	case false:
+	if !Quiet {
 		fmt.Printf("\r%s\r", strings.Repeat(" ", int(getWinCol())))
 		_, err := fmt.Printf(format, a...)
 		Log(err)

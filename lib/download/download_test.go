@@ -122,11 +122,11 @@ func TestLinkDownload(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, err := LinkDownload(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("LinkDownload() error = %v, wantErr %v", err, tt.wantErr)
-			} else {
-				// cleanup
-				if err := os.Remove(testTemp()); err != nil {
-					t.Fatal(err)
-				}
+				return
+			}
+			// cleanup
+			if err := os.Remove(testTemp()); err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
@@ -179,11 +179,11 @@ func TestLinkDownloadQ(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, err := LinkDownloadQ(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("LinkDownloadQ() error = %v, wantErr %v", err, tt.wantErr)
-			} else {
-				// cleanup
-				if err := os.Remove(testTemp()); err != nil {
-					t.Fatal(err)
-				}
+				return
+			}
+			// cleanup
+			if err := os.Remove(testTemp()); err != nil {
+				t.Fatal(err)
 			}
 		})
 	}

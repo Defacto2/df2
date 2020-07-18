@@ -66,8 +66,7 @@ func Extract(archive, filename, uuid string) error {
 			if th.cont {
 				continue
 			}
-			switch {
-			case file.Size() > th.size:
+			if file.Size() > th.size {
 				th.name = fn
 				th.size = file.Size()
 			}
