@@ -64,7 +64,8 @@ func (f *File) parse(values []sql.RawBytes) {
 		}
 	}
 	f.Title = fmt.Sprintf("%s ago, %s for %s", f.timeAgo, f.title, f.group)
-	if f.year >= 1980 {
+	const min = 1980
+	if f.year >= min {
 		f.Title += fmt.Sprintf(" in %d", f.year)
 	}
 }

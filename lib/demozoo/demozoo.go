@@ -66,8 +66,9 @@ func (req Request) Query(id string) (err error) {
 
 // newRecord initialises a new file record.
 func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
-	if l := len(values); l < 21 {
-		return r, fmt.Errorf("demozoo newRecord: unexpected number of of values, want 21 but got %d", l)
+	const want = 21
+	if l := len(values); l < want {
+		return r, fmt.Errorf("demozoo newRecord: unexpected number of of values, want %d but got %d", want, l)
 	}
 	r = Record{
 		count: c,
@@ -307,7 +308,8 @@ func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip b
 			logs.Print(color.Note.Sprint("no suitable downloads found\n"))
 			return true
 		}
-		logs.Printcrf("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(200, "200 OK"))
+		const OK = 200
+		logs.Printcrf("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
 		head, err := download.LinkDownload(r.FilePath, link)
 		if err != nil {
 			logs.Log(err)
@@ -363,11 +365,12 @@ func (r Record) check() (update bool) {
 }
 
 func (r *Record) platform(api ProductionsAPIv1) {
+	const dos, win = 4, 1
 	for _, p := range api.Platforms {
 		switch p.ID {
-		case 4:
+		case dos:
 			r.Platform = "dos"
-		case 1:
+		case win:
 			r.Platform = "windows"
 		default:
 			break

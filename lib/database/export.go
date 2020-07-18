@@ -204,14 +204,13 @@ func (f Flags) fileName() string {
 // ExportCronJob is intended for an operating system time-based job scheduler.
 // It creates both create and update types exports for the files table.
 func (f Flags) ExportCronJob() {
-	f.Compress = true
-	f.Limit = 0
-	f.Table = "files"
+	f.Compress, f.Limit, f.Table = true, 0, "files"
 	start := time.Now()
+	const delta = 2
 	switch f.Parallel {
 	case true:
 		var wg sync.WaitGroup
-		wg.Add(2)
+		wg.Add(delta)
 		go func(f Flags) {
 			defer wg.Done()
 			f.Type = "create"
@@ -317,12 +316,13 @@ func (f Flags) ExportDB() {
 
 // queryTables generates the SQL import database and tables statement.
 func (f Flags) queryTables() (*bytes.Buffer, error) {
+	const delta = 4
 	var buf1, buf2, buf3, buf4 *bytes.Buffer
 	var err error
 	switch f.Parallel {
 	case true:
 		var wg sync.WaitGroup
-		wg.Add(4)
+		wg.Add(delta)
 		go func(f Flags) {
 			defer wg.Done()
 			buf1 = f.reqDB("files")
@@ -428,7 +428,8 @@ func now() string {
 
 // ver pads the df2 tool version value for use in templates.
 func (f Flags) ver() string {
-	pad := 9 - len(f.Version) // 9 is the maximum number of characters
+	const maxChars = 9
+	pad := maxChars - len(f.Version)
 	if pad < 0 {
 		return f.Version
 	}

@@ -34,7 +34,7 @@ func Set(name string) {
 			color.Warn.Sprintf("invalid flag value %v", fmt.Sprintf("--name %s", name)),
 			"to see a list of usable settings run:",
 			color.Bold.Sprint("df2 config info"))
-		os.Exit(202)
+		os.Exit(1)
 	}
 	Config.nameFlag = name
 	s := viper.GetString(name)

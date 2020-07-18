@@ -100,11 +100,11 @@ func createDirectory(path string) (ok bool) {
 
 // createHolderFiles generates a number of placeholder files in the given directory.
 func createHolderFiles(dir string, size int, number uint) {
-	if number > 9 {
+	const max = 9
+	if number > max {
 		logs.Check(errPrefix(number))
 	}
-	var i uint
-	for i = 0; i <= number; i++ {
+	for i := uint(0); i <= number; i++ {
 		createHolderFile(dir, size, i)
 	}
 }
@@ -113,7 +113,8 @@ func createHolderFiles(dir string, size int, number uint) {
 // the size of the file determines the number of random characters and the prefix is a digit between
 // 0 and 9 is appended to the filename.
 func createHolderFile(dir string, size int, prefix uint) {
-	if prefix > 9 {
+	const max = 9
+	if prefix > max {
 		logs.Check(errPrefix(prefix))
 	}
 	name := fmt.Sprintf("00000000-0000-0000-0000-00000000000%v", prefix)

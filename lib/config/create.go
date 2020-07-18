@@ -20,9 +20,9 @@ func Create(ow bool) {
 		p := filepath.Dir(cfg)
 		if _, err := os.Stat(p); os.IsNotExist(err) {
 			logs.Println(p)
-			if err := os.MkdirAll(p, 0700); err != nil {
+			if err := os.MkdirAll(p, dir); err != nil {
 				logs.Check(err)
-				os.Exit(770)
+				os.Exit(1)
 			}
 		}
 	}
@@ -34,5 +34,5 @@ func configExists(name, suffix string) {
 	color.Warn.Println("a config file already is in use")
 	logs.Printf("to edit:\t%s %s\n", cmd, "edit")
 	logs.Printf("to remove:\t%s %s\n", cmd, "delete")
-	os.Exit(20)
+	os.Exit(1)
 }

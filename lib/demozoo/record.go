@@ -121,7 +121,8 @@ func (r Record) sql() (query string, args []interface{}) {
 		set = append(set, "file_integrity_strong=?")
 		args = append(args, []interface{}{r.Sum384}...)
 	}
-	if r.LastMod.Year() != 0001 {
+	const errYear = 0001
+	if r.LastMod.Year() != errYear {
 		set = append(set, "file_last_modified=?")
 		args = append(args, []interface{}{r.LastMod}...)
 	}

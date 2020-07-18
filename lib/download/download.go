@@ -94,7 +94,8 @@ func percent(count uint64, total uint64) uint64 {
 	if total == 0 {
 		return 0
 	}
-	return uint64(float64(count) / float64(total) * 100)
+	const max = 100
+	return uint64(float64(count) / float64(total) * max)
 }
 
 // printProgress prints that the download progress is complete.

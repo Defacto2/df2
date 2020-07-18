@@ -46,7 +46,7 @@ func Arg(arg string, args []string) {
 		color.Warn.Sprint("invalid command"),
 		color.Bold.Sprintf("\"%s %s\"", arg, args[0]),
 		color.Warn.Sprint("\nplease use one of the Available Commands shown above"))
-	os.Exit(10)
+	os.Exit(1)
 }
 
 // Check logs any errors and exits to the operating system with error code 1.
@@ -105,7 +105,7 @@ func save(err error, path string) (ok bool) {
 func check(e error) {
 	if e != nil {
 		log.Printf("%s %s", color.Danger.Sprint("!"), e)
-		os.Exit(19)
+		os.Exit(1)
 	}
 }
 
@@ -130,7 +130,8 @@ func Print(a ...interface{}) {
 // Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
 func Printcr(a ...interface{}) {
 	if !Quiet {
-		fmt.Printf("\r%s\r", strings.Repeat(" ", int(getWinCol())))
+		cols := int(termSize())
+		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
 		_, err := fmt.Print(a...)
 		Log(err)
 	}
@@ -155,7 +156,8 @@ func Println(a ...interface{}) {
 // Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
 func Printcrf(format string, a ...interface{}) {
 	if !Quiet {
-		fmt.Printf("\r%s\r", strings.Repeat(" ", int(getWinCol())))
+		cols := int(termSize())
+		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
 		_, err := fmt.Printf(format, a...)
 		Log(err)
 	}
@@ -163,9 +165,10 @@ func Printcrf(format string, a ...interface{}) {
 
 // ProgressPct returns the count of total remaining as a percentage.
 func ProgressPct(name string, count, total int) float64 {
-	r := float64(count) / float64(total) * 100
+	const fin = 100
+	r := float64(count) / float64(total) * fin
 	switch r {
-	case 100:
+	case fin:
 		fmt.Printf("\rquerying %s %.0f %%  ", name, r)
 	default:
 		fmt.Printf("\rquerying %s %.2f %%", name, r)
@@ -213,7 +216,7 @@ func File(config string, err error) {
 		if Panic {
 			log.Panic(err)
 		}
-		os.Exit(11)
+		os.Exit(1)
 	} else {
 		Log(err)
 	}
@@ -248,18 +251,19 @@ func Port(port int) bool {
 
 // promptCheck asks the user for a string configuration value and saves it.
 func promptCheck(cnt int) {
+	const help, max = 2, 4
 	switch {
-	case cnt == 2:
+	case cnt == help:
 		fmt.Println("Ctrl+C to keep the existing port")
-	case cnt >= 4:
-		os.Exit(12)
+	case cnt >= max:
+		os.Exit(1)
 	}
 }
 
 func scannerCheck(s *bufio.Scanner) {
 	if err := s.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "reading input:", err)
-		os.Exit(13)
+		os.Exit(1)
 	}
 }
 
@@ -285,7 +289,7 @@ func PromptDir() string {
 		}
 		if _, err := os.Stat(save); os.IsNotExist(err) {
 			fmt.Fprintln(os.Stderr, "will not save the change as this directory is not found:", Path(save))
-			os.Exit(14)
+			os.Exit(1)
 		} else {
 			break // exit loop if the directory is found
 		}

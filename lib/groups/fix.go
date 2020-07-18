@@ -51,7 +51,8 @@ func ToClean(g string) string {
 
 // dropDot removes any trailing dots from a string.
 func dropDot(s string) string {
-	if len(s) < 2 {
+	const short = 2
+	if len(s) < short {
 		return s
 	}
 	l := s[len(s)-1:]
@@ -63,8 +64,9 @@ func dropDot(s string) string {
 
 // dropThe removes a 'the' prefix from a string.
 func dropThe(g string) string {
+	const short = 2
 	a := strings.Split(g, " ")
-	if len(a) < 2 {
+	if len(a) < short {
 		return g
 	}
 	l := a[len(a)-1]
@@ -76,7 +78,8 @@ func dropThe(g string) string {
 
 // format returns a copy of the string with custom formatting.
 func format(s string) string {
-	if len(s) < 4 {
+	const acronym = 3
+	if len(s) <= acronym {
 		return strings.ToUpper(s)
 	}
 	groups := strings.Split(s, ",")

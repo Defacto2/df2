@@ -8,8 +8,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func getWinCol() (columns uint16) {
-	columns = uint16(80) // 80 column fallback
+func termSize() (columns uint16) {
+	const falback = 80
+	columns = uint16(falback)
 	ws, err := unix.IoctlGetWinsize(int(os.Stdout.Fd()), unix.TIOCGWINSZ)
 	if err != nil {
 		return columns

@@ -53,7 +53,7 @@ func Execute() {
 		if strings.Contains(e, "required flag(s) \"name\"") {
 			logs.Println("see Examples for usage or run to list setting choices:", color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
 		}
-		os.Exit(100)
+		os.Exit(1)
 	}
 	config.ErrCheck()
 }
@@ -95,7 +95,7 @@ func filterFlag(t interface{}, flag, val string) {
 				color.Bold.Sprintf("%q", val),
 				color.Warn.Sprint("available flag values"),
 				color.Primary.Sprint(strings.Join(t, ",")))
-			os.Exit(103)
+			os.Exit(1)
 		}
 	}
 }

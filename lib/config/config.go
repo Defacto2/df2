@@ -18,7 +18,11 @@ import (
 
 // ConfigName is the default configuration filename.
 const ConfigName string = "config.yaml"
-const cmdPath = "df2 config"
+const (
+	cmdPath             = "df2 config"
+	dir     os.FileMode = 0700
+	file    os.FileMode = 0600
+)
 
 // Settings configurations.
 type settings struct {
@@ -50,14 +54,14 @@ func configMissing(suffix string) {
 	cmd := strings.TrimSuffix(cmdPath, suffix) + "create"
 	color.Warn.Println("no config file is in use")
 	logs.Printf("to create:\t%s\n", cmd)
-	os.Exit(21)
+	os.Exit(1)
 }
 
 // writeConfig saves all configs to a configuration file.
 func writeConfig(update bool) {
 	bs, err := yaml.Marshal(viper.AllSettings())
 	logs.Check(err)
-	err = ioutil.WriteFile(Filepath(), bs, 0600) // owner+wr
+	err = ioutil.WriteFile(Filepath(), bs, file) // owner+wr
 	logs.Check(err)
 	s := "created a new"
 	if update {

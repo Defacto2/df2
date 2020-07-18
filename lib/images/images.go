@@ -190,8 +190,9 @@ func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
 	} else if err != nil {
 		return print, err
 	}
+	const percent = 70
 	webp := webpbin.NewCWebP().
-		Quality(70).
+		Quality(percent).
 		InputFile(src).
 		OutputFile(dest)
 	if vendorTempDir {

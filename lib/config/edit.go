@@ -34,7 +34,7 @@ func Edit() {
 		if _, err := exec.LookPath(edit); err != nil {
 			if edit != "" {
 				log.Printf("%q edit command not found\n%v", edit, exec.ErrNotFound)
-				os.Exit(201)
+				os.Exit(1)
 			} else {
 				editNotFound()
 			}
@@ -51,5 +51,5 @@ func Edit() {
 
 func editNotFound() {
 	log.Println("no suitable editor could be found\nplease set one by creating a $EDITOR environment variable in your shell configuration")
-	os.Exit(200)
+	os.Exit(1)
 }

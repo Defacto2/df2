@@ -123,6 +123,7 @@ type DownloadsAPIv1 struct {
 
 // Downloads parses the Demozoo DownloadLinks and saves the first suitable download.
 func (p *ProductionsAPIv1) Downloads() {
+	const found = 200
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods
 		if ok := l.parse(); !ok {
@@ -135,7 +136,7 @@ func (p *ProductionsAPIv1) Downloads() {
 			continue
 		}
 		defer ping.Body.Close()
-		if ping.StatusCode != 200 {
+		if ping.StatusCode != found {
 			logs.Printf(" %s", ping.Status) // print the HTTP status
 			continue
 		}
@@ -318,10 +319,11 @@ func filename(h http.Header) (filename string) {
 		return filename
 	}
 	rh := strings.Split(gh, ";")
+	const want = 2
 	for _, v := range rh {
 		r := strings.Split(v, "=")
 		r[0] = strings.TrimSpace(r[0])
-		if len(r) != 2 {
+		if len(r) != want {
 			continue
 		}
 		switch r[0] {

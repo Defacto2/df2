@@ -60,9 +60,10 @@ func Generate(name, id string) {
 	}
 	out(s, err)
 	// cap images to the webp limit of 16383 pixels
-	if w, err := images.Width(o); w > 16383 {
+	const limit = 16383
+	if w, err := images.Width(o); w > limit {
 		out(fmt.Sprintf("width %dpx", w), err)
-		s, err = images.ToPng(o, images.NewExt(o, ".png"), 16383)
+		s, err = images.ToPng(o, images.NewExt(o, ".png"), limit)
 		out(s, err)
 	}
 	s, err = images.ToWebp(o, images.NewExt(o, ".webp"), true)

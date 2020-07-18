@@ -78,14 +78,15 @@ func (st *stat) nextRefresh(rec records) (skip bool) {
 }
 
 func (r *Record) confirm(code int, status string) (ok bool) {
-	if code == 404 {
+	const nofound, found, problems = 404, 200, 300
+	if code == nofound {
 		r.WebIDDemozoo = 0
 		if err := r.Save(); err == nil {
 			logs.Printf("(%s)\n", download.StatusColor(code, status))
 		}
 		return false
 	}
-	if code < 200 || code > 299 {
+	if code < found || code >= problems {
 		logs.Printf("(%s)\n", download.StatusColor(code, status))
 		return false
 	}
