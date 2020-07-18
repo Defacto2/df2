@@ -2,7 +2,6 @@ package demozoo
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -75,11 +74,6 @@ func mockHeader(add string) (header http.Header, err error) {
 	return rr.Header(), err
 }
 
-func mockJSON(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	io.WriteString(w, `{"alive": true}`)
-}
 func mockContentDisposition(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Disposition", "attachment")

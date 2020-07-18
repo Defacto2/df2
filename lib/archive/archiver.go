@@ -58,7 +58,7 @@ func configure(f interface{}) (err error) {
 		v.ContinueOnError = false
 		//v.Password = os.Getenv("ARCHIVE_PASSWORD")
 	case *archiver.Tar:
-		v = tar
+		//		v = tar
 	// case *archiver.TarBrotli:
 	// 	v.Tar = tar
 	case *archiver.TarBz2:

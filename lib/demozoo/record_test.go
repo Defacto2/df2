@@ -127,12 +127,7 @@ func Test_stat_fileExist(t *testing.T) {
 		missing int
 		total   int
 	}
-	type args struct {
-		r Record
-	}
-	var r = Record{
-		FilePath: "",
-	}
+	var r = Record{}
 	tests := []struct {
 		name        string
 		fields      fields

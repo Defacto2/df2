@@ -46,7 +46,7 @@ func (c colNames) String() string {
 type colValues []string
 
 func (v colValues) String() string {
-	return fmt.Sprintf(`%s`, strings.Join(v, ",\n"))
+	return strings.Join(v, ",\n")
 }
 
 type dupeKeys []string
@@ -175,7 +175,8 @@ func (f Flags) write(buf *bytes.Buffer) {
 		logs.Check(err)
 		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(wrote)), name)
 	default:
-		io.WriteString(os.Stdout, buf.String())
+		_, err := io.WriteString(os.Stdout, buf.String())
+		logs.Check(err)
 	}
 }
 
@@ -223,7 +224,7 @@ func (f Flags) ExportCronJob() {
 		f.ExportTable()
 	}
 	elapsed := time.Since(start)
-	fmt.Println(fmt.Sprintf("cronjob export took %s", elapsed))
+	fmt.Printf("cronjob export took %s\n", elapsed)
 }
 
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
@@ -273,7 +274,7 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 		var dupes dupeKeys = col
 		dat.UPDATE = fmt.Sprint(dupes)
 	}
-	t := template.Must(template.New("statement").Funcs(tmplFunc()).Parse(fmt.Sprintf(`%s`, tableTmpl)))
+	t := template.Must(template.New("statement").Funcs(tmplFunc()).Parse(tableTmpl))
 	var b bytes.Buffer
 	err = t.Execute(&b, dat)
 	logs.Check(err)
@@ -305,7 +306,7 @@ func (f Flags) ExportDB() {
 	logs.Check(err)
 	f.write(buf)
 	elapsed := time.Since(start)
-	fmt.Println(fmt.Sprintf("sql exports took %s", elapsed))
+	fmt.Printf("sql exports took %s\n", elapsed)
 }
 
 // queryTables generates the SQL import database and tables statement.
@@ -394,10 +395,15 @@ func (f Flags) queryDB() (*bytes.Buffer, error) {
 		Columns: fmt.Sprint(names),
 		Rows:    fmt.Sprint(values),
 	}
-	oof := fmt.Sprintf("INSERT INTO %s ({{.Columns}}) VALUES\n{{.Rows}};", f.Table)
-	tmpl, err := template.New("test").Parse(oof)
+	ins := fmt.Sprintf("INSERT INTO %s ({{.Columns}}) VALUES\n{{.Rows}};", f.Table)
+	tmpl, err := template.New("insert").Parse(ins)
+	if err != nil {
+		return nil, err
+	}
 	var b bytes.Buffer
-	err = tmpl.Execute(&b, data)
+	if err = tmpl.Execute(&b, data); err != nil {
+		return nil, err
+	}
 	return &b, nil
 }
 

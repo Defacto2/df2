@@ -32,7 +32,7 @@ func Set(name string) {
 	if i := sort.SearchStrings(keys, name); i == len(keys) || keys[i] != name {
 		logs.Printf("%s\n%s %s\n",
 			color.Warn.Sprintf("invalid flag value %v", fmt.Sprintf("--name %s", name)),
-			fmt.Sprint("to see a list of usable settings run:"),
+			"to see a list of usable settings run:",
 			color.Bold.Sprint("df2 config info"))
 		os.Exit(202)
 	}

@@ -129,7 +129,9 @@ func ConnectErr() (db *sql.DB, err error) {
 func ConnectInfo() string {
 	c := Init()
 	db, err := sql.Open("mysql", fmt.Sprint(&c))
-	defer db.Close()
+	defer func() {
+		db.Close()
+	}()
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
 		return fmt.Sprint(fmt.Errorf(e))

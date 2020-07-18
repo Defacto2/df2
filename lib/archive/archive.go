@@ -63,7 +63,7 @@ func FileCopy(name, dest string) (written int64, err error) {
 	if err != nil {
 		return 0, genErr("filecopy", err)
 	}
-	return written, nil
+	return written, dst.Close()
 }
 
 // FileMove copies a file to the destination and then deletes the source.
@@ -130,6 +130,9 @@ func Restore(source, filename, destination string) (files []string, err error) {
 	} else {
 		defer a.Close()
 		files, err = a.Extract(destination)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return files, nil
 }

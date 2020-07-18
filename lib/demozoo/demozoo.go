@@ -34,7 +34,6 @@ type Request struct {
 	Overwrite bool // overwrite existing files
 	Refresh   bool // refresh all demozoo entries
 	Simulate  bool // simulate database save
-	unitTest  bool // intended for demozoo_test to break loop after two records
 }
 
 // query statistics
@@ -367,8 +366,9 @@ func (r *Record) platform(api ProductionsAPIv1) {
 			r.Platform = "dos"
 		case 1:
 			r.Platform = "windows"
+		default:
+			break
 		}
-		break
 	}
 }
 

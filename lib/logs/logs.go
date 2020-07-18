@@ -291,8 +291,9 @@ func PromptDir() string {
 		if _, err := os.Stat(save); os.IsNotExist(err) {
 			fmt.Fprintln(os.Stderr, "will not save the change as this directory is not found:", Path(save))
 			os.Exit(14)
+		} else {
+			break // exit loop if the directory is found
 		}
-		break // exit loop if the directory is found
 	}
 	scannerCheck(scanner)
 	return save

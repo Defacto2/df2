@@ -200,7 +200,7 @@ func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
 	if err = webp.Run(); err != nil {
 		return print, err
 	}
-	return fmt.Sprint("»webp"), nil
+	return "»webp", nil
 }
 
 // vendorPath is the absolute path to store webpbin vendor downloads.

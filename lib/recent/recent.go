@@ -102,7 +102,8 @@ func List(limit uint, compress bool) {
 		err = json.Compact(&out, jsonData)
 	}
 	logs.Check(err)
-	out.WriteTo(os.Stdout)
+	_, err = out.WriteTo(os.Stdout)
+	logs.Check(err)
 	if ok := json.Valid(jsonData); !ok {
 		err := fmt.Errorf("recent list: jsonData fails JSON encoding validation")
 		logs.Log(err)

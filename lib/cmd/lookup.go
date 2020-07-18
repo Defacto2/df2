@@ -17,7 +17,6 @@ var lookupCmd = &cobra.Command{
   uuid character groups are 8-4-4-16 (xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxxxxxx)`,
 	Hidden: false,
 	Args: func(cmd *cobra.Command, args []string) error {
-		const help = ""
 		if len(args) < 1 {
 			return errors.New("lookup: requires an id or uuid argument")
 		}

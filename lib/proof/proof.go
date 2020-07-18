@@ -104,6 +104,9 @@ func (request Request) Queries() error {
 		logs.Println("Total records", s.total)
 	}
 	rows, err = db.Query(sqlSelect())
+	if err != nil {
+		return err
+	}
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		logs.Check(err)

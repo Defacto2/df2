@@ -118,8 +118,8 @@ func (r Request) initialism(group string) (name string) {
 func (r Request) iterate(groups []string) *[]Group {
 	total := len(groups)
 	data := make([]Group, total)
-	var lastLetter = ""
-	var hr = false
+	var lastLetter string
+	var hr bool
 	for i, grp := range groups {
 		if !logs.Quiet && r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)

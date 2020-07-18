@@ -39,7 +39,7 @@ func RefreshMeta() error {
 	// fetch the rows
 	st := stat{count: 0, missing: 0}
 	for rows.Next() {
-		if skip := st.nextRefresh(records{rows, scanArgs, values}); skip {
+		if st.nextRefresh(records{rows, scanArgs, values}) {
 			continue
 		}
 	}
@@ -90,12 +90,6 @@ func (r *Record) confirm(code int, status string) (ok bool) {
 		return false
 	}
 	return true
-}
-
-func (r *Record) groups(api ProductionsAPIv1) {
-	// this is removed due to different methodologies between Defacto2 and DZ
-	// DZ puts groups into the Title, DF2 needs the groups categories
-	// example: https://demozoo.org/productions/158376/
 }
 
 func (r *Record) pouet(api ProductionsAPIv1) {
