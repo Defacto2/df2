@@ -147,7 +147,7 @@ func (req Request) Queries() error {
 			logs.Log(err)
 			continue
 		}
-		logs.Printfcr(r.String(st.total))
+		logs.Printcrf(r.String(st.total))
 		if skip := r.parseAPI(st, req.Overwrite, storage); skip {
 			continue
 		}
@@ -307,13 +307,13 @@ func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip b
 			logs.Print(color.Note.Sprint("no suitable downloads found\n"))
 			return true
 		}
-		logs.Printfcr("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(200, "200 OK"))
+		logs.Printcrf("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(200, "200 OK"))
 		head, err := download.LinkDownload(r.FilePath, link)
 		if err != nil {
 			logs.Log(err)
 			return true
 		}
-		logs.Printfcr(r.String(st.total))
+		logs.Printcrf(r.String(st.total))
 		logs.Printf("• %s", name)
 		r.downloadReset(name)
 		r.lastMod(head)

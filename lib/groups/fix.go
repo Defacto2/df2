@@ -27,12 +27,12 @@ func Fix(simulate bool) {
 	}
 	switch {
 	case c > 0 && simulate:
-		logs.Printfcr("%d fixes required", c)
+		logs.Printcrf("%d fixes required", c)
 		logs.Simulate()
 	case c == 1:
 		logs.Printcr("1 fix applied")
 	case c > 0:
-		logs.Printfcr("%d fixes applied", c)
+		logs.Printcrf("%d fixes applied", c)
 	default:
 		logs.Printcr("no fixes needed")
 	}

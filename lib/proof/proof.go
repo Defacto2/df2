@@ -160,7 +160,7 @@ func new(values []sql.RawBytes, path string) Record {
 }
 
 func (r Record) printID(s stat) {
-	logs.Printfcr("%s %0*d. %v ",
+	logs.Printcrf("%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.total)),
 		s.count,

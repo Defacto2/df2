@@ -54,7 +54,7 @@ func (st *stat) nextRefresh(rec records) (skip bool) {
 	st.count++
 	r, err := newRecord(st.count, rec.values)
 	logs.Check(err)
-	logs.Printfcr(r.String(0))
+	logs.Printcrf(r.String(0))
 	code, status, api := Fetch(r.WebIDDemozoo)
 	if ok := r.confirm(code, status); !ok {
 		return true

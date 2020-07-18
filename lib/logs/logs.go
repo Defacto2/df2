@@ -152,8 +152,8 @@ func Println(a ...interface{}) {
 	}
 }
 
-// Printfcr obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
-func Printfcr(format string, a ...interface{}) {
+// Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
+func Printcrf(format string, a ...interface{}) {
 	if !Quiet {
 		fmt.Printf("\r%s\r", strings.Repeat(" ", int(getWinCol())))
 		_, err := fmt.Printf(format, a...)

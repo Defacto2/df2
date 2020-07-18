@@ -103,7 +103,7 @@ func capture(test, text string, quiet bool) (output string) {
 	case "println":
 		Println(text)
 	case "printfcr":
-		Printfcr("%s", text)
+		Printcrf("%s", text)
 	}
 	w.Close()
 	bytes, _ := ioutil.ReadAll(r)
