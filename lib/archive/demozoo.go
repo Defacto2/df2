@@ -97,7 +97,7 @@ func (f finds) top() string {
 		Filename string
 		Priority int
 	}
-	var ss []fp
+	var ss = make([]fp, len(f))
 	for k, v := range f {
 		ss = append(ss, fp{k, v})
 	}

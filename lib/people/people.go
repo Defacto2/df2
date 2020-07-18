@@ -133,7 +133,7 @@ func parse(filename string, tpl string, r Request) {
 func Print(r Request) {
 	ppl, total := List(r.Filter)
 	logs.Println(total, "matching", r.Filter, "records found")
-	var a []string
+	var a = make([]string, total)
 	for i := range ppl {
 		if r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)
