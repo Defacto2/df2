@@ -14,7 +14,7 @@ import (
 // Set edits and saves a setting within a configuration file.
 func Set(name string) {
 	if viper.ConfigFileUsed() == "" {
-		configMissing(cmdPath, "set")
+		configMissing("set")
 	}
 	keys := viper.AllKeys()
 	sort.Strings(keys)

@@ -183,9 +183,13 @@ func (r Record) approve() error {
 	db := database.Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	_, err = update.Exec(database.UpdateID, r.ID)
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	logs.Printf(" %s", logs.Y())
 	return nil
 }

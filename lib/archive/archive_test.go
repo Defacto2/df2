@@ -61,17 +61,13 @@ func Test_content_filemime(t *testing.T) {
 		executable bool
 		textfile   bool
 	}
-	type args struct {
-		f os.FileInfo
-	}
 	tests := []struct {
 		name    string
 		fields  fields
-		args    args
 		wantErr bool
 	}{
-		{"text", fields{}, args{}, true},
-		{"text", fields{ext: ".txt", path: testDir("text/test.txt")}, args{}, false},
+		{"text", fields{}, true},
+		{"text", fields{ext: ".txt", path: testDir("text/test.txt")}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -84,7 +80,7 @@ func Test_content_filemime(t *testing.T) {
 				executable: tt.fields.executable,
 				textfile:   tt.fields.textfile,
 			}
-			if err := c.filemime(tt.args.f); (err != nil) != tt.wantErr {
+			if err := c.filemime(); (err != nil) != tt.wantErr {
 				t.Errorf("content.filemime() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

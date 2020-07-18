@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/go-sql-driver/mysql" // MySQL database driver
 	"github.com/google/uuid"
 )
 

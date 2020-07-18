@@ -60,7 +60,7 @@ func (f *File) parse(values []sql.RawBytes) {
 	if y := string(values[6]); y != "" {
 		i, err := strconv.Atoi(y)
 		if err == nil {
-			f.year = int(i)
+			f.year = i
 		}
 	}
 	f.Title = fmt.Sprintf("%s ago, %s for %s", f.timeAgo, f.title, f.group)

@@ -31,7 +31,7 @@ func (c content) String() string {
 }
 
 // filemime saves the file MIME information and name extension.
-func (c *content) filemime(f os.FileInfo) error {
+func (c *content) filemime() error {
 	m, err := mimetype.DetectFile(c.path)
 	if err != nil {
 		return genErr("filemime", err)

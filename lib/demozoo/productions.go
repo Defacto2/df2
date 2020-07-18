@@ -93,7 +93,7 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 		if ok := l.parse(); !ok {
 			continue
 		}
-		// skip defacto2 links if others are avaliable
+		// skip defacto2 links if others are available
 		if u, _ := url.Parse(l.URL); total > 1 && u.Hostname() == "defacto2.net" {
 			continue
 		}

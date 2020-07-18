@@ -12,10 +12,10 @@ import (
 func Delete() {
 	cfg := viper.ConfigFileUsed()
 	if cfg == "" {
-		configMissing(cmdPath, "delete")
+		configMissing("delete")
 	}
 	if _, err := os.Stat(cfg); os.IsNotExist(err) {
-		configMissing(cmdPath, "delete")
+		configMissing("delete")
 	}
 	switch logs.PromptYN("Remove the config file", false) {
 	case true:

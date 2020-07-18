@@ -100,7 +100,7 @@ func (r *Record) fileZipContent() (ok bool) {
 
 func (r Record) sql() (query string, args []interface{}) {
 	var set []string
-	// an range map iternation is not used due to the varied comparisions
+	// an range map iternation is not used due to the varied comparisons
 	if r.Filename != "" {
 		set = append(set, "filename=?")
 		args = append(args, []interface{}{r.Filename}...)

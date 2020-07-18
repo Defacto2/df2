@@ -172,9 +172,13 @@ func (r record) approve() error {
 	db := Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	_, err = update.Exec(UpdateID, r.id)
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -233,7 +237,7 @@ func (r *record) checkFileContent(fc string) (ok bool) {
 }
 
 func (r *record) checkFileName(fn string) (ok bool) {
-	if r.filename = string(fn); r.filename == "" {
+	if r.filename = fn; r.filename == "" {
 		return false
 	}
 	return true
@@ -261,10 +265,10 @@ func (r *record) checkGroups(g1, g2 string) (ok bool) {
 }
 
 func (r *record) checkHash(h1, h2 string) (ok bool) {
-	if r.hashStrong = string(h1); r.hashStrong == "" {
+	if r.hashStrong = h1; r.hashStrong == "" {
 		return false
 	}
-	if r.hashWeak = string(h2); r.hashWeak == "" {
+	if r.hashWeak = h2; r.hashWeak == "" {
 		return false
 	}
 	return true
@@ -311,12 +315,12 @@ func fileCopy(name, dest string) (written int64, err error) {
 		return 0, err
 	}
 	defer src.Close()
-	file, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0666)
+	new, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return 0, err
 	}
-	defer file.Close()
-	written, err = io.Copy(file, src)
+	defer new.Close()
+	written, err = io.Copy(new, src)
 	if err != nil {
 		return 0, err
 	}

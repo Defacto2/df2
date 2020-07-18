@@ -46,8 +46,8 @@ func Filepath() (dir string) {
 	return dir
 }
 
-func configMissing(name, suffix string) {
-	cmd := strings.TrimSuffix(name, suffix) + "create"
+func configMissing(suffix string) {
+	cmd := strings.TrimSuffix(cmdPath, suffix) + "create"
 	color.Warn.Println("no config file is in use")
 	logs.Printf("to create:\t%s\n", cmd)
 	os.Exit(21)

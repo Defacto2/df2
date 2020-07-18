@@ -13,7 +13,7 @@ import (
 func Edit() {
 	cfg := viper.ConfigFileUsed()
 	if cfg == "" {
-		configMissing(cmdPath, "edit")
+		configMissing("edit")
 	}
 	var edit string
 	if err := viper.BindEnv("editor", "EDITOR"); err != nil {

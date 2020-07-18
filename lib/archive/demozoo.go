@@ -50,8 +50,7 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err erro
 		var zip content
 		zip.path = tempDir // filename gets appended by z.scan()
 		zip.filescan(f)
-		err = zip.filemime(f)
-		if err != nil {
+		if err = zip.filemime(); err != nil {
 			return dz, dzErr(err)
 		}
 		zips[i] = zip

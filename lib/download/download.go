@@ -110,7 +110,6 @@ func LinkDownload(name, url string) (http.Header, error) {
 		return h, err
 	}
 	defer out.Close()
-
 	res, err := http.Get(url)
 	if err != nil {
 		return h, err
@@ -133,7 +132,6 @@ func LinkDownloadQ(name, url string) (http.Header, error) {
 		return h, err
 	}
 	defer out.Close()
-
 	res, err := http.Get(url)
 	if err != nil {
 		return h, err
