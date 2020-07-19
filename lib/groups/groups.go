@@ -61,9 +61,14 @@ func Count(name string) (count int) {
 // Cronjob is used for system automation to generate dynamic HTML pages.
 func Cronjob() {
 	tags := []string{"bbs", "ftp", "group", "magazine"}
+	const htm = ".htm"
 	for i := range tags {
-		name := tags[i] + ".htm"
-		if update, err := database.FileUpdate(path.Join(viper.GetString("directory.html"), name), database.LastUpdate()); err != nil {
+		name := tags[i] + htm
+		last, err := database.LastUpdate()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if update, err := database.FileUpdate(path.Join(viper.GetString("directory.html"), name), last); err != nil {
 			log.Fatal(err) // TODO: handle this better?
 		} else if !update {
 			logs.Println(name + " has nothing to update")
