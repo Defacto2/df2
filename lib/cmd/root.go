@@ -23,11 +23,11 @@ var simulate bool
 const version string = "1.1.0" // df2 version
 
 var (
-	copyright  string = cYear()
-	configName        = ""
-	fmtflags          = [7]string{"datalist", "html", "text", "dl", "d", "h", "t"}
-	panic      bool   = false // debug log
-	quiet      bool   = false // quiet disables most printing or output to terminal
+	copyright  = cYear()
+	configName = ""
+	fmtflags   = [7]string{"datalist", "html", "text", "dl", "d", "h", "t"}
+	panic      = false // debug log
+	quiet      = false // quiet disables most printing or output to terminal
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -102,8 +102,8 @@ func filterFlag(t interface{}, flag, val string) {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	initPanic(panic)
-	initQuiet(quiet)
+	logs.Panic = panic
+	logs.Quiet = quiet
 	cf := config.Filepath()
 	if cf != "" {
 		viper.SetConfigFile(cf)
@@ -120,16 +120,6 @@ func initConfig() {
 	} else if !quiet {
 		logs.Println(logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
 	}
-}
-
-// initPanic toggles panics for all logged errors.
-func initPanic(q bool) {
-	logs.Panic = q
-}
-
-// initQuiet quiets the terminal output.
-func initQuiet(q bool) {
-	logs.Quiet = q
 }
 
 func initVer() {
