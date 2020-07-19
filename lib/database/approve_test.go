@@ -1,6 +1,8 @@
 package database
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -11,14 +13,19 @@ func Test_record_imagePath(t *testing.T) {
 	type args struct {
 		path string
 	}
+	const (
+		png  = ".png"
+		uuid = "486070ae-f462-446f-b7e8-c70cb7a8a996"
+	)
+	p := os.TempDir()
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
 		want   string
 	}{
-		{"empty", fields{"486070ae-f462-446f-b7e8-c70cb7a8a996"}, args{""}, "486070ae-f462-446f-b7e8-c70cb7a8a996.png"},
-		{"ok", fields{"486070ae-f462-446f-b7e8-c70cb7a8a996"}, args{"/opt/temp/path"}, "/opt/temp/path/486070ae-f462-446f-b7e8-c70cb7a8a996.png"},
+		{"empty", fields{uuid}, args{""}, uuid + png},
+		{"ok", fields{uuid}, args{p}, filepath.Join(p, uuid) + png},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

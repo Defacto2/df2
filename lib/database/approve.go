@@ -16,6 +16,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	fm os.FileMode = 0666
+	//dm os.FileMode = 0777
+)
 const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`," +
 	"`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`" +
 	",`group_brand_for`,`group_brand_by`,`section`\n" +
@@ -25,10 +29,12 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 var verb = false
 
 // Approve automatically checks and clears file records for live.
-func Approve(verbose bool) {
+func Approve(verbose bool) error {
 	verb = verbose
-	err := queries()
-	logs.Check(err)
+	if err := queries(); err != nil {
+		return err
+	}
+	return nil
 }
 
 type record struct {
@@ -64,6 +70,8 @@ func queries() error {
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {
 		return err
+	} else if rows.Err() != nil {
+		return rows.Err()
 	}
 	columns, err := rows.Columns()
 	if err != nil {
@@ -81,13 +89,15 @@ func queries() error {
 	rowCnt := 0
 	for rows.Next() {
 		rowCnt++
-		err = rows.Scan(scanArgs...)
-		logs.Check(err)
+		if err = rows.Scan(scanArgs...); err != nil {
+			return err
+		}
 		if new := IsNew(values); !new {
 			continue
 		}
 		r.uuid = string(values[1])
-		printV(fmt.Sprintf("\n%s item %04d (%v) %s %s ", logs.X(), rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
+		printV(fmt.Sprintf("\n%s item %04d (%v) %s %s ", logs.X(),
+			rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if ok := r.check(values, &dir); !ok {
 			continue
 		}
@@ -101,7 +111,6 @@ func queries() error {
 		r.c++
 		fmt.Println(r)
 	}
-	logs.Check(rows.Err())
 	printV("\n")
 	r.summary(rowCnt)
 	return nil
@@ -174,8 +183,7 @@ func (r record) approve() error {
 	if err != nil {
 		return err
 	}
-	_, err = update.Exec(UpdateID, r.id)
-	if err != nil {
+	if _, err := update.Exec(UpdateID, r.id); err != nil {
 		return err
 	}
 	return nil
@@ -252,8 +260,7 @@ func (r *record) checkFileSize(fs string) (ok bool) {
 }
 
 func (r *record) checkGroups(g1, g2 string) (ok bool) {
-	r.groupBy = g1
-	r.groupFor = g2
+	r.groupBy, r.groupFor = g1, g2
 	if r.groupBy == "" && r.groupFor == "" {
 		return false
 	}
@@ -314,7 +321,7 @@ func fileCopy(name, dest string) (written int64, err error) {
 		return 0, err
 	}
 	defer src.Close()
-	new, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0666)
+	new, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, fm)
 	if err != nil {
 		return 0, err
 	}
@@ -323,5 +330,5 @@ func fileCopy(name, dest string) (written int64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return written, nil
+	return written, new.Close()
 }
