@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/hako/durafmt"
 )
 
@@ -71,14 +70,20 @@ func (f *File) parse(values []sql.RawBytes) {
 }
 
 // List recent files as a JSON document.
-func List(limit uint, compress bool) {
+func List(limit uint, compress bool) error {
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(sqlRecent(limit, false))
-	logs.Check(err)
-	logs.Check(rows.Err())
+	query := sqlRecent(limit, false)
+	rows, err := db.Query(query)
+	if err != nil {
+		return err
+	} else if rows.Err() != nil {
+		return rows.Err()
+	}
 	columns, err := rows.Columns()
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
 	for i := range values {
@@ -88,35 +93,46 @@ func List(limit uint, compress bool) {
 		Cols: [3]string{"uuid", "urlid", "title"},
 	}
 	for rows.Next() {
-		err = rows.Scan(scanArgs...)
-		logs.Check(err)
+		if err = rows.Scan(scanArgs...); err != nil {
+			return err
+		} else if values == nil {
+			continue
+		}
 		var v File
 		v.parse(values)
 		f.Data = append(f.Data, [3]string{v.UUID, v.URLID, v.Title})
 	}
-	var jsonData []byte
-	jsonData, err = json.Marshal(f)
-	logs.Check(err)
+	jsonData, err := json.Marshal(f)
+	if err != nil {
+		return err
+	}
 	var out bytes.Buffer
 	if !compress {
-		err = json.Indent(&out, jsonData, "", "    ")
-	} else {
-		err = json.Compact(&out, jsonData)
+		if err := json.Indent(&out, jsonData, "", "    "); err != nil {
+			return err
+		}
+	} else if err := json.Compact(&out, jsonData); err != nil {
+		return err
 	}
-	logs.Check(err)
-	_, err = out.WriteTo(os.Stdout)
-	logs.Check(err)
+	if _, err = out.WriteTo(os.Stdout); err != nil {
+		return err
+	}
 	if ok := json.Valid(jsonData); !ok {
 		err := fmt.Errorf("recent list: jsonData fails JSON encoding validation")
-		logs.Log(err)
+		return err
 	}
+	return nil
 }
 
-func sqlRecent(limit uint, includeSoftDeletes bool) string {
-	var sql string = "SELECT id,uuid,record_title,group_brand_for,group_brand_by,filename,date_issued_year,createdat,updatedat FROM files"
+func sqlRecent(limit uint, includeSoftDeletes bool) (sql string) {
+	const (
+		sel   = "SELECT id,uuid,record_title,group_brand_for,group_brand_by,filename,date_issued_year,createdat,updatedat FROM files"
+		where = " WHERE deletedat IS NULL"
+		order = " ORDER BY createdat DESC"
+	)
+	sql = sel
 	if includeSoftDeletes {
-		sql += " WHERE deletedat IS NULL"
+		sql += where
 	}
-	sql += " ORDER BY createdat DESC LIMIT " + strconv.Itoa(int(limit))
-	return sql
+	return sql + order + " LIMIT " + strconv.Itoa(int(limit))
 }
