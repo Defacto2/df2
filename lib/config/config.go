@@ -54,7 +54,6 @@ func configMissing(suffix string) {
 	cmd := strings.TrimSuffix(cmdPath, suffix) + "create"
 	color.Warn.Println("no config file is in use")
 	logs.Printf("to create:\t%s\n", cmd)
-	os.Exit(1)
 }
 
 // writeConfig saves all configs to a configuration file.

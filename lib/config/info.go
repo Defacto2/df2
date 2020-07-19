@@ -68,7 +68,6 @@ func errMsg() {
 	if Config.Errors && !logs.Quiet {
 		fmt.Printf("%s %s\n", color.Warn.Sprint("config: no config file in use, please run"),
 			color.Bold.Sprintf("df2 config create"))
-		os.Exit(1)
 	} else if Config.Errors {
 		os.Exit(1)
 	}
