@@ -47,7 +47,8 @@ func List(role string) (people []string, total int) {
 	if s == "" {
 		return people, total
 	}
-	total = database.Total(&s)
+	total, err := database.Total(&s)
+	logs.Check(err)
 	// interate through records
 	rows, err := db.Query(s)
 	logs.Check(err)

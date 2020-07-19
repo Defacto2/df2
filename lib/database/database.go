@@ -413,18 +413,19 @@ func RenGroup(new, old string) (count int64, err error) {
 }
 
 // Total reports the number of records fetched by the supplied SQL query.
-func Total(s *string) (total int) {
+func Total(s *string) (sum int, err error) {
 	db := Connect()
 	rows, err := db.Query(*s)
-	logs.Check(rows.Err())
 	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
 		logs.Println(s)
+	} else if err != nil {
+		return -1, err
+	} else if rows.Err() != nil {
+		return -1, rows.Err()
 	}
-	logs.Check(err)
 	defer db.Close()
-	total = 0
 	for rows.Next() {
-		total++
+		sum++
 	}
-	return total
+	return sum, db.Close()
 }

@@ -187,7 +187,10 @@ func list(filter string) (groups []string, total int, err error) {
 	if err != nil {
 		return groups, total, err
 	}
-	total = database.Total(&s)
+	total, err = database.Total(&s)
+	if err != nil {
+		return groups, total, err
+	}
 	// interate through records
 	rows, err := db.Query(s)
 	if err != nil {
