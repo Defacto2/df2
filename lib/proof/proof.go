@@ -1,7 +1,5 @@
 package proof
 
-// os.Exit() = 9x
-
 import (
 	"database/sql"
 	"fmt"
