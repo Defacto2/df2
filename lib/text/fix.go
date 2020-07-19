@@ -14,8 +14,8 @@ import (
 
 var dir directories.Dir
 
-// Txt is an image object.
-type Txt struct {
+// Image preview and thumbnail of a text object.
+type Image struct {
 	ID       uint
 	UUID     string
 	Filename string
@@ -23,8 +23,9 @@ type Txt struct {
 	Filesize int
 }
 
-func (t Txt) String() string {
-	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(t.ID), t.Filename, color.Info.Sprint(humanize.Bytes(uint64(t.Filesize))))
+func (i Image) String() string {
+	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(i.ID), i.Filename,
+		color.Info.Sprint(humanize.Bytes(uint64(i.Filesize))))
 }
 
 // Fix generates any missing assets from downloads that are text based.
@@ -38,19 +39,19 @@ func Fix(simulate bool) error {
 	}
 	c := 0
 	for rows.Next() {
-		var txt Txt
-		err = rows.Scan(&txt.ID, &txt.UUID, &txt.Filename, &txt.Filesize)
+		var img Image
+		err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize)
 		if err != nil {
 			logs.Check(err)
 		}
 		// TODO replace with function that handles archives
-		if !txt.ext() {
+		if !img.valid() {
 			continue
 		}
-		if !txt.check() {
+		if !img.exist() {
 			c++
-			logs.Printf("%d. %v", c, txt)
-			input := filepath.Join(dir.UUID, txt.UUID)
+			logs.Printf("%d. %v", c, img)
+			input := filepath.Join(dir.UUID, img.UUID)
 			if _, err := os.Stat(input); os.IsNotExist(err) {
 				logs.Printf("%s\n", logs.X())
 				continue
@@ -59,8 +60,7 @@ func Fix(simulate bool) error {
 				logs.Printf("%s\n", color.Question.Sprint("?"))
 				continue
 			}
-			Generate(input, txt.UUID)
-			//images.Generate(input, txt.UUID)
+			Generate(input, img.UUID)
 			logs.Print("\n")
 		}
 	}
@@ -72,21 +72,26 @@ func Fix(simulate bool) error {
 	return nil
 }
 
-func (t Txt) ext() bool {
-	switch filepath.Ext(t.Filename) {
-	case ".txt", ".diz", ".doc", ".nfo":
-		return true
-	}
-	return false
-}
-
 // check that [UUID].png exists in all three image subdirectories.
-func (t Txt) check() bool {
+func (i Image) exist() bool {
+	const ext = ".png"
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
-		if _, err := os.Stat(filepath.Join(path, t.UUID+".png")); os.IsNotExist(err) {
+		if path == "" {
+			return false
+		}
+		if s, err := os.Stat(filepath.Join(path, i.UUID+ext)); os.IsNotExist(err) {
+			fmt.Println(s)
 			return false
 		}
 	}
 	return true
+}
+
+func (i Image) valid() bool {
+	switch filepath.Ext(i.Filename) {
+	case ".txt", ".diz", ".doc", ".nfo":
+		return true
+	}
+	return false
 }

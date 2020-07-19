@@ -3,12 +3,13 @@ package text
 import (
 	"os"
 	"path"
+	"runtime"
 	"testing"
 
 	"github.com/gookit/color"
 )
 
-func TestTxt_check(t *testing.T) {
+func TestImage_exists(t *testing.T) {
 	type fields struct {
 		UUID string
 	}
@@ -21,26 +22,35 @@ func TestTxt_check(t *testing.T) {
 		{"test", fields{"test"}, true},
 		{"missingdir", fields{"test"}, false},
 	}
-	wd, _ := os.Getwd()
-	dir.Img000 = path.Join(wd, "../../tests/text/")
-	dir.Img150 = path.Join(wd, "../../tests/text/")
-	dir.Img400 = path.Join(wd, "../../tests/text/")
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	if runtime.GOOS == "windows" {
+		dir.Img000 = path.Join(wd, "..\\..\\tests\\text\\")
+		dir.Img150 = path.Join(wd, "..\\..\\tests\\text\\")
+		dir.Img400 = path.Join(wd, "..\\..\\tests\\text\\")
+	} else {
+		dir.Img000 = path.Join(wd, "../../tests/text/")
+		dir.Img150 = path.Join(wd, "../../tests/text/")
+		dir.Img400 = path.Join(wd, "../../tests/text/")
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.name == "missingdir" {
 				dir.Img400 = ""
 			}
-			x := Txt{
+			x := Image{
 				UUID: tt.fields.UUID,
 			}
-			if got := x.check(); got != tt.want {
-				t.Errorf("Txt.check() = %v, want %v", got, tt.want)
+			if got := x.exist(); got != tt.want {
+				t.Errorf("Image.exist() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestTxt_ext(t *testing.T) {
+func TestImage_valid(t *testing.T) {
 	type fields struct {
 		Filename string
 	}
@@ -57,17 +67,17 @@ func TestTxt_ext(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			x := Txt{
+			x := Image{
 				Filename: tt.fields.Filename,
 			}
-			if got := x.ext(); got != tt.want {
-				t.Errorf("Txt.ext() = %v, want %v", got, tt.want)
+			if got := x.valid(); got != tt.want {
+				t.Errorf("Image.valid() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestTxt_String(t *testing.T) {
+func TestImage_String(t *testing.T) {
 	type fields struct {
 		ID       uint
 		UUID     string
@@ -86,15 +96,15 @@ func TestTxt_String(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			text := Txt{
+			img := Image{
 				ID:       tt.fields.ID,
 				UUID:     tt.fields.UUID,
 				Filename: tt.fields.Filename,
 				FileExt:  tt.fields.FileExt,
 				Filesize: tt.fields.Filesize,
 			}
-			if got := text.String(); got != tt.want {
-				t.Errorf("Txt.String() = %q, want %q", got, tt.want)
+			if got := img.String(); got != tt.want {
+				t.Errorf("Image.String() = %q, want %q", got, tt.want)
 			}
 		})
 	}

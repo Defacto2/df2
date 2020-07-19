@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -66,11 +67,13 @@ func Set(name string) {
 	}
 }
 
+var saveType = errors.New("config save: unsupported value interface type")
+
 func configSave(value interface{}) {
 	switch value.(type) {
 	case int64, string:
 	default:
-		logs.Check(fmt.Errorf("config save: unsupported value interface type"))
+		logs.Check(saveType)
 	}
 	viper.Set(Config.nameFlag, value)
 	logs.Printf("%s %s is now set to \"%v\"\n", logs.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))

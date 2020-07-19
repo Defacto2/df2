@@ -2,7 +2,7 @@ package logs
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -48,8 +48,7 @@ func Test_ProgressPct(t *testing.T) {
 }
 
 func Test_save(t *testing.T) {
-	const msg = "test error: this is a test"
-	err := fmt.Errorf(msg)
+	eerr, terr := errors.New(""), errors.New("test error: this is a test")
 	type args struct {
 		err  error
 		path string
@@ -60,8 +59,8 @@ func Test_save(t *testing.T) {
 		wantOk bool
 	}{
 		{"empty", args{nil, ""}, false},
-		{"empty", args{fmt.Errorf(""), ""}, false},
-		{"ok", args{err, testTxt()}, true},
+		{"empty", args{eerr, ""}, false},
+		{"ok", args{terr, testTxt()}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
