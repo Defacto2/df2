@@ -183,22 +183,27 @@ func CheckUUID(id string) error {
 }
 
 // ColumnTypes details the columns used by the table.
-func ColumnTypes(table string) {
+func ColumnTypes(table string) error {
 	db := Connect()
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
 	rows, err := db.Query(fmt.Sprintf("SELECT * FROM `%s` LIMIT 0", table))
-	logs.Check(err)
-	logs.Check(rows.Err())
-	colTypes, _ := rows.ColumnTypes()
-	logs.Check(err)
+	if err != nil {
+		return err
+	} else if rows.Err() != nil {
+		return rows.Err()
+	}
+	colTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return err
+	}
 	const padding = 3
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', tabwriter.AlignRight)
 	fmt.Fprintln(w, "Column name\tType\tNullable\tLength\t")
 	for _, s := range colTypes {
 		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t\n", s.Name(), s.DatabaseTypeName(), printNull(s), printLen(s))
 	}
-	w.Flush()
+	return w.Flush()
 }
 
 func printNull(s *sql.ColumnType) (null string) {
@@ -206,13 +211,10 @@ func printNull(s *sql.ColumnType) (null string) {
 	if !ok {
 		return null
 	}
-	switch n {
-	case true:
-		null = "✓"
-	default:
-		null = "✗"
+	if n {
+		return "✓"
 	}
-	return null
+	return "✗"
 }
 
 func printLen(s *sql.ColumnType) (length string) {
@@ -221,7 +223,7 @@ func printLen(s *sql.ColumnType) (length string) {
 		return length
 	}
 	if l > 0 {
-		length = strconv.Itoa(int(l))
+		return strconv.Itoa(int(l))
 	}
 	return length
 }
@@ -259,6 +261,10 @@ func IsNew(values []sql.RawBytes) bool {
 }
 
 func isNew(deleted, updated sql.RawBytes) (bool, error) {
+	const (
+		min = -5
+		max = 5
+	)
 	// normalise the date values as sometimes updatedat & deletedat can be off by a second.
 	del, err := time.Parse(time.RFC3339, string(deleted))
 	if err != nil {
@@ -268,21 +274,21 @@ func isNew(deleted, updated sql.RawBytes) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if diff := upd.Sub(del); diff.Seconds() > 5 || diff.Seconds() < -5 {
+	if diff := upd.Sub(del); diff.Seconds() > max || diff.Seconds() < min {
 		return false, nil
 	}
 	return true, nil
 }
 
 // FileUpdate reports if the file is newer than the database time.
-func FileUpdate(name string, database time.Time) bool {
+func FileUpdate(name string, database time.Time) (bool, error) {
 	f, err := os.Stat(name)
 	if os.IsNotExist(err) {
-		return true
+		return true, nil
+	} else if err != nil {
+		return false, err
 	}
-	logs.Check(err)
-	mod := f.ModTime()
-	return !mod.UTC().After(database.UTC())
+	return !f.ModTime().UTC().After(database.UTC()), nil
 }
 
 // LastUpdate reports the time when the files database was last modified.

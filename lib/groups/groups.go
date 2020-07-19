@@ -3,6 +3,7 @@ package groups
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"regexp"
@@ -62,7 +63,9 @@ func Cronjob() {
 	tags := []string{"bbs", "ftp", "group", "magazine"}
 	for i := range tags {
 		name := tags[i] + ".htm"
-		if update := database.FileUpdate(path.Join(viper.GetString("directory.html"), name), database.LastUpdate()); !update {
+		if update, err := database.FileUpdate(path.Join(viper.GetString("directory.html"), name), database.LastUpdate()); err != nil {
+			log.Fatal(err) // TODO: handle this better?
+		} else if !update {
 			logs.Println(name + " has nothing to update")
 		} else {
 			Request{tags[i], true, true, false}.HTML(name)
