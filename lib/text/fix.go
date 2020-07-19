@@ -12,6 +12,11 @@ import (
 	"github.com/gookit/color"
 )
 
+const (
+	png  = ".png"
+	webp = ".webp"
+)
+
 var dir directories.Dir
 
 // image preview and thumbnail of a text object.
@@ -60,7 +65,9 @@ func Fix(simulate bool) error {
 				logs.Printf("%s\n", color.Question.Sprint("?"))
 				continue
 			}
-			Generate(input, img.UUID)
+			if err := generate(input, img.UUID); err != nil {
+				return err
+			}
 			logs.Print("\n")
 		}
 	}
@@ -74,13 +81,12 @@ func Fix(simulate bool) error {
 
 // check that [UUID].png exists in all three image subdirectories.
 func (i image) exist() bool {
-	const ext = ".png"
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
 		if path == "" {
 			return false
 		}
-		if s, err := os.Stat(filepath.Join(path, i.UUID+ext)); os.IsNotExist(err) {
+		if s, err := os.Stat(filepath.Join(path, i.UUID+png)); os.IsNotExist(err) {
 			fmt.Println(s)
 			return false
 		}

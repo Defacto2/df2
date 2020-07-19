@@ -1,6 +1,7 @@
 package text
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,88 +13,82 @@ import (
 	"github.com/gookit/color"
 )
 
-/*
-   https://github.com/ansilove/ansilove
-   /usr/local/bin/ansilove
-   ansilove [-dhiqrsv] [-b bits] [-c columns] [-f font] [-m mode] [-o file]
-            [-R factor] file
+const ansiloveErr = `
+this command requires the installation of AnsiLove/C
+installation instructions: https://github.com/ansilove/ansilove
+`
 
-     -b bits     Set to 9 to render 9th column of block characters (default:
-                 8).
-     -c columns  Adjust number of columns for ANSI, BIN, and TND files.
-     -d          Enable DOS aspect ratio.
-     -f font     Select font for supported formats.
-     -h          Show help.
-     -i          Enable iCE colors.
-     -m mode     Set rendering mode for ANS files. Valid options are:
-                 ced     Black on gray, with 78 columns.
-                 transparent
-                         Render with transparent background.
-                 workbench
-                         Use Amiga Workbench palette.
-     -o file     Specify output filename/path.
-     -q          Suppress output messages (quiet).
-     -r          Create Retina @2x output file.
-     -R factor   Create Retina output file with custom scale factor.
-     -s          Show SAUCE record without generating output.
-     -v          Show version information.
-*/
-
-// Generate a collection of site images.
-func Generate(name, id string) {
-	var n string = name
-	out := func(s string, e error) {
-		if s != "" {
-			logs.Print("  ", s)
-		} else {
-			logs.Log(e)
-		}
-	}
-	f := directories.Files(id)
-	o := f.Img000 + ".png"
-	s, err := ToPng(n, f.Img000)
+// generate a collection of site images.
+func generate(name, id string) error {
+	n, f := name, directories.Files(id)
+	o := f.Img000 + png
+	s, err := makePng(n, f.Img000)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
-		fmt.Println("\n\nthis command requires the installation of AnsiLove/C")
-		fmt.Println("installation instructions: https://github.com/ansilove/ansilove")
-		fmt.Println()
+		fmt.Println(ansiloveErr)
 		logs.Check(err)
+	} else if err != nil {
+		return err
 	}
-	out(s, err)
+	fmt.Printf("  %s", s)
 	// cap images to the webp limit of 16383 pixels
 	const limit = 16383
 	if w, err := images.Width(o); w > limit {
-		out(fmt.Sprintf("width %dpx", w), err)
-		s, err = images.ToPng(o, images.NewExt(o, ".png"), limit)
-		out(s, err)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("width %dpx", w)
+		s, err = images.ToPng(o, images.NewExt(o, png), limit)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("  %s", s)
 	}
-	s, err = images.ToWebp(o, images.NewExt(o, ".webp"), true)
-	out(s, err)
+	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("  %s", s)
 	s, err = images.ToThumb(o, f.Img400, 400)
-	out(s, err)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("  %s", s)
 	s, err = images.ToThumb(o, f.Img150, 150)
-	out(s, err)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("  %s", s)
+	return nil
 }
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
-func ToPng(src, dest string) (string, error) {
+func makePng(src, dest string) (string, error) {
 	if src == "" {
-		return "", fmt.Errorf("text topng: src argument requires a source directory path")
+		return "", errors.New("text topng: src argument requires a source directory path")
 	}
 	if dest == "" {
-		return "", fmt.Errorf("text topng: dest argument requires a destination filename path")
+		return "", errors.New("text topng: dest argument requires a destination filename path")
 	}
-	img := dest + ".png"
+	img := dest + png
 	cmd := exec.Command("ansilove", "-r", "-o", img, src)
 	out, err := cmd.Output()
-	wd, _ := os.Getwd()
-	exe, _ := os.Executable()
-	fmt.Printf("%s - %s", wd, exe)
 	if err != nil {
 		return "", err
 	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	fmt.Printf("%s - %s", wd, exe)
 	stat, err := os.Stat(img)
-	if os.IsNotExist(err) {
+	if err != nil && os.IsNotExist(err) {
+		return "", err
+	} else if err != nil {
 		return "", err
 	}
 	ss := stat.Size()
