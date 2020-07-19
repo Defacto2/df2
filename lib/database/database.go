@@ -83,14 +83,14 @@ func Init() Connection {
 // Connect will connect to the database and handle any errors.
 func Connect() *sql.DB {
 	c := Init()
-	db, err := sql.Open("mysql", fmt.Sprint(&c))
+	db, err := sql.Open("mysql", c.String())
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
 		logs.Check(fmt.Errorf(e))
 	}
-	err = db.Ping() // ping the server to make sure the connection works
-	if err != nil {
-		logs.Println(color.Secondary.Sprint(strings.Replace(fmt.Sprint(&c), c.Pass, "****", 1)))
+	// ping the server to make sure the connection works
+	if err = db.Ping(); err != nil {
+		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, "****", 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
 		var p = color.Primary.Sprint
@@ -112,13 +112,12 @@ func Connect() *sql.DB {
 // ConnectErr will connect to the database or return any errors.
 func ConnectErr() (db *sql.DB, err error) {
 	c := Init()
-	db, err = sql.Open("mysql", fmt.Sprint(&c))
+	db, err = sql.Open("mysql", c.String())
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
 		return nil, fmt.Errorf(e)
 	}
-	err = db.Ping()
-	if err != nil {
+	if err = db.Ping(); err != nil {
 		return nil, err
 	}
 	return db, nil
@@ -127,7 +126,7 @@ func ConnectErr() (db *sql.DB, err error) {
 // ConnectInfo will connect to the database and return any errors.
 func ConnectInfo() string {
 	c := Init()
-	db, err := sql.Open("mysql", fmt.Sprint(&c))
+	db, err := sql.Open("mysql", c.String())
 	defer func() {
 		db.Close()
 	}()
@@ -135,8 +134,7 @@ func ConnectInfo() string {
 		e := strings.Replace(err.Error(), c.Pass, "****", 1)
 		return fmt.Sprint(fmt.Errorf(e))
 	}
-	err = db.Ping()
-	if err != nil {
+	if err = db.Ping(); err != nil {
 		if err, ok := err.(*mysql.MySQLError); ok {
 			e := strings.Replace(err.Error(), c.User, color.Primary.Sprint(c.User), 1)
 			return fmt.Sprint(fmt.Errorf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e)))
