@@ -9,32 +9,33 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/viper"
 )
 
 const (
-	resource string = "https://defacto2.net/f/"
-	static   string = "https://defacto2.net/"
+	resource = "https://defacto2.net/f/"
+	static   = "https://defacto2.net/"
+	index    = "index.cfm"
+	cfm      = ".cfm"
 )
 
 // limit the number of urls as permitted by Bing and Google search engines
-const limit int = 50000
+const limit = 50000
 
 // url composes the <url> tag in the sitemap
 type url struct {
-	Location string `xml:"loc"`
+	Location string `xml:"loc,omitempty"`
 	// optional attributes
 	LastModified string `xml:"lastmod,omitempty"`
 	ChangeFreq   string `xml:"changefreq,omitempty"`
 	Priority     string `xml:"priority,omitempty"`
 }
 
-// Urlset is a sitemap XML template
-type Urlset struct {
-	XMLName xml.Name `xml:"urlset"`
-	XMLNS   string   `xml:"xmlns,attr"`
-	Svs     []url    `xml:"url"`
+// URLset is a sitemap XML template
+type URLset struct {
+	XMLName xml.Name `xml:"urlset,omitempty"`
+	XMLNS   string   `xml:"xmlns,attr,omitempty"`
+	Svs     []url    `xml:"url,omitempty"`
 }
 
 var urls = [28]string{
@@ -69,47 +70,61 @@ var urls = [28]string{
 }
 
 // Create generates and prints the sitemap.
-func Create() {
+func Create() error {
 	// query
-	var id string
+	var id, v, count = "", &URLset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}, 0
 	var createdat, updatedat sql.NullString
+	dbc := database.Connect()
+	rowCnt, err := dbc.Query("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL")
+	if err != nil {
+		return err
+	}
+	defer dbc.Close()
+	for rowCnt.Next() {
+		if err := rowCnt.Scan(&count); err != nil {
+			return err
+		}
+	}
 	db := database.Connect()
 	rows, err := db.Query("SELECT `id`,`createdat`,`updatedat` FROM `files` WHERE `deletedat` IS NULL")
-	logs.Check(err)
-	logs.Check(rows.Err())
+	if err != nil {
+		return err
+	}
 	defer db.Close()
-
-	v := &Urlset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
-	c := 0
-
+	if rows.Err() != nil {
+		return rows.Err()
+	}
+	c, i := 0, 0
 	// handle static urls
 	d := viper.GetString("directory.views")
-	for _, u := range urls {
-		i := filepath.Join(d, u, "index.cfm")
-		if s, err := os.Stat(i); !os.IsNotExist(err) {
-			v.Svs = append(v.Svs, url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"})
+	v.Svs = make([]url, len(urls)+count)
+	for i, u := range urls {
+		file := filepath.Join(d, u, index)
+		if s, err := os.Stat(file); !os.IsNotExist(err) {
+			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"}
 			c++
 			continue
 		}
-		j := filepath.Join(d, u) + ".cfm"
+		j := filepath.Join(d, u) + cfm
 		if s, err := os.Stat(j); !os.IsNotExist(err) {
-			v.Svs = append(v.Svs, url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.8"})
+			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.8"}
 			c++
 			continue
 		}
-		k := filepath.Join(d, strings.ReplaceAll(u, "-", "")+".cfm")
+		k := filepath.Join(d, strings.ReplaceAll(u, "-", "")+cfm)
 		if s, err := os.Stat(k); !os.IsNotExist(err) {
-			v.Svs = append(v.Svs, url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.7"})
+			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.7"}
 			c++
 			continue
 		}
-		v.Svs = append(v.Svs, url{fmt.Sprintf("%v", static+u), "", "", "1"})
+		v.Svs[i] = url{fmt.Sprintf("%v", static+u), "", "", "1"}
 	}
-
 	// handle query results
 	for rows.Next() {
-		err = rows.Scan(&id, &createdat, &updatedat)
-		logs.Check(err)
+		i++
+		if err = rows.Scan(&id, &createdat, &updatedat); err != nil {
+			return err
+		}
 		// check for valid createdat and updatedat entries
 		_, errU := updatedat.Value()
 		_, errC := createdat.Value()
@@ -118,28 +133,46 @@ func Create() {
 		}
 		// parse createdat and updatedat to use in the <lastmod> tag
 		var lastmod string
-		if udValid := updatedat.Valid; udValid {
+		if ok := updatedat.Valid; ok {
 			lastmod = updatedat.String
-		} else if cdValid := createdat.Valid; cdValid {
+		} else if ok := createdat.Valid; ok {
 			lastmod = createdat.String
 		}
 		lastmodFields := strings.Fields(lastmod)
 		// NOTE: most search engines do not bother with the lastmod value so it could be removed to improve size.
-		var lastmodValue string // blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given
+		// blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given
+		var lastmodValue string
 		if len(lastmodFields) > 0 {
 			t := strings.Split(lastmodFields[0], "T") // example value: 2020-04-06T20:51:36Z
 			lastmodValue = t[0]
 		}
-		v.Svs = append(v.Svs, url{fmt.Sprintf("%v%v", resource, database.ObfuscateParam(id)), lastmodValue, "", ""})
+		v.Svs[i] = url{fmt.Sprintf("%v%v", resource, database.ObfuscateParam(id)), lastmodValue, "", ""}
 		c++
 		if c >= limit {
 			break
 		}
 	}
+	// trim empty urls so they're not included in the xml
+	empty := url{}
+	var trimmed []url
+	for i, x := range v.Svs {
+		if x == empty {
+			trimmed = v.Svs[0:i]
+			break
+		}
+	}
+	v.Svs = trimmed
 	output, err := xml.MarshalIndent(v, "", "")
-	logs.Check(err)
-	os.Stdout.Write([]byte(xml.Header))
-	os.Stdout.Write(output)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stdout.Write([]byte(xml.Header)); err != nil {
+		return err
+	}
+	if _, err := os.Stdout.Write(output); err != nil {
+		return err
+	}
+	return db.Close()
 }
 
 func lastmod(s os.FileInfo) string {

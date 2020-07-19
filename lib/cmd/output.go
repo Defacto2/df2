@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -162,6 +163,8 @@ var sitemapCmd = &cobra.Command{
 	Aliases: []string{"m", "s", "map"},
 	Short:   "A site map generator",
 	Run: func(cmd *cobra.Command, args []string) {
-		sitemap.Create()
+		if err := sitemap.Create(); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
