@@ -292,25 +292,24 @@ func FileUpdate(name string, database time.Time) (bool, error) {
 }
 
 // LastUpdate reports the time when the files database was last modified.
-func LastUpdate() (updatedat time.Time) {
+func LastUpdate() (updatedat time.Time, err error) {
 	db := Connect()
 	defer db.Close()
 	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat` ORDER BY `updatedat` DESC LIMIT 1")
-	err := row.Scan(&updatedat)
-	logs.Check(err)
-	return updatedat
+	if err := row.Scan(&updatedat); err != nil {
+		return updatedat, err
+	}
+	return updatedat, nil
 }
 
 // LookupID returns the ID from a supplied UUID or database ID value.
 func LookupID(value string) (id uint, err error) {
 	db := Connect()
 	defer db.Close()
-	var s string
 	if v, err := strconv.Atoi(value); err == nil {
 		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
-		s = fmt.Sprintf("SELECT EXISTS(SELECT * FROM files WHERE id='%d')", v)
-		err = db.QueryRow(s).Scan(&id)
-		if err != nil {
+		s := fmt.Sprintf("SELECT EXISTS(SELECT * FROM files WHERE id='%d')", v)
+		if err = db.QueryRow(s).Scan(&id); err != nil {
 			return 0, fmt.Errorf("lookupid: %s", err)
 		} else if id == 0 {
 			return 0, fmt.Errorf("lookupid: unique id '%v' is does not exist in the database", v)
@@ -318,12 +317,11 @@ func LookupID(value string) (id uint, err error) {
 		return uint(v), nil
 	}
 	value = strings.ToLower(value)
-	s = fmt.Sprintf("SELECT id FROM files WHERE uuid='%s'", value)
-	err = db.QueryRow(s).Scan(&id)
-	if err != nil {
+	s := fmt.Sprintf("SELECT id FROM files WHERE uuid='%s'", value)
+	if err = db.QueryRow(s).Scan(&id); err != nil {
 		return 0, fmt.Errorf("lookupid: uuid '%v' is does not exist in the database", value)
 	}
-	return id, nil
+	return id, db.Close()
 }
 
 // LookupFile returns the filename from a supplied UUID or database ID value.
@@ -333,8 +331,7 @@ func LookupFile(value string) (filename string, err error) {
 	var s string
 	if v, err := strconv.Atoi(value); err == nil {
 		s = fmt.Sprintf("SELECT filename FROM files WHERE id='%d'", v)
-		err = db.QueryRow(s).Scan(&filename)
-		if err != nil {
+		if err = db.QueryRow(s).Scan(&filename); err != nil {
 			return "", fmt.Errorf("lookupfile: %s", err)
 		} else if filename == "" {
 			return "", fmt.Errorf("lookupfile: unique id '%v' is does not exist in the database", v)
@@ -343,8 +340,7 @@ func LookupFile(value string) (filename string, err error) {
 	}
 	value = strings.ToLower(value)
 	s = fmt.Sprintf("SELECT filename FROM files WHERE uuid='%s'", value)
-	err = db.QueryRow(s).Scan(&filename)
-	if err != nil {
+	if err = db.QueryRow(s).Scan(&filename); err != nil {
 		return "", fmt.Errorf("lookupfile: uuid '%v' is does not exist in the database", value)
 	}
 	return filename, err
@@ -352,27 +348,32 @@ func LookupFile(value string) (filename string, err error) {
 
 // ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
 func ObfuscateParam(param string) string {
-	rv := param // return value
+	if param == "" {
+		return ""
+	}
 	// check to make sure param doesn't begin with a 0 digit
-	if rv0 := rv[0]; rv0 == '0' {
-		return rv
+	if param[0] == '0' {
+		return param
 	}
-	paramInt, err := strconv.Atoi(param) // convert param to an int type
+	pint, err := strconv.Atoi(param)
 	if err != nil {
-		return rv
+		return param
 	}
-	iEnd := len(rv) // count the number of digits in param
-	afloat64 := math.Pow10(iEnd) + float64(reverseInt(paramInt))
+	l := len(param)
+	r, err := reverseInt(uint(pint))
+	if err != nil {
+		return param
+	}
+	afloat64 := math.Pow10(l) + float64(r)
 	// keep a and b as int type
-	a := int(afloat64)
-	b := 0
-	for i := 1; i <= iEnd; i++ {
+	a, b := int(afloat64), 0
+	for i := 1; i <= l; i++ {
 		// slice individual digits from param and sum them
-		paramSlice, err := strconv.Atoi(string(param[iEnd-i]))
+		s, err := strconv.Atoi(string(param[l-i]))
 		if err != nil {
-			return rv
+			return param
 		}
-		b += paramSlice
+		b += s
 	}
 	// base 64 conversion
 	a ^= 461
@@ -381,40 +382,34 @@ func ObfuscateParam(param string) string {
 }
 
 // reverseInt swaps the direction of the value, 12345 would return 54321.
-func reverseInt(value int) (reversed int) {
-	int := strconv.Itoa(value)
-	new := ""
-	for x := len(int); x > 0; x-- {
-		new += string(int[x-1])
+func reverseInt(value uint) (reversed uint, err error) {
+	v, s, n := strconv.Itoa(int(value)), "", 0
+	for x := len(v); x > 0; x-- {
+		s += string(v[x-1])
 	}
-	reversed, err := strconv.Atoi(new)
-	logs.Check(err)
-	return reversed
+	if n, err = strconv.Atoi(s); err != nil {
+		return value, err
+	}
+	return uint(n), nil
 }
 
 // RenGroup replaces all instances of the old group name with the new group name.
 func RenGroup(new, old string) (count int64, err error) {
 	db := Connect()
 	defer db.Close()
-	var sql = [2]string{
-		"UPDATE files SET group_brand_for=? WHERE group_brand_for=?",
-		"UPDATE files SET group_brand_by=? WHERE group_brand_by=?",
+	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?, group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
+	if err != nil {
+		return 0, err
 	}
-	for i := range sql {
-		update, err := db.Prepare(sql[i])
-		if err != nil {
-			return 0, err
-		}
-		res, err := update.Exec(new, old)
-		if err != nil {
-			return 0, err
-		}
-		count, err = res.RowsAffected()
-		if err != nil {
-			return 0, err
-		}
+	res, err := stmt.Exec(new, new, old, old)
+	if err != nil {
+		return 0, err
 	}
-	return count, nil
+	count, err = res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return count, db.Close()
 }
 
 // Total reports the number of records fetched by the supplied SQL query.

@@ -119,3 +119,44 @@ func Test_isNew(t *testing.T) {
 		})
 	}
 }
+
+func Test_reverseInt(t *testing.T) {
+	tests := []struct {
+		name         string
+		value        uint
+		wantReversed uint
+	}{
+		{"empty", 0, 0},
+		{"count", 12345, 54321},
+		{"seq", 555, 555},
+		{"sign", 662211, 112266},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotReversed, _ := reverseInt(tt.value); gotReversed != tt.wantReversed {
+				t.Errorf("reverseInt() = %v, want %v", gotReversed, tt.wantReversed)
+			}
+		})
+	}
+}
+
+func TestObfuscateParam(t *testing.T) {
+	tests := []struct {
+		name  string
+		param string
+		want  string
+	}{
+		{"empty", "", ""},
+		{"0", "000001", "000001"},
+		{"1", "1", "9b1c6"},
+		{"999...", "999999999", "eb77359232"},
+		{"rand", "69247541", "c06d44215"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ObfuscateParam(tt.param); got != tt.want {
+				t.Errorf("ObfuscateParam() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
