@@ -14,8 +14,8 @@ import (
 
 var dir directories.Dir
 
-// Image preview and thumbnail of a text object.
-type Image struct {
+// image preview and thumbnail of a text object.
+type image struct {
 	ID       uint
 	UUID     string
 	Filename string
@@ -23,7 +23,7 @@ type Image struct {
 	Filesize int
 }
 
-func (i Image) String() string {
+func (i image) String() string {
 	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(i.ID), i.Filename,
 		color.Info.Sprint(humanize.Bytes(uint64(i.Filesize))))
 }
@@ -39,7 +39,7 @@ func Fix(simulate bool) error {
 	}
 	c := 0
 	for rows.Next() {
-		var img Image
+		var img image
 		err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize)
 		if err != nil {
 			logs.Check(err)
@@ -73,7 +73,7 @@ func Fix(simulate bool) error {
 }
 
 // check that [UUID].png exists in all three image subdirectories.
-func (i Image) exist() bool {
+func (i image) exist() bool {
 	const ext = ".png"
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
@@ -88,7 +88,7 @@ func (i Image) exist() bool {
 	return true
 }
 
-func (i Image) valid() bool {
+func (i image) valid() bool {
 	switch filepath.Ext(i.Filename) {
 	case ".txt", ".diz", ".doc", ".nfo":
 		return true
