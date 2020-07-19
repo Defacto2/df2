@@ -154,7 +154,9 @@ var recentCmd = &cobra.Command{
 	Aliases: []string{"r"},
 	Short:   "A JSON snippet generator to list recent file additions",
 	Run: func(cmd *cobra.Command, args []string) {
-		recent.List(rf.limit, rf.compress)
+		if err := recent.List(rf.limit, rf.compress); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
