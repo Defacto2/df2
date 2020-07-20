@@ -291,10 +291,11 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 		var dupes dupeKeys = col
 		dat.UPDATE = fmt.Sprint(dupes)
 	}
-	t := template.Must(template.New("statement").Funcs(tmplFunc()).Parse(tableTmpl))
+	t := template.Must(template.New("stmt").Funcs(tmplFunc()).Parse(tableTmpl))
 	var b bytes.Buffer
-	err = t.Execute(&b, dat)
-	logs.Check(err)
+	if err = t.Execute(&b, dat); err != nil {
+		return nil, err
+	}
 	return &b, err
 }
 
@@ -317,46 +318,68 @@ func (f Flags) create() (value string) {
 }
 
 // ExportDB saves or prints a MySQL 5.7 compatible SQL import database statement.
-func (f Flags) ExportDB() {
+func (f Flags) ExportDB() error {
 	start := time.Now()
 	buf, err := f.queryTables()
-	logs.Check(err)
-	f.write(buf)
+	if err != nil {
+		return err
+	}
+	if err = f.write(buf); err != nil {
+		return err
+	}
 	elapsed := time.Since(start)
 	fmt.Printf("sql exports took %s\n", elapsed)
+	return nil
 }
 
 // queryTables generates the SQL import database and tables statement.
-func (f Flags) queryTables() (*bytes.Buffer, error) {
+func (f Flags) queryTables() (buf *bytes.Buffer, err error) {
 	const delta = 4
 	var buf1, buf2, buf3, buf4 *bytes.Buffer
-	var err error
 	switch f.Parallel {
 	case true:
 		var wg sync.WaitGroup
+		var e1, e2, e3, e4 error
 		wg.Add(delta)
 		go func(f Flags) {
 			defer wg.Done()
-			buf1 = f.reqDB("files")
+			buf1, e1 = f.reqDB("files")
 		}(f)
 		go func(f Flags) {
 			defer wg.Done()
-			buf2 = f.reqDB("groups")
+			buf2, e2 = f.reqDB("groups")
 		}(f)
 		go func(f Flags) {
 			defer wg.Done()
-			buf3 = f.reqDB("groups")
+			buf3, e3 = f.reqDB("netresources")
 		}(f)
 		go func(f Flags) {
 			defer wg.Done()
-			buf4 = f.reqDB("users")
+			buf4, e4 = f.reqDB("users")
 		}(f)
 		wg.Wait()
+		for _, err := range []error{e1, e2, e3, e4} {
+			if err != nil {
+				return nil, err
+			}
+		}
 	default:
-		buf1 = f.reqDB("files")
-		buf2 = f.reqDB("groups")
-		buf3 = f.reqDB("netresources")
-		buf4 = f.reqDB("users")
+		buf1, err = f.reqDB("files")
+		if err != nil {
+			return nil, err
+		}
+		buf2, err = f.reqDB("groups")
+		if err != nil {
+			return nil, err
+		}
+		buf3, err = f.reqDB("netresources")
+		if err != nil {
+			return nil, err
+		}
+		buf4, err = f.reqDB("users")
+		if err != nil {
+			return nil, err
+		}
 	}
 	var data = Tables{
 		VER: f.ver(),
@@ -370,24 +393,27 @@ func (f Flags) queryTables() (*bytes.Buffer, error) {
 	}
 	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(tablesTmpl)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	var b bytes.Buffer
-	err = tmpl.Execute(&b, &data)
-	logs.Check(err)
+	if err = tmpl.Execute(&b, &data); err != nil {
+		return nil, err
+	}
 	return &b, err
 }
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
-func (f Flags) reqDB(table string) *bytes.Buffer {
-	c1 := Flags{
+func (f Flags) reqDB(table string) (*bytes.Buffer, error) {
+	c := Flags{
 		Table: table,
 		Type:  "create",
 		Limit: f.Limit,
 	}
-	buf, err := c1.queryDB()
-	logs.Check(err)
-	return buf
+	buf, err := c.queryDB()
+	if err != nil {
+		return nil, err
+	}
+	return buf, nil
 }
 
 // queryDB requests columns and values of f.Table to create an INSERT INTO ? VALUES ? SQL statement.
