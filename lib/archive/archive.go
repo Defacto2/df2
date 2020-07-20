@@ -14,6 +14,21 @@ import (
 	unarr "github.com/gen2brain/go-unarr"
 )
 
+const (
+	bat  = ".bat"
+	bmp  = ".bmp"
+	com  = ".com"
+	diz  = ".diz"
+	exe  = ".exe"
+	gif  = ".gif"
+	jpg  = ".jpg"
+	nfo  = ".nfo"
+	png  = ".png"
+	tiff = ".tiff"
+	txt  = ".txt"
+	webp = ".webp"
+)
+
 type content struct {
 	name       string
 	ext        string
@@ -34,14 +49,14 @@ func (c content) String() string {
 func (c *content) filemime() error {
 	m, err := mimetype.DetectFile(c.path)
 	if err != nil {
-		return genErr("filemime", err)
+		return err
 	}
 	c.mime = m
 	// flag useful files
 	switch c.ext {
-	case ".exe", ".bat", ".com":
+	case bat, com, exe:
 		c.executable = true
-	case ".nfo", ".diz", ".txt":
+	case diz, nfo, txt:
 		c.textfile = true
 	}
 	return nil
@@ -51,17 +66,16 @@ func (c *content) filemime() error {
 func FileCopy(name, dest string) (written int64, err error) {
 	src, err := os.Open(name)
 	if err != nil {
-		return 0, genErr("filecopy", err)
+		return 0, err
 	}
 	defer src.Close()
 	dst, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return 0, genErr("filecopy", err)
+		return 0, err
 	}
 	defer dst.Close()
-	written, err = io.Copy(dst, src)
-	if err != nil {
-		return 0, genErr("filecopy", err)
+	if written, err = io.Copy(dst, src); err != nil {
+		return 0, err
 	}
 	return written, dst.Close()
 }
@@ -69,22 +83,22 @@ func FileCopy(name, dest string) (written int64, err error) {
 // FileMove copies a file to the destination and then deletes the source.
 func FileMove(name, dest string) (written int64, err error) {
 	if name == dest {
-		return written, err
+		return 0, err
 	}
 	if written, err = FileCopy(name, dest); err != nil {
-		return 0, genErr("filemove", err)
+		return 0, err
 	}
 	if _, err = os.Stat(dest); os.IsNotExist(err) {
 		return 0, err
 	}
 	if err = os.Remove(name); err != nil {
-		return 0, genErr("filemove", err)
+		return 0, err
 	}
 	return written, err
 }
 
 // NewExt swaps or appends the extension to a filename.
-func NewExt(name, extension string) (filename string) {
+func NewExt(name, extension string) string {
 	e := filepath.Ext(name)
 	if e == "" {
 		return name + extension
@@ -100,16 +114,14 @@ func Read(archive string, filename string) (files []string, err error) {
 	a, err := unarr.NewArchive(archive)
 	if err != nil {
 		// using archiver as a fallback
-		files, err = Readr(archive, filename)
-		if err != nil {
-			return nil, genErr("readr", err)
+		if files, err = Readr(archive, filename); err != nil {
+			return nil, err
 		}
 		return files, nil
 	}
 	defer a.Close()
-	files, err = a.List()
-	if err != nil {
-		return nil, genErr("read", err)
+	if files, err = a.List(); err != nil {
+		return nil, err
 	}
 	return files, nil
 }
@@ -122,32 +134,37 @@ func Restore(source, filename, destination string) (files []string, err error) {
 	a, err := unarr.NewArchive(source)
 	if err != nil {
 		if err = Unarchiver(source, filename, destination); err != nil {
-			return nil, genErr("unarchiver", err)
+			return nil, err
 		}
 		if files, err = Readr(source, filename); err != nil {
-			return nil, genErr("readr", err)
+			return nil, err
 		}
 	} else {
 		defer a.Close()
-		files, err = a.Extract(destination)
-		if err != nil {
+		if files, err = a.Extract(destination); err != nil {
 			return nil, err
 		}
 	}
-	return files, nil
+	return files, a.Close()
 }
 
 // dir lists the content of a directory.
-func dir(name string) {
+func dir(name string) error {
 	files, err := ioutil.ReadDir(name)
-	logs.Check(err)
-	for _, file := range files {
-		mime, err := mimetype.DetectFile(name + "/" + file.Name())
-		logs.Log(err)
-		logs.Println(file.Name(), humanize.Bytes(uint64(file.Size())), mime)
+	if err != nil {
+		return err
 	}
+	for _, f := range files {
+		mime, err := mimetype.DetectFile(name + "/" + f.Name())
+		if err != nil {
+			return err
+		}
+		logs.Println(f.Name(), humanize.Bytes(uint64(f.Size())), mime)
+	}
+	return nil
 }
 
+// TODO remove
 func genErr(name string, err error) error {
 	return fmt.Errorf("archive %s: %v", name, err)
 }

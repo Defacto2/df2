@@ -18,40 +18,37 @@ func extract(archive, tempDir string) error {
 	// extract archive
 	ua, err := unarr.NewArchive(archive)
 	if err != nil {
-		return extErr(err)
+		return err
 	}
 	defer ua.Close()
-	_, err = ua.Extract(tempDir)
-	if err != nil {
-		return extErr(err)
+	if _, err = ua.Extract(tempDir); err != nil {
+		return err
 	}
-	return nil
+	return ua.Close()
 }
 
 // Extract decompresses and parses an archive.
 // uuid is used to rename the extracted assets such as image previews.
 func Extract(archive, filename, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
-		return extErr(err)
+		return err
 	}
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
 	if err != nil {
-		return extErr(err)
+		return err
 	}
 	defer os.RemoveAll(tempDir)
-	err = extract(archive, tempDir)
-	if err != nil {
-		if err = extractr(archive, filename, tempDir); err != nil {
-			return extErr(err)
+	if err := extract(archive, tempDir); err != nil {
+		if err := extractr(archive, filename, tempDir); err != nil {
+			return err
 		}
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		return extErr(err)
+		return err
 	}
-	th := taskInit()
-	tx := taskInit()
+	th, tx := taskInit(), taskInit()
 	for _, file := range files {
 		if th.cont && tx.cont {
 			break
@@ -59,10 +56,10 @@ func Extract(archive, filename, uuid string) error {
 		fn := path.Join(tempDir, file.Name())
 		fmime, err := mimetype.DetectFile(fn)
 		if err != nil {
-			return extErr(err)
+			return err
 		}
 		switch fmime.Extension() {
-		case ".bmp", ".gif", ".jpg", ".png", ".tiff", ".webp":
+		case bmp, gif, jpg, png, tiff, webp:
 			if th.cont {
 				continue
 			}
@@ -70,7 +67,7 @@ func Extract(archive, filename, uuid string) error {
 				th.name = fn
 				th.size = file.Size()
 			}
-		case ".txt":
+		case txt:
 			if tx.cont {
 				continue
 			}
@@ -84,12 +81,15 @@ func Extract(archive, filename, uuid string) error {
 	}
 	if n := tx.name; n != "" {
 		f := directories.Files(uuid)
-		_, err := FileMove(n, f.UUID+".txt")
-		logs.Check(err)
+		if _, err := FileMove(n, f.UUID+txt); err != nil {
+			return err
+		}
 		logs.Print("  »txt")
 	}
 	if x := true; !x {
-		dir(tempDir)
+		if err := dir(tempDir); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -104,6 +104,7 @@ func taskInit() task {
 	return task{name: "", size: 0, cont: false}
 }
 
+// TODO remove
 func extErr(err error) error {
 	return fmt.Errorf("archive extract: %v", err)
 }

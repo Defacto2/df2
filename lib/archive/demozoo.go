@@ -28,22 +28,21 @@ func (d Demozoo) String() string {
 // ExtractDemozoo decompresses and parses archives fetched from Demozoo.org.
 func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err error) {
 	if err := database.CheckUUID(uuid); err != nil {
-		return dz, dzErr(err)
+		return dz, err
 	}
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
 	if err != nil {
-		return dz, dzErr(err)
+		return dz, err
 	}
 	defer os.RemoveAll(tempDir)
 	filename, err := database.LookupFile(uuid)
-	_, err = Restore(name, filename, tempDir)
-	if err != nil {
-		return dz, dzErr(err)
+	if _, err = Restore(name, filename, tempDir); err != nil {
+		return dz, err
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		return dz, dzErr(err)
+		return dz, err
 	}
 	var zips = make(contents)
 	for i, f := range files {
@@ -51,12 +50,14 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err erro
 		zip.path = tempDir // filename gets appended by z.scan()
 		zip.filescan(f)
 		if err = zip.filemime(); err != nil {
-			return dz, dzErr(err)
+			return dz, err
 		}
 		zips[i] = zip
 	}
 	if nfo := findNFO(name, zips, varNames); nfo != "" {
-		if moveText(filepath.Join(tempDir, nfo), uuid) {
+		if ok, err := moveText(filepath.Join(tempDir, nfo), uuid); err != nil {
+			return dz, err
+		} else if !ok {
 			dz.NFO = nfo
 		}
 	}
@@ -74,18 +75,20 @@ func (c *content) filescan(f os.FileInfo) {
 	c.path = path.Join(c.path, f.Name())
 }
 
-func moveText(name, uuid string) (ok bool) {
+func moveText(name, uuid string) (ok bool, err error) {
 	if name == "" {
-		return false
+		return false, nil
 	}
 	if err := database.CheckUUID(uuid); err != nil {
-		logs.Check(err)
+		return false, err
 	}
 	f := directories.Files(uuid)
-	size, err := FileMove(name, f.UUID+".txt")
-	logs.Check(err)
+	size, err := FileMove(name, f.UUID+txt)
+	if err != nil {
+		return false, err
+	}
 	logs.Printf(" • NFO » %s", humanize.Bytes(uint64(size)))
-	return true
+	return true, nil
 }
 
 // top returns the highest prioritized filename from a collection of finds.

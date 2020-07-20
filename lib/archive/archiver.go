@@ -7,9 +7,8 @@ import (
 )
 
 func extractr(archive, filename, tempDir string) error {
-	err := Unarchiver(archive, filename, tempDir)
-	if err != nil {
-		return arErr(err)
+	if err := Unarchiver(archive, filename, tempDir); err != nil {
+		return err
 	}
 	return nil
 }
@@ -58,9 +57,7 @@ func configure(f interface{}) (err error) {
 		v.ContinueOnError = false
 		//v.Password = os.Getenv("ARCHIVE_PASSWORD")
 	case *archiver.Tar:
-		//		v = tar
-	// case *archiver.TarBrotli:
-	// 	v.Tar = tar
+		// nothing to customize
 	case *archiver.TarBz2:
 		v.Tar = tar
 	case *archiver.TarGz:
@@ -71,24 +68,14 @@ func configure(f interface{}) (err error) {
 		v.Tar = tar
 	case *archiver.TarXz:
 		v.Tar = tar
-	// case *archiver.TarZstd:
-	// 	v.Tar = tar
 	case *archiver.Zip:
 		v.OverwriteExisting = true
 		v.MkdirAll = true
 		v.SelectiveCompression = true
 		v.ImplicitTopLevelFolder = true
 		v.ContinueOnError = false
-	case *archiver.Gz:
-	//case *archiver.Brotli:
-	case *archiver.Bz2:
-	case *archiver.Lz4:
-	case *archiver.Snappy:
+	case *archiver.Gz, *archiver.Bz2, *archiver.Lz4, *archiver.Snappy, *archiver.Xz:
 		// nothing to customize
-	case *archiver.Xz:
-		// nothing to customize
-	//case *archiver.Zstd:
-	// nothing to customize
 	default:
 		err = fmt.Errorf("config does not support customization: %s", f)
 	}
@@ -100,17 +87,18 @@ func configure(f interface{}) (err error) {
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
 func Walkr(archive, filename string, walkFn archiver.WalkFunc) error {
-	wIface, err := archiver.ByExtension(filename)
+	a, err := archiver.ByExtension(filename)
 	if err != nil {
 		return err
 	}
-	w, ok := wIface.(archiver.Walker)
+	w, ok := a.(archiver.Walker)
 	if !ok {
-		return fmt.Errorf("format specified by archive filename is not a walker format: %s (%T)", filename, wIface)
+		return fmt.Errorf("format specified by archive filename is not a walker format: %s (%T)", filename, a)
 	}
 	return w.Walk(archive, walkFn)
 }
 
+// TODO remove
 func arErr(err error) error {
 	return fmt.Errorf("archiver extract: %v", err)
 }
