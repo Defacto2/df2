@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
@@ -39,7 +38,7 @@ func init() {
 	dataCmd.Flags().UintVarP(&df.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
 	dataCmd.Flags().BoolVarP(&df.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
 	dataCmd.Flags().BoolVarP(&df.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
-	dataCmd.Flags().StringVarP(&df.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", strings.Join(database.TblNames, ",")))
+	dataCmd.Flags().StringVarP(&df.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls))
 	dataCmd.Flags().StringVarP(&df.Type, "type", "y", "update", "database export type\noptions: create or update")
 	err := dataCmd.Flags().MarkHidden("parallel")
 	logs.Check(err)

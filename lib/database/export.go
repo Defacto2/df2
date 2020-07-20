@@ -32,10 +32,8 @@ type Flags struct {
 	Version  string // df2 app version pass-through
 }
 
-// TblNames are the available table in the database
-var TblNames = []string{"files", "groups", "netresources", "users"}
-
-// Format the values of these slices when used as a string
+// Tbls are the available tables in the database
+const Tbls = "files, groups, netresources, users"
 
 type colNames []string
 
@@ -112,13 +110,13 @@ func rows(table string, limit int) (values []string, err error) {
 		return nil, err
 	}
 	vals := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(vals))
+	dest := make([]interface{}, len(vals))
 	for i := range vals {
-		scanArgs[i] = &vals[i]
+		dest[i] = &vals[i]
 	}
 	for rows.Next() {
 		result := make([]string, len(columns))
-		err = rows.Scan(scanArgs...)
+		err = rows.Scan(dest...)
 		logs.Check(err)
 		for i := range vals {
 			result[i], err = format(vals[i],
@@ -128,28 +126,28 @@ func rows(table string, limit int) (values []string, err error) {
 		var r row = result
 		values = append(values, fmt.Sprint(r))
 	}
-	return values, nil
+	return values, db.Close()
 }
 
 // format the value based on the database type name column type.
-func format(value sql.RawBytes, dtn string) (string, error) {
+func format(b sql.RawBytes, colType string) (string, error) {
 	switch {
-	case string(value) == "":
+	case string(b) == "":
 		return "NULL", nil
-	case strings.Contains(dtn, "char"):
-		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(fmt.Sprintf(`%s`, value), `'`, `\'`)), nil
-	case strings.Contains(dtn, "int"):
-		return fmt.Sprintf("%s", value), nil
-	case dtn == "text":
-		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(fmt.Sprintf(`%s`, value), `'`, `\'`)), nil
-	case dtn == "datetime":
-		t, err := time.Parse(time.RFC3339, string(value))
+	case strings.Contains(colType, "char"):
+		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(fmt.Sprintf(`%s`, b), `'`, `\'`)), nil
+	case strings.Contains(colType, "int"):
+		return fmt.Sprintf("%s", b), nil
+	case colType == "text":
+		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(fmt.Sprintf(`%s`, b), `'`, `\'`)), nil
+	case colType == "datetime":
+		t, err := time.Parse(time.RFC3339, string(b))
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("'%s'", t.Format(timestamp)), nil
 	default:
-		return "", fmt.Errorf("db export rows: unsupported mysql column type %q with value %s", dtn, string(value))
+		return "", fmt.Errorf("db export rows: unsupported mysql column type %q with value %s", colType, string(b))
 	}
 }
 
@@ -158,9 +156,8 @@ func (f Flags) write(buf *bytes.Buffer) {
 	var (
 		err  error
 		file *os.File
-		name string
+		name = path.Join(viper.GetString("directory.sql"), f.fileName())
 	)
-	name = path.Join(viper.GetString("directory.sql"), f.fileName())
 	switch {
 	case f.Compress:
 		name += ".bz2"
@@ -239,14 +236,15 @@ func (f Flags) ExportTable() {
 	f.write(buf)
 }
 
-// checkTable validates table against the TblNames collection.
+// checkTable validates table against the list of Tbls
 func checkTable(table string) error {
-	for _, t := range TblNames {
+	tables := strings.Split(Tbls, ",")
+	for _, t := range tables {
 		if strings.ToLower(table) == t {
 			return nil
 		}
 	}
-	return fmt.Errorf("export query: unsupported database table '%s', please choose either %v", table, strings.Join(TblNames, ", "))
+	return fmt.Errorf("export query: unsupported database table '%s', please choose either %v", table, Tbls)
 }
 
 // query generates the SQL import table statement.
