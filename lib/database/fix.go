@@ -9,13 +9,18 @@ import (
 )
 
 // Fix any malformed section and platforms found in the database.
-func Fix() {
+func Fix() error {
 	dist, err := distinct("section")
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	updateSections(&dist)
 	dist, err = distinct("platform")
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	updatePlatforms(&dist)
+	return nil
 }
 
 // Update row values based on conditions.
@@ -40,69 +45,72 @@ func (u Update) Execute() (count int64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	return count, db.Close()
 }
 
 func distinct(column string) (values []string, err error) {
-	var result string
+	result, query := "", "SELECT DISTINCT `"+column+"` AS `result` FROM `files` WHERE `"+column+"` != \"\""
 	db := Connect()
 	defer db.Close()
-	rows, err := db.Query("SELECT DISTINCT `" + column + "` AS `result` FROM `files` WHERE `" + column + "` != \"\"")
+	rows, err := db.Query(query)
 	if err != nil {
-		return values, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&result)
-		logs.Log(err)
+		if err := rows.Scan(&result); err != nil {
+			return nil, err
+		}
 		values = append(values, result)
 	}
-	return values, nil
+	return values, db.Close()
 }
 
-func print(res int64, str *string) {
-	if res == 0 {
-		logs.Printcr(*str)
+func print(i int64, s *string) {
+	if i == 0 {
+		logs.Printcr(*s)
 	} else {
-		logs.Println("\n" + *str)
+		logs.Println("\n" + *s)
 	}
 }
 
 func updatePlatforms(platforms *[]string) {
-	var plat Update
-	plat.Query = "UPDATE files SET platform=? WHERE `platform`=?"
-	for _, s := range *platforms {
-		plat.Args = []interface{}{strings.ToLower(s), s}
-		res, err := plat.Execute()
+	var u Update
+	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
+	for _, p := range *platforms {
+		u.Args = []interface{}{strings.ToLower(p), p}
+		c, err := u.Execute()
 		if err != nil {
 			logs.Log(err)
 		}
-		str := fmt.Sprintf("%s %s \"%s\"", color.Question.Sprint(res), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(s))
-		print(res, &str)
+		s := fmt.Sprintf("%s %s \"%s\"",
+			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
+		print(c, &s)
 	}
 }
 
 func updateSections(sections *[]string) {
-	var sect Update
-	// apply lowercase to all section values
-	sect.Query = "UPDATE files SET section=? WHERE `section`=?"
+	var u Update
+	u.Query = "UPDATE files SET section=? WHERE `section`=?"
 	for _, s := range *sections {
-		sect.Args = []interface{}{strings.ToLower(s), s}
-		res, err := sect.Execute()
+		u.Args = []interface{}{strings.ToLower(s), s}
+		c, err := u.Execute()
 		if err != nil {
 			logs.Log(err)
 		}
-		str := fmt.Sprintf("%s %s \"%s\"", color.Question.Sprint(res), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
-		print(res, &str)
+		str := fmt.Sprintf("%s %s \"%s\"",
+			color.Question.Sprint(c), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
+		print(c, &str)
 	}
 	// set all audio platform files to use intro section
 	// releaseadvert
-	sect.Query = "UPDATE files SET section=? WHERE `platform`=?"
-	sect.Args = []interface{}{"releaseadvert", "audio"}
-	res, err := sect.Execute()
+	u.Query = "UPDATE files SET section=? WHERE `platform`=?"
+	u.Args = []interface{}{"releaseadvert", "audio"}
+	c, err := u.Execute()
 	if err != nil {
 		logs.Log(err)
 	}
-	str := fmt.Sprintf("%s %s \"%s\"", color.Question.Sprint(res), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
-	print(res, &str)
+	str := fmt.Sprintf("%s %s \"%s\"",
+		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
+	print(c, &str)
 }
