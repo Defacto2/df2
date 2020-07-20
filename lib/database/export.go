@@ -18,7 +18,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-const timestamp string = "2006-01-02 15:04:05"
+const (
+	timestamp string      = "2006-01-02 15:04:05"
+	bz2                   = ".bz2"
+	fsql      os.FileMode = 0664
+	fo                    = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+)
 
 // Flags are command line arguments
 type Flags struct {
@@ -152,34 +157,43 @@ func format(b sql.RawBytes, colType string) (string, error) {
 }
 
 // write the buffer to stdout, an SQL file or a compressed SQL file.
-func (f Flags) write(buf *bytes.Buffer) {
-	var (
-		err  error
-		file *os.File
-		name = path.Join(viper.GetString("directory.sql"), f.fileName())
-	)
+func (f Flags) write(buf *bytes.Buffer) error {
+	name := path.Join(viper.GetString("directory.sql"), f.fileName())
 	switch {
 	case f.Compress:
-		name += ".bz2"
-		file, err = os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
-		logs.Check(err)
+		name += bz2
+		file, err := os.OpenFile(name, fo, fsql)
+		if err != nil {
+			return err
+		}
 		defer file.Close()
-		var bz2 = archiver.NewBz2()
-		err = bz2.Compress(buf, file)
-		logs.Check(err)
+		if err = archiver.NewBz2().Compress(buf, file); err != nil {
+			return err
+		}
 		stat, err := file.Stat()
-		logs.Check(err)
+		if err != nil {
+			return err
+		}
 		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(stat.Size())), name)
+		return file.Close()
 	case f.Save:
-		file, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
-		logs.Check(err)
+		file, err := os.OpenFile(name, fo, fsql)
+		if err != nil {
+			return err
+		}
 		defer file.Close()
-		wrote, err := io.Copy(file, buf)
-		logs.Check(err)
-		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(wrote)), name)
+		n, err := io.Copy(file, buf)
+		if err != nil {
+			return err
+		}
+		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(n)), name)
+		return file.Close()
 	default:
 		_, err := io.WriteString(os.Stdout, buf.String())
-		logs.Check(err)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 }
 
