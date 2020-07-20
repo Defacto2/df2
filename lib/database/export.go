@@ -214,40 +214,56 @@ func (f Flags) fileName() string {
 
 // ExportCronJob is intended for an operating system time-based job scheduler.
 // It creates both create and update types exports for the files table.
-func (f Flags) ExportCronJob() {
+func (f Flags) ExportCronJob() error {
 	f.Compress, f.Limit, f.Table = true, 0, "files"
 	start := time.Now()
 	const delta = 2
 	switch f.Parallel {
 	case true:
 		var wg sync.WaitGroup
+		var e1, e2 error
 		wg.Add(delta)
 		go func(f Flags) {
 			defer wg.Done()
 			f.Type = "create"
-			f.ExportTable()
+			e1 = f.ExportTable()
 		}(f)
 		go func(f Flags) {
 			defer wg.Done()
 			f.Type = "update"
-			f.ExportTable()
+			e2 = f.ExportTable()
 		}(f)
 		wg.Wait()
+		if e1 != nil {
+			return e1
+		} else if e2 != nil {
+			return e2
+		}
 	default:
 		f.Type = "create"
-		f.ExportTable()
+		if err := f.ExportTable(); err != nil {
+			return err
+		}
 		f.Type = "update"
-		f.ExportTable()
+		if err := f.ExportTable(); err != nil {
+			return err
+		}
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("cronjob export took %s\n", elapsed)
+	return nil
 }
 
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
-func (f Flags) ExportTable() {
+func (f Flags) ExportTable() error {
 	buf, err := f.queryTable()
-	logs.Check(err)
-	f.write(buf)
+	if err != nil {
+		return err
+	}
+	if err := f.write(buf); err != nil {
+		return err
+	}
+	return nil
 }
 
 // checkTable validates table against the list of Tbls
@@ -454,12 +470,12 @@ func (f Flags) queryDB() (*bytes.Buffer, error) {
 // template functions.
 func tmplFunc() template.FuncMap {
 	fm := make(template.FuncMap)
-	fm["now"] = now // now()
+	fm["now"] = utc
 	return fm
 }
 
-// now returns the current UTC date and time in a MySQL timestamp format.
-func now() string {
+// utc returns the current UTC date and time in a MySQL timestamp format.
+func utc() string {
 	var l, _ = time.LoadLocation("UTC")
 	return time.Now().In(l).Format(timestamp)
 }
