@@ -27,7 +27,7 @@ type item struct {
 }
 
 // parse is used by scanPath to remove matched orphans.
-func parse(s *scan, list *[]os.FileInfo) (stat results) {
+func parse(s *scan, list *[]os.FileInfo) (stat results, err error) {
 	stat = results{count: 0, fails: 0, bytes: 0}
 	for _, file := range *list {
 		if file.IsDir() {
@@ -55,10 +55,11 @@ func parse(s *scan, list *[]os.FileInfo) (stat results) {
 				fmt.Fprintf(w, "%v\t%v%v\t%v\t%v\t%v\n", i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
 			}
 		}
-		err := w.Flush()
-		logs.Check(err)
+		if err := w.Flush(); err != nil {
+			return stat, err
+		}
 	}
-	return stat
+	return stat, nil
 }
 
 func (i *item) bits(f os.FileInfo) {
@@ -71,8 +72,8 @@ func (i *item) count(c int) {
 
 func (i *item) erase(r results) {
 	i.flag = logs.Y()
-	if rm := os.Remove(i.path); rm != nil {
-		i.flag = logs.Y()
+	if err := os.Remove(i.path); err != nil {
+		i.flag = logs.X()
 		r.fails++
 	}
 }

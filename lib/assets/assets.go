@@ -87,16 +87,21 @@ type scan struct {
 }
 
 // Clean walks through and scans directories containing UUID files and erases any orphans that cannot be matched to the database.
-func Clean(target string, delete, human bool) {
+func Clean(target string, delete, human bool) error {
 	targets(target)
 	// connect to the database
-	rows, m := CreateUUIDMap()
+	rows, m, err := CreateUUIDMap()
+	if err != nil {
+		return err
+	}
 	logs.Println("The following files do not match any UUIDs in the database")
 	// parse directories
 	var sum results
 	for p := range paths {
 		s := scan{path: paths[p], delete: delete, human: human, m: m}
-		sum.calculate(s)
+		if err := sum.calculate(s); err != nil {
+			return err
+		}
 	}
 	// output a summary of the results
 	logs.Println(color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v", humanize.Comma(int64(sum.count)), humanize.Comma(int64(rows))))
@@ -112,14 +117,18 @@ func Clean(target string, delete, human bool) {
 		}
 		logs.Print(fmt.Sprintf("%v drive space consumed\n", pts))
 	}
+	return nil
 }
 
-func (sum *results) calculate(s scan) {
+func (sum *results) calculate(s scan) error {
 	r, err := s.scanPath()
-	logs.Log(err)
+	if err != nil {
+		return err
+	}
 	sum.bytes += r.bytes
 	sum.count += r.count
 	sum.fails += r.fails
+	return nil
 }
 
 func targets(target string) (count int) {
@@ -141,21 +150,24 @@ func targets(target string) (count int) {
 }
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
-func CreateUUIDMap() (total int, uuids database.IDs) {
+func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 	db := database.Connect()
 	defer db.Close()
 	// query database
 	var id, uuid string
 	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
-	logs.Check(err)
+	if err != nil {
+		return 0, nil, err
+	}
 	for rows.Next() {
 		uuids = make(database.IDs, len(uuids)+1)
-		err = rows.Scan(&id, &uuid)
-		logs.Check(err)
+		if err = rows.Scan(&id, &uuid); err != nil {
+			return 0, nil, err
+		}
 		uuids[uuid] = database.Empty{} // store record `uuid` value as a key name in the map `m` with an empty value
 		total++
 	}
-	return total, uuids
+	return total, uuids, db.Close()
 }
 
 func (s *scan) archive(list []os.FileInfo) map[string]struct{} {
@@ -179,17 +191,18 @@ func (s *scan) archive(list []os.FileInfo) map[string]struct{} {
 }
 
 // backup is used by scanPath to backup matched orphans.
-func backup(s *scan, list []os.FileInfo) {
+func backup(s *scan, list []os.FileInfo) error {
 	archive := s.archive(list)
 	// identify which files should be backed up
 	part := backupPart()
 	if _, ok := part[s.path]; ok {
 		t := time.Now().Format("2006-Jan-2-150405") // Mon Jan 2 15:04:05 MST 2006
-		name := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", part[s.path], t))
-		basepath := s.path
+		name, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", part[s.path], t)), s.path
 		// create tar archive
 		newTar, err := os.Create(name)
-		logs.File("directory.backup", err)
+		if err != nil {
+			return err
+		}
 		tw := tar.NewWriter(newTar)
 		defer tw.Close()
 		c := 0
@@ -216,10 +229,14 @@ func backup(s *scan, list []os.FileInfo) {
 		if err != nil || c == 0 {
 			// clean up any loose archives
 			newTar.Close()
-			err := os.Remove(name)
-			logs.Check(err)
+			if err := os.Remove(name); err != nil {
+				return err
+			} else if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func backupPart() (part map[string]string) {
@@ -271,15 +288,19 @@ func (s scan) scanPath() (stat results, err error) {
 			return stat, err
 		}
 	}
-
 	// files to ignore
 	ignore = ignoreList(s.path)
 	// archive files that are to be deleted
 	if s.delete {
-		backup(&s, list)
+		if err := backup(&s, list); err != nil {
+			return stat, err
+		}
 	}
 	// list and if requested, delete orphaned files
-	stat = parse(&s, &list)
+	stat, err = parse(&s, &list)
+	if err != nil {
+		return stat, err
+	}
 	var dsc string
 	if s.human {
 		dsc = humanize.Bytes(uint64(stat.bytes))
