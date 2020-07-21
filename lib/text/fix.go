@@ -13,7 +13,11 @@ import (
 )
 
 const (
+	diz  = ".diz"
+	doc  = ".doc"
+	nfo  = ".nfo"
 	png  = ".png"
+	txt  = ".txt"
 	webp = ".webp"
 )
 
@@ -96,7 +100,7 @@ func (i image) exist() bool {
 
 func (i image) valid() bool {
 	switch filepath.Ext(i.Filename) {
-	case ".txt", ".diz", ".doc", ".nfo":
+	case diz, doc, nfo, txt:
 		return true
 	}
 	return false

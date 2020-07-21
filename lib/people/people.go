@@ -40,57 +40,69 @@ type Person struct {
 const Filters = "artists,coders,musicians,writers"
 
 // List people filtered by a role.
-func List(role string) (people []string, total int) {
+func List(role string) (people []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
 	s := sqlPeople(role, false)
 	if s == "" {
-		return people, total
+		return nil, 0, nil
 	}
-	total, err := database.Total(&s)
-	logs.Check(err)
+	if total, err = database.Total(&s); err != nil {
+		return nil, 0, err
+	}
 	// interate through records
 	rows, err := db.Query(s)
-	logs.Check(err)
-	logs.Check(rows.Err())
+	if err != nil {
+		return nil, 0, err
+	} else if rows.Err() != nil {
+		return nil, 0, rows.Err()
+	}
 	var persons sql.NullString
 	i := 0
 	for rows.Next() {
-		err = rows.Scan(&persons)
-		logs.Check(err)
+		if err := rows.Scan(&persons); err != nil {
+			return nil, 0, err
+		}
 		if _, err = persons.Value(); err != nil {
 			continue
 		}
 		i++
 		people = append(people, fmt.Sprintf("%v", persons.String))
 	}
-	return people, total
+	return people, total, nil
 }
 
 // DataList prints an auto-complete list for HTML input elements.
-func DataList(filename string, r Request) {
+func DataList(filename string, r Request) error {
 	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
 	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
-	parse(filename, tpl, r)
+	if err := parse(filename, tpl, r); err != nil {
+		return err
+	}
+	return nil
 }
 
 // HTML prints a snippet listing links to each person.
-func HTML(filename string, r Request) {
+func HTML(filename string, r Request) error {
 	// <h2><a href="/p/ben">Ben</a></h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
-	parse(filename, tpl, r)
+	if err := parse(filename, tpl, r); err != nil {
+		return err
+	}
+	return nil
 }
 
-func parse(filename string, tpl string, r Request) {
-	grp, x := List(r.Filter)
+func parse(filename string, tpl string, r Request) error {
+	grp, x, err := List(r.Filter)
+	if err != nil {
+		return err
+	}
 	f := r.Filter
 	if f == "" {
 		f = "all"
 	}
 	logs.Println(x, "matching", f, "records found")
-	data := make([]Person, len(grp))
-	cap := ""
-	hr := false
+	data, cap, hr := make([]Person, len(grp)), "", false
 	total := len(grp)
 	for i := range grp {
 		if r.Progress {
@@ -114,25 +126,35 @@ func parse(filename string, tpl string, r Request) {
 		}
 	}
 	t, err := template.New("h2").Parse(tpl)
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
 	switch {
 	case filename == "":
-		err = t.Execute(os.Stdout, data)
-		logs.Check(err)
+		if err = t.Execute(os.Stdout, data); err != nil {
+			return err
+		}
 	case r.Filter == "artists", r.Filter == "coders", r.Filter == "musicians", r.Filter == "writers":
 		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
-		logs.Check(err)
+		if err != nil {
+			return err
+		}
 		defer f.Close()
-		err = t.Execute(f, data)
-		logs.Check(err)
+		if err = t.Execute(f, data); err != nil {
+			return err
+		}
 	default:
-		logs.Check(fmt.Errorf("people html parse: invalid filter %q used", r.Filter))
+		return fmt.Errorf("people html parse: invalid filter %q used", r.Filter)
 	}
+	return nil
 }
 
 // Print lists people filtered by a role and summaries the results.
-func Print(r Request) {
-	ppl, total := List(r.Filter)
+func Print(r Request) error {
+	ppl, total, err := List(r.Filter)
+	if err != nil {
+		return err
+	}
 	logs.Println(total, "matching", r.Filter, "records found")
 	var a = make([]string, total)
 	for i := range ppl {
@@ -155,9 +177,8 @@ func Print(r Request) {
 	// remove duplicates
 	less := func(i, j int) bool { return a[i] < a[j] }
 	unique.Slice(&a, less)
-	logs.Println()
-	logs.Println(strings.Join(a, ","))
-	logs.Println("Total authors", len(a))
+	fmt.Printf("\n\n%s\nTotal authors %d", strings.Join(a, ","), len(a))
+	return nil
 }
 
 // Wheres are group categories.
@@ -182,20 +203,29 @@ func roles(r string) string {
 }
 
 // sqlPeople returns a complete SQL WHERE statement where the people are filtered by a role.
-func sqlPeople(role string, includeSoftDeletes bool) (sql string) {
-	inc := includeSoftDeletes
+func sqlPeople(role string, softDel bool) (sql string) {
+	var del = func() string {
+		if softDel {
+			return ""
+		}
+		return "AND `deletedat` IS NULL"
+	}
+	var d = func(s string) string {
+		return fmt.Sprintf(" UNION (SELECT DISTINCT %s AS pubCombined FROM files WHERE Length(%s) <> 0 %s)",
+			s, s, del())
+	}
 	f := roles(role)
 	if strings.ContainsAny(f, "w") {
-		sql += " UNION (SELECT DISTINCT credit_text AS pubCombined FROM files WHERE Length(credit_text) <> 0 " + sqlPeopleDel(inc) + ")"
+		sql += d("credit_text")
 	}
 	if strings.ContainsAny(f, "m") {
-		sql += " UNION (SELECT DISTINCT credit_audio AS pubCombined FROM files WHERE Length(credit_audio) <> 0 " + sqlPeopleDel(inc) + ")"
+		sql += d("credit_audio")
 	}
 	if strings.ContainsAny(f, "c") {
-		sql += " UNION (SELECT DISTINCT credit_program AS pubCombined FROM files WHERE Length(credit_program) <> 0 " + sqlPeopleDel(inc) + ")"
+		sql += d("credit_program")
 	}
 	if strings.ContainsAny(f, "a") {
-		sql += " UNION (SELECT DISTINCT credit_illustration AS pubCombined FROM files WHERE Length(credit_illustration) <> 0 " + sqlPeopleDel(inc) + ")"
+		sql += d("credit_illustration")
 	}
 	if sql == "" {
 		return sql
@@ -203,12 +233,4 @@ func sqlPeople(role string, includeSoftDeletes bool) (sql string) {
 	sql += " ORDER BY pubCombined"
 	sql = strings.Replace(sql, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
 	return sql
-}
-
-// sqlPeopleDel returns a partial SQL WHERE to handle soft deleted entries.
-func sqlPeopleDel(includeSoftDeletes bool) string {
-	if includeSoftDeletes {
-		return ""
-	}
-	return "AND `deletedat` IS NULL"
 }

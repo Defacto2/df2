@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -118,7 +119,7 @@ func List(limit uint, compress bool) error {
 		return err
 	}
 	if ok := json.Valid(jsonData); !ok {
-		err := fmt.Errorf("recent list: jsonData fails JSON encoding validation")
+		err := errors.New("recent list: jsonData fails JSON encoding validation")
 		return err
 	}
 	return nil

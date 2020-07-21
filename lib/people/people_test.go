@@ -30,24 +30,6 @@ func Test_roles(t *testing.T) {
 	}
 }
 
-func Test_sqlPeopleDel(t *testing.T) {
-	tests := []struct {
-		name               string
-		includeSoftDeletes bool
-		want               string
-	}{
-		{"false", false, "AND `deletedat` IS NULL"},
-		{"true", true, ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := sqlPeopleDel(tt.includeSoftDeletes); got != tt.want {
-				t.Errorf("sqlPeopleDel() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_sqlPeople(t *testing.T) {
 	type args struct {
 		role               string
@@ -105,7 +87,10 @@ func TestList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, got := List(tt.role)
+			_, got, err := List(tt.role)
+			if err != nil {
+				t.Error(err)
+			}
 			if got < tt.want {
 				t.Errorf("List() got = %v, want %v", got, tt.want)
 			}

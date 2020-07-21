@@ -82,8 +82,7 @@ func (request Request) Queries() error {
 	rows, err := db.Query(sqlSelect())
 	if err != nil {
 		return err
-	}
-	if err := rows.Err(); err != nil {
+	} else if err := rows.Err(); err != nil {
 		return err
 	}
 	columns, err := rows.Columns()
@@ -107,24 +106,28 @@ func (request Request) Queries() error {
 	rows, err = db.Query(sqlSelect())
 	if err != nil {
 		return err
+	} else if rows.Err() != nil {
+		return rows.Err()
 	}
 	for rows.Next() {
-		err = rows.Scan(scanArgs...)
-		logs.Check(err)
+		if err = rows.Scan(scanArgs...); err != nil {
+			return err
+		}
 		if request.flagSkip(values) {
 			continue
 		}
 		s.count++
-		var r = new(values, s.basePath)
-		if s.fileSkip(r, request.HideMissing) {
+		r := new(values, s.basePath)
+		if skip, err := s.fileSkip(r, request.HideMissing); skip {
 			continue
+		} else if err != nil {
+			return err
 		}
 		s.columns = columns
 		s.overwrite = request.Overwrite
 		s.values = &values
 		r.iterate(s)
 	}
-	logs.Check(rows.Err())
 	s.summary()
 	return nil
 }
@@ -193,18 +196,17 @@ func (r Record) approve() error {
 }
 
 // fileZipContent reads an archive and saves its content to the database.
-func (r Record) fileZipContent() (ok bool) {
+func (r Record) fileZipContent() (ok bool, err error) {
 	a, err := archive.Read(r.File, r.Name)
 	if err != nil {
-		logs.Log(err)
-		return false
+		return false, err
 	}
 	updateZipContent(r.ID, len(a), strings.Join(a, "\n"))
-	return true
+	return true, nil
 }
 
 // fileSkip checks if the file of the proof exists.
-func (s *stat) fileSkip(r Record, hide bool) (skip bool) {
+func (s *stat) fileSkip(r Record, hide bool) (skip bool, err error) {
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
 		s.missing++
 		if !hide {
@@ -216,9 +218,11 @@ func (s *stat) fileSkip(r Record, hide bool) (skip bool) {
 				filepath.Join(s.base, color.Danger.Sprint(r.UUID)),
 				logs.X())
 		}
-		return true
+		return true, nil
+	} else if err != nil {
+		return false, err
 	}
-	return false
+	return false, nil
 }
 
 func sqlSelect() string {
@@ -249,14 +253,18 @@ func (s stat) summary() {
 }
 
 // updateZipContent sets the file_zip_content column to match content and platform to "image".
-func updateZipContent(id string, items int, content string) {
+func updateZipContent(id string, items int, content string) error {
 	db := database.Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
-	logs.Check(err)
-	_, err = update.Exec(content, database.UpdateID, "image", id)
-	logs.Check(err)
+	if err != nil {
+		return err
+	}
+	if _, err := update.Exec(content, database.UpdateID, "image", id); err != nil {
+		return err
+	}
 	logs.Printf("%d items", items)
+	return db.Close()
 }
 
 func val(col sql.RawBytes) string {
@@ -266,17 +274,21 @@ func val(col sql.RawBytes) string {
 	return string(col)
 }
 
-func (r Record) zip(col sql.RawBytes, s stat) {
+func (r Record) zip(col sql.RawBytes, s stat) error {
 	if col == nil || s.overwrite {
 		logs.Print(" • ")
-		if u := r.fileZipContent(); !u {
-			return
+		if u, err := r.fileZipContent(); !u {
+			return nil
+		} else if err != nil {
+			return err
 		}
 		if err := archive.Extract(r.File, r.Name, r.UUID); err != nil {
-			logs.Log(err)
+			return err
 		} else {
-			err = r.approve()
-			logs.Log(err)
+			if err := r.approve(); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }

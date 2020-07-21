@@ -126,10 +126,11 @@ func Create() error {
 			return err
 		}
 		// check for valid createdat and updatedat entries
-		_, errU := updatedat.Value()
-		_, errC := createdat.Value()
-		if errU != nil || errC != nil {
-			continue // skip record (log in future?)
+		if _, err := updatedat.Value(); err != nil {
+			continue
+		}
+		if _, err := createdat.Value(); err != nil {
+			continue
 		}
 		// parse createdat and updatedat to use in the <lastmod> tag
 		var lastmod string

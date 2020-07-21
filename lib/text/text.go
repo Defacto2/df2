@@ -8,7 +8,6 @@ import (
 
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
@@ -25,7 +24,7 @@ func generate(name, id string) error {
 	s, err := makePng(n, f.Img000)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
 		fmt.Println(ansiloveErr)
-		logs.Check(err)
+		return err
 	} else if err != nil {
 		return err
 	}
