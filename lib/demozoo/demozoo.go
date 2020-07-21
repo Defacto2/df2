@@ -404,7 +404,8 @@ func (r *Record) fileMeta() (err error) {
 }
 
 func (r *Record) doseeMeta() {
-	var names = r.variations()
+	names, err := r.variations()
+	logs.Log(err)
 	d, err := archive.ExtractDemozoo(r.FilePath, r.UUID, &names)
 	logs.Log(err)
 	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
@@ -418,12 +419,20 @@ func (r *Record) doseeMeta() {
 	}
 }
 
-func (r Record) variations() (names []string) {
+func (r Record) variations() (names []string, err error) {
 	if r.GroupBy != "" {
-		names = append(names, groups.Variations(r.GroupBy)...)
+		v, err := groups.Variations(r.GroupBy)
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, v...)
 	}
 	if r.GroupFor != "" {
-		names = append(names, groups.Variations(r.GroupFor)...)
+		v, err := groups.Variations(r.GroupFor)
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, v...)
 	}
-	return names
+	return names, nil
 }

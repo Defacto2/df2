@@ -1,13 +1,14 @@
 package groups
 
 import (
+	"log"
 	"os"
 	"path"
 	"reflect"
 	"testing"
 )
 
-func Test_sqlGroupsWhere(t *testing.T) {
+func Test_groupsWhere(t *testing.T) {
 	type args struct {
 		name           string
 		incSoftDeletes bool
@@ -28,16 +29,19 @@ func Test_sqlGroupsWhere(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := sqlGroupsWhere(tt.args.name, tt.args.incSoftDeletes); got != tt.want {
-				t.Errorf("sqlGroupsWhere() = %q, want %q", got, tt.want)
+			if got, _ := groupsWhere(tt.args.name, tt.args.incSoftDeletes); got != tt.want {
+				t.Errorf("groupsWhere() = %q, want %q", got, tt.want)
 			}
 		})
 	}
 }
 
 func BenchmarkGroupsToHTML(b *testing.B) {
+	r := Request{"", true, true, true}
 	for i := 0; i < b.N; i++ {
-		Request{"", true, true, true}.HTML("")
+		if err := r.HTML(""); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
@@ -59,24 +63,6 @@ func TestMakeSlug(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := MakeSlug(tt.args.name); got != tt.want {
 				t.Errorf("MakeSlug() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_initialism(t *testing.T) {
-	tests := []struct {
-		name    string
-		wantNew string
-	}{
-		{"", ""},
-		{"Defacto2", "DF2"},
-		{"not found", ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotNew := initialism(tt.name); gotNew != tt.wantNew {
-				t.Errorf("initialism() = %v, want %v", gotNew, tt.wantNew)
 			}
 		})
 	}
@@ -151,28 +137,6 @@ func Test_dropThe(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := dropThe(tt.args.g); got != tt.want {
 				t.Errorf("dropThe() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestVariations(t *testing.T) {
-	type args struct {
-		name string
-	}
-	tests := []struct {
-		name string
-		args args
-		want []string
-	}{
-		{"0", args{""}, []string(nil)},
-		{"1", args{"hello"}, []string{"hello"}},
-		{"2", args{"hello world"}, []string{"hello world", "helloworld", "hello-world", "hello_world", "hello.world"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := Variations(tt.args.name); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Variations() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
@@ -258,7 +222,7 @@ func Test_list(t *testing.T) {
 	}
 }
 
-func Test_sqlGroups(t *testing.T) {
+func Test_groupsStmt(t *testing.T) {
 	type args struct {
 		filter             string
 		includeSoftDeletes bool
@@ -274,28 +238,10 @@ func Test_sqlGroups(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := sqlGroups(tt.args.filter, tt.args.includeSoftDeletes)
+			_, err := groupsStmt(tt.args.filter, tt.args.includeSoftDeletes)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("sqlGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("groupsStmt() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-		})
-	}
-}
-
-func TestCount(t *testing.T) {
-	tests := []struct {
-		name      string
-		wantCount int
-	}{
-		{"", 0},
-		{"abcdefgh", 0},
-		{"Defacto2", 28},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotCount := Count(tt.name); gotCount != tt.wantCount {
-				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
 			}
 		})
 	}
@@ -330,52 +276,6 @@ func Test_hrElement(t *testing.T) {
 	}
 }
 
-func TestRequest_files(t *testing.T) {
-	type args struct {
-		group string
-	}
-	tests := []struct {
-		name      string
-		r         Request
-		args      args
-		wantTotal int
-	}{
-		{"empty", Request{}, args{""}, 0},
-		{"none", Request{Counts: false}, args{"Defacto2"}, 0},
-		{"Defacto2", Request{Counts: true}, args{"Defacto2"}, 28},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotTotal := tt.r.files(tt.args.group); gotTotal != tt.wantTotal {
-				t.Errorf("Request.files() = %v, want %v", gotTotal, tt.wantTotal)
-			}
-		})
-	}
-}
-
-func TestRequest_initialism(t *testing.T) {
-	type args struct {
-		group string
-	}
-	tests := []struct {
-		name     string
-		r        Request
-		args     args
-		wantName string
-	}{
-		{"empty", Request{}, args{""}, ""},
-		{"none", Request{Initialisms: false}, args{"Defacto2"}, ""},
-		{"Defacto2", Request{Initialisms: true}, args{"Defacto2"}, "DF2"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotName := tt.r.initialism(tt.args.group); gotName != tt.wantName {
-				t.Errorf("Request.initialism() = %v, want %v", gotName, tt.wantName)
-			}
-		})
-	}
-}
-
 func TestRequest_parse(t *testing.T) {
 	type args struct {
 		filename string
@@ -401,19 +301,159 @@ func TestRequest_parse(t *testing.T) {
 	}
 }
 
+func TestCount(t *testing.T) {
+	tests := []struct {
+		name      string
+		wantCount int
+		wantErr   bool
+	}{
+		{"", 0, false},
+		{"abcdefgh", 0, false},
+		{"Defacto2", 28, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotCount, err := Count(tt.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Count() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotCount != tt.wantCount {
+				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
+			}
+		})
+	}
+}
+
 func TestPrint(t *testing.T) {
 	tests := []struct {
 		name      string
 		r         Request
 		wantTotal int
+		wantErr   bool
 	}{
-		{"", Request{}, 6000},
-		{"bbs", Request{Filter: "bbs"}, 3000},
+		{"", Request{}, 6000, false},
+		{"bbs", Request{Filter: "bbs"}, 3000, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotTotal := Print(tt.r); gotTotal < tt.wantTotal {
-				t.Errorf("Print() = %v, want > %v", gotTotal, tt.wantTotal)
+			gotTotal, err := Print(tt.r)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Print() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotTotal != tt.wantTotal {
+				t.Errorf("Print() = %v, want %v", gotTotal, tt.wantTotal)
+			}
+		})
+	}
+}
+
+func TestRequest_initialism(t *testing.T) {
+	type args struct {
+		group string
+	}
+	tests := []struct {
+		name     string
+		r        Request
+		args     args
+		wantName string
+		wantErr  bool
+	}{
+		{"empty", Request{}, args{""}, "", false},
+		{"none", Request{Initialisms: false}, args{"Defacto2"}, "", false},
+		{"Defacto2", Request{Initialisms: true}, args{"Defacto2"}, "DF2", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, err := tt.r.initialism(tt.args.group)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Request.initialism() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotName != tt.wantName {
+				t.Errorf("Request.initialism() = %v, want %v", gotName, tt.wantName)
+			}
+		})
+	}
+}
+
+func TestRequest_files(t *testing.T) {
+	type args struct {
+		group string
+	}
+	tests := []struct {
+		name      string
+		r         Request
+		args      args
+		wantTotal int
+		wantErr   bool
+	}{
+		{"empty", Request{}, args{""}, 0, false},
+		{"none", Request{Counts: false}, args{"Defacto2"}, 0, false},
+		{"Defacto2", Request{Counts: true}, args{"Defacto2"}, 28, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotTotal, err := tt.r.files(tt.args.group)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Request.files() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotTotal != tt.wantTotal {
+				t.Errorf("Request.files() = %v, want %v", gotTotal, tt.wantTotal)
+			}
+		})
+	}
+}
+
+func TestVariations(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantVars []string
+		wantErr  bool
+	}{
+		{"0", args{""}, []string(nil), false},
+		{"1", args{"hello"}, []string{"hello"}, false},
+		{"2", args{"hello world"}, []string{"hello world", "helloworld", "hello-world", "hello_world", "hello.world"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotVars, err := Variations(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Variations() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotVars, tt.wantVars) {
+				t.Errorf("Variations() = %v, want %v", gotVars, tt.wantVars)
+			}
+		})
+	}
+}
+
+func Test_initialism(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    string
+		wantErr bool
+	}{
+		{"", "", false},
+		{"Defacto2", "DF2", false},
+		{"not found", "", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := initialism(tt.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("initialism() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("initialism() = %v, want %v", got, tt.want)
 			}
 		})
 	}
