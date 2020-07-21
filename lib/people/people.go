@@ -43,7 +43,7 @@ const Filters = "artists,coders,musicians,writers"
 func List(role string) (people []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
-	s := sqlPeople(role, false)
+	s := peopleStmt(role, false)
 	if s == "" {
 		return nil, 0, nil
 	}
@@ -165,7 +165,6 @@ func Print(r Request) error {
 		x := strings.Split(ppl[i], ",")
 		a = append(a, x...)
 	}
-	//ppl = nil
 	// title and sort names
 	for i := range a {
 		if r.Progress {
@@ -202,8 +201,8 @@ func roles(r string) string {
 	return ""
 }
 
-// sqlPeople returns a complete SQL WHERE statement where the people are filtered by a role.
-func sqlPeople(role string, softDel bool) (sql string) {
+// peopleStmt returns a complete SQL WHERE statement where the people are filtered by a role.
+func peopleStmt(role string, softDel bool) (stmt string) {
 	var del = func() string {
 		if softDel {
 			return ""
@@ -216,21 +215,21 @@ func sqlPeople(role string, softDel bool) (sql string) {
 	}
 	f := roles(role)
 	if strings.ContainsAny(f, "w") {
-		sql += d("credit_text")
+		stmt += d("credit_text")
 	}
 	if strings.ContainsAny(f, "m") {
-		sql += d("credit_audio")
+		stmt += d("credit_audio")
 	}
 	if strings.ContainsAny(f, "c") {
-		sql += d("credit_program")
+		stmt += d("credit_program")
 	}
 	if strings.ContainsAny(f, "a") {
-		sql += d("credit_illustration")
+		stmt += d("credit_illustration")
 	}
-	if sql == "" {
-		return sql
+	if stmt == "" {
+		return stmt
 	}
-	sql += " ORDER BY pubCombined"
-	sql = strings.Replace(sql, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
-	return sql
+	stmt += " ORDER BY pubCombined"
+	stmt = strings.Replace(stmt, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
+	return stmt
 }

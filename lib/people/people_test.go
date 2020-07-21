@@ -30,7 +30,7 @@ func Test_roles(t *testing.T) {
 	}
 }
 
-func Test_sqlPeople(t *testing.T) {
+func Test_peopleStmt(t *testing.T) {
 	type args struct {
 		role               string
 		includeSoftDeletes bool
@@ -51,7 +51,7 @@ func Test_sqlPeople(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := sqlPeople(tt.args.role, tt.args.includeSoftDeletes); len(got) != tt.want {
+			if got := peopleStmt(tt.args.role, tt.args.includeSoftDeletes); len(got) != tt.want {
 				t.Errorf("sqlPeople() = %v, want = %v", len(got), tt.want)
 			}
 		})
@@ -98,46 +98,6 @@ func TestList(t *testing.T) {
 	}
 }
 
-func TestDataList(t *testing.T) {
-	type args struct {
-		filename string
-		r        Request
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{"error", args{"", Request{"error", false, false}}},
-		{"ok", args{"", Request{"", false, false}}},
-		{"progress", args{"", Request{"", false, true}}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			DataList(tt.args.filename, tt.args.r)
-		})
-	}
-}
-
-func TestHTML(t *testing.T) {
-	type args struct {
-		filename string
-		r        Request
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{"error", args{"", Request{"error", false, false}}},
-		{"ok", args{"", Request{"", false, false}}},
-		{"progress", args{"", Request{"", false, true}}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			HTML(tt.args.filename, tt.args.r)
-		})
-	}
-}
-
 func TestPrint(t *testing.T) {
 	tests := []struct {
 		name string
@@ -150,6 +110,52 @@ func TestPrint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			Print(tt.r)
+		})
+	}
+}
+
+func TestDataList(t *testing.T) {
+	type args struct {
+		filename string
+		r        Request
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"error", args{"", Request{"error", false, false}}, true},
+		{"ok", args{"", Request{"", false, false}}, false},
+		{"progress", args{"", Request{"", false, true}}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := DataList(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
+				t.Errorf("DataList() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestHTML(t *testing.T) {
+	type args struct {
+		filename string
+		r        Request
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"error", args{"", Request{"error", false, false}}, true},
+		{"ok", args{"", Request{"", false, false}}, false},
+		{"progress", args{"", Request{"", false, true}}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := HTML(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
+				t.Errorf("HTML() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
