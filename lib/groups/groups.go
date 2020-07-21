@@ -234,7 +234,7 @@ func list(filter string) (groups []string, total int, err error) {
 
 // MakeSlug takes a name and makes it into a URL friendly slug.
 func MakeSlug(name string) string {
-	n := remDupeSpaces(name)
+	n := trimSP(name)
 	n = remInitialism(n)
 	n = strings.ReplaceAll(n, "-", "_")
 	n = strings.ReplaceAll(n, ", ", "*")

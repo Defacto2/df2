@@ -14,14 +14,15 @@ import (
 var sim bool = true
 
 // Fix any malformed group names found in the database.
-func Fix(simulate bool) {
+func Fix(simulate bool) error {
 	sim = simulate
 	names, _, err := list("")
-	logs.Check(err)
-	c := 0
-	start := time.Now()
+	if err != nil {
+		return err
+	}
+	c, start := 0, time.Now()
 	for _, name := range names {
-		if r := toClean(name); r {
+		if r := cleanGroup(name); r {
 			c++
 		}
 	}
@@ -38,42 +39,38 @@ func Fix(simulate bool) {
 	}
 	elapsed := time.Since(start)
 	logs.Print(fmt.Sprintf(", time taken %s\n", elapsed))
+	return nil
 }
 
-// ToClean fixes any malformed strings.
-func ToClean(g string) string {
-	f := remDupeSpaces(g)
+// cleanGroup fixes and saves a malformed group name.
+func cleanGroup(g string) (ok bool) {
+	f := cleanString(g)
+	if f == g {
+		return false
+	}
+	if sim {
+		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), g,
+			color.Question.Sprint("!="), color.Info.Sprint(f))
+		return true
+	}
+	s := logs.Y()
+	ok = true
+	var _, err = database.RenGroup(f, g)
+	if err != nil {
+		s = logs.X()
+		ok = false
+	}
+	logs.Printf("\n%s %q %s %s", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
+	return ok
+}
+
+// cleanString fixes any malformed strings.
+func cleanString(s string) string {
+	f := trimSP(s)
 	f = strings.TrimSpace(f)
-	f = dropThe(f)
+	f = trimThe(f)
 	f = format(f)
 	return f
-}
-
-// dropDot removes any trailing dots from a string.
-func dropDot(s string) string {
-	const short = 2
-	if len(s) < short {
-		return s
-	}
-	l := s[len(s)-1:]
-	if l == "." {
-		return s[:len(s)-1]
-	}
-	return s
-}
-
-// dropThe removes a 'the' prefix from a string.
-func dropThe(g string) string {
-	const short = 2
-	a := strings.Split(g, " ")
-	if len(a) < short {
-		return g
-	}
-	l := a[len(a)-1]
-	if strings.ToLower(a[0]) == "the" && (l == "BBS" || l == "FTP") {
-		return strings.Join(a[1:], " ") // drop "the" prefix
-	}
-	return g
 }
 
 // format returns a copy of the string with custom formatting.
@@ -88,7 +85,7 @@ func format(s string) string {
 		last := len(words) - 1
 		for i, w := range words {
 			w = strings.ToLower(w)
-			w = dropDot(w)
+			w = trimDot(w)
 			if i > 0 && i < last {
 				switch w {
 				case "a", "and", "by", "of", "for", "from", "in", "is", "or", "the", "to":
@@ -108,29 +105,35 @@ func format(s string) string {
 	return strings.Join(groups, ",")
 }
 
-// remDupeSpaces removes duplicate spaces from a string.
-func remDupeSpaces(s string) string {
+// trimDot removes any trailing dots from a string.
+func trimDot(s string) string {
+	const short = 2
+	if len(s) < short {
+		return s
+	}
+	l := s[len(s)-1:]
+	if l == "." {
+		return s[:len(s)-1]
+	}
+	return s
+}
+
+// trimSP removes duplicate spaces from a string.
+func trimSP(s string) string {
 	r := regexp.MustCompile(`\s+`)
 	return r.ReplaceAllString(s, " ")
 }
 
-// toClean fixes and saves a malformed group name.
-func toClean(g string) (ok bool) {
-	f := ToClean(g)
-	if f == g {
-		return false
+// trimThe removes a 'the' prefix from a string.
+func trimThe(s string) string {
+	const short = 2
+	a := strings.Split(s, " ")
+	if len(a) < short {
+		return s
 	}
-	if sim {
-		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), g, color.Question.Sprint("!="), color.Info.Sprint(f))
-		return true
+	l := a[len(a)-1]
+	if strings.ToLower(a[0]) == "the" && (l == "BBS" || l == "FTP") {
+		return strings.Join(a[1:], " ") // drop "the" prefix
 	}
-	s := logs.Y()
-	ok = true
-	var _, err = database.RenGroup(f, g)
-	if err != nil {
-		s = logs.X()
-		ok = false
-	}
-	logs.Printf("\n%s %q %s %s", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
-	return ok
+	return s
 }
