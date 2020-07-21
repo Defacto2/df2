@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestImg_check(t *testing.T) {
+func TestImg_valid(t *testing.T) {
 	tests := []struct {
 		name string
 		i    Img
@@ -14,14 +14,14 @@ func TestImg_check(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.i.check(); got != tt.want {
-				t.Errorf("Img.check() = %v, want %v", got, tt.want)
+			if got := tt.i.valid(); got != tt.want {
+				t.Errorf("Img.valid() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestImg_validExt(t *testing.T) {
+func TestImg_ext(t *testing.T) {
 	tests := []struct {
 		name   string
 		i      Img
@@ -35,8 +35,8 @@ func TestImg_validExt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := tt.i.validExt(); gotOk != tt.wantOk {
-				t.Errorf("Img.validExt() = %v, want %v", gotOk, tt.wantOk)
+			if gotOk := tt.i.ext(); gotOk != tt.wantOk {
+				t.Errorf("Img.ext() = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}

@@ -12,6 +12,14 @@ import (
 	"github.com/gookit/color"
 )
 
+const (
+	gif  = ".gif"
+	jpg  = ".jpg"
+	jpeg = ".jpeg"
+	_png = ".png"
+	webp = ".webp"
+)
+
 var dir directories.Dir
 
 // Img is an image object.
@@ -24,7 +32,9 @@ type Img struct {
 }
 
 func (i Img) String() string {
-	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(i.ID), i.Filename, color.Info.Sprint(humanize.Bytes(uint64(i.Filesize))))
+	return fmt.Sprintf("(%v) %v %v ",
+		color.Primary.Sprint(i.ID), i.Filename,
+		color.Info.Sprint(humanize.Bytes(uint64(i.Filesize))))
 }
 
 // Fix generates any missing assets from downloads that are images.
@@ -40,12 +50,12 @@ func Fix(simulate bool) error {
 	for rows.Next() {
 		var img Img
 		if err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize); err != nil {
-			logs.Check(err)
+			return err
 		}
-		if !img.validExt() {
+		if !img.ext() {
 			continue
 		}
-		if !img.check() {
+		if !img.valid() {
 			c++
 			logs.Printf("%d. %v", c, img)
 			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
@@ -70,18 +80,18 @@ func Fix(simulate bool) error {
 	return nil
 }
 
-func (i Img) validExt() (ok bool) {
+func (i Img) ext() (ok bool) {
 	switch filepath.Ext(i.Filename) {
-	case ".gif", ".jpg", ".jpeg", ".png":
+	case gif, jpg, jpeg, _png:
 		return true
 	}
 	return false
 }
 
-func (i Img) check() (ok bool) {
+func (i Img) valid() (ok bool) {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
-		if _, err := os.Stat(filepath.Join(path, i.UUID+".png")); !os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {
 			return true
 		}
 	}

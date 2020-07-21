@@ -26,27 +26,32 @@ import (
 	_ "golang.org/x/image/webp" // register WebP decoding
 )
 
+const (
+	fp os.FileMode = 0666
+	fm             = os.O_RDWR | os.O_CREATE
+)
+
 var scope = gap.NewScope(gap.User, "df2")
 
 // Duplicate an image file and appends suffix to its name.
 func Duplicate(filename, suffix string) (name string, err error) {
 	src, err := os.Open(filename)
 	if err != nil {
-		return name, err
+		return "", err
 	}
 	defer src.Close()
 	ext := filepath.Ext(filename)
 	fn := strings.TrimSuffix(filename, ext)
-	dest, err := os.OpenFile(fn+suffix+ext, os.O_RDWR|os.O_CREATE, 0666)
+	dest, err := os.OpenFile(fn+suffix+ext, fm, fp)
 	if err != nil {
-		return name, err
+		return "", err
 	}
 	defer dest.Close()
 	if _, err = io.Copy(dest, src); err != nil {
-		return name, err
+		return "", err
 	}
 	name = fmt.Sprintf("%s%s%s", fn, suffix, ext)
-	return name, err
+	return name, nil
 }
 
 // Generate a collection of site images.
@@ -61,9 +66,9 @@ func Generate(name, id string, remove bool) {
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
-	s, err := ToPng(n, NewExt(f.Img000, ".png"), 1500)
+	s, err := ToPng(n, NewExt(f.Img000, _png), 1500)
 	out(s, err)
-	s, err = ToWebp(n, NewExt(f.Img000, ".webp"), true)
+	s, err = ToWebp(n, NewExt(f.Img000, webp), true)
 	out(s, err)
 	s, err = ToThumb(n, f.Img400, 400)
 	out(s, err)
@@ -75,27 +80,27 @@ func Generate(name, id string, remove bool) {
 }
 
 // NewExt replaces or appends the extension to a file name.
-func NewExt(path, extension string) (name string) {
+func NewExt(path, ext string) (name string) {
 	e := filepath.Ext(path)
 	if e == "" {
-		return path + extension
+		return path + ext
 	}
 	fn := strings.TrimSuffix(path, e)
-	return fn + extension
+	return fn + ext
 }
 
 // Info returns the image metadata.
 func Info(name string) (height int, width int, format string, err error) {
 	file, err := os.Open(name)
 	if err != nil {
-		return height, width, format, err
+		return 0, 0, "", err
 	}
 	defer file.Close()
 	config, format, err := image.DecodeConfig(file)
 	if err != nil {
-		return height, width, format, err
+		return 0, 0, "", err
 	}
-	return config.Height, config.Width, format, nil
+	return config.Height, config.Width, format, file.Close()
 }
 
 // Width returns the image width in pixels.
