@@ -81,6 +81,7 @@ func List(limit uint, compress bool) error {
 	} else if rows.Err() != nil {
 		return rows.Err()
 	}
+	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		return err

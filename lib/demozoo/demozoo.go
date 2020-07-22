@@ -115,10 +115,10 @@ func (req Request) Queries() error {
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return err
-	}
-	if err := rows.Err(); err != nil {
+	} else if err := rows.Err(); err != nil {
 		return err
 	}
+	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		return err
@@ -136,7 +136,10 @@ func (req Request) Queries() error {
 	rows, err = db.Query(stmt)
 	if err != nil {
 		return err
+	} else if rows.Err() != nil {
+		return rows.Err()
 	}
+	defer rows.Close()
 	for rows.Next() {
 		fmt.Println()
 		st.fetched++

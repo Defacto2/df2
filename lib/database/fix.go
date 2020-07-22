@@ -37,6 +37,7 @@ func (u Update) Execute() (count int64, err error) {
 	if err != nil {
 		return 0, err
 	}
+	defer update.Close()
 	res, err := update.Exec(u.Args...)
 	if err != nil {
 		return 0, err

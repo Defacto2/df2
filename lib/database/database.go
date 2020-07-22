@@ -194,6 +194,7 @@ func ColumnTypes(table string) error {
 	} else if rows.Err() != nil {
 		return rows.Err()
 	}
+	defer rows.Close()
 	colTypes, err := rows.ColumnTypes()
 	if err != nil {
 		return err
@@ -401,6 +402,7 @@ func RenGroup(new, old string) (count int64, err error) {
 	if err != nil {
 		return 0, err
 	}
+	defer stmt.Close()
 	res, err := stmt.Exec(new, new, old, old)
 	if err != nil {
 		return 0, err
@@ -415,6 +417,7 @@ func RenGroup(new, old string) (count int64, err error) {
 // Total reports the number of records fetched by the supplied SQL query.
 func Total(s *string) (sum int, err error) {
 	db := Connect()
+	defer db.Close()
 	rows, err := db.Query(*s)
 	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
 		logs.Println(s)
@@ -423,7 +426,7 @@ func Total(s *string) (sum int, err error) {
 	} else if rows.Err() != nil {
 		return -1, rows.Err()
 	}
-	defer db.Close()
+	defer rows.Close()
 	for rows.Next() {
 		sum++
 	}

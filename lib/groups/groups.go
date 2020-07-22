@@ -215,10 +215,10 @@ func list(filter string) (groups []string, total int, err error) {
 	rows, err := db.Query(s)
 	if err != nil {
 		return nil, 0, err
-	}
-	if err := rows.Err(); err != nil {
+	} else if err := rows.Err(); err != nil {
 		return nil, 0, err
 	}
+	defer rows.Close()
 	var grp sql.NullString
 	for rows.Next() {
 		if err = rows.Scan(&grp); err != nil {

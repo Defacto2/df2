@@ -63,6 +63,7 @@ func (r Record) Save() error {
 	if err != nil {
 		return err
 	}
+	defer update.Close()
 	_, err = update.Exec(args...)
 	if err != nil {
 		return err

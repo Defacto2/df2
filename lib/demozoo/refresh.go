@@ -26,7 +26,10 @@ func RefreshMeta() error {
 	rows, err := db.Query(selectByID())
 	if err != nil {
 		return err
+	} else if rows.Err() != nil {
+		return rows.Err()
 	}
+	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		return err

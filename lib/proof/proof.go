@@ -85,6 +85,7 @@ func (request Request) Queries() error {
 	} else if err := rows.Err(); err != nil {
 		return err
 	}
+	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		return err
@@ -109,6 +110,7 @@ func (request Request) Queries() error {
 	} else if rows.Err() != nil {
 		return rows.Err()
 	}
+	defer rows.Close()
 	for rows.Next() {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return err
@@ -192,6 +194,7 @@ func (r Record) approve() error {
 	if err != nil {
 		return err
 	}
+	defer update.Close()
 	_, err = update.Exec(database.UpdateID, r.ID)
 	if err != nil {
 		return err
@@ -267,6 +270,7 @@ func updateZipContent(id string, items int, content string) error {
 	if err != nil {
 		return err
 	}
+	defer update.Close()
 	if _, err := update.Exec(content, database.UpdateID, "image", id); err != nil {
 		return err
 	}

@@ -80,10 +80,10 @@ func columns(table string) (columns []string, err error) {
 	rows, err := db.Query(fmt.Sprintf("SELECT * FROM `%s` LIMIT 0", table))
 	if err != nil {
 		return nil, err
-	}
-	if err := rows.Err(); err != nil {
+	} else if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	columns, err = rows.Columns()
 	if err != nil {
 		return nil, err
@@ -102,10 +102,10 @@ func rows(table string, limit int) (values []string, err error) {
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err
-	}
-	if err := rows.Err(); err != nil {
+	} else if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, err

@@ -75,25 +75,26 @@ func Create() error {
 	var id, v, count = "", &URLset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}, 0
 	var createdat, updatedat sql.NullString
 	dbc := database.Connect()
+	defer dbc.Close()
 	rowCnt, err := dbc.Query("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL")
 	if err != nil {
 		return err
 	}
-	defer dbc.Close()
+	defer rowCnt.Close()
 	for rowCnt.Next() {
 		if err := rowCnt.Scan(&count); err != nil {
 			return err
 		}
 	}
 	db := database.Connect()
+	defer db.Close()
 	rows, err := db.Query("SELECT `id`,`createdat`,`updatedat` FROM `files` WHERE `deletedat` IS NULL")
 	if err != nil {
 		return err
-	}
-	defer db.Close()
-	if rows.Err() != nil {
+	} else if rows.Err() != nil {
 		return rows.Err()
 	}
+	defer rows.Close()
 	c, i := 0, 0
 	// handle static urls
 	d := viper.GetString("directory.views")

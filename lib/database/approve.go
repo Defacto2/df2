@@ -73,6 +73,7 @@ func queries() error {
 	} else if rows.Err() != nil {
 		return rows.Err()
 	}
+	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		return err
@@ -183,6 +184,7 @@ func (r record) approve() error {
 	if err != nil {
 		return err
 	}
+	defer update.Close()
 	if _, err := update.Exec(UpdateID, r.id); err != nil {
 		return err
 	}

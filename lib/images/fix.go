@@ -45,7 +45,10 @@ func Fix(simulate bool) error {
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image"`)
 	if err != nil {
 		return err
+	} else if rows.Err() != nil {
+		return rows.Err()
 	}
+	defer rows.Close()
 	c := 0
 	for rows.Next() {
 		var img Img

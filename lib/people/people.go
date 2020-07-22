@@ -57,6 +57,7 @@ func List(role string) (people []string, total int, err error) {
 	} else if rows.Err() != nil {
 		return nil, 0, rows.Err()
 	}
+	defer rows.Close()
 	var persons sql.NullString
 	i := 0
 	for rows.Next() {
