@@ -36,11 +36,43 @@ type Person struct {
 	Hr bool
 }
 
-// Filters are peoples' roles.
-const Filters = "artists,coders,musicians,writers"
+type Role int
+
+func (r Role) String() string {
+	switch r {
+	case Everyone:
+		return "all"
+	case Artists:
+		return "artists"
+	case Coders:
+		return "coders"
+	case Musicians:
+		return "musicians"
+	case Writers:
+		return "writers"
+	default:
+		return ""
+	}
+}
+
+const (
+	Everyone Role = iota
+	Artists
+	Coders
+	Musicians
+	Writers
+)
+
+// Filters is a Role slice for use with the Cobra filterFlag.
+func Filters() []string {
+	return []string{Artists.String(), Coders.String(), Musicians.String(), Writers.String()}
+}
+
+// Roles are the production credit categories.
+const Roles = "artists,coders,musicians,writers"
 
 // List people filtered by a role.
-func List(role string) (people []string, total int, err error) {
+func List(role Role) (people []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
 	s := peopleStmt(role, false)
@@ -94,7 +126,7 @@ func HTML(filename string, r Request) error {
 }
 
 func parse(filename string, tpl string, r Request) error {
-	grp, x, err := List(r.Filter)
+	grp, x, err := List(roles(r.Filter))
 	if err != nil {
 		return err
 	}
@@ -152,7 +184,7 @@ func parse(filename string, tpl string, r Request) error {
 
 // Print lists people filtered by a role and summaries the results.
 func Print(r Request) error {
-	ppl, total, err := List(r.Filter)
+	ppl, total, err := List(roles(r.Filter))
 	if err != nil {
 		return err
 	}
@@ -181,29 +213,24 @@ func Print(r Request) error {
 	return nil
 }
 
-// Wheres are group categories.
-func Wheres() []string {
-	return strings.Split(Filters, ",")
-}
-
-func roles(r string) string {
+func roles(r string) Role {
 	switch r {
 	case "writers", "w":
-		return "w"
+		return Writers
 	case "musicians", "m":
-		return "m"
+		return Musicians
 	case "coders", "c":
-		return "c"
+		return Coders
 	case "artists", "a":
-		return "a"
+		return Artists
 	case "", "all":
-		return "wmca"
+		return Everyone
 	}
-	return ""
+	return -1
 }
 
 // peopleStmt returns a complete SQL WHERE statement where the people are filtered by a role.
-func peopleStmt(role string, softDel bool) (stmt string) {
+func peopleStmt(role Role, softDel bool) (stmt string) {
 	var del = func() string {
 		if softDel {
 			return ""
@@ -214,17 +241,19 @@ func peopleStmt(role string, softDel bool) (stmt string) {
 		return fmt.Sprintf(" UNION (SELECT DISTINCT %s AS pubCombined FROM files WHERE Length(%s) <> 0 %s)",
 			s, s, del())
 	}
-	f := roles(role)
-	if strings.ContainsAny(f, "w") {
+	switch role {
+	case Writers:
 		stmt += d("credit_text")
-	}
-	if strings.ContainsAny(f, "m") {
+	case Musicians:
 		stmt += d("credit_audio")
-	}
-	if strings.ContainsAny(f, "c") {
+	case Coders:
 		stmt += d("credit_program")
-	}
-	if strings.ContainsAny(f, "a") {
+	case Artists:
+		stmt += d("credit_illustration")
+	case Everyone:
+		stmt += d("credit_text")
+		stmt += d("credit_audio")
+		stmt += d("credit_program")
 		stmt += d("credit_illustration")
 	}
 	if stmt == "" {

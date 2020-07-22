@@ -13,13 +13,13 @@ func Test_roles(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want string
+		want Role
 	}{
-		{"", args{""}, "wmca"},
-		{"", args{"artists"}, "a"},
-		{"", args{"a"}, "a"},
-		{"", args{"all"}, "wmca"},
-		{"error", args{"xxx"}, ""},
+		{"empty", args{""}, Everyone},
+		{"artist", args{"artists"}, Artists},
+		{"a", args{"a"}, Artists},
+		{"all", args{"all"}, Everyone},
+		{"error", args{"xxx"}, -1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -38,37 +38,38 @@ func Test_peopleStmt(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int
+		want bool
 	}{
-		{"error", args{"text", false}, 0},
-		{"empty f", args{"", false}, 507},
-		{"empty t", args{"", true}, 415},
-		{"writers", args{"writers", true}, 109},
-		{"writers", args{"w", true}, 109},
-		{"musicians", args{"m", true}, 111},
-		{"coders", args{"c", true}, 115},
-		{"artists", args{"a", true}, 125},
+		{"error", args{"text", false}, false},
+		{"empty f", args{"", false}, true},
+		{"empty t", args{"", true}, true},
+		{"writers", args{"writers", true}, true},
+		{"writers", args{"w", true}, true},
+		{"musicians", args{"m", true}, true},
+		{"coders", args{"c", true}, true},
+		{"artists", args{"a", true}, true},
+		{"all", args{"", true}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := peopleStmt(tt.args.role, tt.args.includeSoftDeletes); len(got) != tt.want {
-				t.Errorf("sqlPeople() = %v, want = %v", len(got), tt.want)
+			if got := peopleStmt(roles(tt.args.role), tt.args.includeSoftDeletes); len(got) > 0 != tt.want {
+				t.Errorf("sqlPeople() = %v, want = %v", len(got) > 0, tt.want)
 			}
 		})
 	}
 }
 
-func TestWheres(t *testing.T) {
+func TestFilters(t *testing.T) {
 	tests := []struct {
 		name string
 		want []string
 	}{
-		{"", strings.Split(Filters, ",")},
+		{"", strings.Split(Roles, ",")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Wheres(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Wheres() = %v, want %v", got, tt.want)
+			if got := Filters(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Filters() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -80,14 +81,14 @@ func TestList(t *testing.T) {
 		role string
 		want int
 	}{
-		{"empty", "", 1},
+		{"empty", "", 0},
 		{"error", "error", 0},
 		{"writers", "writers", 1},
 		{"musicians", "m", 1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, got, err := List(tt.role)
+			_, got, err := List(roles(tt.role))
 			if err != nil {
 				t.Error(err)
 			}
@@ -124,7 +125,7 @@ func TestDataList(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"error", args{"", Request{"error", false, false}}, true},
+		{"error", args{"", Request{"error", false, false}}, false},
 		{"ok", args{"", Request{"", false, false}}, false},
 		{"progress", args{"", Request{"", false, true}}, false},
 	}
@@ -147,7 +148,7 @@ func TestHTML(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"error", args{"", Request{"error", false, false}}, true},
+		{"error", args{"", Request{"error", false, false}}, false},
 		{"ok", args{"", Request{"", false, false}}, false},
 		{"progress", args{"", Request{"", false, true}}, false},
 	}
@@ -155,6 +156,25 @@ func TestHTML(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := HTML(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
 				t.Errorf("HTML() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestRole_String(t *testing.T) {
+	tests := []struct {
+		name string
+		r    Role
+		want string
+	}{
+		{"err", -1, ""},
+		{"all", 0, "all"},
+		{"a", 1, "artists"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.r.String(); got != tt.want {
+				t.Errorf("Role.String() = %v, want %v", got, tt.want)
 			}
 		})
 	}

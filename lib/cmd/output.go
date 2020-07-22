@@ -50,7 +50,7 @@ func init() {
 	groupCmd.Flags().StringVarP(&gf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	groupCmd.Flags().BoolVarP(&gf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
-	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Filters)
+	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Roles)
 	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	outputCmd.AddCommand(recentCmd)
 	recentCmd.Flags().BoolVarP(&rf.compress, "compress", "c", false, "remove insignificant whitespace characters")
@@ -139,7 +139,7 @@ var peopleCmd = &cobra.Command{
 	Aliases: []string{"p", "ppl"},
 	Short:   "A HTML snippet generator to list people",
 	Run: func(cmd *cobra.Command, args []string) {
-		filterFlag(people.Wheres(), "filter", pf.filter)
+		filterFlag(people.Filters(), "filter", pf.filter)
 		var req people.Request
 		if filterFlag(fmtflags, "format", pf.format); pf.format != "" {
 			req = people.Request{Filter: pf.filter, Progress: pf.progress}

@@ -12,17 +12,16 @@ import (
 	"github.com/gookit/color"
 )
 
-const ansiloveErr = `
-this command requires the installation of AnsiLove/C
-installation instructions: https://github.com/ansilove/ansilove
-`
-
 // generate a collection of site images.
 func generate(name, id string) error {
 	n, f := name, directories.Files(id)
 	o := f.Img000 + png
 	s, err := makePng(n, f.Img000)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
+		const ansiloveErr = `
+this command requires the installation of AnsiLove/C
+installation instructions: https://github.com/ansilove/ansilove
+`
 		fmt.Println(ansiloveErr)
 		return err
 	} else if err != nil {
