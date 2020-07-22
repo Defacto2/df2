@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo"
@@ -57,8 +59,12 @@ var newCmd = &cobra.Command{
 		color.Info.Println("fix demozoo data conflicts")
 		demozoo.Fix()
 		color.Info.Println("fix malformed database entries")
-		database.Fix()
-		groups.Fix(false)
+		if err := database.Fix(); err != nil {
+			log.Fatal(err)
+		}
+		if err := groups.Fix(false); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

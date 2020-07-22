@@ -68,11 +68,17 @@ var dataCmd = &cobra.Command{
 		df.Version = version
 		switch {
 		case df.CronJob:
-			df.ExportCronJob()
+			if err := df.ExportCronJob(); err != nil {
+				log.Fatal(err)
+			}
 		case df.Table == "all":
-			df.ExportDB()
+			if err := df.ExportDB(); err != nil {
+				log.Fatal(err)
+			}
 		default:
-			df.ExportTable()
+			if err := df.ExportTable(); err != nil {
+				log.Fatal(err)
+			}
 		}
 	},
 }
@@ -95,18 +101,26 @@ var groupCmd = &cobra.Command{
 	Short:   "A HTML snippet generator to list groups",
 	Run: func(cmd *cobra.Command, args []string) {
 		if gf.cronjob {
-			groups.Cronjob()
+			if err := groups.Cronjob(); err != nil {
+				log.Fatal(err)
+			}
 			return
 		}
 		filterFlag(groups.Wheres(), "filter", gf.filter)
 		var req = groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
 		switch gf.format {
 		case "datalist", "dl", "d":
-			req.DataList("")
+			if err := req.DataList(""); err != nil {
+				log.Fatal(err)
+			}
 		case "html", "h", "":
-			req.HTML("")
+			if err := req.HTML(""); err != nil {
+				log.Fatal(err)
+			}
 		case "text", "t":
-			groups.Print(req)
+			if _, err := groups.Print(req); err != nil {
+				log.Fatal(err)
+			}
 		}
 	},
 }
@@ -132,11 +146,17 @@ var peopleCmd = &cobra.Command{
 		}
 		switch pf.format {
 		case "datalist", "dl", "d":
-			people.DataList("", req)
+			if err := people.DataList("", req); err != nil {
+				log.Fatal(err)
+			}
 		case "html", "h", "":
-			people.HTML("", req)
+			if err := people.HTML("", req); err != nil {
+				log.Fatal(err)
+			}
 		case "text", "t":
-			people.Print(req)
+			if err := people.Print(req); err != nil {
+				log.Fatal(err)
+			}
 		}
 	},
 }

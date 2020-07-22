@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/Defacto2/df2/lib/database"
@@ -33,8 +34,12 @@ var fixDatabaseCmd = &cobra.Command{
 	Short:   "Repair malformed database entries",
 	Aliases: []string{"d", "db"},
 	Run: func(cmd *cobra.Command, args []string) {
-		database.Fix()
-		groups.Fix(simulate)
+		if err := database.Fix(); err != nil {
+			log.Fatal(err)
+		}
+		if err := groups.Fix(simulate); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
@@ -52,8 +57,9 @@ var fixImagesCmd = &cobra.Command{
 	Short:   "Generate missing images",
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
-		err := images.Fix(simulate)
-		logs.Check(err)
+		if err := images.Fix(simulate); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
@@ -62,8 +68,9 @@ var fixTextCmd = &cobra.Command{
 	Short:   "Generate missing text previews",
 	Aliases: []string{"t", "txt"},
 	Run: func(cmd *cobra.Command, args []string) {
-		err := text.Fix(simulate)
-		logs.Check(err)
+		if err := text.Fix(simulate); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

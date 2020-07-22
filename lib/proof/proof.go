@@ -126,14 +126,16 @@ func (request Request) Queries() error {
 		s.columns = columns
 		s.overwrite = request.Overwrite
 		s.values = &values
-		r.iterate(s)
+		if err := r.iterate(s); err != nil {
+			return err
+		}
 	}
 	s.summary()
 	return nil
 }
 
 // iterate through each value.
-func (r Record) iterate(s stat) {
+func (r Record) iterate(s stat) error {
 	var value string
 	for i, raw := range *s.values {
 		value = val(raw)
@@ -145,10 +147,13 @@ func (r Record) iterate(s stat) {
 		case "filename":
 			logs.Printf("%v", value)
 		case "file_zip_content":
-			r.zip(raw, s)
+			if err := r.zip(raw, s); err != nil {
+				return err
+			}
 		default:
 		}
 	}
+	return nil
 }
 
 func new(values []sql.RawBytes, path string) Record {
@@ -201,7 +206,9 @@ func (r Record) fileZipContent() (ok bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	updateZipContent(r.ID, len(a), strings.Join(a, "\n"))
+	if err := updateZipContent(r.ID, len(a), strings.Join(a, "\n")); err != nil {
+		return false, err
+	}
 	return true, nil
 }
 

@@ -154,7 +154,7 @@ func Test_stat_fileSkip(t *testing.T) {
 			if gotSkip, gotErr := s.fileSkip(tt.args.r, tt.args.hide); gotSkip != tt.wantSkip {
 				t.Errorf("stat.fileSkip() = %v, want %v", gotSkip, tt.wantSkip)
 			} else if gotErr != nil {
-				t.Errorf("gotErr = ", gotErr)
+				t.Error("gotErr = ", gotErr)
 			}
 		})
 	}

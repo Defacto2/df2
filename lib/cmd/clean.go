@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"log"
 	"sort"
 	"strings"
 
@@ -24,7 +25,9 @@ var cleanCmd = &cobra.Command{
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		directories.Init(makeDirs)
-		assets.Clean(target, delete, humanize)
+		if err := assets.Clean(target, delete, humanize); err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
