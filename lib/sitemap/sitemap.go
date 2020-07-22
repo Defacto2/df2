@@ -79,6 +79,8 @@ func Create() error {
 	rowCnt, err := dbc.Query("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL")
 	if err != nil {
 		return err
+	} else if rowCnt.Err() != nil {
+		return rowCnt.Err()
 	}
 	defer rowCnt.Close()
 	for rowCnt.Next() {
