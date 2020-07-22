@@ -1,7 +1,6 @@
 package archive
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -16,11 +15,10 @@ import (
 
 func extract(archive, tempDir string) error {
 	// extract archive
-	ua, err := unarr.NewArchive(archive)
+	ua, err := unarr.NewArchive(archive) // do not close otherwise a panic triggers
 	if err != nil {
 		return err
 	}
-	defer ua.Close()
 	if _, err = ua.Extract(tempDir); err != nil {
 		return err
 	}
@@ -102,9 +100,4 @@ type task struct {
 
 func taskInit() task {
 	return task{name: "", size: 0, cont: false}
-}
-
-// TODO remove
-func extErr(err error) error {
-	return fmt.Errorf("archive extract: %v", err)
 }

@@ -131,7 +131,7 @@ func Read(archive string, filename string) (files []string, err error) {
 // Restore relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
 func Restore(source, filename, destination string) (files []string, err error) {
-	a, err := unarr.NewArchive(source)
+	a, err := unarr.NewArchive(source) // do not close otherwise a panic triggers
 	if err != nil {
 		if err = Unarchiver(source, filename, destination); err != nil {
 			return nil, err
@@ -145,7 +145,7 @@ func Restore(source, filename, destination string) (files []string, err error) {
 			return nil, err
 		}
 	}
-	return files, a.Close()
+	return files, nil
 }
 
 // dir lists the content of a directory.
@@ -162,9 +162,4 @@ func dir(name string) error {
 		logs.Println(f.Name(), humanize.Bytes(uint64(f.Size())), mime)
 	}
 	return nil
-}
-
-// TODO remove
-func genErr(name string, err error) error {
-	return fmt.Errorf("archive %s: %v", name, err)
 }

@@ -97,8 +97,3 @@ func Walkr(archive, filename string, walkFn archiver.WalkFunc) error {
 	}
 	return w.Walk(archive, walkFn)
 }
-
-// TODO remove
-func arErr(err error) error {
-	return fmt.Errorf("archiver extract: %v", err)
-}

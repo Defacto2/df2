@@ -191,7 +191,3 @@ func findVariant(name, ext string, varNames *[]string) string {
 	}
 	return ""
 }
-
-func dzErr(err error) error {
-	return fmt.Errorf("archive demozoo extract: %v", err)
-}

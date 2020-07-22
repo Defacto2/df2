@@ -168,19 +168,6 @@ func TestRead(t *testing.T) {
 	}
 }
 
-func Test_dir(t *testing.T) {
-	tests := []struct {
-		name string
-	}{
-		{testDir("")},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dir(tt.name)
-		})
-	}
-}
-
 func TestRestore(t *testing.T) {
 	type args struct {
 		source      string
