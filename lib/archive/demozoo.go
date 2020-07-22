@@ -100,9 +100,11 @@ func (f finds) top() string {
 		Filename string
 		Priority int
 	}
-	var ss = make([]fp, len(f))
+	ss := make([]fp, len(f))
+	i := 0
 	for k, v := range f {
-		ss = append(ss, fp{k, v})
+		ss[i] = fp{k, v}
+		i++
 	}
 	sort.SliceStable(ss, func(i, j int) bool {
 		return ss[i].Priority < ss[j].Priority // '<' equals assending order
@@ -121,25 +123,26 @@ func findDOS(name string, files contents, varNames *[]string) string {
 		if !file.executable {
 			continue
 		}
-		base := strings.TrimSuffix(name, file.ext) // base filename without extension
-		fn := strings.ToLower(file.name)           // normalize filenames
-		ext := strings.ToLower(file.ext)           // normalize file extensions
-		e := findVariant(fn, ".exe", varNames)
-		c := findVariant(fn, ".com", varNames)
+		base := strings.TrimSuffix(name, filepath.Ext(name)) // base filename without extension
+		fn := strings.ToLower(file.name)                     // normalize filenames
+		ext := strings.ToLower(file.ext)                     // normalize file extensions
+		e := findVariant(fn, exe, varNames)
+		c := findVariant(fn, com, varNames)
+		fmt.Println(">", "ext", ext, "fn", fn, "chk1", base+exe)
 		switch {
-		case ext == ".bat": // [random].bat
+		case ext == bat: // [random].bat
 			finds[file.name] = 1
-		case fn == base+".exe": // [archive name].exe
+		case fn == base+exe: // [archive name].exe
 			finds[file.name] = 2
-		case fn == base+".com": // [archive name].com
+		case fn == base+com: // [archive name].com
 			finds[file.name] = 3
 		case e != "":
 			finds[file.name] = 4
 		case c != "":
 			finds[file.name] = 5
-		case ext == ".exe": // [random].exe
+		case ext == exe: // [random].exe
 			finds[file.name] = 6
-		case ext == ".com": // [random].com
+		case ext == com: // [random].com
 			finds[file.name] = 7
 		}
 	}

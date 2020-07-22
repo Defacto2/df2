@@ -40,17 +40,17 @@ func Test_findDOS(t *testing.T) {
 	var empty contents
 	var e []string
 	f1 := content{
-		ext:        ".com",
+		ext:        com,
 		name:       "hi.com",
 		executable: true,
 	}
 	f2 := content{
-		ext:        ".exe",
+		ext:        exe,
 		name:       "hi.exe",
 		executable: true,
 	}
 	f3 := content{
-		ext:        ".exe",
+		ext:        exe,
 		name:       "random.exe",
 		executable: true,
 	}
@@ -129,6 +129,25 @@ func Test_findNFO(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := findNFO(tt.args.name, tt.args.files, &e); got != tt.want {
 				t.Errorf("findNFO() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_finds_top(t *testing.T) {
+	tests := []struct {
+		name string
+		f    finds
+		want string
+	}{
+		{"empty", finds{}, ""},
+		{"1", finds{"file.exe": 0}, "file.exe"},
+		{"2", finds{"file.exe": 0, "file.bat": 9}, "file.exe"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.f.top(); got != tt.want {
+				t.Errorf("finds.top() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -16,7 +16,7 @@ func extractr(archive, filename, tempDir string) error {
 // Readr returns a list of files within an rar, tar or zip archive.
 // It has offers compatibility with compression formats.
 func Readr(archive, filename string) (files []string, err error) {
-	err = Walkr(archive, filename, func(f archiver.File) error {
+	err = walkr(archive, filename, func(f archiver.File) error {
 		files = append(files, f.Name())
 		return nil
 	})
@@ -82,11 +82,11 @@ func configure(f interface{}) (err error) {
 	return err
 }
 
-// Walkr calls walkFn for each file within the given archive file.
+// walkr calls walkFn for each file within the given archive file.
 // The archive format is chosen implicitly.
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
-func Walkr(archive, filename string, walkFn archiver.WalkFunc) error {
+func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
 	a, err := archiver.ByExtension(filename)
 	if err != nil {
 		return err

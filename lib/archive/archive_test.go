@@ -1,6 +1,8 @@
 package archive
 
 import (
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -203,5 +205,29 @@ func TestRestore(t *testing.T) {
 				t.Errorf("Restore() = %v, want %v", gotFiles, tt.wantFiles)
 			}
 		})
+	}
+}
+
+func Test_dir(t *testing.T) {
+	tempDir, err := ioutil.TempDir(os.TempDir(), "test-dir")
+	if err != nil {
+		t.Error(err)
+	}
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{"", true},
+		{tempDir, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := dir(tt.name); (err != nil) != tt.wantErr {
+				t.Errorf("dir() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+	if err := os.RemoveAll(tempDir); err != nil {
+		log.Print(err)
 	}
 }
