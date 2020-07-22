@@ -44,7 +44,7 @@ func TestExtract(t *testing.T) {
 	}{
 		{"empty", args{}, true},
 		{"error", args{testDir("demozoo/test.zip"), "test.zip", "xxxx"}, true},
-		//{"zip", args{testDir("demozoo/test.zip"), "test.zip", "6ba7b814-9dad-11d1-80b4-00c04fd430c8"}, true},
+		{"zip", args{testDir("demozoo/test.zip"), "test.zip", "6ba7b814-9dad-11d1-80b4-00c04fd430c8"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
