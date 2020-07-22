@@ -274,6 +274,7 @@ func mutateURL(u *url.URL) *url.URL {
 			p[1] = "get:nl-http" // must include -http to avoid FTP links
 			u.Path = strings.Join(p, "/")
 		}
+	default:
 	}
 	return u
 }

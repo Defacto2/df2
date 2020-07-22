@@ -295,10 +295,8 @@ func (r Record) zip(col sql.RawBytes, s stat) error {
 		}
 		if err := archive.Extract(r.File, r.Name, r.UUID); err != nil {
 			return err
-		} else {
-			if err := r.approve(); err != nil {
-				return err
-			}
+		} else if err := r.approve(); err != nil {
+			return err
 		}
 	}
 	return nil

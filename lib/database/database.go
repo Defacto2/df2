@@ -419,11 +419,12 @@ func Total(s *string) (sum int, err error) {
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query(*s)
-	if err != nil && strings.Contains(err.Error(), "SQL syntax") {
+	switch {
+	case err != nil && strings.Contains(err.Error(), "SQL syntax"):
 		logs.Println(s)
-	} else if err != nil {
+	case err != nil:
 		return -1, err
-	} else if rows.Err() != nil {
+	case rows.Err() != nil:
 		return -1, rows.Err()
 	}
 	defer rows.Close()
