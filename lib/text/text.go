@@ -64,32 +64,41 @@ func generate(name, id string) error {
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
 func makePng(src, dest string) (string, error) {
 	if src == "" {
-		return "", errors.New("text topng: src argument requires a source directory path")
+		return "", errors.New("makepng: src argument requires a source directory path")
+	}
+	_, err := os.Stat(src)
+	if err != nil && os.IsNotExist(err) {
+		return "", fmt.Errorf("src file does not exist: %q: %s", src, err)
+	} else if err != nil {
+		return "", err
 	}
 	if dest == "" {
-		return "", errors.New("text topng: dest argument requires a destination filename path")
+		return "", errors.New("makepng: dest argument requires a destination filename path")
 	}
 	img := dest + png
 	cmd := exec.Command("ansilove", "-r", "-o", img, src)
 	out, err := cmd.Output()
-	if err != nil {
-		return "", err
+	if err != nil && err.Error() == "exit status 127" {
+		return "", errors.New("ansilove: cannot access shared libraries: libansilove.so.1")
+	} else if err != nil {
+		return "", fmt.Errorf("ansilove: %s", err)
 	}
 	wd, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("no working directory: %s", err)
 	}
 	exe, err := os.Executable()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to obtain exe: %s", err)
 	}
 	fmt.Printf("%s - %s", wd, exe)
 	stat, err := os.Stat(img)
 	if err != nil && os.IsNotExist(err) {
-		return "", err
+		return "", fmt.Errorf("makepng: new image is not found: %s", err)
 	} else if err != nil {
 		return "", err
 	}
 	ss := stat.Size()
-	return fmt.Sprintf("✓ text » png %v\n%s", humanize.Bytes(uint64(ss)), color.Secondary.Sprintf("%s", out)), nil
+	return fmt.Sprintf("✓ text » png %v\n%s",
+		humanize.Bytes(uint64(ss)), color.Secondary.Sprintf("%s", out)), nil
 }
