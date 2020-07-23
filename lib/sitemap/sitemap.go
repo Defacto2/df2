@@ -97,31 +97,9 @@ func Create() error {
 		return rows.Err()
 	}
 	defer rows.Close()
-	c, i := 0, 0
 	// handle static urls
-	d := viper.GetString("directory.views")
 	v.Svs = make([]url, len(urls)+count)
-	for i, u := range urls {
-		file := filepath.Join(d, u, index)
-		if s, err := os.Stat(file); !os.IsNotExist(err) {
-			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"}
-			c++
-			continue
-		}
-		j := filepath.Join(d, u) + cfm
-		if s, err := os.Stat(j); !os.IsNotExist(err) {
-			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.8"}
-			c++
-			continue
-		}
-		k := filepath.Join(d, strings.ReplaceAll(u, "-", "")+cfm)
-		if s, err := os.Stat(k); !os.IsNotExist(err) {
-			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.7"}
-			c++
-			continue
-		}
-		v.Svs[i] = url{fmt.Sprintf("%v", static+u), "", "", "1"}
-	}
+	c, i := v.staticURLs()
 	// handle query results.
 	for rows.Next() {
 		i++
@@ -177,6 +155,32 @@ func Create() error {
 		return err
 	}
 	return db.Close()
+}
+
+func (v *URLset) staticURLs() (c int, i int) {
+	c, i, d := 0, 0, viper.GetString("directory.views")
+	for i, u := range urls {
+		file := filepath.Join(d, u, index)
+		if s, err := os.Stat(file); !os.IsNotExist(err) {
+			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"}
+			c++
+			continue
+		}
+		j := filepath.Join(d, u) + cfm
+		if s, err := os.Stat(j); !os.IsNotExist(err) {
+			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.8"}
+			c++
+			continue
+		}
+		k := filepath.Join(d, strings.ReplaceAll(u, "-", "")+cfm)
+		if s, err := os.Stat(k); !os.IsNotExist(err) {
+			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.7"}
+			c++
+			continue
+		}
+		v.Svs[i] = url{fmt.Sprintf("%v", static+u), "", "", "1"}
+	}
+	return c, i
 }
 
 func lastmod(s os.FileInfo) string {
