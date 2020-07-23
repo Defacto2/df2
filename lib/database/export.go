@@ -76,7 +76,7 @@ func columns(table string) (columns []string, err error) {
 	db := Connect()
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
-	rows, err := db.Query(fmt.Sprintf("SELECT * FROM `%s` LIMIT 0", table))
+	rows, err := db.Query("SELECT * FROM ? LIMIT 0", table)
 	if err != nil {
 		return nil, err
 	} else if err := rows.Err(); err != nil {
@@ -92,13 +92,15 @@ func columns(table string) (columns []string, err error) {
 
 // rows returns the values of table.
 func rows(table string, limit int) (values []string, err error) {
-	stmt := fmt.Sprintf("SELECT * FROM `%s` LIMIT %d", table, limit)
-	if limit < 0 {
-		stmt = fmt.Sprintf("SELECT * FROM `%s`", table)
-	}
 	db := Connect()
 	defer db.Close()
-	rows, err := db.Query(stmt)
+	var rows *sql.Rows
+	if limit < 0 {
+		rows, err = db.Query("SELECT * FROM ?", table)
+	} else {
+		rows, err = db.Query("SELECT * FROM ? LIMIT ?", table, limit)
+	}
+	//rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err
 	} else if err := rows.Err(); err != nil {
@@ -394,10 +396,10 @@ func (f Flags) queryTables() (buf *bytes.Buffer, err error) {
 		VER: f.ver(),
 		DB:  newDBTempl,
 		CREATE: []TablesData{
-			{newFilesTempl, buf1.String()},
-			{newGroupsTempl, buf2.String()},
-			{newNetresourcesTempl, buf3.String()},
-			{newUsersTempl, buf4.String()},
+			{newFilesTempl, buf1.String(), ""},
+			{newGroupsTempl, buf2.String(), ""},
+			{newNetresourcesTempl, buf3.String(), ""},
+			{newUsersTempl, buf4.String(), ""},
 		},
 	}
 	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(tablesTmpl)
@@ -445,11 +447,11 @@ func (f Flags) queryDB() (*bytes.Buffer, error) {
 	}
 	var values colValues = vals
 	data := TablesData{
+		Table:   f.Table,
 		Columns: fmt.Sprint(names),
 		Rows:    fmt.Sprint(values),
 	}
-	ins := fmt.Sprintf("INSERT INTO %s ({{.Columns}}) VALUES\n{{.Rows}};", f.Table)
-	tmpl, err := template.New("insert").Parse(ins)
+	tmpl, err := template.New("insert").Parse("INSERT INTO {{.Table}} ({{.Columns}}) VALUES\n{{.Rows}};")
 	if err != nil {
 		return nil, err
 	}

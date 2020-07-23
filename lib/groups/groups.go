@@ -50,10 +50,7 @@ func Count(name string) (count int, err error) {
 	db := database.Connect()
 	defer db.Close()
 	n := name
-	s := "SELECT COUNT(*) FROM files WHERE " +
-		fmt.Sprintf("group_brand_for='%v' OR group_brand_for LIKE '%v,%%' OR group_brand_for LIKE '%%, %v,%%' OR group_brand_for LIKE '%%, %v'", n, n, n, n) +
-		fmt.Sprintf(" OR group_brand_by='%v' OR group_brand_by LIKE '%v,%%' OR group_brand_by LIKE '%%, %v,%%' OR group_brand_by LIKE '%%, %v'", n, n, n, n)
-	row := db.QueryRow(s)
+	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n, n, n, n, n, n, n)
 	if err = row.Scan(&count); err != nil {
 		return 0, err
 	}
@@ -331,8 +328,7 @@ func initialism(name string) (string, error) {
 	db := database.Connect()
 	defer db.Close()
 	var i string
-	s := fmt.Sprintf("SELECT `initialisms` FROM groups WHERE `pubname` = %q", name)
-	row := db.QueryRow(s)
+	row := db.QueryRow("SELECT `initialisms` FROM groups WHERE `pubname` = ?", name)
 	if err := row.Scan(&i); err != nil &&
 		strings.Contains(err.Error(), "no rows in result set") {
 		return "", nil

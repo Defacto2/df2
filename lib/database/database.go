@@ -188,7 +188,7 @@ func ColumnTypes(table string) error {
 	db := Connect()
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
-	rows, err := db.Query(fmt.Sprintf("SELECT * FROM `%s` LIMIT 0", table))
+	rows, err := db.Query("SELECT * FROM ? LIMIT 0", table)
 	if err != nil {
 		return err
 	} else if rows.Err() != nil {
@@ -310,8 +310,7 @@ func LookupID(s string) (id uint, err error) {
 	defer db.Close()
 	if v, err := strconv.Atoi(s); err == nil {
 		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
-		q := fmt.Sprintf("SELECT EXISTS(SELECT * FROM files WHERE id='%d')", v)
-		if err = db.QueryRow(q).Scan(&id); err != nil {
+		if err = db.QueryRow("SELECT EXISTS(SELECT * FROM files WHERE id=?)", v).Scan(&id); err != nil {
 			return 0, fmt.Errorf("lookupid: %s", err)
 		} else if id == 0 {
 			return 0, fmt.Errorf("lookupid: unique id '%v' is does not exist in the database", v)
@@ -319,8 +318,7 @@ func LookupID(s string) (id uint, err error) {
 		return uint(v), nil
 	}
 	s = strings.ToLower(s)
-	q := fmt.Sprintf("SELECT id FROM files WHERE uuid='%s'", s)
-	if err = db.QueryRow(q).Scan(&id); err != nil {
+	if err = db.QueryRow("SELECT id FROM files WHERE uuid=?", s).Scan(&id); err != nil {
 		return 0, fmt.Errorf("lookupid: uuid '%v' is does not exist in the database", s)
 	}
 	return id, db.Close()
@@ -340,8 +338,7 @@ func LookupFile(s string) (name string, err error) {
 		return name, err
 	}
 	s = strings.ToLower(s)
-	q := fmt.Sprintf("SELECT filename FROM files WHERE uuid='%s'", s)
-	if err = db.QueryRow(q).Scan(&name); err != nil {
+	if err = db.QueryRow("SELECT filename FROM files WHERE uuid=?", s).Scan(&name); err != nil {
 		return "", fmt.Errorf("lookupfile: uuid '%v' is does not exist in the database", s)
 	}
 	return name, err

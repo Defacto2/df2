@@ -50,10 +50,10 @@ func (u Update) Execute() (count int64, err error) {
 }
 
 func distinct(column string) (values []string, err error) {
-	result, query := "", "SELECT DISTINCT `"+column+"` AS `result` FROM `files` WHERE `"+column+"` != \"\""
+	result := ""
 	db := Connect()
 	defer db.Close()
-	rows, err := db.Query(query)
+	rows, err := db.Query("SELECT DISTINCT ? AS `result` FROM `files` WHERE ? != \"\"", column, column)
 	if err != nil {
 		return nil, err
 	}

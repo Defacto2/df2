@@ -37,6 +37,7 @@ type Tables struct {
 type TablesData struct {
 	Columns string
 	Rows    string
+	Table   string
 }
 
 const tablesTmpl = `
