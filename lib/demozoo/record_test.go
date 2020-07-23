@@ -38,13 +38,6 @@ type fields struct {
 	CreditAudio    []string
 }
 
-var pwd string
-
-func init() {
-	pwd, _ = os.Getwd()
-	pwd = filepath.Join(pwd, "../..")
-}
-
 func TestRecord_sql(t *testing.T) {
 	const where string = " WHERE id=?"
 	var now = time.Now()
@@ -98,6 +91,11 @@ func TestRecord_sql(t *testing.T) {
 }
 
 func TestRecord_fileZipContent(t *testing.T) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	pwd = filepath.Join(pwd, "../..")
 	tests := []struct {
 		name   string
 		fields fields
@@ -122,6 +120,11 @@ func TestRecord_fileZipContent(t *testing.T) {
 }
 
 func Test_stat_fileExist(t *testing.T) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	pwd = filepath.Join(pwd, "../..")
 	type fields struct {
 		count   int
 		missing int
