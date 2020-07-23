@@ -63,13 +63,7 @@ func proofChk(text string) {
 
 func statInit() stat {
 	dir := directories.Init(false)
-	return stat{
-		base:     logs.Path(dir.UUID),
-		basePath: dir.UUID,
-		count:    0,
-		missing:  0,
-		start:    time.Now(),
-		total:    0}
+	return stat{base: logs.Path(dir.UUID), basePath: dir.UUID, start: time.Now()}
 }
 
 // Queries parses all new proofs.

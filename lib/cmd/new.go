@@ -35,7 +35,8 @@ var newCmd = &cobra.Command{
 			All:       false,
 			Overwrite: false,
 			Refresh:   false,
-			Simulate:  false}
+			Simulate:  false,
+		}
 		color.Info.Println("scan for new demozoo submissions")
 		err = dz.Queries()
 		logs.Check(err)
@@ -43,7 +44,8 @@ var newCmd = &cobra.Command{
 		p := proof.Request{
 			Overwrite:   false,
 			AllProofs:   false,
-			HideMissing: false}
+			HideMissing: false,
+		}
 		color.Info.Println("scan for new proof submissions")
 		err = p.Queries()
 		logs.Check(err)

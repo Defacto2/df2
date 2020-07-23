@@ -33,7 +33,7 @@ func (p *Production) URL() {
 func (p *Production) data() *ProductionsAPIv1 {
 	var err error
 	p.URL()
-	var r = download.Request{
+	r := download.Request{
 		Link: p.link,
 	}
 	err = r.Body()

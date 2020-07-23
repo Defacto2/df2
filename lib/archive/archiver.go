@@ -55,7 +55,6 @@ func configure(f interface{}) (err error) {
 		v.MkdirAll = true
 		v.ImplicitTopLevelFolder = true
 		v.ContinueOnError = false
-		//v.Password = os.Getenv("ARCHIVE_PASSWORD")
 	case *archiver.Tar:
 		// nothing to customize
 	case *archiver.TarBz2:

@@ -48,9 +48,7 @@ var prodID = ""
 
 // Fetch a Demozoo production by its ID.
 func Fetch(id uint) (code int, status string, api ProductionsAPIv1) {
-	var d = Production{
-		ID: int64(id),
-	}
+	d := Production{ID: int64(id)}
 	api = *d.data()
 	return d.StatusCode, d.Status, api
 }
@@ -108,7 +106,7 @@ func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
 // all parses every proof not just records waiting for approval.
 func (req Request) Queries() error {
 	st := stat{count: 0, missing: 0, total: 0}
-	var stmt = selectByID()
+	stmt := selectByID()
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()

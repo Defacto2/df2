@@ -8,8 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfgOWFlag bool
-var cfgNameFlag string
+var (
+	cfgOWFlag   bool
+	cfgNameFlag string
+)
 
 // configCmd represents the config command.
 var configCmd = &cobra.Command{
@@ -65,7 +67,7 @@ var configSetCmd = &cobra.Command{
 	Use:     "set",
 	Short:   "Change a configuration",
 	Aliases: []string{"s"},
-	//TODO: add long with information on how to view settings
+	// TODO: add long with information on how to view settings
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {

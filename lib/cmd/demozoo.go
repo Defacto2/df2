@@ -14,8 +14,8 @@ type dzFlags struct {
 	simulate  bool
 	new       bool
 	refresh   bool
-	id        string   // auto-generated id or a uuid
-	extract   []string //map[string]string
+	id        string // auto-generated id or a uuid
+	extract   []string
 	ping      uint
 	download  uint
 }
@@ -36,7 +36,8 @@ var demozooCmd = &cobra.Command{
 			All:       dzoo.all,
 			Overwrite: dzoo.overwrite,
 			Refresh:   dzoo.refresh,
-			Simulate:  dzoo.simulate}
+			Simulate:  dzoo.simulate,
+		}
 		switch {
 		case dzoo.new, dzoo.all:
 			err = r.Queries()

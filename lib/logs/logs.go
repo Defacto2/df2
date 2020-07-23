@@ -353,7 +353,6 @@ func PromptYN(query string, yesDefault bool) bool {
 		y, n = "y", "N"
 	}
 	fmt.Printf("%s? [%s/%s] ", query, y, n)
-	//fmt.Scanln(&input)
 	input, err := promptRead(os.Stdin)
 	Check(err)
 	return promptyn(input, yesDefault)

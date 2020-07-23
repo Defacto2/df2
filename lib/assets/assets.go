@@ -79,6 +79,7 @@ type results struct {
 	fails int   // results that failed
 	bytes int64 // bytes counted
 }
+
 type scan struct {
 	path   string       // directory to scan
 	delete bool         // delete any detected orphan files

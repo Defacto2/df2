@@ -55,8 +55,7 @@ func cleanGroup(g string) (ok bool) {
 	}
 	s := logs.Y()
 	ok = true
-	var _, err = database.RenGroup(f, g)
-	if err != nil {
+	if _, err := database.RenGroup(f, g); err != nil {
 		s = logs.X()
 		ok = false
 	}

@@ -107,7 +107,7 @@ var groupCmd = &cobra.Command{
 			return
 		}
 		filterFlag(groups.Wheres(), "filter", gf.filter)
-		var req = groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
+		req := groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
 		switch gf.format {
 		case "datalist", "dl", "d":
 			if err := req.DataList(""); err != nil {

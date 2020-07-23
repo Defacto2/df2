@@ -256,7 +256,7 @@ func Print(r Request) (total int, err error) {
 		return 0, err
 	}
 	logs.Println(total, "matching", r.Filter, "records found")
-	var a = make([]string, total)
+	a := make([]string, total)
 	for i := range grp {
 		if r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)

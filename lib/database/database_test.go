@@ -78,8 +78,7 @@ func TestDateTime(t *testing.T) {
 		{"nottime", args{[]byte("hello world")}, "?"},
 		{"invalid", args{[]byte("01-01-2000 00:00:00")}, "?"},
 		{"old", args{[]byte("2000-01-01T00:00:00Z")}, "01 Jan 2000"},
-		{"new", args{[]byte(fmt.Sprintf("%v-01-01T00:00:00Z", now.Year()))},
-			fmt.Sprintf("01 Jan %d", now.Year())},
+		{"new", args{[]byte(fmt.Sprintf("%v-01-01T00:00:00Z", now.Year()))}, fmt.Sprintf("01 Jan %d", now.Year())},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

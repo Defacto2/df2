@@ -12,7 +12,7 @@ func Test_extract(t *testing.T) {
 		tempDir string
 	}
 
-	var zip = filepath.Join(tmp, "zip")
+	zip := filepath.Join(tmp, "zip")
 	os.RemoveAll(filepath.Join(zip))
 	tests := []struct {
 		name    string

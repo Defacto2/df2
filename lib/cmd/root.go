@@ -123,7 +123,7 @@ func initConfig() {
 }
 
 func initVer() {
-	var ansilove, webp, db = color.Error.Sprint("missing"),
+	ansilove, webp, db := color.Error.Sprint("missing"),
 		color.Error.Sprint("missing"),
 		color.Error.Sprint("disconnected")
 	if err := database.ConnectInfo(); err == "" {

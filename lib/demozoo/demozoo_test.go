@@ -148,7 +148,6 @@ func Test_saveName(t *testing.T) {
 }
 
 func TestFetch(t *testing.T) {
-	//var api ProductionsAPIv1
 	tests := []struct {
 		name       string
 		id         uint
@@ -196,7 +195,7 @@ func TestRequest_Query(t *testing.T) {
 }
 
 func values() []sql.RawBytes {
-	var v = []sql.RawBytes{
+	v := []sql.RawBytes{
 		[]byte("1"), // id
 		[]byte("41224f41-0262-4750-956a-893fd7f0f082"), // uuid
 		[]byte(""),             // deletedat

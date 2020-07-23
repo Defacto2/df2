@@ -44,7 +44,7 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err erro
 	if err != nil {
 		return dz, err
 	}
-	var zips = make(contents)
+	zips := make(contents)
 	for i, f := range files {
 		var zip content
 		zip.path = tempDir // filename gets appended by z.scan()

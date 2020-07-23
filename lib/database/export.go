@@ -55,7 +55,6 @@ func (v colValues) String() string {
 type dupeKeys []string
 
 func (dk dupeKeys) String() string {
-	//example output: `id` = VALUES(`id`)
 	for i, n := range dk {
 		dk[i] = fmt.Sprintf("`%s` = VALUES(`%s`)", n, n)
 	}
@@ -296,13 +295,7 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 		return nil, err
 	}
 	var values colValues = vals
-	dat := TableData{
-		VER:    f.ver(),
-		CREATE: f.create(),
-		TABLE:  f.Table,
-		INSERT: fmt.Sprint(names),
-		SQL:    fmt.Sprint(values),
-		UPDATE: ""}
+	dat := TableData{VER: f.ver(), CREATE: f.create(), TABLE: f.Table, INSERT: fmt.Sprint(names), SQL: fmt.Sprint(values)}
 	if f.Type == "update" {
 		var dupes dupeKeys = col
 		dat.UPDATE = fmt.Sprint(dupes)
@@ -397,7 +390,7 @@ func (f Flags) queryTables() (buf *bytes.Buffer, err error) {
 			return nil, err
 		}
 	}
-	var data = Tables{
+	data := Tables{
 		VER: f.ver(),
 		DB:  newDBTempl,
 		CREATE: []TablesData{
@@ -476,7 +469,7 @@ func tmplFunc() template.FuncMap {
 
 // utc returns the current UTC date and time in a MySQL timestamp format.
 func utc() string {
-	var l, _ = time.LoadLocation("UTC")
+	l, _ := time.LoadLocation("UTC")
 	return time.Now().In(l).Format(timestamp)
 }
 

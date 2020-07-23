@@ -72,7 +72,7 @@ var urls = [28]string{
 // Create generates and prints the sitemap.
 func Create() error {
 	// query
-	var id, v, count = "", &URLset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}, 0
+	id, v, count := "", &URLset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}, 0
 	var createdat, updatedat sql.NullString
 	dbc := database.Connect()
 	defer dbc.Close()

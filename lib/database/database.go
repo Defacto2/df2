@@ -93,7 +93,7 @@ func Connect() *sql.DB {
 		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, "****", 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
-		var p = color.Primary.Sprint
+		p := color.Primary.Sprint
 		if err, ok := err.(*mysql.MySQLError); ok {
 			e := strings.Replace(err.Error(), c.User, p(c.User), 1)
 			logs.Check(fmt.Errorf("%s %v", color.Info.Sprint("MySQL"), e))

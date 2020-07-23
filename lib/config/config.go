@@ -14,17 +14,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Directories are initialized and configured by InitDefaults() in lib/cmd.go
+// directories are initialized and configured by InitDefaults() in lib/cmd.go
 
-// ConfigName is the default configuration filename.
-const ConfigName string = "config.yaml"
 const (
-	cmdPath             = "df2 config"
-	dir     os.FileMode = 0700
-	file    os.FileMode = 0600
+	ConfigName             = "config.yaml"
+	cmdPath                = "df2 config"
+	dir        os.FileMode = 0700
+	file       os.FileMode = 0600
 )
 
-// Settings configurations.
+// settings configurations.
 type settings struct {
 	Errors   bool   // flag a config file error, used by root.go initConfig()
 	ignore   bool   // ignore config file error

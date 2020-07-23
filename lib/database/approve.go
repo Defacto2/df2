@@ -16,10 +16,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	fm os.FileMode = 0666
-	//dm os.FileMode = 0777
-)
+const fm os.FileMode = 0666
+
 const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`," +
 	"`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`" +
 	",`group_brand_for`,`group_brand_by`,`section`\n" +

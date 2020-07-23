@@ -189,7 +189,7 @@ func Print(r Request) error {
 		return err
 	}
 	logs.Println(total, "matching", r.Filter, "records found")
-	var a = make([]string, total)
+	a := make([]string, total)
 	for i := range ppl {
 		if r.Progress {
 			logs.ProgressPct(r.Filter, i+1, total)
@@ -231,13 +231,13 @@ func roles(r string) Role {
 
 // peopleStmt returns a complete SQL WHERE statement where the people are filtered by a role.
 func peopleStmt(role Role, softDel bool) (stmt string) {
-	var del = func() string {
+	del := func() string {
 		if softDel {
 			return ""
 		}
 		return "AND `deletedat` IS NULL"
 	}
-	var d = func(s string) string {
+	d := func(s string) string {
 		return fmt.Sprintf(" UNION (SELECT DISTINCT %s AS pubCombined FROM files WHERE Length(%s) <> 0 %s)",
 			s, s, del())
 	}

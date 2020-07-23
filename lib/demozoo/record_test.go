@@ -40,7 +40,7 @@ type fields struct {
 
 func TestRecord_sql(t *testing.T) {
 	const where string = " WHERE id=?"
-	var now = time.Now()
+	now := time.Now()
 	tests := []struct {
 		name   string
 		fields fields
@@ -130,7 +130,7 @@ func Test_stat_fileExist(t *testing.T) {
 		missing int
 		total   int
 	}
-	var r = Record{}
+	r := Record{}
 	tests := []struct {
 		name        string
 		fields      fields
@@ -170,7 +170,7 @@ func TestRecord_String(t *testing.T) {
 	type args struct {
 		total int
 	}
-	var f = fields{
+	f := fields{
 		count:        5,
 		ID:           "99",
 		WebIDDemozoo: 77,
