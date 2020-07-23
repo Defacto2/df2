@@ -97,15 +97,15 @@ func Test_remInitialism(t *testing.T) {
 func Test_list(t *testing.T) {
 	tests := []struct {
 		name      string
-		wantTotal int
+		wantTotal bool
 		wantErr   bool
 	}{
-		{"bbs", 3000, false},
-		{"ftp", 400, false},
-		{"magazine", 100, false},
-		{"group", 2000, false},
-		{"", 5000, false},
-		{"error", 0, true},
+		{"bbs", true, false},
+		{"ftp", true, false},
+		{"magazine", true, false},
+		{"group", true, false},
+		{"", true, false},
+		{"error", false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -114,11 +114,11 @@ func Test_list(t *testing.T) {
 				t.Errorf("list() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if len(gotGroups) < tt.wantTotal {
-				t.Errorf("list() gotGroups count = %v, want >= %v", len(gotGroups), tt.wantTotal)
+			if (len(gotGroups) > 0) != tt.wantTotal {
+				t.Errorf("list() gotGroups count = %v, want >= %v", len(gotGroups) > 0, tt.wantTotal)
 			}
-			if gotTotal < tt.wantTotal {
-				t.Errorf("list() gotTotal = %v, want >= %v", gotTotal, tt.wantTotal)
+			if (gotTotal > 0) != tt.wantTotal {
+				t.Errorf("list() gotTotal = %v, want >= %v", gotTotal > 0, tt.wantTotal)
 			}
 		})
 	}
@@ -206,12 +206,12 @@ func TestRequest_parse(t *testing.T) {
 func TestCount(t *testing.T) {
 	tests := []struct {
 		name      string
-		wantCount int
+		wantCount bool
 		wantErr   bool
 	}{
-		{"", 0, false},
-		{"abcdefgh", 0, false},
-		{"Defacto2", 28, false},
+		{"", false, false},
+		{"abcdefgh", false, false},
+		{"Defacto2", true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -220,7 +220,7 @@ func TestCount(t *testing.T) {
 				t.Errorf("Count() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotCount != tt.wantCount {
+			if (gotCount > 0) != tt.wantCount {
 				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
 			}
 		})
@@ -231,11 +231,11 @@ func TestPrint(t *testing.T) {
 	tests := []struct {
 		name      string
 		r         Request
-		wantTotal int
+		wantTotal bool
 		wantErr   bool
 	}{
-		{"", Request{}, 6000, false},
-		{"bbs", Request{Filter: "bbs"}, 3000, false},
+		{"", Request{}, true, false},
+		{"bbs", Request{Filter: "bbs"}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -244,7 +244,7 @@ func TestPrint(t *testing.T) {
 				t.Errorf("Print() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotTotal != tt.wantTotal {
+			if (gotTotal > 0) != tt.wantTotal {
 				t.Errorf("Print() = %v, want %v", gotTotal, tt.wantTotal)
 			}
 		})
@@ -288,12 +288,12 @@ func TestRequest_files(t *testing.T) {
 		name      string
 		r         Request
 		args      args
-		wantTotal int
+		wantTotal bool
 		wantErr   bool
 	}{
-		{"empty", Request{}, args{""}, 0, false},
-		{"none", Request{Counts: false}, args{"Defacto2"}, 0, false},
-		{"Defacto2", Request{Counts: true}, args{"Defacto2"}, 28, false},
+		{"empty", Request{}, args{""}, false, false},
+		{"none", Request{Counts: false}, args{"Defacto2"}, false, false},
+		{"Defacto2", Request{Counts: true}, args{"Defacto2"}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -302,7 +302,7 @@ func TestRequest_files(t *testing.T) {
 				t.Errorf("Request.files() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotTotal != tt.wantTotal {
+			if (gotTotal > 0) != tt.wantTotal {
 				t.Errorf("Request.files() = %v, want %v", gotTotal, tt.wantTotal)
 			}
 		})
