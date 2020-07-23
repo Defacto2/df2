@@ -22,7 +22,7 @@ import (
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
 )
 
-// files are unique UUID values used by the database and filenames
+// files are unique UUID values used by the database and filenames.
 type files map[string]struct{}
 
 var (

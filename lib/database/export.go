@@ -25,7 +25,7 @@ const (
 	fo                    = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 )
 
-// Flags are command line arguments
+// Flags are command line arguments.
 type Flags struct {
 	Compress bool   // Compress and save the output
 	CronJob  bool   //
@@ -37,7 +37,7 @@ type Flags struct {
 	Version  string // df2 app version pass-through
 }
 
-// Tbls are the available tables in the database
+// Tbls are the available tables in the database.
 const Tbls = "files, groups, netresources, users"
 
 type colNames []string
@@ -266,7 +266,7 @@ func (f Flags) ExportTable() error {
 	return nil
 }
 
-// checkTable validates table against the list of Tbls
+// checkTable validates table against the list of Tbls.
 func checkTable(table string) error {
 	tables := strings.Split(Tbls, ",")
 	for _, t := range tables {

@@ -177,7 +177,7 @@ func ProgressPct(name string, count, total int) float64 {
 }
 
 // ProgressSum returns the count of total remaining.
-// TODO: toggle with a configuration setting
+// TODO: toggle with a configuration setting.
 func ProgressSum(count, total int) (sum string) {
 	sum = fmt.Sprintf("%d/%d", count, total)
 	fmt.Printf("\rBuilding %s", sum)

@@ -30,7 +30,7 @@ var (
 	quiet      = false // quiet disables most printing or output to terminal
 )
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:     "df2",
 	Example: "  df2 new",

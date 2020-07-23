@@ -22,7 +22,7 @@ type dzFlags struct {
 
 var dzoo dzFlags
 
-// demozooCmd represents the demozoo command
+// demozooCmd represents the demozoo command.
 var demozooCmd = &cobra.Command{
 	Use:     "demozoo",
 	Short:   "Interact with Demozoo.org upload submissions",

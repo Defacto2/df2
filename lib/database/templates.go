@@ -1,6 +1,6 @@
 package database
 
-// TableData is a container for the tableTmpl template
+// TableData is a container for the tableTmpl template.
 type TableData struct {
 	VER    string
 	CREATE string
@@ -26,14 +26,14 @@ INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
 -- {{now}}
 `
 
-// Tables is a container for the tablesTmpl template
+// Tables is a container for the tablesTmpl template.
 type Tables struct {
 	VER    string
 	DB     string
 	CREATE []TablesData
 }
 
-// TablesData is a data container for the tablesTmpl template
+// TablesData is a data container for the tablesTmpl template.
 type TablesData struct {
 	Columns string
 	Rows    string
@@ -54,7 +54,7 @@ SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 -- {{now}}
 `
 
-// as there is no escape feature for `raw literals`, these SQL CREATE statements append standard strings
+// as there is no escape feature for `raw literals`, these SQL CREATE statements append standard strings.
 
 const newDBTempl = "\nDROP DATABASE IF EXISTS `defacto2-inno`;\n" +
 	"CREATE DATABASE `defacto2-inno` /*!40100 DEFAULT CHARACTER SET utf8 */;\n" +

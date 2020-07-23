@@ -326,7 +326,7 @@ func Wheres() []string {
 }
 
 // initialism returns a group's initialism or acronym.
-// For example "Defacto2" would return "df2"
+// For example "Defacto2" would return "df2".
 func initialism(name string) (string, error) {
 	db := database.Connect()
 	defer db.Close()

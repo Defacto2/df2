@@ -15,7 +15,7 @@ type proofFlags struct {
 
 var proo proofFlags
 
-// proofCmd represents the proof command
+// proofCmd represents the proof command.
 var proofCmd = &cobra.Command{
 	Use:     "proof",
 	Short:   "Handler for files tagged as #releaseproof",

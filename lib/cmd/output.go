@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// outputCmd represents the output command
+// outputCmd represents the output command.
 var outputCmd = &cobra.Command{
 	Use:     "output",
 	Short:   "JSON, HTML, SQL and sitemap generator",
@@ -94,7 +94,7 @@ type groupFlags struct {
 
 var gf groupFlags
 
-// groupCmd represents the organisations command
+// groupCmd represents the organisations command.
 var groupCmd = &cobra.Command{
 	Use:     "groups",
 	Aliases: []string{"g", "group"},
@@ -133,7 +133,7 @@ type pplFlags struct {
 
 var pf pplFlags
 
-// peopleCmd represents the authors command
+// peopleCmd represents the authors command.
 var peopleCmd = &cobra.Command{
 	Use:     "people",
 	Aliases: []string{"p", "ppl"},

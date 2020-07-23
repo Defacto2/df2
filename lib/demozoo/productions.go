@@ -228,7 +228,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id int, statusCode int) {
 	return 0, 0
 }
 
-// parsePouetProduction takes a pouet prod URL and extracts the ID
+// parsePouetProduction takes a pouet prod URL and extracts the ID.
 func parsePouetProduction(rawurl string) (id int, err error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {

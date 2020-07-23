@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// random characters used by randStringBytes()
+// random characters used by randStringBytes().
 const random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
 
 // Dir is a collection of paths containing files.

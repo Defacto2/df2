@@ -17,7 +17,7 @@ import (
 
 // This will eventually replace https://defacto2.net/welcome/recentfiles
 
-// File data for new thumbnails
+// File data for new thumbnails.
 type File struct {
 	UUID    string `json:"uuid"`
 	URLID   string `json:"urlid"`

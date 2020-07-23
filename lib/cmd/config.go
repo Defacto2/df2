@@ -1,7 +1,5 @@
 package cmd
 
-// os.Exit() = 200+
-
 import (
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
@@ -13,9 +11,7 @@ import (
 var cfgOWFlag bool
 var cfgNameFlag string
 
-//var cfg config.
-
-// configCmd represents the config command
+// configCmd represents the config command.
 var configCmd = &cobra.Command{
 	Use:     "config",
 	Short:   "Configure the settings for this tool",

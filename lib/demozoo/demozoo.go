@@ -36,7 +36,7 @@ type Request struct {
 	Simulate  bool // simulate database save
 }
 
-// query statistics
+// query statistics.
 type stat struct {
 	count   int
 	fetched int
@@ -334,7 +334,7 @@ func (r *Record) downloadReset(name string) {
 	r.FileZipContent = ""
 }
 
-// last modified time passed via HTTP
+// last modified time passed via HTTP.
 func (r *Record) lastMod(head http.Header) {
 	lm := head.Get("Last-Modified")
 	if len(lm) < 1 {

@@ -18,7 +18,7 @@ var (
 	targets  []string = []string{"all", "download", "emulation", "image"}
 )
 
-// cleanCmd represents the clean command
+// cleanCmd represents the clean command.
 var cleanCmd = &cobra.Command{
 	Use:     "clean",
 	Short:   "Discover or clean orphan files",

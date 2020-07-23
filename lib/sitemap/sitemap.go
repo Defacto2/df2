@@ -19,10 +19,10 @@ const (
 	cfm      = ".cfm"
 )
 
-// limit the number of urls as permitted by Bing and Google search engines
+// limit the number of urls as permitted by Bing and Google search engines.
 const limit = 50000
 
-// url composes the <url> tag in the sitemap
+// url composes the <url> tag in the sitemap.
 type url struct {
 	Location string `xml:"loc,omitempty"`
 	// optional attributes
@@ -31,7 +31,7 @@ type url struct {
 	Priority     string `xml:"priority,omitempty"`
 }
 
-// URLset is a sitemap XML template
+// URLset is a sitemap XML template.
 type URLset struct {
 	XMLName xml.Name `xml:"urlset,omitempty"`
 	XMLNS   string   `xml:"xmlns,attr,omitempty"`
@@ -122,20 +122,20 @@ func Create() error {
 		}
 		v.Svs[i] = url{fmt.Sprintf("%v", static+u), "", "", "1"}
 	}
-	// handle query results
+	// handle query results.
 	for rows.Next() {
 		i++
 		if err = rows.Scan(&id, &createdat, &updatedat); err != nil {
 			return err
 		}
-		// check for valid createdat and updatedat entries
+		// check for valid createdat and updatedat entries.
 		if _, err := updatedat.Value(); err != nil {
 			continue
 		}
 		if _, err := createdat.Value(); err != nil {
 			continue
 		}
-		// parse createdat and updatedat to use in the <lastmod> tag
+		// parse createdat and updatedat to use in the <lastmod> tag.
 		var lastmod string
 		if ok := updatedat.Valid; ok {
 			lastmod = updatedat.String
@@ -144,7 +144,7 @@ func Create() error {
 		}
 		lastmodFields := strings.Fields(lastmod)
 		// NOTE: most search engines do not bother with the lastmod value so it could be removed to improve size.
-		// blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given
+		// blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given.
 		var lastmodValue string
 		if len(lastmodFields) > 0 {
 			t := strings.Split(lastmodFields[0], "T") // example value: 2020-04-06T20:51:36Z
@@ -156,7 +156,7 @@ func Create() error {
 			break
 		}
 	}
-	// trim empty urls so they're not included in the xml
+	// trim empty urls so they're not included in the xml.
 	empty := url{}
 	var trimmed []url
 	for i, x := range v.Svs {

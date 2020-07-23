@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// fixCmd represents the fix command
+// fixCmd represents the fix command.
 var fixCmd = &cobra.Command{
 	Use:     "fix",
 	Short:   "Fixes database entries and records",
