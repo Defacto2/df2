@@ -295,29 +295,27 @@ func Variations(name string) (vars []string, err error) {
 	}
 	name = strings.ToLower(name)
 	vars = append(vars, name)
-	if name != "" {
-		s := strings.Split(name, " ")
-		a := strings.Join(s, "")
-		if name != a {
-			vars = append(vars, a)
-		}
-		b := strings.Join(s, "-")
-		if name != b {
-			vars = append(vars, b)
-		}
-		c := strings.Join(s, "_")
-		if name != c {
-			vars = append(vars, c)
-		}
-		d := strings.Join(s, ".")
-		if name != d {
-			vars = append(vars, d)
-		}
-		if init, err := Initialism(name); err == nil && init != "" {
-			vars = append(vars, strings.ToLower(init))
-		} else if err != nil {
-			return nil, err
-		}
+	s := strings.Split(name, " ")
+	a := strings.Join(s, "")
+	if name != a {
+		vars = append(vars, a)
+	}
+	b := strings.Join(s, "-")
+	if name != b {
+		vars = append(vars, b)
+	}
+	c := strings.Join(s, "_")
+	if name != c {
+		vars = append(vars, c)
+	}
+	d := strings.Join(s, ".")
+	if name != d {
+		vars = append(vars, d)
+	}
+	if init, err := Initialism(name); err == nil && init != "" {
+		vars = append(vars, strings.ToLower(init))
+	} else if err != nil {
+		return nil, err
 	}
 	return vars, nil
 }

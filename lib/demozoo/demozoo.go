@@ -336,17 +336,20 @@ func (r *Record) downloadReset(name string) {
 
 // last modified time passed via HTTP
 func (r *Record) lastMod(head http.Header) {
-	if lm := head.Get("Last-Modified"); len(lm) > 0 {
-		if t, err := time.Parse(download.RFC5322, lm); err != nil {
-			logs.Printf(" • last-mod value %q ?", lm)
-		} else {
-			r.LastMod = t
-			if time.Now().Year() == t.Year() {
-				logs.Printf(" • %s", t.Format("2 Jan"))
-			} else {
-				logs.Printf(" • %s", t.Format("Jan 06"))
-			}
-		}
+	lm := head.Get("Last-Modified")
+	if len(lm) < 1 {
+		return
+	}
+	t, err := time.Parse(download.RFC5322, lm)
+	if err != nil {
+		logs.Printf(" • last-mod value %q ?", lm)
+		return
+	}
+	r.LastMod = t
+	if time.Now().Year() == t.Year() {
+		logs.Printf(" • %s", t.Format("2 Jan"))
+	} else {
+		logs.Printf(" • %s", t.Format("Jan 06"))
 	}
 }
 
