@@ -99,7 +99,7 @@ func TestFileMove(t *testing.T) {
 		wantWritten int64
 		wantErr     bool
 	}{
-		{"empty", args{"", ""}, 0, false},
+		{"empty", args{"", ""}, 0, true},
 		{"one way", args{testDir("text/test.txt"), testDir("text/test.txt~")}, 12, false},
 		{"restore way", args{testDir("text/test.txt~"), testDir("text/test.txt")}, 12, false},
 	}

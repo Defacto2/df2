@@ -8,7 +8,7 @@ import (
 
 func extractr(archive, filename, tempDir string) error {
 	if err := Unarchiver(archive, filename, tempDir); err != nil {
-		return err
+		return fmt.Errorf("extractr: %w", err)
 	}
 	return nil
 }
@@ -20,7 +20,10 @@ func Readr(archive, filename string) (files []string, err error) {
 		files = append(files, f.Name())
 		return nil
 	})
-	return files, err
+	if err != nil {
+		return nil, fmt.Errorf("readr: %w", err)
+	}
+	return files, nil
 }
 
 // Unarchiver unarchives the given archive file into the destination folder.
@@ -30,16 +33,19 @@ func Readr(archive, filename string) (files []string, err error) {
 func Unarchiver(source, filename, destination string) error {
 	f, err := archiver.ByExtension(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("unarchiver byextension %q: %w", filename, err)
 	}
 	if err := configure(f); err != nil {
-		return err
+		return fmt.Errorf("unarchiver configure: %w", err)
 	}
 	un, ok := f.(archiver.Unarchiver)
 	if !ok {
-		return fmt.Errorf("format specified by source filename is not an archive format: %s (%T)", filename, f)
+		return fmt.Errorf("unarchiver %s (%T): %w", filename, f, ErrNotArc)
 	}
-	return un.Unarchive(source, destination)
+	if err := un.Unarchive(source, destination); err != nil {
+		return fmt.Errorf("unarchiver: %w", err)
+	}
+	return nil
 }
 
 func configure(f interface{}) (err error) {
@@ -76,9 +82,10 @@ func configure(f interface{}) (err error) {
 	case *archiver.Gz, *archiver.Bz2, *archiver.Lz4, *archiver.Snappy, *archiver.Xz:
 		// nothing to customize
 	default:
-		err = fmt.Errorf("config does not support customization: %s", f)
+		err = fmt.Errorf("configure %v: %w", f, ErrNoCustom)
+		return err
 	}
-	return err
+	return nil
 }
 
 // walkr calls walkFn for each file within the given archive file.
@@ -88,11 +95,14 @@ func configure(f interface{}) (err error) {
 func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
 	a, err := archiver.ByExtension(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("walkr byextension %q: %w", filename, err)
 	}
 	w, ok := a.(archiver.Walker)
 	if !ok {
-		return fmt.Errorf("format specified by archive filename is not a walker format: %s (%T)", filename, a)
+		return fmt.Errorf("walkr %s (%T): %w", filename, a, ErrWalkrFmt)
 	}
-	return w.Walk(archive, walkFn)
+	if err := w.Walk(archive, walkFn); err != nil {
+		return fmt.Errorf("walkr %q: %w", archive, err)
+	}
+	return nil
 }

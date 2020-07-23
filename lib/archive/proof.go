@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,37 +15,39 @@ import (
 )
 
 func extract(archive, tempDir string) error {
-	// extract archive
 	ua, err := unarr.NewArchive(archive) // do not close otherwise a panic triggers
 	if err != nil {
-		return err
+		return fmt.Errorf("extract newarchive %q: %w", archive, err)
 	}
 	if _, err = ua.Extract(tempDir); err != nil {
-		return err
+		return fmt.Errorf("extract: %w", err)
 	}
-	return ua.Close()
+	if err := ua.Close(); err != nil {
+		return fmt.Errorf("extract close: %w", err)
+	}
+	return nil
 }
 
 // Extract decompresses and parses an archive.
 // uuid is used to rename the extracted assets such as image previews.
 func Extract(archive, filename, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
-		return err
+		return fmt.Errorf("extract archive uuid %q: %w", uuid, err)
 	}
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
 	if err != nil {
-		return err
+		return fmt.Errorf("extract archive tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
 	if err := extract(archive, tempDir); err != nil {
 		if err := extractr(archive, filename, tempDir); err != nil {
-			return err
+			return fmt.Errorf("extract archive extractor %q: %w", archive, err)
 		}
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("extract archive read tempdir %q: %w", tempDir, err)
 	}
 	th, tx := taskInit(), taskInit()
 	for _, file := range files {
@@ -54,7 +57,7 @@ func Extract(archive, filename, uuid string) error {
 		fn := path.Join(tempDir, file.Name())
 		fmime, err := mimetype.DetectFile(fn)
 		if err != nil {
-			return err
+			return fmt.Errorf("extract archive detect mime %q: %w", fn, err)
 		}
 		switch fmime.Extension() {
 		case bmp, gif, jpg, png, tiff, webp:
@@ -80,13 +83,13 @@ func Extract(archive, filename, uuid string) error {
 	if n := tx.name; n != "" {
 		f := directories.Files(uuid)
 		if _, err := FileMove(n, f.UUID+txt); err != nil {
-			return err
+			return fmt.Errorf("extract archive filemove %q: %w", n, err)
 		}
 		logs.Print("  »txt")
 	}
 	if x := true; !x {
 		if err := dir(tempDir); err != nil {
-			return err
+			return fmt.Errorf("extract archive dir %q: %w", tempDir, err)
 		}
 	}
 	return nil

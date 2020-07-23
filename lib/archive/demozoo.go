@@ -28,21 +28,21 @@ func (d Demozoo) String() string {
 // ExtractDemozoo decompresses and parses archives fetched from Demozoo.org.
 func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err error) {
 	if err := database.CheckUUID(uuid); err != nil {
-		return dz, err
+		return Demozoo{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
 	}
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "extarc-")
 	if err != nil {
-		return dz, err
+		return Demozoo{}, fmt.Errorf("extract demozoo tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
 	filename, err := database.LookupFile(uuid)
 	if _, err = Restore(name, filename, tempDir); err != nil {
-		return dz, err
+		return Demozoo{}, fmt.Errorf("extract demozoo restore %q: %w", filename, err)
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		return dz, err
+		return Demozoo{}, fmt.Errorf("extract demozoo readdir %q: %w", tempDir, err)
 	}
 	zips := make(contents)
 	for i, f := range files {
@@ -50,13 +50,13 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err erro
 		zip.path = tempDir // filename gets appended by z.scan()
 		zip.filescan(f)
 		if err = zip.filemime(); err != nil {
-			return dz, err
+			return Demozoo{}, fmt.Errorf("extract demozoo filemime %q: %w", f, err)
 		}
 		zips[i] = zip
 	}
 	if nfo := findNFO(name, zips, varNames); nfo != "" {
 		if ok, err := moveText(filepath.Join(tempDir, nfo), uuid); err != nil {
-			return dz, err
+			return Demozoo{}, fmt.Errorf("extract demozo move nfo: %w", err)
 		} else if !ok {
 			dz.NFO = nfo
 		}
@@ -80,12 +80,12 @@ func moveText(name, uuid string) (ok bool, err error) {
 		return false, nil
 	}
 	if err := database.CheckUUID(uuid); err != nil {
-		return false, err
+		return false, fmt.Errorf("movetext check uuid %q: %w", uuid, err)
 	}
 	f := directories.Files(uuid)
 	size, err := FileMove(name, f.UUID+txt)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("movetext filemove %q: %w", name, err)
 	}
 	logs.Printf(" • NFO » %s", humanize.Bytes(uint64(size)))
 	return true, nil
