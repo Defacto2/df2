@@ -17,7 +17,6 @@ func testDir(name string) string {
 }
 
 func TestFileCopy(t *testing.T) {
-
 	type args struct {
 		name string
 		dest string

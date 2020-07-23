@@ -12,7 +12,6 @@ func Test_ignoreList(t *testing.T) {
 	if got := ignoreList("")["blank.png"]; !reflect.DeepEqual(got, want) {
 		t.Errorf("ignoreList() = %v, want %v", got, want)
 	}
-
 }
 
 func Test_targets(t *testing.T) {
