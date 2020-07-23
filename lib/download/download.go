@@ -1,6 +1,7 @@
 package download
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -30,17 +31,22 @@ type Request struct {
 
 // Body fetches a HTTP link and returns its data and the status code.
 func (r *Request) Body() error {
-	client := http.Client{
-		Timeout: timeout(r.Timeout),
-	}
 	_, err := url.Parse(r.Link)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodGet, r.Link, nil)
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, r.Timeout)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Link, nil)
 	if err != nil {
+		cancel()
 		return err
 	}
+	client := http.Client{}
+	go func() {
+		time.Sleep(r.Timeout)
+		cancel()
+	}()
 	res, err := client.Do(req)
 	if err != nil {
 		return err
@@ -105,55 +111,79 @@ func progressDone(name string, written int64) {
 
 // LinkDownload downloads the URL and saves it as the named file.
 func LinkDownload(name, url string) (http.Header, error) {
-	var h http.Header
+	// open local target file
 	out, err := os.Create(name)
 	if err != nil {
-		return h, err
+		return nil, err
 	}
 	defer out.Close()
-	res, err := http.Get(url)
+	// request remote file
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return h, err
+		return nil, err
 	}
-	defer res.Body.Close()
-	counter := &WriteCounter{Name: out.Name(), Total: uint64(res.ContentLength)}
-	i, err := io.Copy(out, io.TeeReader(res.Body, counter))
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
-		return h, err
+		return nil, err
+	}
+	defer resp.Body.Close()
+	// download and write remote file to local target
+	counter := &WriteCounter{Name: out.Name(), Total: uint64(resp.ContentLength)}
+	i, err := io.Copy(out, io.TeeReader(resp.Body, counter))
+	if err != nil {
+		return nil, err
 	}
 	progressDone(out.Name(), i)
-	return res.Header, nil
+	return resp.Header, nil
 }
 
 // LinkDownloadQ quietly downloads the URL and saves it to the named file.
 func LinkDownloadQ(name, url string) (http.Header, error) {
-	var h http.Header
 	out, err := os.Create(name)
 	if err != nil {
-		return h, err
+		return nil, err
 	}
 	defer out.Close()
-	res, err := http.Get(url)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return h, err
+		return nil, err
 	}
-	defer res.Body.Close()
-
-	_, err = io.Copy(out, res.Body)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
-		return h, err
+		return nil, err
 	}
-	return res.Header, nil
+	defer resp.Body.Close()
+	// download and write remote file to the local target
+	if _, err := io.Copy(out, resp.Body); err != nil {
+		return nil, err
+	}
+	return resp.Header, nil
 }
 
 // LinkPing connects to a URL and returns its HTTP status code and status text.
 func LinkPing(url string) (*http.Response, error) {
-	res, err := http.Head(url)
+	const seconds = 2 * time.Second
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, seconds)
+	req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	client := &http.Client{}
+	go func() {
+		time.Sleep(seconds)
+		cancel()
+	}()
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
-	return res, nil
+	return resp, nil
 }
 
 // StatusColor colours the HTTP status based on its severity.
