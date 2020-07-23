@@ -50,7 +50,7 @@ func Count(name string) (count int, err error) {
 	db := database.Connect()
 	defer db.Close()
 	n := name
-	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n, n, n, n, n, n, n)
+	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n)
 	if err = row.Scan(&count); err != nil {
 		return 0, err
 	}
