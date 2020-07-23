@@ -176,30 +176,18 @@ func TestFetch(t *testing.T) {
 }
 
 func TestRequest_Query(t *testing.T) {
-	type fields struct {
-		All       bool
-		Overwrite bool
-		Refresh   bool
-		Simulate  bool
-	}
 	tests := []struct {
 		name    string
-		fields  fields
 		id      string
 		wantErr bool
 	}{
-		{"empty", fields{}, "", true},
-		{"invalid", fields{}, "abcde", true},
-		{"ok", fields{}, "1", false},
+		{"empty", "", true},
+		{"invalid", "abcde", true},
+		{"ok", "1", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := Request{
-				All:       tt.fields.All,
-				Overwrite: tt.fields.Overwrite,
-				Refresh:   tt.fields.Refresh,
-				Simulate:  tt.fields.Simulate,
-			}
+			req := Request{}
 			if err := req.Query(tt.id); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
 			}

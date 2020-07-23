@@ -8,9 +8,9 @@ import (
 
 type proofFlags struct {
 	all         bool   // scan for all proofs, not just new uploads
-	id          string // auto-generated id or a uuid
 	hideMissing bool   // hide proofs that are missing their file download
 	overwrite   bool   // overwrite all existing images
+	id          string // auto-generated id or a uuid
 }
 
 var proo proofFlags

@@ -17,12 +17,12 @@ func TestRequest_Query(t *testing.T) {
 	no := fields{false, false, false}
 	tests := []struct {
 		name    string
-		fields  fields
 		id      string
+		fields  fields
 		wantErr bool
 	}{
-		{"empty", no, "", true},
-		{"missing", no, "1", false},
+		{"empty", "", no, true},
+		{"missing", "1", no, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

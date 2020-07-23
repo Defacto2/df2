@@ -86,10 +86,10 @@ var dataCmd = &cobra.Command{
 type groupFlags struct {
 	counts   bool
 	cronjob  bool
-	filter   string
-	format   string
 	init     bool
 	progress bool
+	filter   string
+	format   string
 }
 
 var gf groupFlags

@@ -29,12 +29,12 @@ const (
 type Flags struct {
 	Compress bool   // Compress and save the output
 	CronJob  bool   //
-	Limit    uint   // Limit the number of records
 	Parallel bool   // Run --table=all queries in parallel
 	Save     bool   // Save the output uncompressed
 	Table    string // Table of the database to use
 	Type     string // Type of export (create|update)
 	Version  string // df2 app version pass-through
+	Limit    uint   // Limit the number of records
 }
 
 // Tbls are the available tables in the database.

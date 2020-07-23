@@ -9,15 +9,15 @@ import (
 )
 
 type dzFlags struct {
-	all       bool   // scan for all proofs, not just new submissions
-	id        string // auto-generated id or a uuid
-	overwrite bool   // overwrite all existing assets
-	ping      uint
-	download  uint
+	all       bool // scan for all proofs, not just new submissions
+	overwrite bool // overwrite all existing assets
 	simulate  bool
 	new       bool
-	extract   []string //map[string]string
 	refresh   bool
+	id        string   // auto-generated id or a uuid
+	extract   []string //map[string]string
+	ping      uint
+	download  uint
 }
 
 var dzoo dzFlags
