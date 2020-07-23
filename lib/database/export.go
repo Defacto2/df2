@@ -100,7 +100,6 @@ func rows(table string, limit int) (values []string, err error) {
 	} else {
 		rows, err = db.Query("SELECT * FROM ? LIMIT ?", table, limit)
 	}
-	//rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err
 	} else if err := rows.Err(); err != nil {

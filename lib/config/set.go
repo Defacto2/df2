@@ -67,12 +67,11 @@ func Set(name string) {
 	}
 }
 
-var saveType = errors.New("config save: unsupported value interface type")
-
 func configSave(value interface{}) {
 	switch value.(type) {
 	case int64, string:
 	default:
+		saveType := errors.New("config save: unsupported value interface type")
 		logs.Check(saveType)
 	}
 	viper.Set(Config.nameFlag, value)
