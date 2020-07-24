@@ -37,17 +37,17 @@ var (
 func AddTarFile(path, name string, tw *tar.Writer) error {
 	fi, err := os.Lstat(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("addtarfile %q:%w", path, err)
 	}
 	var link string
 	if fi.Mode()&os.ModeSymlink != 0 {
 		if link, err = os.Readlink(path); err != nil {
-			return err
+			return fmt.Errorf("addtarfile mode:%w", err)
 		}
 	}
 	hdr, err := tar.FileInfoHeader(fi, link)
 	if err != nil {
-		return err
+		return fmt.Errorf("addtarfile header:%w", err)
 	}
 	if fi.IsDir() && !os.IsPathSeparator(name[len(name)-1]) {
 		name += "/"
@@ -58,17 +58,18 @@ func AddTarFile(path, name string, tw *tar.Writer) error {
 	} else {
 		hdr.Name = filepath.ToSlash(name)
 	}
+	fmt.Printf("hdr: %+v\n", hdr)
 	if err := tw.WriteHeader(hdr); err != nil {
-		return err
+		return fmt.Errorf("addtarfile write header:%w", err)
 	}
 	if hdr.Typeflag == tar.TypeReg {
 		file, err := os.Open(path)
 		if err != nil {
-			return err
+			return fmt.Errorf("addtarfile open %q:%w", path, err)
 		}
 		defer file.Close()
 		if _, err = io.Copy(tw, file); err != nil {
-			return err
+			return fmt.Errorf("addtarfile io.copy %q:%w", path, err)
 		}
 	}
 	return nil
@@ -154,6 +155,11 @@ func targets(target string) (count int) {
 func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 	db := database.Connect()
 	defer db.Close()
+	// count rows
+	count := 0
+	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
+		return 0, nil, err
+	}
 	// query database
 	var id, uuid string
 	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
@@ -161,8 +167,8 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 		return 0, nil, err
 	}
 	defer rows.Close()
+	uuids = make(database.IDs, count)
 	for rows.Next() {
-		uuids = make(database.IDs, len(uuids)+1)
 		if err = rows.Scan(&id, &uuid); err != nil {
 			return 0, nil, err
 		}
