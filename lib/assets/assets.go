@@ -3,6 +3,7 @@ package assets
 import (
 	"archive/tar"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -22,6 +23,15 @@ import (
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
 )
 
+type Target int
+
+const (
+	All Target = iota
+	Download
+	Emulation
+	Image
+)
+
 // files are unique UUID values used by the database and filenames.
 type files map[string]struct{}
 
@@ -32,65 +42,121 @@ var (
 	d      = directories.Init(false)
 )
 
-// AddTarFile saves the result of a fileWalk file into a TAR archive at path as the source file name.
-// Source: cloudfoundry/archiver (https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go)
-func AddTarFile(path, name string, tw *tar.Writer) error {
-	fi, err := os.Lstat(path)
-	if err != nil {
-		return fmt.Errorf("addtarfile %q:%w", path, err)
+var (
+	ErrStructNil = errors.New("structure cannot be nil")
+	ErrPathEmpty = errors.New("path cannot be empty")
+)
+
+// Clean walks through and scans directories containing UUID files
+// and erases any orphans that cannot be matched to the database.
+func Clean(target string, delete, human bool) error {
+	return clean(targetfy(target), delete, human)
+}
+
+// CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
+func CreateUUIDMap() (total int, uuids database.IDs, err error) {
+	db := database.Connect()
+	defer db.Close()
+	// count rows
+	count := 0
+	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
+		return 0, nil, err
 	}
-	var link string
-	if fi.Mode()&os.ModeSymlink != 0 {
-		if link, err = os.Readlink(path); err != nil {
-			return fmt.Errorf("addtarfile mode:%w", err)
+	// query database
+	var id, uuid string
+	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
+	if err != nil {
+		return 0, nil, err
+	}
+	defer rows.Close()
+	uuids = make(database.IDs, count)
+	for rows.Next() {
+		if err = rows.Scan(&id, &uuid); err != nil {
+			return 0, nil, err
 		}
+		// store record `uuid` value as a key name in the map `m` with an empty value
+		uuids[uuid] = empty
+		total++
 	}
-	hdr, err := tar.FileInfoHeader(fi, link)
-	if err != nil {
-		return fmt.Errorf("addtarfile header:%w", err)
+	return total, uuids, db.Close()
+}
+
+// backup is used by scanPath to backup matched orphans.
+func backup(s *scan, list []os.FileInfo) error {
+	if s == nil {
+		return fmt.Errorf("backup s (scan): %w", ErrStructNil)
+	} else if s.path == "" {
+		return fmt.Errorf("backup: %w", ErrPathEmpty)
 	}
-	if fi.IsDir() && !os.IsPathSeparator(name[len(name)-1]) {
-		name += "/"
+	test := false
+	if flag.Lookup("test.v") != nil {
+		test = true
 	}
-	if hdr.Typeflag == tar.TypeReg && name == "." {
-		// archiving a single file
-		hdr.Name = filepath.ToSlash(filepath.Base(path))
-	} else {
-		hdr.Name = filepath.ToSlash(name)
+	archive := s.archive(list)
+	// identify which files should be backed up
+	part := backupPart()
+	if test {
+		part[s.path] = "test"
 	}
-	fmt.Printf("hdr: %+v\n", hdr)
-	if err := tw.WriteHeader(hdr); err != nil {
-		return fmt.Errorf("addtarfile write header:%w", err)
-	}
-	if hdr.Typeflag == tar.TypeReg {
-		file, err := os.Open(path)
+	//return errors.New("exitonk")
+	if _, ok := part[s.path]; ok {
+		t := time.Now().Format("2006-Jan-2-150405") // Mon Jan 2 15:04:05 MST 2006
+		name, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", part[s.path], t)), s.path
+		// create tar archive
+		newTar, err := os.Create(name)
 		if err != nil {
-			return fmt.Errorf("addtarfile open %q:%w", path, err)
+			return err
 		}
-		defer file.Close()
-		if _, err = io.Copy(tw, file); err != nil {
-			return fmt.Errorf("addtarfile io.copy %q:%w", path, err)
+		tw := tar.NewWriter(newTar)
+		defer tw.Close()
+		c := 0
+		// walk through `path` and match any files marked for deletion
+		// Partial source: https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
+		err = filepath.Walk(s.path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			name, err := walkName(basepath, path)
+			if err != nil {
+				return err
+			}
+			if _, ok := archive[name]; ok || test {
+				c++
+				if c == 1 {
+					logs.Print("archiving these files before deletion\n\n")
+				}
+				return writeTar(path, name, tw)
+			}
+			return nil // no match
+		})
+		// if backup fails, then abort deletion
+		if err != nil || c == 0 {
+			// clean up any loose archives
+			newTar.Close()
+			if err := os.Remove(name); err != nil {
+				return err
+			} else if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-type results struct {
-	count int   // results handled
-	fails int   // results that failed
-	bytes int64 // bytes counted
+func backupPart() (part map[string]string) {
+	part = make(map[string]string)
+	part[d.UUID] = "uuid"
+	part[d.Img150] = "img-150xthumbs"
+	part[d.Img400] = "img-400xthumbs"
+	part[d.Img000] = "img-captures"
+	return part
 }
 
-type scan struct {
-	path   string       // directory to scan
-	delete bool         // delete any detected orphan files
-	human  bool         // humanize values shown by print output
-	m      database.IDs // UUID values fetched from the database
-}
-
-// Clean walks through and scans directories containing UUID files and erases any orphans that cannot be matched to the database.
-func Clean(target string, delete, human bool) error {
-	targets(target)
+func clean(t Target, delete, human bool) error {
+	if ts := targets(t); ts == nil {
+		return errors.New("honk")
+	}
+	fmt.Printf("mess: %+v", d)
 	// connect to the database
 	rows, m, err := CreateUUIDMap()
 	if err != nil {
@@ -122,6 +188,117 @@ func Clean(target string, delete, human bool) error {
 	return nil
 }
 
+// ignoreList is used by scanPath to filter files that should not be erased.
+func ignoreList(path string) (ignore files) {
+	ignore = make(files)
+	ignore["00000000-0000-0000-0000-000000000000"] = empty
+	ignore["blank.png"] = empty
+	if path == d.Emu {
+		ignore["g_drive.zip"] = empty
+		ignore["s_drive.zip"] = empty
+		ignore["u_drive.zip"] = empty
+		ignore["dosee-core.js"] = empty
+		ignore["dosee-core.mem"] = empty
+	}
+	return ignore
+}
+
+func targetfy(t string) Target {
+	switch strings.ToLower(t) {
+	case "all":
+		return All
+	case "download":
+		return Download
+	case "emulation":
+		return Emulation
+	case "image":
+		return Image
+	}
+	return -1
+}
+
+func targets(t Target) []string {
+	if d.Base == "" {
+		d = directories.Init(false)
+	}
+	paths = nil
+	switch t {
+	case All:
+		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400, d.Img150)
+	case Download:
+		paths = append(paths, d.UUID, d.Backup)
+	case Emulation:
+		paths = append(paths, d.Emu)
+	case Image:
+		paths = append(paths, d.Img000, d.Img400, d.Img150)
+	}
+	return paths
+}
+
+func walkName(basepath, path string) (name string, err error) {
+	if path == "" {
+		return "", fmt.Errorf("walkname: %w", ErrPathEmpty)
+	}
+	if os.IsPathSeparator(path[len(path)-1]) {
+		name, err = filepath.Rel(basepath, path)
+	} else {
+		name, err = filepath.Rel(filepath.Dir(basepath), path)
+	}
+	if err != nil {
+		return "", err
+	}
+	return filepath.ToSlash(name), nil
+}
+
+// writeTar saves the result of a fileWalk into a TAR writer.
+// Source: cloudfoundry/archiver
+// https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
+func writeTar(absPath, filename string, tw *tar.Writer) error {
+	stat, err := os.Lstat(absPath)
+	if err != nil {
+		return fmt.Errorf("writetar %q:%w", absPath, err)
+	}
+	var link string
+	if stat.Mode()&os.ModeSymlink != 0 {
+		if link, err = os.Readlink(absPath); err != nil {
+			return fmt.Errorf("writetar mode:%w", err)
+		}
+	}
+	head, err := tar.FileInfoHeader(stat, link)
+	if err != nil {
+		return fmt.Errorf("writetar header:%w", err)
+	}
+	if stat.IsDir() && !os.IsPathSeparator(filename[len(filename)-1]) {
+		filename += "/"
+	}
+	if head.Typeflag == tar.TypeReg && filename == "." {
+		// archiving a single file
+		head.Name = filepath.ToSlash(filepath.Base(absPath))
+	} else {
+		head.Name = filepath.ToSlash(filename)
+	}
+	if err := tw.WriteHeader(head); err != nil {
+		return fmt.Errorf("writetar write header:%w", err)
+	}
+	if head.Typeflag == tar.TypeReg {
+		file, err := os.Open(absPath)
+		if err != nil {
+			return fmt.Errorf("writetar open %q:%w", absPath, err)
+		}
+		defer file.Close()
+		if _, err = io.Copy(tw, file); err != nil {
+			return fmt.Errorf("writetar io.copy %q:%w", absPath, err)
+		}
+	}
+	return nil
+}
+
+type results struct {
+	count int   // results handled
+	fails int   // results that failed
+	bytes int64 // bytes counted
+}
+
 func (sum *results) calculate(s scan) error {
 	r, err := s.scanPath()
 	if err != nil {
@@ -133,49 +310,11 @@ func (sum *results) calculate(s scan) error {
 	return nil
 }
 
-func targets(target string) (count int) {
-	if d.Base == "" {
-		d = directories.Init(false)
-	}
-	paths = nil
-	switch target {
-	case "all":
-		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400, d.Img150)
-	case "download":
-		paths = append(paths, d.UUID, d.Backup)
-	case "emulation":
-		paths = append(paths, d.Emu)
-	case "image":
-		paths = append(paths, d.Img000, d.Img400, d.Img150)
-	}
-	return len(paths)
-}
-
-// CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
-func CreateUUIDMap() (total int, uuids database.IDs, err error) {
-	db := database.Connect()
-	defer db.Close()
-	// count rows
-	count := 0
-	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
-		return 0, nil, err
-	}
-	// query database
-	var id, uuid string
-	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
-	if err != nil {
-		return 0, nil, err
-	}
-	defer rows.Close()
-	uuids = make(database.IDs, count)
-	for rows.Next() {
-		if err = rows.Scan(&id, &uuid); err != nil {
-			return 0, nil, err
-		}
-		uuids[uuid] = database.Empty{} // store record `uuid` value as a key name in the map `m` with an empty value
-		total++
-	}
-	return total, uuids, db.Close()
+type scan struct {
+	path   string       // directory to scan
+	delete bool         // delete any detected orphan files
+	human  bool         // humanize values shown by print output
+	m      database.IDs // UUID values fetched from the database
 }
 
 func (s *scan) archive(list []os.FileInfo) map[string]struct{} {
@@ -198,92 +337,8 @@ func (s *scan) archive(list []os.FileInfo) map[string]struct{} {
 	return a
 }
 
-// backup is used by scanPath to backup matched orphans.
-func backup(s *scan, list []os.FileInfo) error {
-	archive := s.archive(list)
-	// identify which files should be backed up
-	part := backupPart()
-	if _, ok := part[s.path]; ok {
-		t := time.Now().Format("2006-Jan-2-150405") // Mon Jan 2 15:04:05 MST 2006
-		name, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", part[s.path], t)), s.path
-		// create tar archive
-		newTar, err := os.Create(name)
-		if err != nil {
-			return err
-		}
-		tw := tar.NewWriter(newTar)
-		defer tw.Close()
-		c := 0
-		// walk through `path` and match any files marked for deletion
-		// Partial source: https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
-		err = filepath.Walk(s.path, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			name, err := walkName(basepath, path)
-			if err != nil {
-				return err
-			}
-			if _, ok := archive[name]; ok {
-				c++
-				if c == 1 {
-					logs.Print("archiving these files before deletion\n\n")
-				}
-				return AddTarFile(path, name, tw)
-			}
-			return nil // no match
-		})
-		// if backup fails, then abort deletion
-		if err != nil || c == 0 {
-			// clean up any loose archives
-			newTar.Close()
-			if err := os.Remove(name); err != nil {
-				return err
-			} else if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func backupPart() (part map[string]string) {
-	part = make(map[string]string)
-	part[d.UUID] = "uuid"
-	part[d.Img150] = "img-150xthumbs"
-	part[d.Img400] = "img-400xthumbs"
-	part[d.Img000] = "img-captures"
-	return part
-}
-
-func walkName(basepath, path string) (name string, err error) {
-	if os.IsPathSeparator(path[len(path)-1]) {
-		name, err = filepath.Rel(basepath, path)
-	} else {
-		name, err = filepath.Rel(filepath.Dir(basepath), path)
-	}
-	if err != nil {
-		return "", err
-	}
-	return filepath.ToSlash(name), nil
-}
-
-// ignoreList is used by scanPath to filter files that should not be erased.
-func ignoreList(path string) (ignore files) {
-	ignore = make(files)
-	ignore["00000000-0000-0000-0000-000000000000"] = empty
-	ignore["blank.png"] = empty
-	if path == d.Emu {
-		ignore["g_drive.zip"] = empty
-		ignore["s_drive.zip"] = empty
-		ignore["u_drive.zip"] = empty
-		ignore["dosee-core.js"] = empty
-		ignore["dosee-core.mem"] = empty
-	}
-	return ignore
-}
-
-// scanPath gets a list of filenames located in s.path and matches the results against the list generated by CreateUUIDMap.
+// scanPath gets a list of filenames located in s.path and matches the results
+// against the list generated by CreateUUIDMap.
 func (s scan) scanPath() (stat results, err error) {
 	logs.Println(color.Primary.Sprintf("\nResults from %v", s.path))
 	// query file system
