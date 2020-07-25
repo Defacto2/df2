@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/sha512"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -56,17 +57,22 @@ func Fetch(id uint) (code int, status string, api ProductionsAPIv1) {
 // Query parses a single Demozoo entry.
 func (req Request) Query(id string) (err error) {
 	if err = database.CheckID(id); err != nil {
-		return err
+		return fmt.Errorf("request query id %s: %w", id, err)
 	}
 	prodID = id
-	return req.Queries()
+	if err := req.Queries(); err != nil {
+		return fmt.Errorf("request query queries: %w", err)
+	}
+	return nil
 }
+
+var ErrRecordCnt = errors.New("unexpected number of record values")
 
 // newRecord initialises a new file record.
 func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
 	const want = 21
 	if l := len(values); l < want {
-		return r, fmt.Errorf("demozoo newRecord: unexpected number of of values, want %d but got %d", want, l)
+		return r, fmt.Errorf("new records %q: %w", l, err)
 	}
 	r = Record{
 		count: c,
@@ -105,21 +111,19 @@ func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
 func (req Request) Queries() error {
-	st := stat{count: 0, missing: 0, total: 0}
-	stmt := selectByID()
-	start := time.Now()
+	st, stmt, start := stat{}, selectByID(), time.Now()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(stmt)
 	if err != nil {
-		return err
+		return fmt.Errorf("request queries query 1: %w", err)
 	} else if err := rows.Err(); err != nil {
-		return err
+		return fmt.Errorf("request queries rows 1: %w", rows.Err())
 	}
 	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
-		return err
+		return fmt.Errorf("request queries columns: %w", err)
 	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
@@ -127,21 +131,25 @@ func (req Request) Queries() error {
 		scanArgs[i] = &values[i]
 	}
 	storage := directories.Init(false).UUID
-	st.sumTotal(records{rows, scanArgs, values}, req)
+	if err := st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
+		return fmt.Errorf("req queries sum total: %w", err)
+	}
 	if st.total > 1 {
 		logs.Println("Total records", st.total)
 	}
 	rows, err = db.Query(stmt)
 	if err != nil {
-		return err
+		return fmt.Errorf("request queries query 2: %w", err)
 	} else if rows.Err() != nil {
-		return rows.Err()
+		return fmt.Errorf("request queries rows 2: %w", rows.Err())
 	}
 	defer rows.Close()
 	for rows.Next() {
 		fmt.Println()
 		st.fetched++
-		if skip := st.nextResult(records{rows, scanArgs, values}, req); skip {
+		if skip, err := st.nextResult(records{rows, scanArgs, values}, req); err != nil {
+			return fmt.Errorf("request queries next row: %w", err)
+		} else if skip {
 			continue
 		}
 		r, err := newRecord(st.count, values)
@@ -162,7 +170,6 @@ func (req Request) Queries() error {
 			r.save()
 		}
 	}
-	logs.Check(rows.Err())
 	if prodID != "" {
 		if st.count == 0 {
 			var t string
@@ -212,26 +219,29 @@ func selectByID() (sql string) {
 }
 
 // sumTotal calculates the total number of conditional rows.
-func (st *stat) sumTotal(rec records, req Request) {
+func (st *stat) sumTotal(rec records, req Request) error {
 	for rec.rows.Next() {
-		err := rec.rows.Scan(rec.scanArgs...)
-		logs.Check(err)
+		if err := rec.rows.Scan(rec.scanArgs...); err != nil {
+			return fmt.Errorf("sum total rows scan: %w", err)
+		}
 		if new := database.IsNew(rec.values); !new && req.flags() {
 			continue
 		}
 		st.total++
 	}
+	return nil
 }
 
 // nextResult checks for the next, new record.
-func (st *stat) nextResult(rec records, req Request) (skip bool) {
-	err := rec.rows.Scan(rec.scanArgs...)
-	logs.Check(err)
+func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
+	if err := rec.rows.Scan(rec.scanArgs...); err != nil {
+		return false, fmt.Errorf("next result rows scan: %w", err)
+	}
 	if new := database.IsNew(rec.values); !new && req.flags() {
-		return true
+		return true, nil
 	}
 	st.count++
-	return false
+	return false, nil
 }
 
 func (req Request) flags() (skip bool) {
@@ -385,33 +395,37 @@ func (r *Record) platform(api ProductionsAPIv1) {
 func (r *Record) fileMeta() (err error) {
 	stat, err := os.Stat(r.FilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("record file meta stat: %w", err)
 	}
 	r.Filesize = strconv.Itoa(int(stat.Size()))
 	// file hashes
 	f, err := os.Open(r.FilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("record file meta open: %w", err)
 	}
 	defer f.Close()
 	h1 := md5.New()
 	if _, err := io.Copy(h1, f); err != nil {
-		return err
+		return fmt.Errorf("record file meta io copy for the md5 hash: %w", err)
 	}
 	r.SumMD5 = fmt.Sprintf("%x", h1.Sum(nil))
 	h2 := sha512.New384()
 	if _, err := io.Copy(h2, f); err != nil {
-		return err
+		return fmt.Errorf("record file meta io copy for the sha512 hash: %w", err)
 	}
 	r.Sum384 = fmt.Sprintf("%x", h2.Sum(nil))
 	return nil
 }
 
-func (r *Record) doseeMeta() {
+func (r *Record) doseeMeta() error {
 	names, err := r.variations()
-	logs.Log(err)
+	if err != nil {
+		return fmt.Errorf("record dosee meta: %w", err)
+	}
 	d, err := archive.ExtractDemozoo(r.FilePath, r.UUID, &names)
-	logs.Log(err)
+	if err != nil {
+		return fmt.Errorf("record dosee meta: %w", err)
+	}
 	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
 		r.DOSeeBinary = d.DOSee
 	}
@@ -421,20 +435,21 @@ func (r *Record) doseeMeta() {
 	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
 		r.DOSeeBinary = d.DOSee
 	}
+	return nil
 }
 
 func (r Record) variations() (names []string, err error) {
 	if r.GroupBy != "" {
 		v, err := groups.Variations(r.GroupBy)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("record group by variations: %w", err)
 		}
 		names = append(names, v...)
 	}
 	if r.GroupFor != "" {
 		v, err := groups.Variations(r.GroupFor)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("record group for variations: %w", err)
 		}
 		names = append(names, v...)
 	}

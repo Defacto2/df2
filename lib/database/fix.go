@@ -12,12 +12,12 @@ import (
 func Fix() error {
 	dist, err := distinct("section")
 	if err != nil {
-		return err
+		return fmt.Errorf("fix distinct section: %w", err)
 	}
 	updateSections(&dist)
 	dist, err = distinct("platform")
 	if err != nil {
-		return err
+		return fmt.Errorf("fix distinct platform: %w", err)
 	}
 	updatePlatforms(&dist)
 	return nil
@@ -35,32 +35,32 @@ func (u Update) Execute() (count int64, err error) {
 	defer db.Close()
 	update, err := db.Prepare(u.Query)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("update execute db prepare: %w", err)
 	}
 	defer update.Close()
 	res, err := update.Exec(u.Args...)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("update execute db exec: %w", err)
 	}
 	count, err = res.RowsAffected()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("update execute rows affected: %w", err)
 	}
 	return count, db.Close()
 }
 
 func distinct(column string) (values []string, err error) {
-	result := ""
+	var result string
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query("SELECT DISTINCT ? AS `result` FROM `files` WHERE ? != \"\"", column, column)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("distinct query %q: %w", column, err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&result); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("distinct rows scan: %w", err)
 		}
 		values = append(values, result)
 	}
