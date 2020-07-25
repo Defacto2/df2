@@ -26,8 +26,8 @@ INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
 -- {{now}}
 `
 
-// Tables is a container for the tablesTmpl template.
-type Tables struct {
+// TablesTmp is a container for the tablesTmpl template.
+type TablesTmp struct {
 	VER    string
 	DB     string
 	CREATE []TablesData

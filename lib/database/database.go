@@ -32,6 +32,7 @@ const (
 	changeme = "changeme"
 	z7       = ".7z"
 	arj      = ".arj"
+	bz2      = ".bz2"
 	png      = ".png"
 	rar      = ".rar"
 	zip      = ".zip"
@@ -52,7 +53,11 @@ func (c *Connection) String() string {
 	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
 }
 
-var ErrNoID = errors.New("unique id is does not exist in the database table")
+var (
+	ErrNoID    = errors.New("unique id is does not exist in the database table")
+	ErrNoTable = errors.New("unknown database table")
+	ErrColType = errors.New("the value type is not usable with the mysql column")
+)
 
 // Empty is used as a blank value for search maps.
 // See: https://dave.cheney.net/2014/03/25/the-empty-struct
