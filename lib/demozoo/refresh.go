@@ -2,6 +2,7 @@ package demozoo
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -25,14 +26,14 @@ func RefreshMeta() error {
 	defer db.Close()
 	rows, err := db.Query(selectByID())
 	if err != nil {
-		return err
+		return fmt.Errorf("refresh meta query: %w", err)
 	} else if rows.Err() != nil {
-		return rows.Err()
+		return fmt.Errorf("refresh meta rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
-		return err
+		return fmt.Errorf("refresh meta columns: %w", err)
 	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
@@ -40,60 +41,66 @@ func RefreshMeta() error {
 		scanArgs[i] = &values[i]
 	}
 	// fetch the rows
-	st := stat{count: 0, missing: 0}
+	st := stat{}
 	for rows.Next() {
-		if st.nextRefresh(records{rows, scanArgs, values}) {
-			continue
+		if _, err := st.nextRefresh(records{rows, scanArgs, values}); err != nil {
+			return fmt.Errorf("refresh meta next row: %w", err)
 		}
 	}
-	logs.Check(rows.Err())
 	st.summary(time.Since(start))
 	return nil
 }
 
-func (st *stat) nextRefresh(rec records) (skip bool) {
-	err := rec.rows.Scan(rec.scanArgs...)
-	logs.Check(err)
+func (st *stat) nextRefresh(rec records) (skip bool, err error) {
+	if err = rec.rows.Scan(rec.scanArgs...); err != nil {
+		return true, fmt.Errorf("next refresh rows scan: %w", err)
+	}
 	st.count++
 	r, err := newRecord(st.count, rec.values)
-	logs.Check(err)
+	if err != nil {
+		return true, fmt.Errorf("next refresh new record 1: %w", err)
+	}
 	logs.Printcrf(r.String(0))
 	code, status, api := Fetch(r.WebIDDemozoo)
-	if ok := r.confirm(code, status); !ok {
-		return true
+	if ok, err := r.confirm(code, status); err != nil {
+		return true, fmt.Errorf("next refresh confirm: %w", err)
+	} else if !ok {
+		return true, nil
 	}
 	r.pouet(api)
 	r.title(api)
 	r.authors(api.Authors())
 	new, err := newRecord(st.count, rec.values)
-	logs.Check(err)
+	if err != nil {
+		return true, fmt.Errorf("next refresh new record 2: %w", err)
+	}
 	if reflect.DeepEqual(new, r) {
 		logs.Printf("• skipped %v", logs.Y())
-		return true
+		return true, nil
 	}
 	if err = r.Save(); err != nil {
 		logs.Printf("• saved %v ", logs.X())
-		logs.Log(err)
-	} else {
-		logs.Printf("• saved %v", logs.Y())
+		return true, fmt.Errorf("next refresh save: %w", err)
 	}
-	return false
+	logs.Printf("• saved %v", logs.Y())
+	return false, nil
 }
 
-func (r *Record) confirm(code int, status string) (ok bool) {
+func (r *Record) confirm(code int, status string) (ok bool, err error) {
 	const nofound, found, problems = 404, 200, 300
 	if code == nofound {
 		r.WebIDDemozoo = 0
-		if err := r.Save(); err == nil {
-			logs.Printf("(%s)\n", download.StatusColor(code, status))
+		if err := r.Save(); err != nil {
+			return true, fmt.Errorf("record confirm save: %w", err)
 		}
-		return false
+		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		return false, nil
 	}
 	if code < found || code >= problems {
 		logs.Printf("(%s)\n", download.StatusColor(code, status))
-		return false
+		return false, nil
 	}
-	return true
+	return true, nil
 }
 
 func (r *Record) pouet(api ProductionsAPIv1) {
@@ -123,29 +130,25 @@ func (r *Record) authors(a Authors) {
 		return true
 	}
 	if len(a.art) > 1 {
-		new := a.art
-		old := r.CreditArt
+		new, old := a.art, r.CreditArt
 		if !compare(new, old, "a") {
 			r.CreditArt = new
 		}
 	}
 	if len(a.audio) > 1 {
-		new := a.audio
-		old := r.CreditAudio
+		new, old := a.audio, r.CreditAudio
 		if !compare(new, old, "m") {
 			r.CreditAudio = new
 		}
 	}
 	if len(a.code) > 1 {
-		new := a.code
-		old := r.CreditCode
+		new, old := a.code, r.CreditCode
 		if !compare(new, old, "c") {
 			r.CreditCode = new
 		}
 	}
 	if len(a.text) > 1 {
-		new := a.text
-		old := r.CreditText
+		new, old := a.text, r.CreditText
 		if !compare(new, old, "t") {
 			r.CreditText = new
 		}

@@ -97,7 +97,10 @@ func Test_prodURL(t *testing.T) {
 
 func Test_randomName(t *testing.T) {
 	rand := func() bool {
-		r := randomName()
+		r, err := randomName()
+		if err != nil {
+			t.Error(err)
+		}
 		fmt.Println(r)
 		return strings.Contains(r, "df2-download")
 	}

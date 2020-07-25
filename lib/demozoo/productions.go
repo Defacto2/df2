@@ -291,25 +291,30 @@ func (dl *DownloadsAPIv1) parse() (ok bool) {
 }
 
 // randomName generates a random temporary filename.
-func randomName() (name string) {
+func randomName() (name string, err error) {
 	tmpfile, err := ioutil.TempFile("", "df2-download")
-	logs.Check(err)
-	defer os.Remove(tmpfile.Name())
-	name = tmpfile.Name()
-	err = tmpfile.Close()
-	logs.Check(err)
-	return name
+	if err != nil {
+		return "", fmt.Errorf("random name tempfile: %w", err)
+	}
+	defer tmpfile.Close()
+	if err := os.Remove(tmpfile.Name()); err != nil {
+		logs.Log(fmt.Errorf("random name remove tempfile %q: %w", tmpfile.Name(), err))
+	}
+	return tmpfile.Name(), nil
 }
 
 // saveName gets a filename from the URL or generates a random filename.
 func saveName(rawurl string) (name string, err error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("save name %q: %w", rawurl, err)
 	}
 	name = filepath.Base(u.Path)
 	if name == "." {
-		name = randomName()
+		name, err = randomName()
+		if err != nil {
+			return "", fmt.Errorf("save name random: %w", err)
+		}
 	}
 	return name, nil
 }

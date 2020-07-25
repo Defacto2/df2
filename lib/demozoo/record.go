@@ -9,7 +9,6 @@ import (
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 )
 
@@ -61,12 +60,12 @@ func (r Record) Save() error {
 	query, args := r.sql()
 	update, err := db.Prepare(query)
 	if err != nil {
-		return err
+		return fmt.Errorf("record save db prepare: %w", err)
 	}
 	defer update.Close()
 	_, err = update.Exec(args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("record save db exec: %w", err)
 	}
 	return nil
 }
@@ -80,23 +79,19 @@ func (st *stat) fileExist(r Record) (missing bool) {
 }
 
 // fileZipContent reads an archive and saves its content to the database.
-func (r *Record) fileZipContent() (ok bool) {
-	const pfx = "demozoo record filezipcontent:"
+func (r *Record) fileZipContent() (ok bool, err error) {
 	if r.FilePath == "" {
-		logs.Log(fmt.Errorf("%s r.filepath required by fileZipContent is empty", pfx))
-		return false
+		return false, fmt.Errorf("record filezipcontent: %w", ErrFilePath)
 	}
 	a, err := archive.Read(r.FilePath, r.Filename)
 	if err != nil {
 		if err.Error() == "unarr: File not found" {
-			logs.Log(fmt.Errorf("%s file not found %s", pfx, r.FilePath))
-			return false
+			return false, fmt.Errorf("record filezipcontent archive read %q: %w", r.FilePath, ErrNoFile)
 		}
-		logs.Log(err)
-		return false
+		return false, fmt.Errorf("record filezipcontent archive read: %w", err)
 	}
 	r.FileZipContent = strings.Join(a, "\n")
-	return true
+	return true, nil
 }
 
 func (r Record) sql() (query string, args []interface{}) {

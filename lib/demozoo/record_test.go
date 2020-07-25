@@ -112,8 +112,10 @@ func TestRecord_fileZipContent(t *testing.T) {
 				FilePath: tt.fields.FilePath,
 				Filename: tt.fields.Filename,
 			}
-			if gotOk := r.fileZipContent(); gotOk != tt.wantOk {
+			if gotOk, err := r.fileZipContent(); gotOk != tt.wantOk {
 				t.Errorf("Record.fileZipContent() = %v, want %v", gotOk, tt.wantOk)
+			} else if err != nil {
+				t.Error(err)
 			}
 		})
 	}

@@ -45,6 +45,13 @@ type stat struct {
 	total   int
 }
 
+var (
+	ErrRecordCnt  = errors.New("unexpected number of record values")
+	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
+	ErrFilePath   = errors.New("filepath requirement cannot be empty")
+	ErrNoFile     = errors.New("file cannot be found")
+)
+
 var prodID = ""
 
 // Fetch a Demozoo production by its ID.
@@ -65,8 +72,6 @@ func (req Request) Query(id string) (err error) {
 	}
 	return nil
 }
-
-var ErrRecordCnt = errors.New("unexpected number of record values")
 
 // newRecord initialises a new file record.
 func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
@@ -154,11 +159,16 @@ func (req Request) Queries() error {
 		}
 		r, err := newRecord(st.count, values)
 		if err != nil {
-			logs.Log(err)
-			continue
+			return fmt.Errorf("request queries new record: %w", err)
+			// logs.Log(err)
+			// continue
 		}
 		logs.Printcrf(r.String(st.total))
-		if skip := r.parseAPI(st, req.Overwrite, storage); skip {
+		if skip, err := r.parseAPI(st, req.Overwrite, storage); err != nil {
+			return fmt.Errorf("request queries parse api: %w", err)
+			// logs.Log(err)
+			// continue
+		} else if skip {
 			continue
 		}
 		switch {
@@ -252,23 +262,25 @@ func (req Request) flags() (skip bool) {
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
+func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, err error) {
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
 		fmt.Println("Clearing filename which is incorrectly set as", r.Filename)
 		r.Filename = ""
 	}
 	code, status, api := Fetch(r.WebIDDemozoo)
-	if ok := r.confirm(code, status); !ok {
-		return true
+	if ok, err := r.confirm(code, status); err != nil {
+		return true, fmt.Errorf("parse api: %w", err)
+	} else if !ok {
+		return true, nil
 	}
 	r.pingPouet(api)
 	r.FilePath = filepath.Join(storage, r.UUID)
 	if skip := r.download(overwrite, api, st); skip {
-		return true
+		return true, nil
 	}
 	if update := r.check(); !update {
-		return true
+		return true, nil
 	}
 	if r.Platform == "" {
 		r.platform(api)
@@ -277,8 +289,7 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
 	case
 		r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
-		n, _ := api.DownloadLink()
-		if n != "" {
+		if n, _ := api.DownloadLink(); n != "" {
 			fmt.Print(n)
 			r.Filename = n
 		} else {
@@ -290,16 +301,19 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool) {
 		r.SumMD5 == "",
 		r.Sum384 == "":
 		if err := r.fileMeta(); err != nil {
-			logs.Log(err)
-			return true
+			return true, fmt.Errorf("parse api: %w", err)
 		}
 		fallthrough
 	case r.FileZipContent == "":
-		if zip := r.fileZipContent(); zip {
-			r.doseeMeta()
+		if zip, err := r.fileZipContent(); err != nil {
+			return true, fmt.Errorf("parse api: %w", err)
+		} else if zip {
+			if err := r.doseeMeta(); err != nil {
+				return true, fmt.Errorf("parse api: %w", err)
+			}
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (r *Record) pingPouet(api ProductionsAPIv1) {
