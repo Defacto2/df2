@@ -14,14 +14,16 @@ import (
 )
 
 // Info prints the content of a configuration file.
-func Info() {
+func Info() error {
 	logs.Print("\nDefault configurations in use when no flags are given.\n\n")
 	sets, err := yaml.Marshal(viper.AllSettings())
-	logs.Check(err)
+	if err != nil {
+		return fmt.Errorf("info config yaml marshal: %w", err)
+	}
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())
-	ErrCheck()
+	Check()
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath())
-	dbTest := database.ConnectInfo()
+	db := database.ConnectInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {
 		s := strings.Split(scanner.Text(), ":")
@@ -37,14 +39,16 @@ func Info() {
 		val := strings.TrimSpace(strings.Join(s[1:], ""))
 		switch strings.TrimSpace(s[0]) {
 		case "server":
-			if dbTest != "" {
-				logs.Printf(" %s %s", logs.X(), dbTest)
+			if db != "" {
+				logs.Printf(" %s %s", logs.X(), db)
 			} else {
 				logs.Printf(" %s %s", color.Success.Sprint("up"), logs.Y())
 			}
 		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
 			if _, err := os.Stat(val); os.IsNotExist(err) {
 				logs.Printf(" %s %s", val, logs.X())
+			} else if err != nil {
+				return fmt.Errorf("info stat %q: %w", val, err)
 			} else {
 				logs.Printf(" %s %s", val, logs.Y())
 			}
@@ -55,20 +59,5 @@ func Info() {
 		}
 		logs.Println()
 	}
-}
-
-// ErrCheck prints a missing configuration file notice.
-func ErrCheck() {
-	if !Config.ignore {
-		errMsg()
-	}
-}
-
-func errMsg() {
-	if Config.Errors && !logs.Quiet {
-		fmt.Printf("%s %s\n", color.Warn.Sprint("config: no config file in use, please run"),
-			color.Bold.Sprintf("df2 config create"))
-	} else if Config.Errors {
-		os.Exit(1)
-	}
+	return nil
 }

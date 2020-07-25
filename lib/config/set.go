@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -13,7 +12,10 @@ import (
 )
 
 // Set edits and saves a setting within a configuration file.
-func Set(name string) {
+func Set(name string) error {
+	rec := func(value string) string {
+		return color.Info.Sprintf("(recommend: %v)", value)
+	}
 	if viper.ConfigFileUsed() == "" {
 		configMissing("set")
 	}
@@ -45,40 +47,43 @@ func Set(name string) {
 	default:
 		fmt.Printf("\n%s is currently set to \"%v\"\n", name, color.Primary.Sprint(s))
 	}
+	var err error
 	switch {
 	case name == "connection.server.host":
-		fmt.Printf("\nSet a new host, leave blank to keep as-is %v: \n", recommend("localhost"))
-		configSave(logs.PromptString(s))
+		fmt.Printf("\nSet a new host, leave blank to keep as-is %v: \n", rec("localhost"))
+		err = configSave(logs.PromptString(s))
 	case name == "connection.server.protocol":
-		fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", recommend("tcp"))
-		configSave(logs.PromptString(s))
+		fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", rec("tcp"))
+		err = configSave(logs.PromptString(s))
 	case name == "connection.server.port":
-		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", logs.PortMin, logs.PortMax, recommend("3306"))
-		configSave(logs.PromptPort())
+		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", logs.PortMin, logs.PortMax, rec("3306"))
+		err = configSave(logs.PromptPort())
 	case name[:10] == "directory.":
 		fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")
-		configSave(logs.PromptDir())
+		err = configSave(logs.PromptDir())
 	case name == "connection.password":
 		fmt.Printf("\nSet a new MySQL user encrypted or plaintext password or leave blank to keep as-is: \n")
-		configSave(logs.PromptString(s))
+		err = configSave(logs.PromptString(s))
 	default:
 		fmt.Printf("\nSet a new value, leave blank to keep as-is or use a dash [-] to disable: \n")
-		configSave(logs.PromptString(s))
+		err = configSave(logs.PromptString(s))
 	}
+	if err != nil {
+		return fmt.Errorf("set %s: %w", name, err)
+	}
+	return nil
 }
 
-func configSave(value interface{}) {
+func configSave(value interface{}) error {
 	switch value.(type) {
 	case int64, string:
 	default:
-		saveType := errors.New("config save: unsupported value interface type")
-		logs.Check(saveType)
+		return fmt.Errorf("config save: %w", ErrSaveType)
 	}
 	viper.Set(Config.nameFlag, value)
 	logs.Printf("%s %s is now set to \"%v\"\n", logs.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))
-	writeConfig(true)
-}
-
-func recommend(value string) string {
-	return color.Info.Sprintf("(recommend: %v)", value)
+	if err := writeConfig(true); err != nil {
+		return fmt.Errorf("config save: %w", err)
+	}
+	return nil
 }

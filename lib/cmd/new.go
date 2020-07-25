@@ -28,7 +28,7 @@ var newCmd = &cobra.Command{
       fix demozoo
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
-		config.ErrCheck()
+		config.Check()
 		var err error
 		// demozoo handler
 		dz := demozoo.Request{

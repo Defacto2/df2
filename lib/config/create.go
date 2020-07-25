@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,28 +12,25 @@ import (
 )
 
 // Create a configuration file.
-func Create(ow bool) {
+func Create(ow bool) error {
 	Config.ignore = true
 	if cfg := viper.ConfigFileUsed(); cfg != "" && !ow {
 		if _, err := os.Stat(cfg); !os.IsNotExist(err) {
-			configExists(cmdPath, "create")
+			cmd := strings.TrimSuffix(cmdPath, "create")
+			color.Warn.Println("a config file already is in use")
+			logs.Printf("to edit:\t%s %s\nto remove:\t%s %s\n", cmd, "edit", cmd, "delete")
+			os.Exit(1)
 		}
 		p := filepath.Dir(cfg)
 		if _, err := os.Stat(p); os.IsNotExist(err) {
 			logs.Println(p)
 			if err := os.MkdirAll(p, dir); err != nil {
-				logs.Check(err)
-				os.Exit(1)
+				return fmt.Errorf("create mkdir %q: %w", dir, err)
 			}
 		}
 	}
-	writeConfig(false)
-}
-
-func configExists(name, suffix string) {
-	cmd := strings.TrimSuffix(name, suffix)
-	color.Warn.Println("a config file already is in use")
-	logs.Printf("to edit:\t%s %s\n", cmd, "edit")
-	logs.Printf("to remove:\t%s %s\n", cmd, "delete")
-	os.Exit(1)
+	if err := writeConfig(false); err != nil {
+		return fmt.Errorf("create: %w", err)
+	}
+	return nil
 }

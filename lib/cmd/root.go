@@ -55,7 +55,7 @@ func Execute() {
 		}
 		os.Exit(1)
 	}
-	config.ErrCheck()
+	config.Check()
 }
 
 func init() {
@@ -111,7 +111,7 @@ func initConfig() {
 		home, err := os.UserHomeDir()
 		logs.Check(err)
 		viper.AddConfigPath(home)
-		viper.SetConfigName(config.ConfigName)
+		viper.SetConfigName(config.Config.Name)
 	}
 	viper.AutomaticEnv() // read in environment variables that match
 	// if a config file is found, read it in

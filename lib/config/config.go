@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,16 +19,19 @@ import (
 // directories are initialized and configured by InitDefaults() in lib/cmd.go
 
 const (
-	ConfigName             = "config.yaml"
-	cmdPath                = "df2 config"
-	dir        os.FileMode = 0700
-	file       os.FileMode = 0600
+	cmdPath              = "df2 config"
+	filename             = "config.yaml"
+	dir      os.FileMode = 0700
+	file     os.FileMode = 0600
 )
+
+var ErrSaveType = errors.New("unsupported value interface type")
 
 // settings configurations.
 type settings struct {
 	Errors   bool   // flag a config file error, used by root.go initConfig()
 	ignore   bool   // ignore config file error
+	Name     string // config filename
 	nameFlag string // viper configuration path
 }
 
@@ -34,17 +39,32 @@ var (
 	scope = gap.NewScope(gap.User, "df2")
 	// Config settings.
 	Config = settings{
+		Name:   filename,
 		Errors: false,
 		ignore: false,
 	}
 )
 
+// Check prints a missing configuration file notice.
+func Check() {
+	if Config.ignore {
+		return
+	}
+	if Config.Errors && !logs.Quiet {
+		fmt.Printf("%s %s\n",
+			color.Warn.Sprint("config: no config file in use, please run"),
+			color.Bold.Sprintf("df2 config create"))
+	} else if Config.Errors {
+		os.Exit(1)
+	}
+}
+
 // Filepath is the absolute path and filename of the configuration file.
 func Filepath() (dir string) {
-	dir, err := scope.ConfigPath(ConfigName)
+	dir, err := scope.ConfigPath(filename)
 	if err != nil {
 		h, _ := os.UserHomeDir()
-		return filepath.Join(h, ConfigName)
+		return filepath.Join(h, filename)
 	}
 	return dir
 }
@@ -56,14 +76,19 @@ func configMissing(suffix string) {
 }
 
 // writeConfig saves all configs to a configuration file.
-func writeConfig(update bool) {
+func writeConfig(update bool) error {
 	bs, err := yaml.Marshal(viper.AllSettings())
-	logs.Check(err)
+	if err != nil {
+		return fmt.Errorf("write config yaml marshal: %w", err)
+	}
 	err = ioutil.WriteFile(Filepath(), bs, file) // owner+wr
-	logs.Check(err)
+	if err != nil {
+		return fmt.Errorf("write config file %s: %w", file, err)
+	}
 	s := "created a new"
 	if update {
 		s = "updated the"
 	}
 	logs.Println(s+" config file", Filepath())
+	return nil
 }

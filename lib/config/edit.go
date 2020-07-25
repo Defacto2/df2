@@ -11,13 +11,13 @@ import (
 
 // Edit a configuration file.
 func Edit() {
-	cfg := viper.ConfigFileUsed()
+	var editors = [3]string{"micro", "nano", "vim"}
+	cfg, edit := viper.ConfigFileUsed(), ""
 	if cfg == "" {
 		configMissing("edit")
 	}
-	var edit string
+	const missing = "no suitable editor could be found\nplease set one by creating a $EDITOR environment variable in your shell configuration"
 	if err := viper.BindEnv("editor", "EDITOR"); err != nil {
-		editors := [3]string{"micro", "nano", "vim"}
 		for _, editor := range editors {
 			if _, err := exec.LookPath(editor); err == nil {
 				edit = editor
@@ -27,17 +27,18 @@ func Edit() {
 		if edit != "" {
 			log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
 		} else {
-			editNotFound()
+			log.Panicln(missing)
+			os.Exit(1)
 		}
 	} else {
 		edit = viper.GetString("editor")
 		if _, err := exec.LookPath(edit); err != nil {
 			if edit != "" {
 				log.Printf("%q edit command not found\n%v", edit, exec.ErrNotFound)
-				os.Exit(1)
 			} else {
-				editNotFound()
+				log.Panicln(missing)
 			}
+			os.Exit(1)
 		}
 	}
 	// credit: https://stackoverflow.com/questions/21513321/how-to-start-vim-from-go
@@ -47,9 +48,4 @@ func Edit() {
 	if err := exe.Run(); err != nil {
 		logs.Printf("%s\n", err)
 	}
-}
-
-func editNotFound() {
-	log.Println("no suitable editor could be found\nplease set one by creating a $EDITOR environment variable in your shell configuration")
-	os.Exit(1)
 }

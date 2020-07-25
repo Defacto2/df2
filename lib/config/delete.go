@@ -9,7 +9,7 @@ import (
 )
 
 // Delete a configuration file.
-func Delete() {
+func Delete() error {
 	cfg := viper.ConfigFileUsed()
 	if cfg == "" {
 		configMissing("delete")
@@ -19,9 +19,10 @@ func Delete() {
 	}
 	if ok := logs.PromptYN("Remove the config file", false); ok {
 		if err := os.Remove(cfg); err != nil {
-			logs.Check(fmt.Errorf("config delete: could not remove %v %v", cfg, err))
+			return fmt.Errorf("delete remove %q: %w", cfg, err)
 		}
 		logs.Println("the config is gone")
 	}
 	os.Exit(0)
+	return nil
 }
