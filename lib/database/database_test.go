@@ -89,7 +89,7 @@ func TestDateTime(t *testing.T) {
 	}
 }
 
-func Test_isNew(t *testing.T) {
+func Test_valid(t *testing.T) {
 	type args struct {
 		deleted sql.RawBytes
 		updated sql.RawBytes
@@ -107,13 +107,13 @@ func Test_isNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := isNew(tt.args.deleted, tt.args.updated)
+			got, err := valid(tt.args.deleted, tt.args.updated)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("isNew() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("valid() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("isNew() = %v, want %v", got, tt.want)
+				t.Errorf("valid() = %v, want %v", got, tt.want)
 			}
 		})
 	}

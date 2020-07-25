@@ -2,7 +2,9 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"math"
 	"net"
 	"os"
@@ -26,6 +28,15 @@ const UpdateID string = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 // Datetime MySQL 5.7 format.
 const Datetime string = "2006-01-02T15:04:05Z"
 
+const (
+	changeme = "changeme"
+	z7       = ".7z"
+	arj      = ".arj"
+	png      = ".png"
+	rar      = ".rar"
+	zip      = ".zip"
+)
+
 // Connection information for a MySQL database.
 type Connection struct {
 	Name     string // database name
@@ -37,26 +48,18 @@ type Connection struct {
 	Port     string
 }
 
+func (c *Connection) String() string {
+	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
+}
+
+var ErrNoID = errors.New("unique id is does not exist in the database table")
+
 // Empty is used as a blank value for search maps.
 // See: https://dave.cheney.net/2014/03/25/the-empty-struct
 type Empty struct{}
 
 // IDs are unique UUID values used by the database and filenames.
 type IDs map[string]struct{}
-
-func (c *Connection) String() string {
-	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
-}
-
-// defaults initializes default connection settings.
-func defaults() {
-	viper.SetDefault("connection.name", "defacto2-inno")
-	viper.SetDefault("connection.user", "root")
-	viper.SetDefault("connection.password", "password")
-	viper.SetDefault("connection.server.protocol", "tcp")
-	viper.SetDefault("connection.server.host", "localhost")
-	viper.SetDefault("connection.server.port", "3306")
-}
 
 // Init initializes the database connection using stored settings.
 func Init() Connection {
@@ -85,27 +88,24 @@ func Connect() *sql.DB {
 	c := Init()
 	db, err := sql.Open("mysql", c.String())
 	if err != nil {
-		e := strings.Replace(err.Error(), c.Pass, "****", 1)
-		logs.Check(fmt.Errorf(e))
+		e := errors.New(strings.Replace(err.Error(), c.Pass, "****", 1))
+		log.Fatal(fmt.Errorf("connect database open: %w", e))
 	}
 	// ping the server to make sure the connection works
 	if err = db.Ping(); err != nil {
 		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, "****", 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
-		p := color.Primary.Sprint
-		if err, ok := err.(*mysql.MySQLError); ok {
-			e := strings.Replace(err.Error(), c.User, p(c.User), 1)
-			logs.Check(fmt.Errorf("%s %v", color.Info.Sprint("MySQL"), e))
+		if err, _ := err.(*mysql.MySQLError); err != nil {
+			log.Fatal(fmt.Errorf("connect database mysql: %w", err))
 		}
-		if err, ok := err.(*net.OpError); ok {
+		if err, _ := err.(*net.OpError); err != nil {
 			if strings.Contains(err.Error(), "connect: connection refused") {
-				logs.Check(fmt.Errorf("database server %v is either down or the %v %v port is blocked",
-					p(c.Address), p(c.Protocol), p(c.Port)))
-			} else {
-				logs.Check(err)
+				log.Fatal(fmt.Errorf("database server %v is either down or the %v %v port is blocked",
+					c.Address, c.Protocol, c.Port))
 			}
 		}
+		log.Fatal(fmt.Errorf("connect database: %w", err))
 	}
 	return db
 }
@@ -115,11 +115,11 @@ func ConnectErr() (db *sql.DB, err error) {
 	c := Init()
 	db, err = sql.Open("mysql", c.String())
 	if err != nil {
-		e := strings.Replace(err.Error(), c.Pass, "****", 1)
-		return nil, fmt.Errorf(e)
+		e := errors.New(strings.Replace(err.Error(), c.Pass, "****", 1))
+		return nil, fmt.Errorf("mysql open error: %w", e)
 	}
 	if err = db.Ping(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("mysql ping error: %w", err)
 	}
 	return db, nil
 }
@@ -142,29 +142,15 @@ func ConnectInfo() string {
 		}
 		if err, ok := err.(*net.OpError); ok {
 			if strings.Contains(err.Error(), "connect: connection refused") {
-				return fmt.Sprint(fmt.Errorf("%s '%v' %s", color.Danger.Sprint("database server"), color.Primary.Sprint(c.Server), color.Danger.Sprint("is either down or the port is blocked")))
+				return fmt.Sprint(fmt.Errorf("%s '%v' %s",
+					color.Danger.Sprint("database server"),
+					color.Primary.Sprint(c.Server),
+					color.Danger.Sprint("is either down or the port is blocked")))
 			}
 			return color.Danger.Sprint(err)
 		}
 	}
 	return ""
-}
-
-// DateTime colours and formats a date and time string.
-func DateTime(b sql.RawBytes) string {
-	v := string(b)
-	if v == "" {
-		return ""
-	}
-	t, err := time.Parse(Datetime, v)
-	if err != nil {
-		logs.Log(err)
-		return "?"
-	}
-	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
-		return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 2006 ")))
-	}
-	return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 15:04")))
 }
 
 // CheckID reports an error message for an incorrect universal unique record id or MySQL auto-generated id.
@@ -190,44 +176,53 @@ func ColumnTypes(table string) error {
 	// LIMIT 0 quickly returns an empty set
 	rows, err := db.Query("SELECT * FROM ? LIMIT 0", table)
 	if err != nil {
-		return err
+		return fmt.Errorf("column types query: %w", err)
 	} else if rows.Err() != nil {
-		return rows.Err()
+		return fmt.Errorf("column types rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	colTypes, err := rows.ColumnTypes()
 	if err != nil {
-		return err
+		return fmt.Errorf("column types: %w", err)
 	}
 	const padding = 3
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', tabwriter.AlignRight)
 	fmt.Fprintln(w, "Column name\tType\tNullable\tLength\t")
 	for _, s := range colTypes {
-		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t\n", s.Name(), s.DatabaseTypeName(), nullable(s), colLen(s))
+		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t\n", s.Name(), s.DatabaseTypeName(), nullable(s), collen(s))
 	}
-	return w.Flush()
+	if err = w.Flush(); err != nil {
+		return fmt.Errorf("column types flush tab writer: %w", err)
+	}
+	return nil
 }
 
-func nullable(s *sql.ColumnType) string {
-	n, ok := s.Nullable()
-	if !ok {
+// DateTime colours and formats a date and time string.
+func DateTime(b sql.RawBytes) string {
+	v := string(b)
+	if v == "" {
 		return ""
 	}
-	if n {
-		return "✓"
+	t, err := time.Parse(Datetime, v)
+	if err != nil {
+		logs.Log(err)
+		return "?"
 	}
-	return "✗"
+	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
+		return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 2006 ")))
+	}
+	return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 15:04")))
 }
 
-func colLen(s *sql.ColumnType) string {
-	l, ok := s.Length()
-	if !ok {
-		return ""
+// FileUpdate reports if the file is newer than the database time.
+func FileUpdate(name string, database time.Time) (bool, error) {
+	f, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return true, nil
+	} else if err != nil {
+		return false, fmt.Errorf("file update stat %q: %w", name, err)
 	}
-	if l > 0 {
-		return strconv.Itoa(int(l))
-	}
-	return ""
+	return !f.ModTime().UTC().After(database.UTC()), nil
 }
 
 // IsID reports whether string is a autogenerated record id.
@@ -244,6 +239,16 @@ func IsID(s string) bool {
 	return true
 }
 
+// IsNew reports if a file record is set to unapproved.
+func IsNew(b []sql.RawBytes) bool {
+	if b[2] == nil {
+		return false
+	}
+	new, err := valid(b[2], b[3])
+	logs.Log(err)
+	return new
+}
+
 // IsUUID reports whether string is a universal unique record id.
 func IsUUID(s string) bool {
 	if _, err := uuid.Parse(s); err != nil {
@@ -252,54 +257,13 @@ func IsUUID(s string) bool {
 	return true
 }
 
-// IsNew reports if a file record is set to unapproved.
-func IsNew(b []sql.RawBytes) bool {
-	if b[2] == nil {
-		return false
-	}
-	new, err := isNew(b[2], b[3])
-	logs.Log(err)
-	return new
-}
-
-func isNew(deleted, updated sql.RawBytes) (bool, error) {
-	const (
-		min = -5
-		max = 5
-	)
-	// normalise the date values as sometimes updatedat & deletedat can be off by a second.
-	del, err := time.Parse(time.RFC3339, string(deleted))
-	if err != nil {
-		return false, err
-	}
-	upd, err := time.Parse(time.RFC3339, string(updated))
-	if err != nil {
-		return false, err
-	}
-	if diff := upd.Sub(del); diff.Seconds() > max || diff.Seconds() < min {
-		return false, nil
-	}
-	return true, nil
-}
-
-// FileUpdate reports if the file is newer than the database time.
-func FileUpdate(name string, database time.Time) (bool, error) {
-	f, err := os.Stat(name)
-	if os.IsNotExist(err) {
-		return true, nil
-	} else if err != nil {
-		return false, err
-	}
-	return !f.ModTime().UTC().After(database.UTC()), nil
-}
-
 // LastUpdate reports the time when the files database was last modified.
 func LastUpdate() (t time.Time, err error) {
 	db := Connect()
 	defer db.Close()
 	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat` ORDER BY `updatedat` DESC LIMIT 1")
 	if err := row.Scan(&t); err != nil {
-		return t, err
+		return t, fmt.Errorf("last update: %w", err)
 	}
 	return t, nil
 }
@@ -308,18 +272,20 @@ func LastUpdate() (t time.Time, err error) {
 func LookupID(s string) (id uint, err error) {
 	db := Connect()
 	defer db.Close()
+	// auto increment numeric ids
 	if v, err := strconv.Atoi(s); err == nil {
 		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
 		if err = db.QueryRow("SELECT EXISTS(SELECT * FROM files WHERE id=?)", v).Scan(&id); err != nil {
-			return 0, fmt.Errorf("lookupid: %s", err)
+			return 0, fmt.Errorf("lookupid query row: %w", err)
 		} else if id == 0 {
-			return 0, fmt.Errorf("lookupid: unique id '%v' is does not exist in the database", v)
+			return 0, fmt.Errorf("lookupid %q: %w", v, ErrNoID)
 		}
 		return uint(v), nil
 	}
+	// uuid ids
 	s = strings.ToLower(s)
 	if err = db.QueryRow("SELECT id FROM files WHERE uuid=?", s).Scan(&id); err != nil {
-		return 0, fmt.Errorf("lookupid: uuid '%v' is does not exist in the database", s)
+		return 0, fmt.Errorf("lookupid %q: %w", s, ErrNoID)
 	}
 	return id, db.Close()
 }
@@ -331,17 +297,17 @@ func LookupFile(s string) (name string, err error) {
 	if v, err := strconv.Atoi(s); err == nil {
 		q := fmt.Sprintf("SELECT filename FROM files WHERE id='%d'", v)
 		if err = db.QueryRow(q).Scan(&name); err != nil {
-			return "", fmt.Errorf("lookupfile: %s", err)
+			return "", fmt.Errorf("lookup file queryrow: %w", err)
 		} else if name == "" {
-			return "", fmt.Errorf("lookupfile: unique id '%v' is does not exist in the database", v)
+			return "", fmt.Errorf("lookup file %q: %w", v, ErrNoID)
 		}
-		return name, err
+		return name, nil
 	}
 	s = strings.ToLower(s)
 	if err = db.QueryRow("SELECT filename FROM files WHERE uuid=?", s).Scan(&name); err != nil {
-		return "", fmt.Errorf("lookupfile: uuid '%v' is does not exist in the database", s)
+		return "", fmt.Errorf("lookup file %q: %w", s, ErrNoID)
 	}
-	return name, err
+	return name, nil
 }
 
 // ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
@@ -379,34 +345,22 @@ func ObfuscateParam(param string) string {
 	return strconv.FormatInt(int64(b), 16) + strconv.FormatInt(int64(a), 16)
 }
 
-// reverseInt swaps the direction of the value, 12345 would return 54321.
-func reverseInt(value uint) (reversed uint, err error) {
-	v, s, n := strconv.Itoa(int(value)), "", 0
-	for x := len(v); x > 0; x-- {
-		s += string(v[x-1])
-	}
-	if n, err = strconv.Atoi(s); err != nil {
-		return value, err
-	}
-	return uint(n), nil
-}
-
-// RenGroup replaces all instances of the old group name with the new group name.
-func RenGroup(new, old string) (count int64, err error) {
+// Rename replaces all instances of the group name with a new group name.
+func Rename(new, group string) (count int64, err error) {
 	db := Connect()
 	defer db.Close()
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?, group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("rename group statement: %w", err)
 	}
 	defer stmt.Close()
-	res, err := stmt.Exec(new, new, old, old)
+	res, err := stmt.Exec(new, new, group, group)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("rename group exec: %w", err)
 	}
 	count, err = res.RowsAffected()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("rename group rows affected: %w", err)
 	}
 	return count, db.Close()
 }
@@ -420,13 +374,76 @@ func Total(s *string) (sum int, err error) {
 	case err != nil && strings.Contains(err.Error(), "SQL syntax"):
 		logs.Println(s)
 	case err != nil:
-		return -1, err
+		return -1, fmt.Errorf("total query: %w", err)
 	case rows.Err() != nil:
-		return -1, rows.Err()
+		return -1, fmt.Errorf("total query rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	for rows.Next() {
 		sum++
 	}
 	return sum, db.Close()
+}
+
+func collen(s *sql.ColumnType) string {
+	l, ok := s.Length()
+	if !ok {
+		return ""
+	}
+	if l > 0 {
+		return strconv.Itoa(int(l))
+	}
+	return ""
+}
+
+// defaults initializes default connection settings.
+func defaults() {
+	viper.SetDefault("connection.name", "defacto2-inno")
+	viper.SetDefault("connection.user", "root")
+	viper.SetDefault("connection.password", "password")
+	viper.SetDefault("connection.server.protocol", "tcp")
+	viper.SetDefault("connection.server.host", "localhost")
+	viper.SetDefault("connection.server.port", "3306")
+}
+
+func nullable(s *sql.ColumnType) string {
+	n, ok := s.Nullable()
+	if !ok {
+		return ""
+	}
+	if n {
+		return "✓"
+	}
+	return "✗"
+}
+
+// reverseInt swaps the direction of the value, 12345 would return 54321.
+func reverseInt(value uint) (reversed uint, err error) {
+	v, s, n := strconv.Itoa(int(value)), "", 0
+	for x := len(v); x > 0; x-- {
+		s += string(v[x-1])
+	}
+	if n, err = strconv.Atoi(s); err != nil {
+		return value, fmt.Errorf("reverse int %q: %w", s, err)
+	}
+	return uint(n), nil
+}
+func valid(deleted, updated sql.RawBytes) (bool, error) {
+	const (
+		min = -5
+		max = 5
+	)
+	// normalise the date values as sometimes updatedat & deletedat can be off by a second.
+	del, err := time.Parse(time.RFC3339, string(deleted))
+	if err != nil {
+		return false, fmt.Errorf("valid deleted time: %w", err)
+	}
+	upd, err := time.Parse(time.RFC3339, string(updated))
+	if err != nil {
+		return false, fmt.Errorf("valid updated time: %w", err)
+	}
+	if diff := upd.Sub(del); diff.Seconds() > max || diff.Seconds() < min {
+		return false, nil
+	}
+	return true, nil
 }
