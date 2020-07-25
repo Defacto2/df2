@@ -56,7 +56,7 @@ func parse(s *scan, list *[]os.FileInfo) (stat results, err error) {
 			}
 		}
 		if err := w.Flush(); err != nil {
-			return stat, err
+			return stat, fmt.Errorf("parse tabwriter flush: %w", err)
 		}
 	}
 	return stat, nil

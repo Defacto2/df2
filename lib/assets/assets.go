@@ -60,19 +60,19 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 	// count rows
 	count := 0
 	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
-		return 0, nil, err
+		return 0, nil, fmt.Errorf("create uuid map query row: %w", err)
 	}
 	// query database
 	var id, uuid string
 	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, fmt.Errorf("create uuid map query: %w", err)
 	}
 	defer rows.Close()
 	uuids = make(database.IDs, count)
 	for rows.Next() {
 		if err = rows.Scan(&id, &uuid); err != nil {
-			return 0, nil, err
+			return 0, nil, fmt.Errorf("create uuid map row: %w", err)
 		}
 		// store record `uuid` value as a key name in the map `m` with an empty value
 		uuids[uuid] = empty
@@ -105,7 +105,7 @@ func backup(s *scan, list []os.FileInfo) error {
 		// create tar archive
 		newTar, err := os.Create(name)
 		if err != nil {
-			return err
+			return fmt.Errorf("backup create %q: %w", name, err)
 		}
 		tw := tar.NewWriter(newTar)
 		defer tw.Close()
@@ -114,18 +114,20 @@ func backup(s *scan, list []os.FileInfo) error {
 		// Partial source: https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
 		err = filepath.Walk(s.path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return fmt.Errorf("backup walk %q: %w", path, err)
 			}
 			name, err := walkName(basepath, path)
 			if err != nil {
-				return err
+				return fmt.Errorf("backup walk name %q: %w", path, err)
 			}
 			if _, ok := archive[name]; ok || test {
 				c++
 				if c == 1 {
 					logs.Print("archiving these files before deletion\n\n")
 				}
-				return writeTar(path, name, tw)
+				if err := writeTar(path, name, tw); err != nil {
+					return fmt.Errorf("backup write tar %q: %w", path, err)
+				}
 			}
 			return nil // no match
 		})
@@ -134,9 +136,7 @@ func backup(s *scan, list []os.FileInfo) error {
 			// clean up any loose archives
 			newTar.Close()
 			if err := os.Remove(name); err != nil {
-				return err
-			} else if err != nil {
-				return err
+				return fmt.Errorf("backup remove %q: %w", name, err)
 			}
 		}
 	}
@@ -160,7 +160,7 @@ func clean(t Target, delete, human bool) error {
 	// connect to the database
 	rows, m, err := CreateUUIDMap()
 	if err != nil {
-		return err
+		return fmt.Errorf("clean uuid map: %w", err)
 	}
 	logs.Println("The following files do not match any UUIDs in the database")
 	// parse directories
@@ -168,7 +168,7 @@ func clean(t Target, delete, human bool) error {
 	for p := range paths {
 		s := scan{path: paths[p], delete: delete, human: human, m: m}
 		if err := sum.calculate(s); err != nil {
-			return err
+			return fmt.Errorf("clean sum calculate: %w", err)
 		}
 	}
 	// output a summary of the results
@@ -245,7 +245,7 @@ func walkName(basepath, path string) (name string, err error) {
 		name, err = filepath.Rel(filepath.Dir(basepath), path)
 	}
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("walkname rel-path: %w", err)
 	}
 	return filepath.ToSlash(name), nil
 }
@@ -302,7 +302,7 @@ type results struct {
 func (sum *results) calculate(s scan) error {
 	r, err := s.scanPath()
 	if err != nil {
-		return err
+		return fmt.Errorf("sum calculate: %w", err)
 	}
 	sum.bytes += r.bytes
 	sum.count += r.count
@@ -348,7 +348,7 @@ func (s scan) scanPath() (stat results, err error) {
 		if errors.As(err, &e) {
 			logs.Println(color.Warn.Sprint("assets scanpath: no such directory"))
 		} else {
-			return stat, err
+			return stat, fmt.Errorf("scan path readdir %q: %w", s.path, err)
 		}
 	}
 	// files to ignore
@@ -356,13 +356,13 @@ func (s scan) scanPath() (stat results, err error) {
 	// archive files that are to be deleted
 	if s.delete {
 		if err := backup(&s, list); err != nil {
-			return stat, err
+			return stat, fmt.Errorf("scan path backup: %w", err)
 		}
 	}
 	// list and if requested, delete orphaned files
 	stat, err = parse(&s, &list)
 	if err != nil {
-		return stat, err
+		return stat, fmt.Errorf("scan path parse: %w", err)
 	}
 	var dsc string
 	if s.human {
@@ -371,5 +371,6 @@ func (s scan) scanPath() (stat results, err error) {
 		dsc = fmt.Sprintf("%v B", stat.bytes)
 	}
 	logs.Print(fmt.Sprintf("\n%v orphaned files\n%v drive space consumed\n", stat.count, dsc))
-	return stat, nil // number of orphaned files discovered, deletion failures, their cumulative size in bytes
+	// number of orphaned files discovered, deletion failures, their cumulative size in bytes
+	return stat, nil
 }
