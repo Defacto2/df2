@@ -183,49 +183,12 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 
 // Downloads parses the Demozoo DownloadLinks and saves the first suitable download.
 func (p *ProductionsAPIv1) Downloads() {
-	//const found = 200
 	for _, l := range p.DownloadLinks {
-		//var l DownloadsAPIv1 = l // apply type so we can use it with methods
 		if err := p.Download(l); err != nil {
 			log.Printf(" %s", err)
 		} else {
 			break
 		}
-		// if ok := l.parse(); !ok {
-		// 	logs.Print(" not usable\n")
-		// 	continue
-		// }
-		// ping, err := download.LinkPing(l.URL)
-		// if err != nil {
-		// 	logs.Log(err)
-		// 	continue
-		// }
-		// defer ping.Body.Close()
-		// if ping.StatusCode != found {
-		// 	logs.Printf(" %s", ping.Status) // print the HTTP status
-		// 	continue
-		// }
-		// save, err := saveName(l.URL)
-		// if err != nil {
-		// 	logs.Log(err)
-		// 	continue
-		// }
-		// temp, err := ioutil.TempDir("", "demozoo-download")
-		// if err != nil {
-		// 	logs.Log(err)
-		// 	continue
-		// }
-		// saveDest, err := filepath.Abs(filepath.Join(temp, save))
-		// if err != nil {
-		// 	logs.Log(err)
-		// 	continue
-		// }
-		// _, err = download.LinkDownload(saveDest, l.URL)
-		// if err != nil {
-		// 	logs.Log(err)
-		// 	continue
-		// }
-		// break
 	}
 }
 

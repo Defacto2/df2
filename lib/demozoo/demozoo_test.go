@@ -9,6 +9,33 @@ import (
 	"testing"
 )
 
+func TestRequest_Query(t *testing.T) {
+	r := Request{
+		All:       false,
+		Overwrite: false,
+		Refresh:   false,
+		Simulate:  true,
+	}
+	tests := []struct {
+		name    string
+		id      string
+		wantErr bool
+	}{
+		{"empty", "", true},
+		{"invalid", "abcde", true},
+		{"not demozoo", "1", false},
+		{"demozoo by id", "22884", false},
+		{"demozoo by uuid", "0d4777a3-181a-4ce4-bcf2-2093b48be83b", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := r.Query(tt.id); (err != nil) != tt.wantErr {
+				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func Test_mutateURL(t *testing.T) {
 	exp, _ := url.Parse("http://example.com")
 	bro, _ := url.Parse("not-a-valid-url")
@@ -181,26 +208,6 @@ func TestFetch(t *testing.T) {
 	}
 }
 
-func TestRequest_Query(t *testing.T) {
-	tests := []struct {
-		name    string
-		id      string
-		wantErr bool
-	}{
-		{"empty", "", true},
-		{"invalid", "abcde", true},
-		{"ok", "1", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := Request{}
-			if err := req.Query(tt.id); (err != nil) != tt.wantErr {
-				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func values() []sql.RawBytes {
 	v := []sql.RawBytes{
 		[]byte("1"), // id
@@ -272,6 +279,89 @@ func Test_newRecord(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotR.CreditText, tt.wantText) {
 				t.Errorf("newRecord().CreditText = %v, want %v", gotR.CreditText, tt.wantText)
+			}
+		})
+	}
+}
+
+func TestRecord_download(t *testing.T) {
+	type fields struct {
+		UUID string
+	}
+	type args struct {
+		overwrite bool
+		api       ProductionsAPIv1
+		st        stat
+	}
+	tests := []struct {
+		name     string
+		fields   fields
+		args     args
+		wantSkip bool
+	}{
+		{"empty", fields{}, args{}, true},
+		{"okay", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, args{}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Record{
+				UUID: tt.fields.UUID,
+			}
+			if gotSkip := r.download(tt.args.overwrite, tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
+				t.Errorf("Record.download() = %v, want %v", gotSkip, tt.wantSkip)
+			}
+		})
+	}
+}
+
+func TestRecord_doseeMeta(t *testing.T) {
+	type fields struct {
+		ID   string
+		UUID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{"empty", fields{}, true},
+		{"id", fields{ID: "22884"}, true},
+		{"uuid", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, true}, // because physical files are missing
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Record{
+				ID:   tt.fields.ID,
+				UUID: tt.fields.UUID,
+			}
+			if err := r.doseeMeta(); (err != nil) != tt.wantErr {
+				t.Errorf("Record.doseeMeta() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+func TestRecord_fileMeta(t *testing.T) {
+	type fields struct {
+		ID   string
+		UUID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{"empty", fields{}, true},
+		{"id", fields{ID: "22884"}, true},
+		{"uuid", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, true}, // because physical files are missing
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Record{
+				ID:   tt.fields.ID,
+				UUID: tt.fields.UUID,
+			}
+			if err := r.fileMeta(); (err != nil) != tt.wantErr {
+				t.Errorf("Record.fileMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
