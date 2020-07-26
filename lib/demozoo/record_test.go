@@ -97,14 +97,15 @@ func TestRecord_fileZipContent(t *testing.T) {
 	}
 	pwd = filepath.Join(pwd, "../..")
 	tests := []struct {
-		name   string
-		fields fields
-		wantOk bool
+		name    string
+		fields  fields
+		wantOk  bool
+		wantErr bool
 	}{
-		{name: "empty", fields: fields{}, wantOk: false},
-		{"missing", fields{FilePath: "/dev/null"}, false},
-		{"7z", fields{FilePath: "tests/demozoo"}, false}, // not supported
-		{"zip", fields{FilePath: filepath.Join(pwd, "tests/demozoo/test.zip")}, true},
+		{"empty", fields{}, false, true},
+		{"missing", fields{FilePath: "/dev/null"}, false, true},
+		{"7z", fields{FilePath: "tests/demozoo"}, false, true}, // not supported
+		{"zip", fields{FilePath: filepath.Join(pwd, "tests/demozoo/test.zip")}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -112,10 +113,12 @@ func TestRecord_fileZipContent(t *testing.T) {
 				FilePath: tt.fields.FilePath,
 				Filename: tt.fields.Filename,
 			}
-			if gotOk, err := r.fileZipContent(); gotOk != tt.wantOk {
+			gotOk, err := r.fileZipContent()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Record.fileZipContent()  error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if gotOk != tt.wantOk {
 				t.Errorf("Record.fileZipContent() = %v, want %v", gotOk, tt.wantOk)
-			} else if err != nil {
-				t.Error(err)
 			}
 		})
 	}

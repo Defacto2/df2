@@ -18,16 +18,13 @@ type Record struct {
 	FilePath       string // absolute path to file
 	ID             string // MySQL auto increment id
 	UUID           string // record unique id
-	WebIDDemozoo   uint   // demozoo production id
-	WebIDPouet     uint
 	Filename       string
 	Filesize       string
 	FileZipContent string
 	CreatedAt      string
 	UpdatedAt      string
-	SumMD5         string    // file download MD5 hash
-	Sum384         string    // file download SHA384 hash
-	LastMod        time.Time // file download last modified time
+	SumMD5         string // file download MD5 hash
+	Sum384         string // file download SHA384 hash
 	Readme         string
 	DOSeeBinary    string
 	Platform       string
@@ -39,6 +36,9 @@ type Record struct {
 	CreditCode     []string
 	CreditArt      []string
 	CreditAudio    []string
+	WebIDDemozoo   uint // demozoo production id
+	WebIDPouet     uint
+	LastMod        time.Time // file download last modified time
 }
 
 func (r Record) String(total int) string {
@@ -68,14 +68,6 @@ func (r Record) Save() error {
 		return fmt.Errorf("record save db exec: %w", err)
 	}
 	return nil
-}
-
-func (st *stat) fileExist(r Record) (missing bool) {
-	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
-		st.missing++
-		return true
-	}
-	return false
 }
 
 // fileZipContent reads an archive and saves its content to the database.
@@ -176,4 +168,12 @@ func (r Record) sql() (query string, args []interface{}) {
 	query = "UPDATE files SET " + strings.Join(set, ",") + " WHERE id=?"
 	args = append(args, []interface{}{r.ID}...)
 	return query, args
+}
+
+func (st *stat) fileExist(r Record) (missing bool) {
+	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
+		st.missing++
+		return true
+	}
+	return false
 }

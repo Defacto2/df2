@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +15,14 @@ import (
 	"github.com/Defacto2/df2/lib/download"
 	"github.com/Defacto2/df2/lib/logs"
 )
+
+// Authors contains Defacto2 people rolls.
+type Authors struct {
+	text  []string // credit_text, writer
+	code  []string // credit_program, programmer/coder
+	art   []string // credit_illustration, artist/graphics
+	audio []string // credit_audio, musician/sound
+}
 
 // ProductionsAPIv1 productions API v1.
 // This can be dynamically generated at https://mholt.github.io/json-to-go/
@@ -85,8 +94,30 @@ type ProductionsAPIv1 struct {
 	} `json:"screenshots"`
 }
 
+// Authors parses Demozoo authors and reclassifies them into Defacto2 people rolls.
+func (p *ProductionsAPIv1) Authors() Authors {
+	var a Authors
+	for _, n := range p.Credits {
+		if n.Nick.Releaser.IsGroup {
+			continue
+		}
+		switch category(n.Category) {
+		case Text:
+			a.text = append(a.text, n.Nick.Name)
+		case Code:
+			a.code = append(a.code, n.Nick.Name)
+		case Graphics:
+			a.art = append(a.art, n.Nick.Name)
+		case Music:
+			a.audio = append(a.audio, n.Nick.Name)
+		}
+	}
+	return a
+}
+
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
 func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
+	const found = 200
 	total := len(p.DownloadLinks)
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods
@@ -94,11 +125,11 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 			continue
 		}
 		// skip defacto2 links if others are available
-		if u, _ := url.Parse(l.URL); total > 1 && u.Hostname() == "defacto2.net" {
+		if u, _ := url.Parse(l.URL); total > 1 && u.Hostname() == df2 {
 			continue
 		}
 		ping, err := download.LinkPing(l.URL)
-		if err != nil || ping.StatusCode != 200 {
+		if err != nil || ping.StatusCode != found {
 			continue
 		}
 		defer ping.Body.Close()
@@ -115,52 +146,86 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 	return name, link
 }
 
-// DownloadsAPIv1 are DownloadLinks for ProductionsAPIv1.
-type DownloadsAPIv1 struct {
-	LinkClass string `json:"link_class"`
-	URL       string `json:"url"`
+func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
+	const found = 200
+	//var l DownloadsAPIv1 = l // apply type so we can use it with methods
+	if ok := l.parse(); !ok {
+		logs.Print(" not usable\n")
+		return nil
+	}
+	ping, err := download.LinkPing(l.URL)
+	if err != nil {
+		return fmt.Errorf("download off demozoo ping: %w", err)
+	}
+	defer ping.Body.Close()
+	if ping.StatusCode != found {
+		logs.Printf(" %s", ping.Status) // print the HTTP status
+		return nil
+	}
+	save, err := saveName(l.URL)
+	if err != nil {
+		return fmt.Errorf("download off demozoo: %w", err)
+	}
+	temp, err := ioutil.TempDir("", "demozoo-download")
+	if err != nil {
+		return fmt.Errorf("download off demozoo temp dir: %w", err)
+	}
+	dest, err := filepath.Abs(filepath.Join(temp, save))
+	if err != nil {
+		return fmt.Errorf("download off demozoo abs filepath: %w", err)
+	}
+	_, err = download.LinkDownload(dest, l.URL)
+	if err != nil {
+		return fmt.Errorf("download off demozoo download: %w", err)
+	}
+	return nil
 }
 
 // Downloads parses the Demozoo DownloadLinks and saves the first suitable download.
 func (p *ProductionsAPIv1) Downloads() {
-	const found = 200
+	//const found = 200
 	for _, l := range p.DownloadLinks {
-		var l DownloadsAPIv1 = l // apply type so we can use it with methods
-		if ok := l.parse(); !ok {
-			logs.Print(" not usable\n")
-			continue
+		//var l DownloadsAPIv1 = l // apply type so we can use it with methods
+		if err := p.Download(l); err != nil {
+			log.Printf(" %s", err)
+		} else {
+			break
 		}
-		ping, err := download.LinkPing(l.URL)
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		defer ping.Body.Close()
-		if ping.StatusCode != found {
-			logs.Printf(" %s", ping.Status) // print the HTTP status
-			continue
-		}
-		save, err := saveName(l.URL)
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		temp, err := ioutil.TempDir("", "dzdl")
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		saveDest, err := filepath.Abs(filepath.Join(temp, save))
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		_, err = download.LinkDownload(saveDest, l.URL)
-		if err != nil {
-			logs.Log(err)
-			continue
-		}
-		break
+		// if ok := l.parse(); !ok {
+		// 	logs.Print(" not usable\n")
+		// 	continue
+		// }
+		// ping, err := download.LinkPing(l.URL)
+		// if err != nil {
+		// 	logs.Log(err)
+		// 	continue
+		// }
+		// defer ping.Body.Close()
+		// if ping.StatusCode != found {
+		// 	logs.Printf(" %s", ping.Status) // print the HTTP status
+		// 	continue
+		// }
+		// save, err := saveName(l.URL)
+		// if err != nil {
+		// 	logs.Log(err)
+		// 	continue
+		// }
+		// temp, err := ioutil.TempDir("", "demozoo-download")
+		// if err != nil {
+		// 	logs.Log(err)
+		// 	continue
+		// }
+		// saveDest, err := filepath.Abs(filepath.Join(temp, save))
+		// if err != nil {
+		// 	logs.Log(err)
+		// 	continue
+		// }
+		// _, err = download.LinkDownload(saveDest, l.URL)
+		// if err != nil {
+		// 	logs.Log(err)
+		// 	continue
+		// }
+		// break
 	}
 }
 
@@ -176,107 +241,46 @@ func (p *ProductionsAPIv1) Groups() [2]string {
 	return g
 }
 
-// Authors contains Defacto2 people rolls.
-type Authors struct {
-	text  []string // credit_text, writer
-	code  []string // credit_program, programmer/coder
-	art   []string // credit_illustration, artist/graphics
-	audio []string // credit_audio, musician/sound
-}
-
-// Authors parses Demozoo authors and reclassifies them into Defacto2 people rolls.
-func (p *ProductionsAPIv1) Authors() Authors {
-	var a Authors
-	for _, n := range p.Credits {
-		if n.Nick.Releaser.IsGroup {
-			continue
-		}
-		switch strings.ToLower(n.Category) {
-		case "text":
-			a.text = append(a.text, n.Nick.Name)
-		case "code":
-			a.code = append(a.code, n.Nick.Name)
-		case "graphics":
-			a.art = append(a.art, n.Nick.Name)
-		case "music":
-			a.audio = append(a.audio, n.Nick.Name)
-		}
-	}
-	return a
-}
-
 // PouetID returns the ID value used by Pouet's which prod URL syntax
 // and its HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID(ping bool) (id int, statusCode int) {
+func (p *ProductionsAPIv1) PouetID(ping bool) (id int, statusCode int, err error) {
 	for _, l := range p.ExternalLinks {
-		if l.LinkClass != "PouetProduction" {
+		if l.LinkClass != cls {
 			continue
 		}
 		id, err := parsePouetProduction(l.URL)
 		if err != nil {
-			logs.Log(err)
-			continue
+			return 0, 0, fmt.Errorf("pouet id parse: %w", err)
 		}
 		if ping {
-			ping, _ := download.LinkPing(l.URL)
-			defer ping.Body.Close()
-			return id, ping.StatusCode
+			resp, err := download.LinkPing(l.URL)
+			if err != nil {
+				return 0, 0, fmt.Errorf("pouet id ping: %w", err)
+			}
+			defer resp.Body.Close()
+			return id, resp.StatusCode, nil
 		}
-		return id, 0
+		return id, 0, nil
 	}
-	return 0, 0
-}
-
-// parsePouetProduction takes a pouet prod URL and extracts the ID.
-func parsePouetProduction(rawurl string) (id int, err error) {
-	u, err := url.Parse(rawurl)
-	if err != nil {
-		return 0, err
-	}
-	q := u.Query()
-	w := q.Get("which")
-	const pfx = "productions parse pouet: unexpected"
-	if w == "" {
-		return 0, fmt.Errorf("%s url syntax %q", pfx, rawurl)
-	}
-	id, err = strconv.Atoi(w)
-	if err != nil {
-		return 0, fmt.Errorf("%s which= query syntax %q", pfx, w)
-	}
-	if id < 0 {
-		return 0, fmt.Errorf("%s which= query value %q", pfx, w)
-	}
-	return id, nil
+	return 0, 0, nil
 }
 
 // Print displays the production API results as tabbed JSON.
-func (p *ProductionsAPIv1) Print() {
+func (p *ProductionsAPIv1) Print() error {
 	js, err := json.MarshalIndent(&p, "", "  ")
-	logs.Check(err)
+	if err != nil {
+		return fmt.Errorf("print json marshal indent: %w", err)
+	}
 	// ignore --quiet
 	fmt.Println(string(js))
+	return nil
 }
 
-// mutateURL applies fixes to known problematic URLs.
-func mutateURL(u *url.URL) *url.URL {
-	if u == nil {
-		u, err := url.Parse("")
-		logs.Check(err)
-		return u
-	}
-	switch u.Hostname() {
-	case "files.scene.org":
-		p := strings.Split(u.Path, "/")
-		// https://files.scene.org/view/.. >
-		// https://files.scene.org/get:nl-http/..
-		if p[1] == "view" {
-			p[1] = "get:nl-http" // must include -http to avoid FTP links
-			u.Path = strings.Join(p, "/")
-		}
-	default:
-	}
-	return u
+// DownloadsAPIv1 are DownloadLinks for ProductionsAPIv1.
+type DownloadsAPIv1 struct {
+	LinkClass string `json:"link_class"`
+	URL       string `json:"url"`
 }
 
 // parse corrects any known errors with a Downloads API link.
@@ -290,37 +294,8 @@ func (dl *DownloadsAPIv1) parse() (ok bool) {
 	return true
 }
 
-// randomName generates a random temporary filename.
-func randomName() (name string, err error) {
-	tmpfile, err := ioutil.TempFile("", "df2-download")
-	if err != nil {
-		return "", fmt.Errorf("random name tempfile: %w", err)
-	}
-	defer tmpfile.Close()
-	if err := os.Remove(tmpfile.Name()); err != nil {
-		logs.Log(fmt.Errorf("random name remove tempfile %q: %w", tmpfile.Name(), err))
-	}
-	return tmpfile.Name(), nil
-}
-
-// saveName gets a filename from the URL or generates a random filename.
-func saveName(rawurl string) (name string, err error) {
-	u, err := url.Parse(rawurl)
-	if err != nil {
-		return "", fmt.Errorf("save name %q: %w", rawurl, err)
-	}
-	name = filepath.Base(u.Path)
-	if name == "." {
-		name, err = randomName()
-		if err != nil {
-			return "", fmt.Errorf("save name random: %w", err)
-		}
-	}
-	return name, nil
-}
-
 func filename(h http.Header) (filename string) {
-	gh := h.Get("Content-Disposition")
+	gh := h.Get(cd)
 	if gh == "" {
 		return filename
 	}
@@ -338,4 +313,77 @@ func filename(h http.Header) (filename string) {
 		}
 	}
 	return filename
+}
+
+// mutateURL applies fixes to known problematic URLs.
+func mutateURL(u *url.URL) *url.URL {
+	if u == nil {
+		u, err := url.Parse("")
+		if err != nil {
+			log.Fatal(fmt.Errorf("mutate url parse: %w", err))
+		}
+		return u
+	}
+	switch u.Hostname() {
+	case "files.scene.org":
+		p := strings.Split(u.Path, "/")
+		// https://files.scene.org/view/.. >
+		// https://files.scene.org/get:nl-http/..
+		if p[1] == "view" {
+			p[1] = "get:nl-http" // must include -http to avoid FTP links
+			u.Path = strings.Join(p, "/")
+		}
+	default:
+	}
+	return u
+}
+
+// parsePouetProduction takes a pouet prod URL and extracts the ID.
+func parsePouetProduction(rawurl string) (id int, err error) {
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		return 0, fmt.Errorf(" url parse: %w", err)
+	}
+	q := u.Query()
+	w := q.Get("which")
+	if w == "" {
+		return 0, fmt.Errorf("parse pouet production &which=%v: %w", w, err)
+	}
+	id, err = strconv.Atoi(w)
+	if err != nil {
+		return 0, fmt.Errorf("parse pouet production &which=%v: %w", w, err)
+	}
+	if id < 0 {
+		return 0, fmt.Errorf("parse pouet production &which=%v: %w", id, err)
+	}
+	return id, nil
+}
+
+// randomName generates a random temporary filename.
+func randomName() (name string, err error) {
+	tmp, err := ioutil.TempFile("", "df2-download")
+	if err != nil {
+		return "", fmt.Errorf("random name tempfile: %w", err)
+	}
+	defer tmp.Close()
+	if err := os.Remove(tmp.Name()); err != nil {
+		logs.Log(fmt.Errorf("random name remove tempfile %q: %w", tmp.Name(), err))
+	}
+	return tmp.Name(), nil
+}
+
+// saveName gets a filename from the URL or generates a random filename.
+func saveName(rawurl string) (name string, err error) {
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		return "", fmt.Errorf("save name %q: %w", rawurl, err)
+	}
+	name = filepath.Base(u.Path)
+	if name == "." {
+		name, err = randomName()
+		if err != nil {
+			return "", fmt.Errorf("save name random: %w", err)
+		}
+	}
+	return name, nil
 }

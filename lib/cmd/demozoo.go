@@ -46,13 +46,19 @@ var demozooCmd = &cobra.Command{
 		case dzoo.refresh:
 			err = demozoo.RefreshMeta()
 		case dzoo.ping != 0:
-			_, s, data := demozoo.Fetch(dzoo.ping)
-			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.ping, s)
-			data.Print()
+			f, err := demozoo.Fetch(dzoo.ping)
+			if err != nil {
+				logs.Check(err)
+			}
+			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.ping, f.Status)
+			f.API.Print()
 		case dzoo.download != 0:
-			_, s, data := demozoo.Fetch(dzoo.download)
-			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.download, s)
-			data.Downloads()
+			f, err := demozoo.Fetch(dzoo.download)
+			if err != nil {
+				logs.Check(err)
+			}
+			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.download, f.Status)
+			f.API.Downloads()
 			logs.Print("\n")
 		case len(dzoo.extract) == 1:
 			id, err := uuid.NewRandom()

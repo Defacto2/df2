@@ -3,7 +3,6 @@ package demozoo
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"path"
 	"strconv"
@@ -24,44 +23,44 @@ type Production struct {
 // URL creates a productions API v.1 request link.
 // example: https://demozoo.org/api/v1/productions/158411/?format=json
 func (p *Production) URL() error {
-	rawurl, err := prodURL(p.ID)
+	s, err := production(p.ID)
 	if err != nil {
 		return fmt.Errorf("production url: %w", err)
 	}
-	p.link = rawurl
+	p.link = s
 	return nil
 }
 
 // data gets a production API link and normalises the results.
-func (p *Production) data() *ProductionsAPIv1 {
+func (p *Production) data() (ProductionsAPIv1, error) {
 	if err := p.URL(); err != nil {
-		log.Fatal(fmt.Errorf("production data: %w", err))
+		return ProductionsAPIv1{}, fmt.Errorf("production data: %w", err)
 	}
 	r := download.Request{
 		Link: p.link,
 	}
 	if err := r.Body(); err != nil {
-		log.Fatal(fmt.Errorf("production data body: %w", err))
+		return ProductionsAPIv1{}, fmt.Errorf("production data body: %w", err)
 	}
 	p.Status = r.Status
 	p.StatusCode = r.StatusCode
 	dz := ProductionsAPIv1{}
 	if len(r.Read) > 0 {
 		if err := json.Unmarshal(r.Read, &dz); err != nil {
-			log.Fatal(fmt.Errorf("production data json unmarshal: %w", err))
+			return ProductionsAPIv1{}, fmt.Errorf("production data json unmarshal: %w", err)
 		}
 	}
-	return &dz
+	return dz, nil
 }
 
-// prodURL creates a production URL from a Demozoo ID.
-func prodURL(id int64) (string, error) {
+// production creates a production URL from a Demozoo ID.
+func production(id int64) (string, error) {
 	if id < 0 {
-		return "", fmt.Errorf("prod url id %v: %w", id, ErrNegativeID)
+		return "", fmt.Errorf("production id %v: %w", id, ErrNegativeID)
 	}
-	u, err := url.Parse(prodAPI) // base URL
+	u, err := url.Parse(api) // base URL
 	if err != nil {
-		return "", fmt.Errorf("prod url parse: %w", err)
+		return "", fmt.Errorf("production parse: %w", err)
 	}
 	u.Path = path.Join(u.Path, strconv.FormatInt(id, 10)) // append ID
 	q := u.Query()

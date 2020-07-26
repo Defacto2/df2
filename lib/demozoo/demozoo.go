@@ -23,11 +23,85 @@ import (
 	"github.com/gookit/color"
 )
 
-const prodAPI string = "https://demozoo.org/api/v1/productions"
+type Category int
+
+func (c Category) String() string {
+	switch c {
+	case Text:
+		return "text"
+	case Code:
+		return "code"
+	case Graphics:
+		return "graphics"
+	case Music:
+		return "music"
+	case Magazine:
+		return "magazine"
+	}
+	return ""
+}
+
+const (
+	Text Category = iota
+	Code
+	Graphics
+	Music
+	Magazine
+)
+
+func category(c string) Category {
+	switch strings.ToLower(c) {
+	case Text.String():
+		return Text
+	case Code.String():
+		return Code
+	case Graphics.String():
+		return Graphics
+	case Music.String():
+		return Music
+	case Magazine.String():
+		return Magazine
+	}
+	return -1
+}
+
+const (
+	api = "https://demozoo.org/api/v1/productions"
+	cd  = "Content-Disposition"
+	cls = "PouetProduction"
+	df2 = "defacto2.net"
+)
 
 const selectSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`," +
 	"`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`," +
 	"`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
+
+var (
+	ErrRecordCnt  = errors.New("unexpected number of record values")
+	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
+	ErrFilePath   = errors.New("filepath requirement cannot be empty")
+	ErrNoFile     = errors.New("file cannot be found")
+)
+
+var activeID = ""
+
+type Fetched struct {
+	Code   int
+	Status string
+	API    ProductionsAPIv1
+}
+
+// Fetch a Demozoo production by its ID.
+// func Fetch(id uint) (code int, status string, api ProductionsAPIv1) {
+func Fetch(id uint) (Fetched, error) {
+	d := Production{ID: int64(id)}
+	api, err := d.data()
+	if err != nil {
+		return Fetched{}, fmt.Errorf("fetched %d: %w", id, err)
+	}
+	return Fetched{Code: d.StatusCode, Status: d.Status, API: api}, nil
+	//	return d.StatusCode, d.Status, api
+}
 
 // Request proofs.
 type Request struct {
@@ -37,79 +111,16 @@ type Request struct {
 	Simulate  bool // simulate database save
 }
 
-// query statistics.
-type stat struct {
-	count   int
-	fetched int
-	missing int
-	total   int
-}
-
-var (
-	ErrRecordCnt  = errors.New("unexpected number of record values")
-	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
-	ErrFilePath   = errors.New("filepath requirement cannot be empty")
-	ErrNoFile     = errors.New("file cannot be found")
-)
-
-var prodID = ""
-
-// Fetch a Demozoo production by its ID.
-func Fetch(id uint) (code int, status string, api ProductionsAPIv1) {
-	d := Production{ID: int64(id)}
-	api = *d.data()
-	return d.StatusCode, d.Status, api
-}
-
 // Query parses a single Demozoo entry.
 func (req Request) Query(id string) (err error) {
 	if err = database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %s: %w", id, err)
 	}
-	prodID = id
+	activeID = id
 	if err := req.Queries(); err != nil {
 		return fmt.Errorf("request query queries: %w", err)
 	}
 	return nil
-}
-
-// newRecord initialises a new file record.
-func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
-	const want = 21
-	if l := len(values); l < want {
-		return r, fmt.Errorf("new records %q: %w", l, err)
-	}
-	r = Record{
-		count: c,
-		ID:    string(values[0]), // id
-		UUID:  string(values[1]), // uuid
-		// deletedat
-		CreatedAt: database.DateTime(values[3]), // createdat
-		Filename:  string(values[4]),            // filename
-		Filesize:  string(values[5]),            // filesize
-		// web_id_demozoo
-		FileZipContent: string(values[7]),            // file_zip_content
-		UpdatedAt:      database.DateTime(values[8]), // updatedat
-		Platform:       string(values[9]),            // platform
-		Sum384:         string(values[10]),           // file_integrity_strong
-		SumMD5:         string(values[11]),           // file_integrity_weak
-		// web_id_pouet
-		GroupFor:    string(values[13]),
-		GroupBy:     string(values[14]),
-		Title:       string(values[15]),
-		Section:     string(values[16]),
-		CreditArt:   strings.Split(string(values[17]), ","),
-		CreditAudio: strings.Split(string(values[18]), ","),
-		CreditCode:  strings.Split(string(values[19]), ","),
-		CreditText:  strings.Split(string(values[20]), ","),
-	}
-	if i, err := strconv.Atoi(string(values[6])); err == nil {
-		r.WebIDDemozoo = uint(i)
-	}
-	if i, err := strconv.Atoi(string(values[12])); err == nil {
-		r.WebIDPouet = uint(i)
-	}
-	return r, nil
 }
 
 // Queries parses all new proofs.
@@ -180,13 +191,13 @@ func (req Request) Queries() error {
 			r.save()
 		}
 	}
-	if prodID != "" {
+	if activeID != "" {
 		if st.count == 0 {
 			var t string
 			if st.fetched == 0 {
-				t = fmt.Sprintf("id %q is not a Demozoo sourced file record", prodID)
+				t = fmt.Sprintf("id %q is not a Demozoo sourced file record", activeID)
 			} else {
-				t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", prodID, prodID)
+				t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", activeID, activeID)
 			}
 			logs.Println(t)
 		}
@@ -196,13 +207,31 @@ func (req Request) Queries() error {
 	return nil
 }
 
-func (r *Record) save() {
-	if err := r.Save(); err != nil {
-		logs.Printf(" %v \n", logs.X())
-		logs.Log(err)
-		return
+func (req Request) flags() (skip bool) {
+	if !req.All && !req.Refresh && !req.Overwrite {
+		return true
 	}
-	logs.Printf(" • saved %v", logs.Y())
+	return false
+}
+
+// query statistics.
+type stat struct {
+	count   int
+	fetched int
+	missing int
+	total   int
+}
+
+// nextResult checks for the next, new record.
+func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
+	if err := rec.rows.Scan(rec.scanArgs...); err != nil {
+		return false, fmt.Errorf("next result rows scan: %w", err)
+	}
+	if new := database.IsNew(rec.values); !new && req.flags() {
+		return true, nil
+	}
+	st.count++
+	return false, nil
 }
 
 func (st stat) summary(elapsed time.Duration) {
@@ -212,20 +241,6 @@ func (st stat) summary(elapsed time.Duration) {
 	if st.missing > 0 {
 		logs.Println("UUID files not found:", st.missing)
 	}
-}
-
-func selectByID() (sql string) {
-	const w = " FROM `files` WHERE `web_id_demozoo` IS NOT NULL"
-	where := w
-	if prodID != "" {
-		switch {
-		case database.IsUUID(prodID):
-			where = fmt.Sprintf("%v AND `uuid`=%q", w, prodID)
-		case database.IsID(prodID):
-			where = fmt.Sprintf("%v AND `id`=%q", w, prodID)
-		}
-	}
-	return selectSQL + where
 }
 
 // sumTotal calculates the total number of conditional rows.
@@ -242,23 +257,120 @@ func (st *stat) sumTotal(rec records, req Request) error {
 	return nil
 }
 
-// nextResult checks for the next, new record.
-func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
-	if err := rec.rows.Scan(rec.scanArgs...); err != nil {
-		return false, fmt.Errorf("next result rows scan: %w", err)
+// check record to see if it needs updating.
+func (r Record) check() (update bool) {
+	switch {
+	case
+		r.Filename == "",
+		r.Platform == "",
+		r.Filesize == "",
+		r.Sum384 == "",
+		r.SumMD5 == "",
+		r.FileZipContent == "":
+		return true
+	default:
+		logs.Printf("skipped, no changes needed %v", logs.Y())
+		return false
 	}
-	if new := database.IsNew(rec.values); !new && req.flags() {
-		return true, nil
-	}
-	st.count++
-	return false, nil
 }
 
-func (req Request) flags() (skip bool) {
-	if !req.All && !req.Refresh && !req.Overwrite {
-		return true
+func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip bool) {
+	if st.fileExist(*r) || overwrite {
+		if r.UUID == "" {
+			fmt.Print(color.Error.Sprint("UUID is empty, cannot continue"))
+			return true
+		}
+		name, link := api.DownloadLink()
+		if len(link) == 0 {
+			logs.Print(color.Note.Sprint("no suitable downloads found\n"))
+			return true
+		}
+		const OK = 200
+		logs.Printcrf("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
+		head, err := download.LinkDownload(r.FilePath, link)
+		if err != nil {
+			logs.Log(err)
+			return true
+		}
+		logs.Printcrf(r.String(st.total))
+		logs.Printf("• %s", name)
+		r.downloadReset(name)
+		r.lastMod(head)
 	}
 	return false
+}
+
+func (r *Record) downloadReset(name string) {
+	r.Filename = name
+	r.Filesize = ""
+	r.SumMD5 = ""
+	r.Sum384 = ""
+	r.FileZipContent = ""
+}
+
+func (r *Record) doseeMeta() error {
+	names, err := r.variations()
+	if err != nil {
+		return fmt.Errorf("record dosee meta: %w", err)
+	}
+	d, err := archive.ExtractDemozoo(r.FilePath, r.UUID, &names)
+	if err != nil {
+		return fmt.Errorf("record dosee meta: %w", err)
+	}
+	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
+		r.DOSeeBinary = d.DOSee
+	}
+	if d.NFO != "" {
+		r.Readme = d.NFO
+	}
+	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
+		r.DOSeeBinary = d.DOSee
+	}
+	return nil
+}
+
+func (r *Record) fileMeta() (err error) {
+	stat, err := os.Stat(r.FilePath)
+	if err != nil {
+		return fmt.Errorf("record file meta stat: %w", err)
+	}
+	r.Filesize = strconv.Itoa(int(stat.Size()))
+	// file hashes
+	f, err := os.Open(r.FilePath)
+	if err != nil {
+		return fmt.Errorf("record file meta open: %w", err)
+	}
+	defer f.Close()
+	h1 := md5.New()
+	if _, err := io.Copy(h1, f); err != nil {
+		return fmt.Errorf("record file meta io copy for the md5 hash: %w", err)
+	}
+	r.SumMD5 = fmt.Sprintf("%x", h1.Sum(nil))
+	h2 := sha512.New384()
+	if _, err := io.Copy(h2, f); err != nil {
+		return fmt.Errorf("record file meta io copy for the sha512 hash: %w", err)
+	}
+	r.Sum384 = fmt.Sprintf("%x", h2.Sum(nil))
+	return nil
+}
+
+// last modified time passed via HTTP.
+func (r *Record) lastMod(head http.Header) {
+	lm := head.Get("Last-Modified")
+	if len(lm) < 1 {
+		return
+	}
+	t, err := time.Parse(download.RFC5322, lm)
+	if err != nil {
+		logs.Printf(" • last-mod value %q ?", lm)
+		return
+	}
+	r.LastMod = t
+	if time.Now().Year() == t.Year() {
+		logs.Printf(" • %s", t.Format("2 Jan"))
+	} else {
+		logs.Printf(" • %s", t.Format("Jan 06"))
+	}
 }
 
 // parseAPI confirms and parses the API request.
@@ -268,13 +380,19 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 		fmt.Println("Clearing filename which is incorrectly set as", r.Filename)
 		r.Filename = ""
 	}
-	code, status, api := Fetch(r.WebIDDemozoo)
+	f, err := Fetch(r.WebIDDemozoo)
+	if err != nil {
+		return true, fmt.Errorf("parse api fetch: %w", err)
+	}
+	code, status, api := f.Code, f.Status, f.API
 	if ok, err := r.confirm(code, status); err != nil {
 		return true, fmt.Errorf("parse api: %w", err)
 	} else if !ok {
 		return true, nil
 	}
-	r.pingPouet(api)
+	if err := r.pingPouet(api); err != nil {
+		return true, fmt.Errorf("parse api: %w", err)
+	}
 	r.FilePath = filepath.Join(storage, r.UUID)
 	if skip := r.download(overwrite, api, st); skip {
 		return true, nil
@@ -316,80 +434,13 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	return false, nil
 }
 
-func (r *Record) pingPouet(api ProductionsAPIv1) {
-	if id, code := api.PouetID(true); id > 0 && code < 300 {
+func (r *Record) pingPouet(api ProductionsAPIv1) error {
+	if id, code, err := api.PouetID(true); err != nil {
+		return fmt.Errorf("ping pouet: %w", err)
+	} else if id > 0 && code < 300 {
 		r.WebIDPouet = uint(id)
 	}
-}
-
-func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip bool) {
-	if st.fileExist(*r) || overwrite {
-		if r.UUID == "" {
-			fmt.Print(color.Error.Sprint("UUID is empty, cannot continue"))
-			return true
-		}
-		name, link := api.DownloadLink()
-		if len(link) == 0 {
-			logs.Print(color.Note.Sprint("no suitable downloads found\n"))
-			return true
-		}
-		const OK = 200
-		logs.Printcrf("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
-		head, err := download.LinkDownload(r.FilePath, link)
-		if err != nil {
-			logs.Log(err)
-			return true
-		}
-		logs.Printcrf(r.String(st.total))
-		logs.Printf("• %s", name)
-		r.downloadReset(name)
-		r.lastMod(head)
-	}
-	return false
-}
-
-func (r *Record) downloadReset(name string) {
-	r.Filename = name
-	r.Filesize = ""
-	r.SumMD5 = ""
-	r.Sum384 = ""
-	r.FileZipContent = ""
-}
-
-// last modified time passed via HTTP.
-func (r *Record) lastMod(head http.Header) {
-	lm := head.Get("Last-Modified")
-	if len(lm) < 1 {
-		return
-	}
-	t, err := time.Parse(download.RFC5322, lm)
-	if err != nil {
-		logs.Printf(" • last-mod value %q ?", lm)
-		return
-	}
-	r.LastMod = t
-	if time.Now().Year() == t.Year() {
-		logs.Printf(" • %s", t.Format("2 Jan"))
-	} else {
-		logs.Printf(" • %s", t.Format("Jan 06"))
-	}
-}
-
-// check record to see if it needs updating.
-func (r Record) check() (update bool) {
-	switch {
-	case
-		r.Filename == "",
-		r.Platform == "",
-		r.Filesize == "",
-		r.Sum384 == "",
-		r.SumMD5 == "",
-		r.FileZipContent == "":
-		return true
-	default:
-		logs.Printf("skipped, no changes needed %v", logs.Y())
-		return false
-	}
+	return nil
 }
 
 func (r *Record) platform(api ProductionsAPIv1) {
@@ -406,50 +457,13 @@ func (r *Record) platform(api ProductionsAPIv1) {
 	}
 }
 
-func (r *Record) fileMeta() (err error) {
-	stat, err := os.Stat(r.FilePath)
-	if err != nil {
-		return fmt.Errorf("record file meta stat: %w", err)
+func (r *Record) save() {
+	if err := r.Save(); err != nil {
+		logs.Printf(" %v \n", logs.X())
+		logs.Log(err)
+		return
 	}
-	r.Filesize = strconv.Itoa(int(stat.Size()))
-	// file hashes
-	f, err := os.Open(r.FilePath)
-	if err != nil {
-		return fmt.Errorf("record file meta open: %w", err)
-	}
-	defer f.Close()
-	h1 := md5.New()
-	if _, err := io.Copy(h1, f); err != nil {
-		return fmt.Errorf("record file meta io copy for the md5 hash: %w", err)
-	}
-	r.SumMD5 = fmt.Sprintf("%x", h1.Sum(nil))
-	h2 := sha512.New384()
-	if _, err := io.Copy(h2, f); err != nil {
-		return fmt.Errorf("record file meta io copy for the sha512 hash: %w", err)
-	}
-	r.Sum384 = fmt.Sprintf("%x", h2.Sum(nil))
-	return nil
-}
-
-func (r *Record) doseeMeta() error {
-	names, err := r.variations()
-	if err != nil {
-		return fmt.Errorf("record dosee meta: %w", err)
-	}
-	d, err := archive.ExtractDemozoo(r.FilePath, r.UUID, &names)
-	if err != nil {
-		return fmt.Errorf("record dosee meta: %w", err)
-	}
-	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
-		r.DOSeeBinary = d.DOSee
-	}
-	if d.NFO != "" {
-		r.Readme = d.NFO
-	}
-	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
-		r.DOSeeBinary = d.DOSee
-	}
-	return nil
+	logs.Printf(" • saved %v", logs.Y())
 }
 
 func (r Record) variations() (names []string, err error) {
@@ -468,4 +482,57 @@ func (r Record) variations() (names []string, err error) {
 		names = append(names, v...)
 	}
 	return names, nil
+}
+
+// newRecord initialises a new file record.
+func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
+	const want = 21
+	if l := len(values); l < want {
+		return r, fmt.Errorf("new records %q: %w", l, err)
+	}
+	r = Record{
+		count: c,
+		ID:    string(values[0]), // id
+		UUID:  string(values[1]), // uuid
+		// deletedat
+		CreatedAt: database.DateTime(values[3]), // createdat
+		Filename:  string(values[4]),            // filename
+		Filesize:  string(values[5]),            // filesize
+		// web_id_demozoo
+		FileZipContent: string(values[7]),            // file_zip_content
+		UpdatedAt:      database.DateTime(values[8]), // updatedat
+		Platform:       string(values[9]),            // platform
+		Sum384:         string(values[10]),           // file_integrity_strong
+		SumMD5:         string(values[11]),           // file_integrity_weak
+		// web_id_pouet
+		GroupFor:    string(values[13]),
+		GroupBy:     string(values[14]),
+		Title:       string(values[15]),
+		Section:     string(values[16]),
+		CreditArt:   strings.Split(string(values[17]), ","),
+		CreditAudio: strings.Split(string(values[18]), ","),
+		CreditCode:  strings.Split(string(values[19]), ","),
+		CreditText:  strings.Split(string(values[20]), ","),
+	}
+	if i, err := strconv.Atoi(string(values[6])); err == nil {
+		r.WebIDDemozoo = uint(i)
+	}
+	if i, err := strconv.Atoi(string(values[12])); err == nil {
+		r.WebIDPouet = uint(i)
+	}
+	return r, nil
+}
+
+func selectByID() (sql string) {
+	const w = " FROM `files` WHERE `web_id_demozoo` IS NOT NULL"
+	where := w
+	if activeID != "" {
+		switch {
+		case database.IsUUID(activeID):
+			where = fmt.Sprintf("%v AND `uuid`=%q", w, activeID)
+		case database.IsID(activeID):
+			where = fmt.Sprintf("%v AND `id`=%q", w, activeID)
+		}
+	}
+	return selectSQL + where
 }

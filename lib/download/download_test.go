@@ -13,7 +13,7 @@ func testTemp() string {
 	return filepath.Join(dir, "../../tests/download")
 }
 
-func Test_timeout(t *testing.T) {
+func Test_checkTime(t *testing.T) {
 	td := func(v int) time.Duration {
 		sec, _ := time.ParseDuration(fmt.Sprintf("%ds", v))
 		return sec
@@ -33,8 +33,8 @@ func Test_timeout(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := timeout(tt.args.t); got != tt.want {
-				t.Errorf("timeout() = %v, want %v", got, tt.want)
+			if got := checkTime(tt.args.t); got != tt.want {
+				t.Errorf("checkTime() = %v, want %v", got, tt.want)
 			}
 		})
 	}

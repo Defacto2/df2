@@ -61,13 +61,19 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 		return true, fmt.Errorf("next refresh new record 1: %w", err)
 	}
 	logs.Printcrf(r.String(0))
-	code, status, api := Fetch(r.WebIDDemozoo)
+	f, err := Fetch(r.WebIDDemozoo)
+	if err != nil {
+		return true, fmt.Errorf("next refresh fetch: %w", err)
+	}
+	code, status, api := f.Code, f.Status, f.API
 	if ok, err := r.confirm(code, status); err != nil {
 		return true, fmt.Errorf("next refresh confirm: %w", err)
 	} else if !ok {
 		return true, nil
 	}
-	r.pouet(api)
+	if err := r.pouet(api); err != nil {
+		return true, fmt.Errorf("next refresh: %w", err)
+	}
 	r.title(api)
 	r.authors(api.Authors())
 	new, err := newRecord(st.count, rec.values)
@@ -84,38 +90,6 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 	}
 	logs.Printf("• saved %v", logs.Y())
 	return false, nil
-}
-
-func (r *Record) confirm(code int, status string) (ok bool, err error) {
-	const nofound, found, problems = 404, 200, 300
-	if code == nofound {
-		r.WebIDDemozoo = 0
-		if err := r.Save(); err != nil {
-			return true, fmt.Errorf("record confirm save: %w", err)
-		}
-		logs.Printf("(%s)\n", download.StatusColor(code, status))
-		return false, nil
-	}
-	if code < found || code >= problems {
-		logs.Printf("(%s)\n", download.StatusColor(code, status))
-		return false, nil
-	}
-	return true, nil
-}
-
-func (r *Record) pouet(api ProductionsAPIv1) {
-	pid, _ := api.PouetID(false)
-	if r.WebIDPouet != uint(pid) {
-		r.WebIDPouet = uint(pid)
-		logs.Printf("PN:%s ", color.Note.Sprint(pid))
-	}
-}
-
-func (r *Record) title(api ProductionsAPIv1) {
-	if r.Section != "magazine" && !strings.EqualFold(r.Title, api.Title) {
-		logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
-		r.Title = api.Title
-	}
 }
 
 func (r *Record) authors(a Authors) {
@@ -152,5 +126,41 @@ func (r *Record) authors(a Authors) {
 		if !compare(new, old, "t") {
 			r.CreditText = new
 		}
+	}
+}
+
+func (r *Record) confirm(code int, status string) (ok bool, err error) {
+	const nofound, found, problems = 404, 200, 300
+	if code == nofound {
+		r.WebIDDemozoo = 0
+		if err := r.Save(); err != nil {
+			return true, fmt.Errorf("record confirm save: %w", err)
+		}
+		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		return false, nil
+	}
+	if code < found || code >= problems {
+		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		return false, nil
+	}
+	return true, nil
+}
+
+func (r *Record) pouet(api ProductionsAPIv1) error {
+	pid, _, err := api.PouetID(false)
+	if err != nil {
+		return fmt.Errorf("pouet: %w", err)
+	}
+	if r.WebIDPouet != uint(pid) {
+		r.WebIDPouet = uint(pid)
+		logs.Printf("PN:%s ", color.Note.Sprint(pid))
+	}
+	return nil
+}
+
+func (r *Record) title(api ProductionsAPIv1) {
+	if r.Section != Magazine.String() && !strings.EqualFold(r.Title, api.Title) {
+		logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
+		r.Title = api.Title
 	}
 }

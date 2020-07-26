@@ -2,6 +2,7 @@ package download
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -35,21 +36,22 @@ func (r *Request) Body() error {
 	if err != nil {
 		return err
 	}
+	timeout := checkTime(r.Timeout)
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, r.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Link, nil)
 	if err != nil {
 		cancel()
-		return err
+		return fmt.Errorf("request body new with context: %w", err)
 	}
 	client := http.Client{}
 	go func() {
-		time.Sleep(r.Timeout)
+		time.Sleep(timeout)
 		cancel()
 	}()
 	res, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("request body client do: %w", err)
 	}
 	defer func() {
 		res.Body.Close()
@@ -58,13 +60,13 @@ func (r *Request) Body() error {
 	r.StatusCode = res.StatusCode
 	r.Read, err = ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("request body read body response: %w", err)
 	}
 	return nil
 }
 
-// timeout creates a valid second duration for use with http.Client.Timeout.
-func timeout(t time.Duration) time.Duration {
+// checkTime creates a valid second duration for use with http.Client.Timeout.
+func checkTime(t time.Duration) time.Duration {
 	if t < 1 {
 		t = 5
 	}

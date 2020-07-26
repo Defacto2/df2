@@ -67,7 +67,7 @@ func Test_parsePouetProduction(t *testing.T) {
 	}
 }
 
-func Test_prodURL(t *testing.T) {
+func Test_production(t *testing.T) {
 	type args struct {
 		id int64
 	}
@@ -83,13 +83,13 @@ func Test_prodURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := prodURL(tt.args.id)
+			got, err := production(tt.args.id)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("prodURL() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("production() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("prodURL() = %v, want %v", got, tt.want)
+				t.Errorf("production() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -163,7 +163,11 @@ func TestFetch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCode, gotStatus, gotAPI := Fetch(tt.id)
+			f, err := Fetch(tt.id)
+			if err != nil {
+				t.Error(err)
+			}
+			gotCode, gotStatus, gotAPI := f.Code, f.Status, f.API
 			if gotCode != tt.wantCode {
 				t.Errorf("Fetch() gotCode = %v, want %v", gotCode, tt.wantCode)
 			}
