@@ -30,35 +30,35 @@ installation instructions: https://github.com/ansilove/ansilove
 		fmt.Println(note)
 		return fmt.Errorf("generate ansilove not found: %w", err)
 	} else if err != nil {
-		return fmt.Errorf("generate make png: %w", err)
+		return fmt.Errorf("generate: %w", err)
 	}
 	fmt.Printf("  %s", s)
 	// cap images to the webp limit of 16383 pixels
 	const limit = 16383
 	if w, err := images.Width(o); w > limit {
 		if err != nil {
-			return fmt.Errorf("generate images width: %w", err)
+			return fmt.Errorf("generate: %w", err)
 		}
 		fmt.Printf("width %dpx", w)
 		s, err = images.ToPng(o, images.NewExt(o, png), limit)
 		if err != nil {
-			return fmt.Errorf("generate to png: %w", err)
+			return fmt.Errorf("generate: %w", err)
 		}
 		fmt.Printf("  %s", s)
 	}
 	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
 	if err != nil {
-		return fmt.Errorf("generate to webp: %w", err)
+		return fmt.Errorf("generate: %w", err)
 	}
 	fmt.Printf("  %s", s)
 	s, err = images.ToThumb(o, f.Img400, 400)
 	if err != nil {
-		return fmt.Errorf("generate to thumb 400px: %w", err)
+		return fmt.Errorf("generate thumb 400px: %w", err)
 	}
 	fmt.Printf("  %s", s)
 	s, err = images.ToThumb(o, f.Img150, 150)
 	if err != nil {
-		return fmt.Errorf("generate to thumb 150px: %w", err)
+		return fmt.Errorf("generate thumb 150px: %w", err)
 	}
 	fmt.Printf("  %s", s)
 	return nil
@@ -77,30 +77,30 @@ func makePng(src, dest string) (string, error) {
 		return "", fmt.Errorf("make png stat: %w", err)
 	}
 	if dest == "" {
-		return "", errors.New("makepng: dest argument requires a destination filename path")
+		return "", errors.New("make png: dest argument requires a destination filename path")
 	}
 	img := dest + png
 	cmd := exec.Command("ansilove", "-r", "-o", img, src)
 	out, err := cmd.Output()
 	if err != nil && err.Error() == "exit status 127" {
-		return "", fmt.Errorf("makepng ansilove: %w", ErrAnsiLove)
+		return "", fmt.Errorf("make png ansilove: %w", ErrAnsiLove)
 	} else if err != nil {
-		return "", fmt.Errorf("makepng ansilove: %w", err)
+		return "", fmt.Errorf("make png ansilove %q: %w", out, err)
 	}
 	wd, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("makepng working directory: %w", err)
+		return "", fmt.Errorf("make png working directory: %w", err)
 	}
 	exe, err := os.Executable()
 	if err != nil {
-		return "", fmt.Errorf("makepng failed to obtain exe: %w", err)
+		return "", fmt.Errorf("make png failed to obtain exe: %w", err)
 	}
 	fmt.Printf("%s - %s", wd, exe)
 	stat, err := os.Stat(img)
 	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("makepng stat %q: %w", img, err)
+		return "", fmt.Errorf("make png stat %q: %w", img, err)
 	} else if err != nil {
-		return "", fmt.Errorf("makepng stat: %w", err)
+		return "", fmt.Errorf("make png stat: %w", err)
 	}
 	return fmt.Sprintf("✓ text » png %v\n%s",
 		humanize.Bytes(uint64(stat.Size())), color.Secondary.Sprintf("%s", out)), nil

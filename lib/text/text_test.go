@@ -3,6 +3,7 @@ package text
 import (
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 )
 
@@ -37,6 +38,14 @@ func Test_makePng(t *testing.T) {
 }
 
 func Test_generate(t *testing.T) {
+	gif, err := filepath.Abs("../../tests/images/test.gif")
+	if err != nil {
+		t.Error(err)
+	}
+	txt, err := filepath.Abs("../../tests/text/test.txt")
+	if err != nil {
+		t.Error(err)
+	}
 	type args struct {
 		name string
 		id   string
@@ -47,6 +56,9 @@ func Test_generate(t *testing.T) {
 		wantErr bool
 	}{
 		{"test", args{"", ""}, true},
+		{"missing", args{"abce", "1"}, true},
+		{"gif", args{gif, "1"}, true},
+		{"txt", args{txt, "1"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
