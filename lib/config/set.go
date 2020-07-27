@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/prompt"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
 )
@@ -51,22 +52,22 @@ func Set(name string) error {
 	switch {
 	case name == "connection.server.host":
 		fmt.Printf("\nSet a new host, leave blank to keep as-is %v: \n", rec("localhost"))
-		err = configSave(logs.PromptString(s))
+		err = configSave(prompt.String(s))
 	case name == "connection.server.protocol":
 		fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", rec("tcp"))
-		err = configSave(logs.PromptString(s))
+		err = configSave(prompt.String(s))
 	case name == "connection.server.port":
 		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", logs.PortMin, logs.PortMax, rec("3306"))
-		err = configSave(logs.PromptPort())
+		err = configSave(prompt.Port())
 	case name[:10] == "directory.":
 		fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")
-		err = configSave(logs.PromptDir())
+		err = configSave(prompt.Dir())
 	case name == "connection.password":
 		fmt.Printf("\nSet a new MySQL user encrypted or plaintext password or leave blank to keep as-is: \n")
-		err = configSave(logs.PromptString(s))
+		err = configSave(prompt.String(s))
 	default:
 		fmt.Printf("\nSet a new value, leave blank to keep as-is or use a dash [-] to disable: \n")
-		err = configSave(logs.PromptString(s))
+		err = configSave(prompt.String(s))
 	}
 	if err != nil {
 		return fmt.Errorf("set %s: %w", name, err)

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/prompt"
 	"github.com/spf13/viper"
 )
 
@@ -17,7 +18,7 @@ func Delete() error {
 	if _, err := os.Stat(cfg); os.IsNotExist(err) {
 		configMissing("delete")
 	}
-	if ok := logs.PromptYN("Remove the config file", false); ok {
+	if ok := prompt.YN("Remove the config file", false); ok {
 		if err := os.Remove(cfg); err != nil {
 			return fmt.Errorf("delete remove %q: %w", cfg, err)
 		}

@@ -1,17 +1,12 @@
 package logs
 
-// os.Exit() = 1x
-
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -119,50 +114,6 @@ func Filepath() string {
 	return fp
 }
 
-// Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
-func Print(a ...interface{}) {
-	if !Quiet {
-		_, err := fmt.Print(a...)
-		Log(err)
-	}
-}
-
-// Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
-func Printcr(a ...interface{}) {
-	if !Quiet {
-		cols := int(termSize())
-		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
-		_, err := fmt.Print(a...)
-		Log(err)
-	}
-}
-
-// Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
-func Printf(format string, a ...interface{}) {
-	if !Quiet {
-		_, err := fmt.Printf(format, a...)
-		Log(err)
-	}
-}
-
-// Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
-func Println(a ...interface{}) {
-	if !Quiet {
-		_, err := fmt.Println(a...)
-		Log(err)
-	}
-}
-
-// Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
-func Printcrf(format string, a ...interface{}) {
-	if !Quiet {
-		cols := int(termSize())
-		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
-		_, err := fmt.Printf(format, a...)
-		Log(err)
-	}
-}
-
 // ProgressPct returns the count of total remaining as a percentage.
 func ProgressPct(name string, count, total int) float64 {
 	const fin = 100
@@ -249,135 +200,9 @@ func Port(port int) bool {
 	return true
 }
 
-// promptCheck asks the user for a string configuration value and saves it.
-func promptCheck(cnt int) {
-	const help, max = 2, 4
-	switch {
-	case cnt == help:
-		fmt.Println("Ctrl+C to keep the existing port")
-	case cnt >= max:
-		os.Exit(1)
-	}
-}
-
-func scannerCheck(s *bufio.Scanner) {
-	if err := s.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading input:", err)
-		os.Exit(1)
-	}
-}
-
 // Simulate prints the --simulate=false flag info.
 func Simulate() {
 	Println(color.Notice.Sprint("use the --simulate=false flag to apply these fixes"))
-}
-
-// PromptDir asks the user for a directory path and saves it.
-func PromptDir() string {
-	// allow multiple word user input
-	scanner := bufio.NewScanner(os.Stdin)
-	var save string
-	for scanner.Scan() {
-		txt := scanner.Text()
-		switch txt {
-		case "":
-			os.Exit(0)
-		case "-":
-			save = ""
-		default:
-			save = txt
-		}
-		if _, err := os.Stat(save); os.IsNotExist(err) {
-			fmt.Fprintln(os.Stderr, "will not save the change as this directory is not found:", Path(save))
-			os.Exit(1)
-		} else {
-			break // exit loop if the directory is found
-		}
-	}
-	scannerCheck(scanner)
-	return save
-}
-
-// PromptPort asks the user for a port configuration value and returns the input.
-func PromptPort() int64 {
-	var input string
-	cnt := 0
-	for {
-		input = ""
-		cnt++
-		fmt.Scanln(&input)
-		if input == "" {
-			promptCheck(cnt)
-			continue
-		}
-		i, err := strconv.ParseInt(input, 10, 0)
-		if err != nil && input != "" {
-			fmt.Printf("%s %v\n", X(), input)
-			promptCheck(cnt)
-			continue
-		}
-		// check that the input a valid port
-		if v := Port(int(i)); !v {
-			fmt.Printf("%s %q is out of range\n", X(), input)
-			promptCheck(cnt)
-			continue
-		}
-		return i
-	}
-}
-
-// PromptString asks the user for a string configuration value and saves it.
-func PromptString(keep string) string {
-	// allow multiple word user input
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		txt := scanner.Text()
-		switch txt {
-		case "":
-			os.Exit(0)
-		case "-":
-			return ""
-		default:
-			return txt
-		}
-	}
-	scannerCheck(scanner)
-	os.Exit(0)
-	return ""
-}
-
-// PromptYN asks the user for a yes or no input.
-func PromptYN(query string, yesDefault bool) bool {
-	var y, n string = "Y", "n"
-	if !yesDefault {
-		y, n = "y", "N"
-	}
-	fmt.Printf("%s? [%s/%s] ", query, y, n)
-	input, err := promptRead(os.Stdin)
-	Check(err)
-	return promptyn(input, yesDefault)
-}
-
-func promptyn(input string, yesDefault bool) bool {
-	switch input {
-	case "":
-		if yesDefault {
-			return true
-		}
-	case "yes", "y":
-		return true
-	}
-	return false
-}
-
-func promptRead(stdin io.Reader) (input string, err error) {
-	reader := bufio.NewReader(stdin)
-	input, err = reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-	if err != nil && err != io.EOF {
-		return input, err
-	}
-	return input, nil
 }
 
 // Truncate shortens a string to len characters.

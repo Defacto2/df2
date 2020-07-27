@@ -1,7 +1,6 @@
 package logs
 
 import (
-	"bytes"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -270,79 +269,6 @@ func TestTruncate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Truncate(tt.args.text, tt.args.len); got != tt.want {
 				t.Errorf("Truncate() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_promptRead(t *testing.T) {
-	color.Enable = false
-	var stdin bytes.Buffer
-	tests := []struct {
-		name      string
-		in        string
-		wantInput string
-		wantErr   bool
-	}{
-		{"empty", "", "", false},
-		{"hello", "hello", "hello", false},
-		{"trim", "        hello", "hello", false},
-		{"sentence", "I am hello world.", "I am hello world.", false},
-		{"nl", "\n\t\n\t\tb", "", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			stdin.Write([]byte(tt.in))
-			gotInput, err := promptRead(&stdin)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("promptRead() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotInput != tt.wantInput {
-				t.Errorf("promptRead() = %v, want %v", gotInput, tt.wantInput)
-			}
-		})
-	}
-}
-
-func Test_promptyn(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		def   bool
-		want  bool
-	}{
-		{"default y", "", true, true},
-		{"default n", "", false, false},
-		{"yes", "y", true, true},
-		{"no", "n", true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := promptyn(tt.input, tt.def); got != tt.want {
-				t.Errorf("promptyn(%v) = %v, want %v", tt.def, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestPromptYN(t *testing.T) {
-	type args struct {
-		query      string
-		yesDefault bool
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{"y", args{"", false}, false},
-		{"n", args{"", true}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := PromptYN(tt.args.query, tt.args.yesDefault); got != tt.want {
-				t.Errorf("PromptYN() = %v, want %v", got, tt.want)
 			}
 		})
 	}
