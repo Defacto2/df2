@@ -2,6 +2,7 @@ package people
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -38,6 +39,14 @@ type Person struct {
 
 type Role int
 
+const (
+	Everyone Role = iota
+	Artists
+	Coders
+	Musicians
+	Writers
+)
+
 func (r Role) String() string {
 	switch r {
 	case Everyone:
@@ -55,21 +64,17 @@ func (r Role) String() string {
 	}
 }
 
-const (
-	Everyone Role = iota
-	Artists
-	Coders
-	Musicians
-	Writers
-)
-
 // Filters is a Role slice for use with the Cobra filterFlag.
 func Filters() []string {
 	return []string{Artists.String(), Coders.String(), Musicians.String(), Writers.String()}
 }
 
-// Roles are the production credit categories.
-const Roles = "artists,coders,musicians,writers"
+var Roles = strings.Join(Filters(), ",")
+
+var (
+	ErrFilter = errors.New("invalid filter used")
+	ErrRole   = errors.New("unknown role")
+)
 
 // List people filtered by a role.
 func List(role Role) (people []string, total int, err error) {
@@ -77,24 +82,24 @@ func List(role Role) (people []string, total int, err error) {
 	defer db.Close()
 	s := peopleStmt(role, false)
 	if s == "" {
-		return nil, 0, nil
+		return nil, 0, fmt.Errorf("list statement %v: %w", role, ErrRole)
 	}
 	if total, err = database.Total(&s); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("list totals: %w", err)
 	}
 	// interate through records
 	rows, err := db.Query(s)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("list query: %w", err)
 	} else if rows.Err() != nil {
-		return nil, 0, rows.Err()
+		return nil, 0, fmt.Errorf("list rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	var persons sql.NullString
 	i := 0
 	for rows.Next() {
 		if err := rows.Scan(&persons); err != nil {
-			return nil, 0, err
+			return nil, 0, fmt.Errorf("list row scan: %w", err)
 		}
 		if _, err = persons.Value(); err != nil {
 			continue
@@ -110,7 +115,7 @@ func DataList(filename string, r Request) error {
 	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
 	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
 	if err := parse(filename, tpl, r); err != nil {
-		return err
+		return fmt.Errorf("datalist: %w", err)
 	}
 	return nil
 }
@@ -120,7 +125,7 @@ func HTML(filename string, r Request) error {
 	// <h2><a href="/p/ben">Ben</a></h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
 	if err := parse(filename, tpl, r); err != nil {
-		return err
+		return fmt.Errorf("html: %w", err)
 	}
 	return nil
 }
@@ -128,7 +133,7 @@ func HTML(filename string, r Request) error {
 func parse(filename string, tpl string, r Request) error {
 	grp, x, err := List(roles(r.Filter))
 	if err != nil {
-		return err
+		return fmt.Errorf("parse list: %w", err)
 	}
 	f := r.Filter
 	if f == "" {
@@ -160,24 +165,26 @@ func parse(filename string, tpl string, r Request) error {
 	}
 	t, err := template.New("h2").Parse(tpl)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse h2 template: %w", err)
 	}
-	switch {
-	case filename == "":
+	if filename == "" {
 		if err = t.Execute(os.Stdout, data); err != nil {
-			return err
+			return fmt.Errorf("parse h2 execute template: %w", err)
 		}
-	case r.Filter == "artists", r.Filter == "coders", r.Filter == "musicians", r.Filter == "writers":
+		return nil
+	}
+	switch roles(r.Filter) {
+	case Artists, Coders, Musicians, Writers:
 		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
 		if err != nil {
-			return err
+			return fmt.Errorf("parse create: %w", err)
 		}
 		defer f.Close()
 		if err = t.Execute(f, data); err != nil {
-			return err
+			return fmt.Errorf("parse template execute: %w", err)
 		}
 	default:
-		return fmt.Errorf("people html parse: invalid filter %q used", r.Filter)
+		return fmt.Errorf("parse %v: %w", r.Filter, ErrFilter)
 	}
 	return nil
 }
@@ -186,7 +193,7 @@ func parse(filename string, tpl string, r Request) error {
 func Print(r Request) error {
 	ppl, total, err := List(roles(r.Filter))
 	if err != nil {
-		return err
+		return fmt.Errorf("print request: %w", err)
 	}
 	logs.Println(total, "matching", r.Filter, "records found")
 	a := make([]string, total)

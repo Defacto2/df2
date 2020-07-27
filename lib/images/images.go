@@ -37,26 +37,26 @@ var scope = gap.NewScope(gap.User, "df2")
 func Duplicate(filename, suffix string) (name string, err error) {
 	src, err := os.Open(filename)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("duplicate %q: %w", filename, err)
 	}
 	defer src.Close()
 	ext := filepath.Ext(filename)
 	fn := strings.TrimSuffix(filename, ext)
 	dest, err := os.OpenFile(fn+suffix+ext, fm, fp)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("duplicate open file %q: %w", fn, err)
 	}
 	defer dest.Close()
 	if _, err = io.Copy(dest, src); err != nil {
-		return "", err
+		return "", fmt.Errorf("duplicate io copy: %w", err)
 	}
 	name = fmt.Sprintf("%s%s%s", fn, suffix, ext)
 	return name, nil
 }
 
 // Generate a collection of site images.
-func Generate(name, id string, remove bool) {
-	var n string = name
+func Generate(name, id string, remove bool) error {
+	n := name
 	out := func(s string, e error) {
 		if s != "" {
 			logs.Printf("  %s", s)
@@ -75,8 +75,11 @@ func Generate(name, id string, remove bool) {
 	s, err = ToThumb(n, f.Img150, 150)
 	out(s, err)
 	if remove {
-		os.Remove(n)
+		if err := os.Remove(n); err != nil {
+			return fmt.Errorf("generate remove %q: %w", n, err)
+		}
 	}
+	return nil
 }
 
 // NewExt replaces or appends the extension to a file name.
@@ -93,12 +96,12 @@ func NewExt(path, ext string) (name string) {
 func Info(name string) (height int, width int, format string, err error) {
 	file, err := os.Open(name)
 	if err != nil {
-		return 0, 0, "", err
+		return 0, 0, "", fmt.Errorf("info open %q: %w", name, err)
 	}
 	defer file.Close()
 	config, format, err := image.DecodeConfig(file)
 	if err != nil {
-		return 0, 0, "", err
+		return 0, 0, "", fmt.Errorf("info decode config: %w", err)
 	}
 	return config.Height, config.Width, format, file.Close()
 }
@@ -106,7 +109,10 @@ func Info(name string) (height int, width int, format string, err error) {
 // Width returns the image width in pixels.
 func Width(name string) (width int, err error) {
 	_, width, _, err = Info(name)
-	return width, err
+	if err != nil {
+		return 0, fmt.Errorf("width: %w", err)
+	}
+	return width, nil
 }
 
 // ToPng converts any supported format to a compressed PNG image.
@@ -114,13 +120,13 @@ func Width(name string) (width int, err error) {
 func ToPng(src, dest string, maxDimension int) (print string, err error) {
 	in, err := os.Open(src)
 	if err != nil {
-		return print, err
+		return print, fmt.Errorf("to png open %s: %w", src, err)
 	}
 	defer in.Close()
 	// image.Decode will determine the format
 	img, ext, err := image.Decode(in)
 	if err != nil {
-		return print, err
+		return print, fmt.Errorf("to png decode: %w", err)
 	}
 	// cap image size
 	if maxDimension > 0 {
@@ -129,7 +135,7 @@ func ToPng(src, dest string, maxDimension int) (print string, err error) {
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
 	img, err = pngquant.Compress(img, "4")
 	if err != nil {
-		return print, err
+		return print, fmt.Errorf("to png quant compress: %w", err)
 	}
 	// adjust any configs to the PNG image encoder
 	cfg := png.Encoder{
@@ -138,16 +144,16 @@ func ToPng(src, dest string, maxDimension int) (print string, err error) {
 	// write the PNG data to img
 	buf := new(bytes.Buffer)
 	if err = cfg.Encode(buf, img); err != nil {
-		return print, err
+		return print, fmt.Errorf("to png buffer encode: %w", err)
 	}
 	// save the PNG to a file
 	out, err := os.Create(dest)
 	if err != nil {
-		return print, err
+		return print, fmt.Errorf("to png create %q: %w", dest, err)
 	}
 	defer out.Close()
 	if _, err := buf.WriteTo(out); err != nil {
-		return print, err
+		return print, fmt.Errorf("to png buffer write to: %w", err)
 	}
 	return fmt.Sprintf("%v»png", strings.ToLower(ext)), nil
 }
@@ -157,30 +163,30 @@ func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
 	pfx := "_" + fmt.Sprintf("%v", sizeSquared) + "x"
 	cp, err := Duplicate(src, pfx)
 	if err != nil {
-		return print, err
+		return print, fmt.Errorf("to thumb duplicate: %w", err)
 	}
 	in, err := imaging.Open(cp)
 	if err != nil {
-		return print, err
+		return print, fmt.Errorf("to thumb imaging open: %w", err)
 	}
 	in = imaging.Resize(in, sizeSquared, 0, imaging.Lanczos)
 	in = imaging.CropAnchor(in, sizeSquared, sizeSquared, imaging.Center)
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
 	in, err = pngquant.Compress(in, "4")
 	if err != nil {
-		return print, err
+		return print, fmt.Errorf("to thumb png quant compress: %w", err)
 	}
-	f := NewExt(cp, ".png")
+	f := NewExt(cp, _png)
 	if err := imaging.Save(in, f); err != nil {
-		return print, err
+		return print, fmt.Errorf("to thumb imaging save: %w", err)
 	}
-	s := NewExt(dest, ".png")
+	s := NewExt(dest, _png)
 	if err := os.Rename(f, s); err != nil {
-		return print, err
+		return print, fmt.Errorf("to thumb rename: %w", err)
 	}
 	if _, err := os.Stat(cp); err == nil {
 		if err := os.Remove(cp); err != nil {
-			return print, err
+			return print, fmt.Errorf("to thumb remove %q: %w", cp, err)
 		}
 	}
 	return fmt.Sprintf("»%vx", sizeSquared), nil
@@ -190,10 +196,10 @@ func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
 // Input format can be either PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
 func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
 	// skip if already a webp image, or handle all other errors
-	if m, err := mimetype.DetectFile(src); m.Extension() == ".webp" {
-		return print, err
+	if m, err := mimetype.DetectFile(src); m.Extension() == webp {
+		return print, nil
 	} else if err != nil {
-		return print, err
+		return print, fmt.Errorf("to webp mimetype detect: %w", err)
 	}
 	const percent = 70
 	webp := webpbin.NewCWebP().
@@ -204,7 +210,7 @@ func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
 		webp.Dest(vendorPath())
 	}
 	if err = webp.Run(); err != nil {
-		return print, err
+		return print, fmt.Errorf("to webp run: %w", err)
 	}
 	return "»webp", nil
 }

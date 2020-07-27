@@ -44,16 +44,16 @@ func Fix(simulate bool) error {
 	defer db.Close()
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image"`)
 	if err != nil {
-		return err
+		return fmt.Errorf("images fix query: %w", err)
 	} else if rows.Err() != nil {
-		return rows.Err()
+		return fmt.Errorf("images fix rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	c := 0
 	for rows.Next() {
 		var img Img
 		if err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize); err != nil {
-			return err
+			return fmt.Errorf("images fix rows scan: %w", err)
 		}
 		if !img.ext() {
 			continue
@@ -65,13 +65,15 @@ func Fix(simulate bool) error {
 				logs.Printf("%s\n", logs.X())
 				continue
 			} else if err != nil {
-				return err
+				return fmt.Errorf("images fix stat: %w", err)
 			}
 			if simulate {
 				logs.Printf("%s\n", color.Question.Sprint("?"))
 				continue
 			}
-			Generate(filepath.Join(dir.UUID, img.UUID), img.UUID, false)
+			if err := Generate(filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
+				return fmt.Errorf("images fix generate: %w", err)
+			}
 			logs.Print("\n")
 		}
 	}

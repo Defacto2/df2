@@ -77,20 +77,21 @@ func TestFilters(t *testing.T) {
 
 func TestList(t *testing.T) {
 	tests := []struct {
-		name string
-		role string
-		want int
+		name    string
+		role    string
+		want    int
+		wantErr bool
 	}{
-		{"empty", "", 0},
-		{"error", "error", 0},
-		{"writers", "writers", 1},
-		{"musicians", "m", 1},
+		{"empty", "", 0, false},
+		{"error", "error", 0, true},
+		{"writers", "writers", 1, false},
+		{"musicians", "m", 1, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, got, err := List(roles(tt.role))
-			if err != nil {
-				t.Error(err)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("List() error got = %v, want %v", (err != nil), tt.wantErr)
 			}
 			if got < tt.want {
 				t.Errorf("List() got = %v, want %v", got, tt.want)

@@ -48,17 +48,13 @@ var proofID string // ID used for proofs, either a UUID or ID string
 // Query parses a single proof.
 func (request Request) Query(id string) error {
 	if err := database.CheckID(id); err != nil {
-		return err
+		return fmt.Errorf("request query id %q: %w", id, err)
 	}
 	proofID = id
-	return request.Queries()
-}
-
-func proofChk(text string) {
-	if proofID == "" {
-		return
+	if err := request.Queries(); err != nil {
+		return fmt.Errorf("request queries: %w", err)
 	}
-	logs.Println(text)
+	return nil
 }
 
 func statInit() stat {
@@ -93,8 +89,8 @@ func (request Request) Queries() error {
 	for rows.Next() {
 		s.total++
 	}
-	if s.total < 1 {
-		proofChk(fmt.Sprintf("file record id '%s' does not exist or is not a release proof", proofID))
+	if s.total < 1 && proofID == "" {
+		logs.Printf("file record id '%s' does not exist or is not a release proof\n", proofID)
 	} else if s.total > 1 {
 		logs.Println("Total records", s.total)
 	}
@@ -174,7 +170,9 @@ func (request Request) flagSkip(values []sql.RawBytes) (skip bool) {
 	if proofID != "" && request.Overwrite {
 		return false
 	} else if new := database.IsNew(values); !new && !request.AllProofs {
-		proofChk(fmt.Sprintf("skip file record id '%s' as it is not new", proofID))
+		if proofID == "" {
+			logs.Printf("skip file record id '%s' as it is not new", proofID)
+		}
 		return true
 	}
 	return false
@@ -186,12 +184,12 @@ func (r Record) approve() error {
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	if err != nil {
-		return err
+		return fmt.Errorf("approve update prepare: %w", err)
 	}
 	defer update.Close()
 	_, err = update.Exec(database.UpdateID, r.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("approve update exec: %w", err)
 	}
 	logs.Printf(" %s", logs.Y())
 	return nil
@@ -201,10 +199,10 @@ func (r Record) approve() error {
 func (r Record) fileZipContent() (ok bool, err error) {
 	a, err := archive.Read(r.File, r.Name)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("file zip content archive read: %w", err)
 	}
 	if err := updateZipContent(r.ID, len(a), strings.Join(a, "\n")); err != nil {
-		return false, err
+		return false, fmt.Errorf("file zip content update: %w", err)
 	}
 	return true, nil
 }
@@ -224,7 +222,7 @@ func (s *stat) fileSkip(r Record, hide bool) (skip bool, err error) {
 		}
 		return true, nil
 	} else if err != nil {
-		return false, err
+		return false, fmt.Errorf("file skip stat %q: %w", r.File, err)
 	}
 	return false, nil
 }
@@ -262,11 +260,11 @@ func updateZipContent(id string, items int, content string) error {
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
 	if err != nil {
-		return err
+		return fmt.Errorf("update zip content db prepare: %w", err)
 	}
 	defer update.Close()
 	if _, err := update.Exec(content, database.UpdateID, "image", id); err != nil {
-		return err
+		return fmt.Errorf("update zip content update exec: %w", err)
 	}
 	logs.Printf("%d items", items)
 	return db.Close()
@@ -285,12 +283,12 @@ func (r Record) zip(col sql.RawBytes, s stat) error {
 		if u, err := r.fileZipContent(); !u {
 			return nil
 		} else if err != nil {
-			return err
+			return fmt.Errorf("zip content: %w", err)
 		}
 		if err := archive.Extract(r.File, r.Name, r.UUID); err != nil {
-			return err
+			return fmt.Errorf("zip extract: %w", err)
 		} else if err := r.approve(); err != nil {
-			return err
+			return fmt.Errorf("zip approve: %w", err)
 		}
 	}
 	return nil
