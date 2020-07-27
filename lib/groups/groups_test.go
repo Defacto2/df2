@@ -10,7 +10,7 @@ import (
 
 func Test_groupsWhere(t *testing.T) {
 	type args struct {
-		name           string
+		f              Filter
 		incSoftDeletes bool
 	}
 	tests := []struct {
@@ -18,18 +18,18 @@ func Test_groupsWhere(t *testing.T) {
 		args args
 		want string
 	}{
-		{"mag-", args{"magazine", false}, "AND section = 'magazine' AND `deletedat` IS NULL"},
-		{"bbs-", args{"bbs", false}, "AND RIGHT(group_brand_for,4) = ' BBS' AND `deletedat` IS NULL"},
-		{"ftp-", args{"ftp", false}, "AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL"},
-		{"grp-", args{"group", false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND `deletedat` IS NULL"},
-		{"mag+", args{"magazine", true}, "AND section = 'magazine'"},
-		{"bbs+", args{"bbs", true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
-		{"ftp+", args{"ftp", true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
-		{"grp+", args{"group", true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine'"},
+		{"mag-", args{Magazine, false}, "AND section = 'magazine' AND `deletedat` IS NULL"},
+		{"bbs-", args{BBS, false}, "AND RIGHT(group_brand_for,4) = ' BBS' AND `deletedat` IS NULL"},
+		{"ftp-", args{FTP, false}, "AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL"},
+		{"grp-", args{Group, false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND `deletedat` IS NULL"},
+		{"mag+", args{Magazine, true}, "AND section = 'magazine'"},
+		{"bbs+", args{BBS, true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
+		{"ftp+", args{FTP, true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
+		{"grp+", args{Group, true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine'"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := groupsWhere(tt.args.name, tt.args.incSoftDeletes); got != tt.want {
+			if got, _ := groupsWhere(tt.args.f, tt.args.incSoftDeletes); got != tt.want {
 				t.Errorf("groupsWhere() = %q, want %q", got, tt.want)
 			}
 		})
@@ -126,7 +126,7 @@ func Test_list(t *testing.T) {
 
 func Test_groupsStmt(t *testing.T) {
 	type args struct {
-		filter             string
+		f                  Filter
 		includeSoftDeletes bool
 	}
 	tests := []struct {
@@ -134,13 +134,13 @@ func Test_groupsStmt(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"valid soft", args{"bbs", true}, false},
-		{"valid", args{"bbs", false}, false},
-		{"invalid", args{"invalid filter", false}, true},
+		{"valid soft", args{BBS, true}, false},
+		{"valid", args{BBS, false}, false},
+		{"invalid", args{filter("invalid filter"), false}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := groupsStmt(tt.args.filter, tt.args.includeSoftDeletes)
+			_, err := groupsStmt(tt.args.f, tt.args.includeSoftDeletes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("groupsStmt() error = %v, wantErr %v", err, tt.wantErr)
 				return

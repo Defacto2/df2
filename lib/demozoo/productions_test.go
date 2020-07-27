@@ -12,10 +12,6 @@ import (
 
 const modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
 
-func init() {
-
-}
-
 func Test_filename(t *testing.T) {
 	type args struct {
 		h http.Header

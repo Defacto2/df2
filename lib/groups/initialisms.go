@@ -16,26 +16,20 @@ type group struct {
 func Initialism(name string) (string, error) {
 	g := group{name: name}
 	if err := g.get(); err != nil {
-		return "", err
+		return "", fmt.Errorf("initialism get %q: %w", name, err)
 	}
 	return g.initialism, nil
-}
-
-func (g group) sqlInitialism() string {
-	return fmt.Sprintf("SELECT `initialisms` FROM `groups` WHERE `pubname`=%q", g.name)
 }
 
 func (g *group) get() error {
 	db, err := database.ConnectErr()
 	if err != nil {
-		return err
+		return fmt.Errorf("get db connect: %w", err)
 	}
 	defer db.Close()
-	var pubname string
-	row := db.QueryRow(g.sqlInitialism())
-	if err = row.Scan(&pubname); err != nil && err != sql.ErrNoRows {
-		return err
+	row := db.QueryRow("SELECT `initialisms` FROM `groups` WHERE `pubname`=?", g.name)
+	if err = row.Scan(&g.initialism); err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("get row scan: %w", err)
 	}
-	g.initialism = pubname
 	return db.Close()
 }

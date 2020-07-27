@@ -2,6 +2,7 @@ package groups
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -16,8 +17,50 @@ import (
 
 const htm = ".htm"
 
+type Filter int
+
+const (
+	None Filter = iota
+	BBS
+	FTP
+	Group
+	Magazine
+)
+
+func (f Filter) String() string {
+	switch f {
+	case BBS:
+		return "bbs"
+	case FTP:
+		return "ftp"
+	case Group:
+		return "group"
+	case Magazine:
+		return "magazine"
+	}
+	return ""
+}
+
+func filter(s string) Filter {
+	switch strings.ToLower(s) {
+	case "bbs":
+		return BBS
+	case "ftp":
+		return FTP
+	case "group":
+		return Group
+	case "magazine":
+		return Magazine
+	case "":
+		return None
+	}
+	return -1
+}
+
 // Filters are group categories.
-const Filters = "bbs,ftp,group,magazine"
+var Filters = strings.Join(Wheres(), ",")
+
+var ErrFilter = errors.New("invalid filter used")
 
 // Request flags for group functions.
 type Request struct {
@@ -31,8 +74,8 @@ type Request struct {
 	Progress bool
 }
 
-// Group data.
-type Group struct {
+// Result on a group.
+type Result struct {
 	// ID used in URLs to link to the group.
 	ID string
 	// Name of the group.
@@ -52,29 +95,28 @@ func Count(name string) (count int, err error) {
 	n := name
 	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n)
 	if err = row.Scan(&count); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("group count row scan: %w", err)
 	}
 	return count, db.Close()
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
 func Cronjob() error {
-	tags := []string{"bbs", "ftp", "group", "magazine"}
-	for i := range tags {
+	for _, tag := range Wheres() {
 		last, err := database.LastUpdate()
 		if err != nil {
-			return err
+			return fmt.Errorf("group cronjob last update: %w", err)
 		}
-		f := tags[i] + htm
+		f := tag + htm
 		n := path.Join(viper.GetString("directory.html"), f)
 		if update, err := database.FileUpdate(n, last); err != nil {
-			return err
+			return fmt.Errorf("group cronjob file update: %w", err)
 		} else if !update {
 			logs.Println(f + " has nothing to update")
 		} else {
-			r := Request{tags[i], true, true, false}
+			r := Request{tag, true, true, false}
 			if err := r.HTML(f); err != nil {
-				return err
+				return fmt.Errorf("group cronjob html: %w", err)
 			}
 		}
 	}
@@ -86,7 +128,7 @@ func (r Request) DataList(filename string) error {
 	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
 	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}<option value="{{.Name}}" label="{{.Name}}">{{end}}`
 	if err := r.parse(filename, tpl); err != nil {
-		return err
+		return fmt.Errorf("datalist parse template: %w", err)
 	}
 	return nil
 }
@@ -96,7 +138,7 @@ func (r Request) HTML(filename string) error {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
 	if err := r.parse(filename, tpl); err != nil {
-		return err
+		return fmt.Errorf("html parse template: %w", err)
 	}
 	return nil
 }
@@ -118,21 +160,29 @@ func hrElement(letter, group string) (string, bool) {
 
 func (r Request) files(group string) (total int, err error) {
 	if r.Counts {
-		return Count(group)
+		total, err = Count(group)
+		if err != nil {
+			return 0, fmt.Errorf("request total files for %q: %w", group, err)
+		}
+		return total, nil
 	}
 	return 0, nil
 }
 
 func (r Request) initialism(group string) (name string, err error) {
 	if r.Initialisms {
-		return initialism(group)
+		name, err = initialism(group)
+		if err != nil {
+			return "", fmt.Errorf("request initialism for %q: %w", group, err)
+		}
+		return name, nil
 	}
 	return "", nil
 }
 
-func (r Request) iterate(groups []string) (g *[]Group, err error) {
+func (r Request) iterate(groups []string) (g *[]Result, err error) {
 	total := len(groups)
-	data := make([]Group, total)
+	data := make([]Result, total)
 	lastLetter, hr := "", false
 	for i, grp := range groups {
 		if !logs.Quiet && r.Progress {
@@ -141,13 +191,13 @@ func (r Request) iterate(groups []string) (g *[]Group, err error) {
 		lastLetter, hr = hrElement(lastLetter, grp)
 		c, err := r.files(grp)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("iterate group file %q: %w", grp, err)
 		}
 		init, err := r.initialism(grp)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("iterate group initialism %q: %w", grp, err)
 		}
-		data[i] = Group{
+		data[i] = Result{
 			ID:         MakeSlug(grp),
 			Name:       grp,
 			Count:      c,
@@ -161,7 +211,7 @@ func (r Request) iterate(groups []string) (g *[]Group, err error) {
 func (r Request) parse(filename string, templ string) (err error) {
 	groups, total, err := list(r.Filter)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse group: %w", err)
 	}
 	if f := r.Filter; f == "" {
 		logs.Println(total, "matching (all) records found")
@@ -170,63 +220,65 @@ func (r Request) parse(filename string, templ string) (err error) {
 	}
 	data, err := r.iterate(groups)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse iterate: %w", err)
 	}
 	t, err := template.New("h2").Parse(templ)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse template: %w", err)
 	}
-	switch {
-	case filename == "":
+	if filename == "" {
 		if err = t.Execute(os.Stdout, &data); err != nil {
-			return err
+			return fmt.Errorf("parse template execute: %w", err)
 		}
-	case r.Filter == "bbs", r.Filter == "ftp", r.Filter == "group", r.Filter == "magazine":
+		return nil
+	}
+	switch filter(r.Filter) {
+	case BBS, FTP, Group, Magazine:
 		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
 		if err != nil {
-			return err
+			return fmt.Errorf("parse create: %w", err)
 		}
 		defer f.Close()
 		if err = t.Execute(f, &data); err != nil {
-			return err
+			return fmt.Errorf("parse t execute: %w", err)
 		}
 	default:
-		return fmt.Errorf("groups parse: invalid filter %q used", r.Filter)
+		return fmt.Errorf("parse %q: %w", r.Filter, ErrFilter)
 	}
 	return nil
 }
 
 // list all organizations or filtered groups.
-func list(filter string) (groups []string, total int, err error) {
+func list(f string) (groups []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
-	s, err := groupsStmt(filter, false)
+	s, err := groupsStmt(filter(f), false)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("list groups statement: %w", err)
 	}
 	total, err = database.Total(&s)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("list groups total: %w", err)
 	}
 	// interate through records
 	rows, err := db.Query(s)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("list groups query: %w", err)
 	} else if err := rows.Err(); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("list groups rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	var grp sql.NullString
 	for rows.Next() {
 		if err = rows.Scan(&grp); err != nil {
-			return nil, 0, err
+			return nil, 0, fmt.Errorf("list groups rows scan: %w", err)
 		}
 		if _, err = grp.Value(); err != nil {
 			continue
 		}
 		groups = append(groups, fmt.Sprintf("%v", grp.String))
 	}
-	return groups, total, err
+	return groups, total, nil
 }
 
 // MakeSlug takes a name and makes it into a URL friendly slug.
@@ -250,7 +302,7 @@ func MakeSlug(name string) string {
 func Print(r Request) (total int, err error) {
 	grp, total, err := list(r.Filter)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("print list groups: %w", err)
 	}
 	logs.Println(total, "matching", r.Filter, "records found")
 	a := make([]string, total)
@@ -264,7 +316,7 @@ func Print(r Request) (total int, err error) {
 		// initialism
 		if r.Initialisms {
 			if in, err := initialism(n); err != nil {
-				return 0, err
+				return 0, fmt.Errorf("print initalism: %w", err)
 			} else if in != "" {
 				s = fmt.Sprintf("%v [%s]", s, in)
 			}
@@ -273,7 +325,7 @@ func Print(r Request) (total int, err error) {
 		if r.Counts {
 			c, err := Count(n)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("print counts: %w", err)
 			}
 			if c > 0 {
 				s = fmt.Sprintf("%v (%d)", s, c)
@@ -312,14 +364,14 @@ func Variations(name string) (vars []string, err error) {
 	if init, err := Initialism(name); err == nil && init != "" {
 		vars = append(vars, strings.ToLower(init))
 	} else if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("variations %q: %w", name, err)
 	}
 	return vars, nil
 }
 
 // Wheres are group categories.
 func Wheres() []string {
-	return strings.Split(Filters, ",")
+	return []string{BBS.String(), FTP.String(), Group.String(), Magazine.String()}
 }
 
 // initialism returns a group's initialism or acronym.
@@ -333,7 +385,7 @@ func initialism(name string) (string, error) {
 		strings.Contains(err.Error(), "no rows in result set") {
 		return "", nil
 	} else if err != nil {
-		return "", err
+		return "", fmt.Errorf("initialism %q: %w", name, err)
 	}
 	return i, db.Close()
 }
@@ -351,16 +403,14 @@ func remInitialism(s string) string {
 }
 
 // groupsStmt returns a complete SQL WHERE statement where the groups are filtered.
-func groupsStmt(filter string, includeSoftDeletes bool) (stmt string, err error) {
+func groupsStmt(f Filter, includeSoftDeletes bool) (stmt string, err error) {
 	var inc, skip bool = includeSoftDeletes, false
-	for _, a := range Wheres() {
-		if a == filter {
-			skip = true
-		}
+	if f > -1 {
+		skip = true
 	}
-	where, err := groupsWhere(filter, inc)
+	where, err := groupsWhere(f, inc)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("group statement %q: %w", f.String(), err)
 	}
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
@@ -377,30 +427,29 @@ func groupsStmt(filter string, includeSoftDeletes bool) (stmt string, err error)
 }
 
 // groupsFilter returns a partial SQL WHERE statement to filter groups.
-func groupsFilter(filter string) (stmt string, err error) {
-	switch filter {
-	case "":
-		return "", nil
-	case "magazine":
+func groupsFilter(f Filter) (stmt string, err error) {
+	switch f {
+	case None:
+		stmt = ""
+	case Magazine:
 		stmt = "section = 'magazine' AND"
-	case "bbs":
+	case BBS:
 		stmt = "RIGHT(group_brand_for,4) = ' BBS' AND"
-	case "ftp":
+	case FTP:
 		stmt = "RIGHT(group_brand_for,4) = ' FTP' AND"
-	case "group": // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
+	case Group: // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
 		stmt = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
 	default:
-		err = fmt.Errorf("groups groupsFilter: unsupported filter option %q, leave blank or use either %v", filter, Filters)
-		return "", err
+		return "", fmt.Errorf("group filter %q: %w", f.String(), ErrFilter)
 	}
 	return stmt, nil
 }
 
 // groupsWhere returns a partial SQL WHERE statement where groups are filtered.
-func groupsWhere(filter string, softDel bool) (stmt string, err error) {
-	stmt, err = groupsFilter(filter)
+func groupsWhere(f Filter, softDel bool) (stmt string, err error) {
+	stmt, err = groupsFilter(f)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("groups where: %w", err)
 	}
 	switch {
 	case stmt != "" && softDel:

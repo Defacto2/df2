@@ -1,20 +1,26 @@
 package directories
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"path"
 	"reflect"
 	"time"
 
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/viper"
 )
 
 // random characters used by randStringBytes().
 const random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
+
+var (
+	ErrPathIsFile = errors.New("path already exist as a file")
+	ErrPrefix     = errors.New("invalid prefix value, it must be between 0 - 9")
+)
 
 // Dir is a collection of paths containing files.
 type Dir struct {
@@ -54,8 +60,12 @@ func Init(create bool) Dir {
 	D.Base = viper.GetString("directory.root")
 	D.UUID = viper.GetString("directory.uuid")
 	if create {
-		createDirectories()
-		createPlaceHolders()
+		if err := createDirectories(); err != nil {
+			log.Fatal(err)
+		}
+		if err := createPlaceHolders(); err != nil {
+			log.Fatal(err)
+		}
 	}
 	return D
 }
@@ -72,70 +82,89 @@ func Files(name string) (dirs Dir) {
 }
 
 // createDirectories generates a series of UUID subdirectories.
-func createDirectories() {
+func createDirectories() error {
 	v := reflect.ValueOf(D)
 	// iterate through the D struct values
 	for i := 0; i < v.NumField(); i++ {
 		if d := fmt.Sprintf("%v", v.Field(i).Interface()); d != "" {
-			createDirectory(d)
+			if err := createDirectory(d); err != nil {
+				return fmt.Errorf("create directory: %w", err)
+			}
 		}
 	}
+	return nil
 }
 
 // createDirectory creates a UUID subdirectory provided to path.
-func createDirectory(path string) (ok bool) {
+func createDirectory(path string) error {
 	src, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		if err := os.MkdirAll(path, 0755); err != nil {
-			logs.Check(err)
+			return fmt.Errorf("create directory mkdir %q: %w", path, err)
 		}
-		return true
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("create directory stat %q: %w", path, err)
 	}
 	if src.Mode().IsRegular() {
-		logs.Log(fmt.Errorf("directories create: path already exist as a file: %s", path))
-		return false
+		return fmt.Errorf("create directory %q: %w", path, ErrPathIsFile)
 	}
-	return false
+	return nil
 }
 
 // createHolderFiles generates a number of placeholder files in the given directory.
-func createHolderFiles(dir string, size int, number uint) {
+func createHolderFiles(dir string, size int, number uint) error {
 	const max = 9
 	if number > max {
-		logs.Check(errPrefix(number))
+		return fmt.Errorf("create holder files number=%d: %w", number, ErrPrefix)
 	}
 	for i := uint(0); i <= number; i++ {
-		createHolderFile(dir, size, i)
+		if err := createHolderFile(dir, size, i); err != nil {
+			return fmt.Errorf("create holder files: %w", err)
+		}
 	}
+	return nil
 }
 
 // createHolderFile generates a placeholder file filled with random text in the given directory,
 // the size of the file determines the number of random characters and the prefix is a digit between
 // 0 and 9 is appended to the filename.
-func createHolderFile(dir string, size int, prefix uint) {
+func createHolderFile(dir string, size int, prefix uint) error {
 	const max = 9
 	if prefix > max {
-		logs.Check(errPrefix(prefix))
+		return fmt.Errorf("create holder file prefix=%d: %w", prefix, ErrPrefix)
 	}
 	name := fmt.Sprintf("00000000-0000-0000-0000-00000000000%v", prefix)
 	fn := path.Join(dir, name)
 	if _, err := os.Stat(fn); err == nil {
-		return // don't overwrite existing files
+		return nil // don't overwrite existing files
 	}
 	rand.Seed(time.Now().UnixNano())
 	text := []byte(randStringBytes(size))
 	if err := ioutil.WriteFile(fn, text, 0644); err != nil {
-		logs.Log(err)
+		return fmt.Errorf("write create holder file %q: %w", fn, err)
 	}
+	return nil
 }
 
 // createPlaceHolders generates a collection placeholder files in the UUID subdirectories.
-func createPlaceHolders() {
-	createHolderFiles(D.UUID, 1000000, 9)
-	createHolderFiles(D.Emu, 1000000, 2)
-	createHolderFiles(D.Img000, 1000000, 9)
-	createHolderFiles(D.Img400, 500000, 9)
-	createHolderFiles(D.Img150, 100000, 9)
+func createPlaceHolders() error {
+	if err := createHolderFiles(D.UUID, 1000000, 9); err != nil {
+		return fmt.Errorf("create uuid holders: %w", err)
+	}
+	if err := createHolderFiles(D.Emu, 1000000, 2); err != nil {
+		return fmt.Errorf("create emu holders: %w", err)
+	}
+	if err := createHolderFiles(D.Img000, 1000000, 9); err != nil {
+		return fmt.Errorf("create img000 holders: %w", err)
+	}
+	if err := createHolderFiles(D.Img400, 500000, 9); err != nil {
+		return fmt.Errorf("create img400 holders: %w", err)
+	}
+	if err := createHolderFiles(D.Img150, 100000, 9); err != nil {
+		return fmt.Errorf("create img150 holders: %w", err)
+	}
+	return nil
 }
 
 // randStringBytes generates a random string of n x characters.
@@ -145,9 +174,4 @@ func randStringBytes(n int) string {
 		b[i] = random[rand.Int63()%int64(len(random))]
 	}
 	return string(b)
-}
-
-// errPrefix gives user feedback with invalid params.
-func errPrefix(prefix uint) error {
-	return fmt.Errorf("directories: invalid prefix %q as it must be between 0 - 9", prefix)
 }
