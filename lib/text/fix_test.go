@@ -43,8 +43,12 @@ func TestImage_exists(t *testing.T) {
 			x := image{
 				UUID: tt.fields.UUID,
 			}
-			if got := x.exist(); got != tt.want {
+			got, err := x.exist()
+			if got != tt.want {
 				t.Errorf("image.exist() = %v, want %v", got, tt.want)
+			}
+			if err != nil {
+				t.Errorf("image.exists() err = %v", err)
 			}
 		})
 	}

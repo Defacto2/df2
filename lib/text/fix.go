@@ -44,9 +44,9 @@ func Fix(simulate bool) error {
 	defer db.Close()
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="text"`)
 	if err != nil {
-		return err
+		return fmt.Errorf("fix db query: %w", err)
 	} else if rows.Err() != nil {
-		return rows.Err()
+		return fmt.Errorf("fix rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	c := 0
@@ -54,13 +54,13 @@ func Fix(simulate bool) error {
 		var img image
 		err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize)
 		if err != nil {
-			logs.Check(err)
+			return fmt.Errorf("fix rows scan: %w", err)
 		}
 		// TODO replace with function that handles archives
 		if !img.valid() {
 			continue
 		}
-		if !img.exist() {
+		if ok, err := img.exist(); !ok {
 			c++
 			logs.Printf("%d. %v", c, img)
 			input := filepath.Join(dir.UUID, img.UUID)
@@ -73,9 +73,11 @@ func Fix(simulate bool) error {
 				continue
 			}
 			if err := generate(input, img.UUID); err != nil {
-				return err
+				return fmt.Errorf("fix generate: %w", err)
 			}
 			logs.Print("\n")
+		} else {
+			return fmt.Errorf("fix exist: %w", err)
 		}
 	}
 	if simulate && c > 0 {
@@ -87,18 +89,20 @@ func Fix(simulate bool) error {
 }
 
 // check that [UUID].png exists in all three image subdirectories.
-func (i image) exist() bool {
+func (i image) exist() (bool, error) {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
 		if path == "" {
-			return false
+			return false, nil
 		}
 		if s, err := os.Stat(filepath.Join(path, i.UUID+png)); os.IsNotExist(err) {
 			fmt.Println(s)
-			return false
+			return false, nil
+		} else if err != nil {
+			return false, fmt.Errorf("image exist: %w", err)
 		}
 	}
-	return true
+	return true, nil
 }
 
 func (i image) valid() bool {

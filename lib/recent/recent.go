@@ -35,6 +35,8 @@ type files struct {
 	Data []data    `json:"DATA"`
 }
 
+var ErrJSON = errors.New("data fails json validation")
+
 func (f *File) parse(values []sql.RawBytes) {
 	if id := string(values[0]); id != "" {
 		f.URLID = database.ObfuscateParam(id)
@@ -77,14 +79,14 @@ func List(limit uint, compress bool) error {
 	query := sqlRecent(limit, false)
 	rows, err := db.Query(query)
 	if err != nil {
-		return err
+		return fmt.Errorf("list query: %w", err)
 	} else if rows.Err() != nil {
-		return rows.Err()
+		return fmt.Errorf("list rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
-		return err
+		return fmt.Errorf("list columns: %w", err)
 	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
@@ -96,7 +98,7 @@ func List(limit uint, compress bool) error {
 	}
 	for rows.Next() {
 		if err = rows.Scan(scanArgs...); err != nil {
-			return err
+			return fmt.Errorf("list rows next: %w", err)
 		} else if values == nil {
 			continue
 		}
@@ -106,22 +108,21 @@ func List(limit uint, compress bool) error {
 	}
 	jsonData, err := json.Marshal(f)
 	if err != nil {
-		return err
+		return fmt.Errorf("list json marshal: %w", err)
 	}
 	var out bytes.Buffer
 	if !compress {
 		if err := json.Indent(&out, jsonData, "", "    "); err != nil {
-			return err
+			return fmt.Errorf("list json indent: %w", err)
 		}
 	} else if err := json.Compact(&out, jsonData); err != nil {
-		return err
+		return fmt.Errorf("list json compact: %w", err)
 	}
 	if _, err = out.WriteTo(os.Stdout); err != nil {
-		return err
+		return fmt.Errorf("list write to: %w", err)
 	}
 	if ok := json.Valid(jsonData); !ok {
-		err := errors.New("recent list: jsonData fails JSON encoding validation")
-		return err
+		return fmt.Errorf("list json validate: %w", ErrJSON)
 	}
 	return nil
 }

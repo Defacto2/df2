@@ -35,7 +35,7 @@ type url struct {
 type URLset struct {
 	XMLName xml.Name `xml:"urlset,omitempty"`
 	XMLNS   string   `xml:"xmlns,attr,omitempty"`
-	Svs     []url    `xml:"url,omitempty"`
+	Urls    []url    `xml:"url,omitempty"`
 }
 
 var urls = [28]string{
@@ -78,33 +78,33 @@ func Create() error {
 	defer dbc.Close()
 	rowCnt, err := dbc.Query("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL")
 	if err != nil {
-		return err
+		return fmt.Errorf("create count query: %w", err)
 	} else if rowCnt.Err() != nil {
-		return rowCnt.Err()
+		return fmt.Errorf("create count rows: %w", rowCnt.Err())
 	}
 	defer rowCnt.Close()
 	for rowCnt.Next() {
 		if err := rowCnt.Scan(&count); err != nil {
-			return err
+			return fmt.Errorf("create count scan: %w", err)
 		}
 	}
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query("SELECT `id`,`createdat`,`updatedat` FROM `files` WHERE `deletedat` IS NULL")
 	if err != nil {
-		return err
+		return fmt.Errorf("create db query: %w", err)
 	} else if rows.Err() != nil {
-		return rows.Err()
+		return fmt.Errorf("create db rows: %w", rowCnt.Err())
 	}
 	defer rows.Close()
 	// handle static urls
-	v.Svs = make([]url, len(urls)+count)
+	v.Urls = make([]url, len(urls)+count)
 	c, i := v.staticURLs()
 	// handle query results.
 	for rows.Next() {
 		i++
 		if err = rows.Scan(&id, &createdat, &updatedat); err != nil {
-			return err
+			return fmt.Errorf("create rows next: %w", err)
 		}
 		// check for valid createdat and updatedat entries.
 		if _, err := updatedat.Value(); err != nil {
@@ -128,7 +128,7 @@ func Create() error {
 			t := strings.Split(lastmodFields[0], "T") // example value: 2020-04-06T20:51:36Z
 			lastmodValue = t[0]
 		}
-		v.Svs[i] = url{fmt.Sprintf("%v%v", resource, database.ObfuscateParam(id)), lastmodValue, "", ""}
+		v.Urls[i] = url{fmt.Sprintf("%v%v", resource, database.ObfuscateParam(id)), lastmodValue, "", ""}
 		c++
 		if c >= limit {
 			break
@@ -137,22 +137,22 @@ func Create() error {
 	// trim empty urls so they're not included in the xml.
 	empty := url{}
 	var trimmed []url
-	for i, x := range v.Svs {
+	for i, x := range v.Urls {
 		if x == empty {
-			trimmed = v.Svs[0:i]
+			trimmed = v.Urls[0:i]
 			break
 		}
 	}
-	v.Svs = trimmed
+	v.Urls = trimmed
 	output, err := xml.MarshalIndent(v, "", "")
 	if err != nil {
-		return err
+		return fmt.Errorf("create xml marshal indent: %w", err)
 	}
 	if _, err := os.Stdout.Write([]byte(xml.Header)); err != nil {
-		return err
+		return fmt.Errorf("create stdout xml header: %w", err)
 	}
 	if _, err := os.Stdout.Write(output); err != nil {
-		return err
+		return fmt.Errorf("create stdout: %w", err)
 	}
 	return db.Close()
 }
@@ -162,23 +162,23 @@ func (v *URLset) staticURLs() (c int, i int) {
 	for i, u := range urls {
 		file := filepath.Join(d, u, index)
 		if s, err := os.Stat(file); !os.IsNotExist(err) {
-			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"}
+			v.Urls[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"}
 			c++
 			continue
 		}
 		j := filepath.Join(d, u) + cfm
 		if s, err := os.Stat(j); !os.IsNotExist(err) {
-			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.8"}
+			v.Urls[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.8"}
 			c++
 			continue
 		}
 		k := filepath.Join(d, strings.ReplaceAll(u, "-", "")+cfm)
 		if s, err := os.Stat(k); !os.IsNotExist(err) {
-			v.Svs[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.7"}
+			v.Urls[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.7"}
 			c++
 			continue
 		}
-		v.Svs[i] = url{fmt.Sprintf("%v", static+u), "", "", "1"}
+		v.Urls[i] = url{fmt.Sprintf("%v", static+u), "", "", "1"}
 	}
 	return c, i
 }
