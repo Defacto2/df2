@@ -181,7 +181,7 @@ func (r Request) initialism(group string) (name string, err error) {
 	return "", nil
 }
 
-func (r Request) iterate(groups []string) (g *[]Result, err error) {
+func (r Request) iterate(groups ...string) (g *[]Result, err error) {
 	total := len(groups)
 	data := make([]Result, total)
 	lastLetter, hr := "", false
@@ -219,7 +219,7 @@ func (r Request) parse(filename string, templ string) (err error) {
 	} else {
 		logs.Println(total, "matching", f, "records found")
 	}
-	data, err := r.iterate(groups)
+	data, err := r.iterate(groups...)
 	if err != nil {
 		return fmt.Errorf("parse iterate: %w", err)
 	}

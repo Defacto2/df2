@@ -39,7 +39,7 @@ var (
 )
 
 // Arg returns instructions for invalid command arguments.
-func Arg(arg string, args []string) {
+func Arg(arg string, args ...string) {
 	fmt.Printf("%s %s %s\n",
 		color.Warn.Sprint("invalid command"),
 		color.Bold.Sprintf("\"%s %s\"", arg, args[0]),

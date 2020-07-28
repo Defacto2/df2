@@ -17,7 +17,7 @@ func Test_options(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := options(tt.args.a); got != tt.want {
+			if got := options(tt.args.a...); got != tt.want {
 				t.Errorf("options() = %q, want %q", got, tt.want)
 			}
 		})
