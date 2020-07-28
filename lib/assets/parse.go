@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/dustin/go-humanize"
 	"gopkg.in/gookit/color.v1"
 )
@@ -71,9 +72,9 @@ func (i *item) count(c int) {
 }
 
 func (i *item) erase(r results) {
-	i.flag = logs.Y()
+	i.flag = str.Y()
 	if err := os.Remove(i.path); err != nil {
-		i.flag = logs.X()
+		i.flag = str.X()
 		r.fails++
 	}
 }

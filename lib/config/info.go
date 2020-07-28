@@ -8,6 +8,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -40,17 +41,17 @@ func Info() error {
 		switch strings.TrimSpace(s[0]) {
 		case "server":
 			if db != "" {
-				logs.Printf(" %s %s", logs.X(), db)
+				logs.Printf(" %s %s", str.X(), db)
 			} else {
-				logs.Printf(" %s %s", color.Success.Sprint("up"), logs.Y())
+				logs.Printf(" %s %s", color.Success.Sprint("up"), str.Y())
 			}
 		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
 			if _, err := os.Stat(val); os.IsNotExist(err) {
-				logs.Printf(" %s %s", val, logs.X())
+				logs.Printf(" %s %s", val, str.X())
 			} else if err != nil {
 				return fmt.Errorf("info stat %q: %w", val, err)
 			} else {
-				logs.Printf(" %s %s", val, logs.Y())
+				logs.Printf(" %s %s", val, str.Y())
 			}
 		case "password":
 			logs.Print(color.Warn.Sprint(" **********"))

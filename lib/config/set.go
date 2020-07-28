@@ -8,6 +8,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/prompt"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
 )
@@ -82,7 +83,7 @@ func configSave(value interface{}) error {
 		return fmt.Errorf("config save: %w", ErrSaveType)
 	}
 	viper.Set(Config.nameFlag, value)
-	logs.Printf("%s %s is now set to \"%v\"\n", logs.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))
+	logs.Printf("%s %s is now set to \"%v\"\n", str.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))
 	if err := writeConfig(true); err != nil {
 		return fmt.Errorf("config save: %w", err)
 	}

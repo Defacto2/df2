@@ -8,23 +8,23 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"unicode/utf8"
 
+	"github.com/Defacto2/df2/lib/str"
 	gap "github.com/muesli/go-app-paths"
 	"gopkg.in/gookit/color.v1"
 )
 
 const (
-	// PortMin is the lowest permitted network port
-	PortMin int = 0
-	// PortMax is the largest permitted network port
-	PortMax int = 65535
 	// AED is the ANSI Erase in Display
-	AED string = "\r\003[2J"
+	AED = "\r\003[2J"
 	// AEL is the ANSI Erase in Line sequence
-	AEL string = "\r\033[0K"
+	AEL = "\r\033[0K"
+	// PortMin is the lowest permitted network port
+	PortMin = 0
+	// PortMax is the largest permitted network port
+	PortMax = 65535
 	// Filename is the default error log filename
-	Filename string = "errors.log"
+	Filename = "errors.log"
 )
 
 var (
@@ -135,32 +135,12 @@ func ProgressSum(count, total int) (sum string) {
 	return sum
 }
 
-// Sec prints a secondary notice.
-func Sec(s string) string {
-	return color.Secondary.Sprint(s)
-}
-
-// Warn prints a warning notice.
-func Warn(s string) string {
-	return color.Warn.Sprint(s)
-}
-
-// X returns a red ✗ cross mark.
-func X() string {
-	return color.Danger.Sprint("✗")
-}
-
-// Y returns a green ✓ tick mark.
-func Y() string {
-	return color.Success.Sprint("✓")
-}
-
 // File is a logger for common os package functions.
 // config is an optional configuration path used by cmd.config.
 func File(config string, err error) {
 	var pathError *os.PathError
 	if errors.As(err, &pathError) {
-		log.Println(X(), "logs file: failed to create or open file", Path(pathError.Path))
+		log.Println(str.X(), "logs file: failed to create or open file", Path(pathError.Path))
 		if config != "" {
 			Println("  to fix run:", color.Info.Sprintf("config set --name %v", config))
 		}
@@ -198,21 +178,4 @@ func Port(port int) bool {
 		return false
 	}
 	return true
-}
-
-// Simulate prints the --simulate=false flag info.
-func Simulate() {
-	Println(color.Notice.Sprint("use the --simulate=false flag to apply these fixes"))
-}
-
-// Truncate shortens a string to len characters.
-func Truncate(text string, len int) string {
-	if len < 1 {
-		return text
-	}
-	const new string = "…"
-	if utf8.RuneCountInString(text) <= len {
-		return text
-	}
-	return text[0:len-utf8.RuneCountInString(new)] + new
 }

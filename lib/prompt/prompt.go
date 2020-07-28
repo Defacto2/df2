@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 )
 
 // Dir asks the user for a directory path and saves it.
@@ -52,13 +53,13 @@ func Port() int64 {
 		}
 		i, err := strconv.ParseInt(input, 10, 0)
 		if err != nil && input != "" {
-			fmt.Printf("%s %v\n", logs.X(), input)
+			fmt.Printf("%s %v\n", str.X(), input)
 			check(cnt)
 			continue
 		}
 		// check that the input a valid port
 		if v := logs.Port(int(i)); !v {
-			fmt.Printf("%s %q is out of range\n", logs.X(), input)
+			fmt.Printf("%s %q is out of range\n", str.X(), input)
 			check(cnt)
 			continue
 		}

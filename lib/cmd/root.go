@@ -13,6 +13,7 @@ import (
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -118,7 +119,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		config.Config.Errors = true
 	} else if !quiet {
-		logs.Println(logs.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
+		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
 	}
 }
 

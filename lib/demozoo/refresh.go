@@ -10,6 +10,7 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/download"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
 )
 
@@ -81,14 +82,14 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 		return true, fmt.Errorf("next refresh new record 2: %w", err)
 	}
 	if reflect.DeepEqual(new, r) {
-		logs.Printf("• skipped %v", logs.Y())
+		logs.Printf("• skipped %v", str.Y())
 		return true, nil
 	}
 	if err = r.Save(); err != nil {
-		logs.Printf("• saved %v ", logs.X())
+		logs.Printf("• saved %v ", str.X())
 		return true, fmt.Errorf("next refresh save: %w", err)
 	}
-	logs.Printf("• saved %v", logs.Y())
+	logs.Printf("• saved %v", str.Y())
 	return false, nil
 }
 

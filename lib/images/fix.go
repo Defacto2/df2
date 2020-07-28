@@ -8,6 +8,7 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
@@ -62,7 +63,7 @@ func Fix(simulate bool) error {
 			c++
 			logs.Printf("%d. %v", c, img)
 			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
-				logs.Printf("%s\n", logs.X())
+				logs.Printf("%s\n", str.X())
 				continue
 			} else if err != nil {
 				return fmt.Errorf("images fix stat: %w", err)
@@ -78,7 +79,7 @@ func Fix(simulate bool) error {
 		}
 	}
 	if simulate && c > 0 {
-		logs.Simulate()
+		str.Simulate()
 	} else if c == 0 {
 		logs.Println("everything is okay, there is nothing to do")
 	}

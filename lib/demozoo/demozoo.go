@@ -20,6 +20,7 @@ import (
 	"github.com/Defacto2/df2/lib/download"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
 )
 
@@ -186,7 +187,7 @@ func (req Request) Queries() error {
 		case st.total == 0:
 			break
 		case req.Simulate:
-			logs.Printf(" • dry-run %v", logs.Y())
+			logs.Printf(" • dry-run %v", str.Y())
 		default:
 			r.save()
 		}
@@ -269,7 +270,7 @@ func (r Record) check() (update bool) {
 		r.FileZipContent == "":
 		return true
 	default:
-		logs.Printf("skipped, no changes needed %v", logs.Y())
+		logs.Printf("skipped, no changes needed %v", str.Y())
 		return false
 	}
 }
@@ -459,11 +460,11 @@ func (r *Record) platform(api ProductionsAPIv1) {
 
 func (r *Record) save() {
 	if err := r.Save(); err != nil {
-		logs.Printf(" %v \n", logs.X())
+		logs.Printf(" %v \n", str.X())
 		logs.Log(err)
 		return
 	}
-	logs.Printf(" • saved %v", logs.Y())
+	logs.Printf(" • saved %v", str.Y())
 }
 
 func (r Record) variations() (names []string, err error) {

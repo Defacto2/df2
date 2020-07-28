@@ -13,6 +13,7 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
 )
 
@@ -191,7 +192,7 @@ func (r Record) approve() error {
 	if err != nil {
 		return fmt.Errorf("approve update exec: %w", err)
 	}
-	logs.Printf(" %s", logs.Y())
+	logs.Printf(" %s", str.Y())
 	return nil
 }
 
@@ -218,7 +219,7 @@ func (s *stat) fileSkip(r Record, hide bool) (skip bool, err error) {
 				s.count,
 				color.Primary.Sprint(r.ID),
 				filepath.Join(s.base, color.Danger.Sprint(r.UUID)),
-				logs.X())
+				str.X())
 		}
 		return true, nil
 	} else if err != nil {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
@@ -102,7 +103,7 @@ func queries() error {
 			continue
 		}
 		r.uuid = string(values[1])
-		printVal(fmt.Sprintf("\n%s item %04d (%v) %s %s ", logs.X(),
+		printVal(fmt.Sprintf("\n%s item %04d (%v) %s %s ", str.X(),
 			rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if ok := r.check(values, &dir); !ok {
 			continue
@@ -139,9 +140,9 @@ type record struct {
 }
 
 func (r record) String() string {
-	status := logs.Y()
+	status := str.Y()
 	if !r.save {
-		status = logs.X()
+		status = str.X()
 	}
 	return fmt.Sprintf("%s item %04d (%v) %s %s", status, r.c, r.id,
 		color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename))

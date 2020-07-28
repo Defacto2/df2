@@ -8,6 +8,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -29,7 +30,7 @@ func Fix(simulate bool) error {
 	switch {
 	case c > 0 && simulate:
 		logs.Printcrf("%d fixes required", c)
-		logs.Simulate()
+		str.Simulate()
 	case c == 1:
 		logs.Printcr("1 fix applied")
 	case c > 0:
@@ -53,10 +54,10 @@ func cleanGroup(g string) (ok bool) {
 			color.Question.Sprint("!="), color.Info.Sprint(f))
 		return true
 	}
-	s := logs.Y()
+	s := str.Y()
 	ok = true
 	if _, err := database.Rename(f, g); err != nil {
-		s = logs.X()
+		s = str.X()
 		ok = false
 	}
 	logs.Printf("\n%s %q %s %s", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
