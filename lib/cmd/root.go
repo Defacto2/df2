@@ -3,11 +3,14 @@ package cmd
 // os.Exit() = 10x
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/Defacto2/df2/lib/config"
@@ -23,10 +26,12 @@ var simulate bool
 
 const version string = "1.1.0" // df2 version
 
+const verTmp = `
+   df2 tool version {{.Version}}  
+`
+
 var (
-	copyright  = cYear()
 	configName = ""
-	fmtflags   = [7]string{"datalist", "html", "text", "dl", "d", "h", "t"}
 	panic      = false // debug log
 	quiet      = false // quiet disables most printing or output to terminal
 )
@@ -38,16 +43,15 @@ var rootCmd = &cobra.Command{
 	Short:   "A tool to optimise and manage defacto2.net",
 	Long: fmt.Sprintf("%s\nCopyright © %v Ben Garrett\n%v",
 		color.Info.Sprint("A tool to optimise and manage defacto2.net"),
-		copyright,
+		copyright(),
 		color.Primary.Sprint("https://github.com/Defacto2/df2")),
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	initVer()
-	rootCmd.SetVersionTemplate(`df2 tool version {{.Version}}`)
-
+	execVersion()
+	rootCmd.SetVersionTemplate(verTmp)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(color.Warn.Sprintf("%s", err))
 		e := err.Error()
@@ -70,13 +74,65 @@ func init() {
 	}
 }
 
-// cYear returns a © Copyright year, or a range of years.
-func cYear() string {
+// copyright returns a © Copyright year, or a range of years.
+func copyright() string {
 	var y, c int = time.Now().Year(), 2020
 	if y == c {
 		return strconv.Itoa(c) // © 2020
 	}
 	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
+}
+
+func execVersion() {
+	type VerData struct {
+		Version  string
+		Database string
+		Ansilove string
+		Webp     string
+	}
+	const exeTmp = `
+┌──────────────────────────┐
+│  database: {{.Database}}  │
+│  ansilove: {{.Ansilove}}  │
+│  webp lib: {{.Webp}}  │
+└──────────────────────────┘
+`
+	p := func(s string) string {
+		switch s {
+		case "ok":
+			return color.Success.Sprint("okay") + strings.Repeat(" ", 10-len(s))
+		case "missing":
+			return color.Error.Sprint("missing") + strings.Repeat(" ", 12-len(s))
+		case "disconnect":
+			return color.Error.Sprint("disconnected") + strings.Repeat(" ", 10-len(s))
+		}
+		return ""
+	}
+	a, w, d := "missing", "missing", "disconnect"
+	if err := database.ConnectInfo(); err == "" {
+		d = "ok"
+	}
+	if _, err := exec.LookPath("ansilove"); err == nil {
+		a = "ok"
+	}
+	if _, err := exec.LookPath("webpng"); err == nil {
+		w = "ok"
+	}
+	var data = VerData{
+		Version:  color.Primary.Sprint(version),
+		Database: p(d),
+		Ansilove: p(a),
+		Webp:     p(w),
+	}
+	tmpl, err := template.New("version").Parse(exeTmp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var b bytes.Buffer
+	if err := tmpl.Execute(&b, data); err != nil {
+		log.Fatal(err)
+	}
+	rootCmd.Version = color.Primary.Sprint(version) + b.String()
 }
 
 // filterFlag compairs the value of the filter flag against the list of slice values.
@@ -85,7 +141,7 @@ func filterFlag(t interface{}, flag, val string) {
 		return
 	}
 	if t, ok := t.([]string); ok {
-		var sup bool
+		sup := false
 		for _, value := range t {
 			if value == val || (val == value[:1]) {
 				sup = true
@@ -124,21 +180,4 @@ func initConfig() {
 	} else if !quiet {
 		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
 	}
-}
-
-func initVer() {
-	ansilove, webp, db := color.Error.Sprint("missing"),
-		color.Error.Sprint("missing"),
-		color.Error.Sprint("disconnected")
-	if err := database.ConnectInfo(); err == "" {
-		db = color.Success.Sprint("okay")
-	}
-	if _, err := exec.LookPath("ansilove"); err == nil {
-		ansilove = color.Success.Sprint("okay")
-	}
-	if _, err := exec.LookPath("webpng"); err == nil {
-		webp = color.Success.Sprint("okay")
-	}
-	rootCmd.Version = fmt.Sprintf("%v\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\ndatabase: %v\nansilove: %v\nwebp lib: %v\n",
-		color.Primary.Sprint(version), db, ansilove, webp)
 }

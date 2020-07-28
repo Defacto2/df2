@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var fmtflags = [7]string{"datalist", "html", "text", "dl", "d", "h", "t"}
+
 // outputCmd represents the output command.
 var outputCmd = &cobra.Command{
 	Use:     "output",
