@@ -15,6 +15,26 @@ import (
 	"github.com/spf13/viper"
 )
 
+type groupFlags struct {
+	counts   bool
+	cronjob  bool
+	init     bool
+	progress bool
+	filter   string
+	format   string
+}
+
+type recentFlags struct {
+	compress bool
+	limit    uint
+}
+
+var (
+	dbf database.Flags
+	gpf groupFlags
+	rcf recentFlags
+)
+
 var fmtflags = [7]string{"datalist", "html", "text", "dl", "d", "h", "t"}
 
 // outputCmd represents the output command.
@@ -39,67 +59,54 @@ var outputCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(outputCmd)
 	outputCmd.AddCommand(dataCmd)
-	dataCmd.Flags().BoolVarP(&df.CronJob, "cronjob", "j", false, "data backup for the cron time-based job scheduler\nall other flags are ignored")
-	dataCmd.Flags().BoolVarP(&df.Compress, "compress", "c", false, fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
-	dataCmd.Flags().UintVarP(&df.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
-	dataCmd.Flags().BoolVarP(&df.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
-	dataCmd.Flags().BoolVarP(&df.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
-	dataCmd.Flags().StringVarP(&df.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls))
-	dataCmd.Flags().StringVarP(&df.Type, "type", "y", "update", "database export type\noptions: create or update")
+	dataCmd.Flags().BoolVarP(&dbf.CronJob, "cronjob", "j", false, "data backup for the cron time-based job scheduler\nall other flags are ignored")
+	dataCmd.Flags().BoolVarP(&dbf.Compress, "compress", "c", false, fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
+	dataCmd.Flags().UintVarP(&dbf.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
+	dataCmd.Flags().BoolVarP(&dbf.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
+	dataCmd.Flags().BoolVarP(&dbf.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
+	dataCmd.Flags().StringVarP(&dbf.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls))
+	dataCmd.Flags().StringVarP(&dbf.Type, "type", "y", "update", "database export type\noptions: create or update")
 	if err := dataCmd.Flags().MarkHidden("parallel"); err != nil {
 		logs.Fatal(err)
 	}
 	outputCmd.AddCommand(groupCmd)
-	groupCmd.Flags().StringVarP(&gf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+groups.Filters)
-	groupCmd.Flags().BoolVarP(&gf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
-	groupCmd.Flags().BoolVarP(&gf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
-	groupCmd.Flags().BoolVarP(&gf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
-	groupCmd.Flags().StringVarP(&gf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
-	groupCmd.Flags().BoolVarP(&gf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
+	groupCmd.Flags().StringVarP(&gpf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+groups.Filters)
+	groupCmd.Flags().BoolVarP(&gpf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
+	groupCmd.Flags().BoolVarP(&gpf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
+	groupCmd.Flags().BoolVarP(&gpf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
+	groupCmd.Flags().StringVarP(&gpf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
+	groupCmd.Flags().BoolVarP(&gpf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
 	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Roles)
 	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	outputCmd.AddCommand(recentCmd)
-	recentCmd.Flags().BoolVarP(&rf.compress, "compress", "c", false, "remove insignificant whitespace characters")
-	recentCmd.Flags().UintVarP(&rf.limit, "limit", "l", 15, "limit the number of rows returned")
+	recentCmd.Flags().BoolVarP(&rcf.compress, "compress", "c", false, "remove insignificant whitespace characters")
+	recentCmd.Flags().UintVarP(&rcf.limit, "limit", "l", 15, "limit the number of rows returned")
 	outputCmd.AddCommand(sitemapCmd)
 }
-
-var df database.Flags
 
 var dataCmd = &cobra.Command{
 	Use:     "data",
 	Aliases: []string{"d", "sql"},
 	Short:   "An SQL dump generator to export files",
 	Run: func(cmd *cobra.Command, args []string) {
-		df.Version = version
+		dbf.Version = version
 		switch {
-		case df.CronJob:
-			if err := df.ExportCronJob(); err != nil {
+		case dbf.CronJob:
+			if err := dbf.ExportCronJob(); err != nil {
 				log.Fatal(err)
 			}
-		case df.Table == "all":
-			if err := df.ExportDB(); err != nil {
+		case dbf.Table == "all":
+			if err := dbf.ExportDB(); err != nil {
 				log.Fatal(err)
 			}
 		default:
-			if err := df.ExportTable(); err != nil {
+			if err := dbf.ExportTable(); err != nil {
 				log.Fatal(err)
 			}
 		}
 	},
 }
-
-type groupFlags struct {
-	counts   bool
-	cronjob  bool
-	init     bool
-	progress bool
-	filter   string
-	format   string
-}
-
-var gf groupFlags
 
 // groupCmd represents the organisations command.
 var groupCmd = &cobra.Command{
@@ -107,15 +114,15 @@ var groupCmd = &cobra.Command{
 	Aliases: []string{"g", "group"},
 	Short:   "A HTML snippet generator to list groups",
 	Run: func(cmd *cobra.Command, args []string) {
-		if gf.cronjob {
+		if gpf.cronjob {
 			if err := groups.Cronjob(); err != nil {
 				log.Fatal(err)
 			}
 			return
 		}
-		filterFlag(groups.Wheres(), "filter", gf.filter)
-		req := groups.Request{Filter: gf.filter, Counts: gf.counts, Initialisms: gf.init, Progress: gf.progress}
-		switch gf.format {
+		filterFlag(groups.Wheres(), "filter", gpf.filter)
+		req := groups.Request{Filter: gpf.filter, Counts: gpf.counts, Initialisms: gpf.init, Progress: gpf.progress}
+		switch gpf.format {
 		case "datalist", "dl", "d":
 			if err := req.DataList(""); err != nil {
 				log.Fatal(err)
@@ -168,19 +175,12 @@ var peopleCmd = &cobra.Command{
 	},
 }
 
-type recentFlags struct {
-	compress bool
-	limit    uint
-}
-
-var rf recentFlags
-
 var recentCmd = &cobra.Command{
 	Use:     "recent",
 	Aliases: []string{"r"},
 	Short:   "A JSON snippet generator to list recent file additions",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := recent.List(rf.limit, rf.compress); err != nil {
+		if err := recent.List(rcf.limit, rcf.compress); err != nil {
 			log.Fatal(err)
 		}
 	},

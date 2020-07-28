@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/Defacto2/df2/lib/database"
@@ -18,11 +17,11 @@ var lookupCmd = &cobra.Command{
 	Hidden: false,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("lookup: requires an id or uuid argument")
+			return fmt.Errorf("lookup cmd: %w", ErrNoID)
 		}
 		for _, a := range args {
 			if err := database.CheckID(a); err != nil {
-				return fmt.Errorf("lookup: invalid id or uuid specified %q", a)
+				return fmt.Errorf("lookup cmd %q: %w", a, ErrID)
 			}
 		}
 		return nil

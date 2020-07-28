@@ -11,10 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	cfgOWFlag   bool
-	cfgNameFlag string
-)
+type configFlags struct {
+	name      string
+	overwrite bool
+}
+
+var cfgf configFlags
 
 // configCmd represents the config command.
 var configCmd = &cobra.Command{
@@ -36,7 +38,7 @@ var configCreateCmd = &cobra.Command{
 	Short:   "Create a new config file",
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Create(cfgOWFlag); err != nil {
+		if err := config.Create(cfgf.overwrite); err != nil {
 			log.Fatal(fmt.Errorf("config create: %w", err))
 		}
 	},
@@ -81,7 +83,7 @@ var configSetCmd = &cobra.Command{
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Set(cfgNameFlag); err != nil {
+		if err := config.Set(cfgf.name); err != nil {
 			log.Fatal(fmt.Errorf("config set: %w", err))
 		}
 	},
@@ -92,12 +94,14 @@ func init() {
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configCreateCmd)
-	configCreateCmd.Flags().BoolVarP(&cfgOWFlag, "overwrite", "y", false, "overwrite any existing config file")
+	configCreateCmd.Flags().BoolVarP(&cfgf.overwrite, "overwrite", "y", false, "overwrite any existing config file")
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configEditCmd)
 	configCmd.AddCommand(configInfoCmd)
 	configCmd.AddCommand(configSetCmd)
-	configSetCmd.Flags().StringVarP(&cfgNameFlag, "name", "n", "", `the configuration path to edit in dot syntax (see examples)
+	configSetCmd.Flags().StringVarP(&cfgf.name, "name", "n", "", `the configuration path to edit in dot syntax (see examples)
 	to see a list of names run: df2 config info`)
-	_ = configSetCmd.MarkFlagRequired("name")
+	if err := configSetCmd.MarkFlagRequired("name"); err != nil {
+		log.Fatal(err)
+	}
 }

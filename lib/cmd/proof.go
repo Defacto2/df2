@@ -6,14 +6,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type proofFlags struct {
+type proofArg struct {
 	all         bool   // scan for all proofs, not just new uploads
 	hideMissing bool   // hide proofs that are missing their file download
 	overwrite   bool   // overwrite all existing images
 	id          string // auto-generated id or a uuid
 }
 
-var proo proofFlags
+var prf proofArg
 
 // proofCmd represents the proof command.
 var proofCmd = &cobra.Command{
@@ -22,13 +22,13 @@ var proofCmd = &cobra.Command{
 	Aliases: []string{"p"},
 	Run: func(cmd *cobra.Command, args []string) {
 		r := proof.Request{
-			Overwrite:   proo.overwrite,
-			AllProofs:   proo.all,
-			HideMissing: proo.hideMissing,
+			Overwrite:   prf.overwrite,
+			AllProofs:   prf.all,
+			HideMissing: prf.hideMissing,
 		}
 		switch {
-		case proo.id != "":
-			if err := r.Query(proo.id); err != nil {
+		case prf.id != "":
+			if err := r.Query(prf.id); err != nil {
 				logs.Danger(err)
 			}
 		default:
@@ -41,8 +41,8 @@ var proofCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(proofCmd)
-	proofCmd.Flags().StringVarP(&proo.id, "id", "i", "", "id or uuid to handle only one proof")
-	proofCmd.Flags().BoolVar(&proo.overwrite, "overwrite", false, "rescan archives and overwrite all existing images")
-	proofCmd.Flags().BoolVar(&proo.all, "all", false, "scan for all proofs, not just new uploads")
-	proofCmd.Flags().BoolVarP(&proo.hideMissing, "hide-missing", "m", false, "hide proofs that are missing their file download")
+	proofCmd.Flags().StringVarP(&prf.id, "id", "i", "", "id or uuid to handle only one proof")
+	proofCmd.Flags().BoolVar(&prf.overwrite, "overwrite", false, "rescan archives and overwrite all existing images")
+	proofCmd.Flags().BoolVar(&prf.all, "all", false, "scan for all proofs, not just new uploads")
+	proofCmd.Flags().BoolVarP(&prf.hideMissing, "hide-missing", "m", false, "hide proofs that are missing their file download")
 }

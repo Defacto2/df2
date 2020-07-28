@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -29,6 +30,12 @@ const version string = "1.1.0" // df2 version
 const verTmp = `
    df2 tool version {{.Version}}  
 `
+
+var (
+	ErrCmd  = errors.New("invalid command, please use one of the available commands")
+	ErrNoID = errors.New("requires an id or uuid argument")
+	ErrID   = errors.New("invalid id or uuid specified")
+)
 
 var (
 	configName = ""

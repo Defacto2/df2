@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,10 +12,6 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/text"
 	"github.com/spf13/cobra"
-)
-
-var (
-	ErrCmd = errors.New("invalid command, please use one of the available commands")
 )
 
 // fixCmd represents the fix command.
