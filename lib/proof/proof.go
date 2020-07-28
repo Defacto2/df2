@@ -90,7 +90,7 @@ func (request Request) Queries() error {
 	for rows.Next() {
 		s.total++
 	}
-	if s.total < 1 && proofID == "" {
+	if s.total < 1 && proofID != "" {
 		logs.Printf("file record id '%s' does not exist or is not a release proof\n", proofID)
 	} else if s.total > 1 {
 		logs.Println("Total records", s.total)
