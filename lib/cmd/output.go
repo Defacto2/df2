@@ -22,11 +22,15 @@ var outputCmd = &cobra.Command{
 	Aliases: []string{"o"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			_ = cmd.Usage()
+			if err := cmd.Usage(); err != nil {
+				logs.Fatal(err)
+			}
 			os.Exit(0)
 		}
-		_ = cmd.Usage()
-		logs.Check(fmt.Errorf("output: invalid command %v please use one of the available fix commands", args[0]))
+		if err := cmd.Usage(); err != nil {
+			logs.Fatal(err)
+		}
+		logs.Danger(fmt.Errorf("ouptut cmd %q: %w", args[0], ErrCmd))
 	},
 }
 
@@ -40,8 +44,9 @@ func init() {
 	dataCmd.Flags().BoolVarP(&df.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
 	dataCmd.Flags().StringVarP(&df.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls))
 	dataCmd.Flags().StringVarP(&df.Type, "type", "y", "update", "database export type\noptions: create or update")
-	err := dataCmd.Flags().MarkHidden("parallel")
-	logs.Check(err)
+	if err := dataCmd.Flags().MarkHidden("parallel"); err != nil {
+		logs.Fatal(err)
+	}
 	outputCmd.AddCommand(groupCmd)
 	groupCmd.Flags().StringVarP(&gf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+groups.Filters)
 	groupCmd.Flags().BoolVarP(&gf.counts, "count", "c", false, "display the file totals for each group (SLOW)")

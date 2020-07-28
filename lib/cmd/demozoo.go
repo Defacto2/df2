@@ -31,7 +31,6 @@ var demozooCmd = &cobra.Command{
   df2 demozoo [--refresh|--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var empty []string
-		var err error
 		r := demozoo.Request{
 			All:       dzoo.all,
 			Overwrite: dzoo.overwrite,
@@ -40,49 +39,57 @@ var demozooCmd = &cobra.Command{
 		}
 		switch {
 		case dzoo.new, dzoo.all:
-			err = r.Queries()
+			if err := r.Queries(); err != nil {
+				logs.Fatal(err)
+			}
 		case dzoo.id != "":
-			err = r.Query(dzoo.id)
+			if err := r.Query(dzoo.id); err != nil {
+				logs.Fatal(err)
+			}
 		case dzoo.refresh:
-			err = demozoo.RefreshMeta()
+			if err := demozoo.RefreshMeta(); err != nil {
+				logs.Fatal(err)
+			}
 		case dzoo.ping != 0:
 			f, err := demozoo.Fetch(dzoo.ping)
 			if err != nil {
-				logs.Check(err)
+				logs.Fatal(err)
 			}
 			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.ping, f.Status)
 			f.API.Print()
 		case dzoo.download != 0:
 			f, err := demozoo.Fetch(dzoo.download)
 			if err != nil {
-				logs.Check(err)
+				logs.Fatal(err)
 			}
 			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzoo.download, f.Status)
 			f.API.Downloads()
 			logs.Print("\n")
 		case len(dzoo.extract) == 1:
 			id, err := uuid.NewRandom()
-			logs.Check(err)
-			d, err := archive.ExtractDemozoo(dzoo.extract[0], id.String(), &empty)
-			logs.Check(err)
-			if err == nil {
-				logs.Println(d.String())
+			if err != nil {
+				logs.Fatal(err)
 			}
+			d, err := archive.ExtractDemozoo(dzoo.extract[0], id.String(), &empty)
+			if err != nil {
+				logs.Fatal(err)
+			}
+			logs.Println(d.String())
 		case len(dzoo.extract) > 1: // limit to the first 2 flags
 			d, err := archive.ExtractDemozoo(dzoo.extract[0], dzoo.extract[1], &empty)
-			logs.Check(err)
-			if err == nil {
-				logs.Println(d.String())
+			if err != nil {
+				logs.Fatal(err)
 			}
+			logs.Println(d.String())
 		default:
-			err = cmd.Usage()
+			if err := cmd.Usage(); err != nil {
+				logs.Fatal(err)
+			}
 		}
-		logs.Check(err)
 	},
 }
 
 func init() {
-	var err error
 	rootCmd.AddCommand(demozooCmd)
 	demozooCmd.Flags().BoolVarP(&dzoo.new, "new", "n", false, "scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().BoolVar(&dzoo.all, "all", false, "scan all files with demozoo links (SLOW)")
@@ -94,9 +101,11 @@ func init() {
 	demozooCmd.Flags().UintVarP(&dzoo.download, "download", "g", 0, "fetch and download a production's link file via the Demozoo.org API\n")
 	demozooCmd.Flags().StringArrayVar(&dzoo.extract, "extract", make([]string, 0), `extracts and parses an archived file
 requires two flags: --extract [filename] --extract [uuid]`)
-	err = demozooCmd.MarkFlagFilename("extract")
-	logs.Check(err)
-	err = demozooCmd.Flags().MarkHidden("extract")
-	logs.Check(err)
+	if err := demozooCmd.MarkFlagFilename("extract"); err != nil {
+		logs.Fatal(err)
+	}
+	if err := demozooCmd.Flags().MarkHidden("extract"); err != nil {
+		logs.Fatal(err)
+	}
 	demozooCmd.Flags().SortFlags = false
 }

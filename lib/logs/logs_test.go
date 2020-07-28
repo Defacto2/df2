@@ -22,22 +22,18 @@ func testTxt() string {
 
 func Test_save(t *testing.T) {
 	eerr, terr := errors.New(""), errors.New("test error: this is a test")
-	type args struct {
-		err  error
-		path string
-	}
 	tests := []struct {
 		name   string
-		args   args
+		err    error
 		wantOk bool
 	}{
-		{"empty", args{nil, ""}, false},
-		{"empty", args{eerr, ""}, false},
-		{"ok", args{terr, testTxt()}, true},
+		{"empty", nil, false},
+		{"empty", eerr, false},
+		{"ok", terr, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := save(tt.args.err, tt.args.path); gotOk != tt.wantOk {
+			if gotOk := save(tt.err); gotOk != tt.wantOk {
 				t.Errorf("save() = %v, want %v", gotOk, tt.wantOk)
 			} else if gotOk {
 				// cleanup

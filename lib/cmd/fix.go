@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +15,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	ErrCmd = errors.New("invalid command, please use one of the available commands")
+)
+
 // fixCmd represents the fix command.
 var fixCmd = &cobra.Command{
 	Use:     "fix",
@@ -21,11 +26,15 @@ var fixCmd = &cobra.Command{
 	Aliases: []string{"f"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			_ = cmd.Usage()
+			if err := cmd.Usage(); err != nil {
+				logs.Fatal(err)
+			}
 			os.Exit(0)
 		}
-		_ = cmd.Usage()
-		logs.Check(fmt.Errorf("fix: invalid command %v please use one of the available fix commands", args[0]))
+		if err := cmd.Usage(); err != nil {
+			logs.Fatal(err)
+		}
+		logs.Danger(fmt.Errorf("fix cmd %q: %w", args[0], ErrCmd))
 	},
 }
 
@@ -48,7 +57,9 @@ var fixDemozooCmd = &cobra.Command{
 	Short:   "Repair imported Demozoo data conflicts",
 	Aliases: []string{"dz"},
 	Run: func(cmd *cobra.Command, args []string) {
-		demozoo.Fix()
+		if err := demozoo.Fix(); err != nil {
+			log.Fatal(fmt.Errorf("demozoo fix: %w", err))
+		}
 	},
 }
 

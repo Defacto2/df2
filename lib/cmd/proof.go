@@ -21,7 +21,6 @@ var proofCmd = &cobra.Command{
 	Short:   "Handler for files tagged as #releaseproof",
 	Aliases: []string{"p"},
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
 		r := proof.Request{
 			Overwrite:   proo.overwrite,
 			AllProofs:   proo.all,
@@ -29,11 +28,14 @@ var proofCmd = &cobra.Command{
 		}
 		switch {
 		case proo.id != "":
-			err = r.Query(proo.id)
+			if err := r.Query(proo.id); err != nil {
+				logs.Danger(err)
+			}
 		default:
-			err = r.Queries()
+			if err := r.Queries(); err != nil {
+				logs.Danger(err)
+			}
 		}
-		logs.Check(err)
 	},
 }
 

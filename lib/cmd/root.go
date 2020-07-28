@@ -65,8 +65,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is %s)", config.Filepath()))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
 	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
-	err := rootCmd.PersistentFlags().MarkHidden("panic")
-	logs.Check(err)
+	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
+		logs.Fatal(err)
+	}
 }
 
 // cYear returns a © Copyright year, or a range of years.
@@ -110,7 +111,9 @@ func initConfig() {
 		viper.SetConfigFile(cf)
 	} else {
 		home, err := os.UserHomeDir()
-		logs.Check(err)
+		if err != nil {
+			logs.Fatal(err)
+		}
 		viper.AddConfigPath(home)
 		viper.SetConfigName(config.Config.Name)
 	}

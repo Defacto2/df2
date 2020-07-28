@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -18,7 +19,11 @@ const (
 	// AEL is the ANSI Erase in Line sequence
 	AEL = "\r\033[0K"
 	// Filename is the default error log filename
-	Filename = "errors.log"
+	Filename             = "errors.log"
+	dir      os.FileMode = 0700
+	file     os.FileMode = 0600
+	flags                = log.Ldate | log.Ltime | log.LUTC
+	newfile              = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 )
 
 var (
@@ -27,6 +32,10 @@ var (
 	Panic = false
 	// Quiet stops most writing to the standard output.
 	Quiet = false
+)
+
+var (
+	ErrNil = errors.New("")
 )
 
 // Arg returns instructions for invalid command arguments.
@@ -38,17 +47,25 @@ func Arg(arg string, args []string) {
 	os.Exit(1)
 }
 
-// Check logs any errors and exits to the operating system with error code 1.
-func Check(err error) {
-	if err != nil {
-		save(err, "")
-		switch Panic {
-		case true:
-			log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
-			log.Panic(err)
-		default:
-			log.Fatal(color.Danger.Sprint("ERROR: "), err)
-		}
+func Danger(err error) {
+	switch Panic {
+	case true:
+		log.Println(fmt.Sprintf("error type %T\t: %v", err, err))
+		log.Panic(err)
+	default:
+		log.Printf("%s %s", color.Danger.Sprint("!"), err)
+	}
+}
+
+// Fatal logs any errors and exits to the operating system with error code 1.
+func Fatal(err error) {
+	save(err)
+	switch Panic {
+	case true:
+		log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
+		log.Panic(err)
+	default:
+		log.Fatal(color.Danger.Sprint("ERROR: "), err)
 	}
 }
 
@@ -56,7 +73,10 @@ func Check(err error) {
 func Filepath() string {
 	fp, err := scope.LogPath(Filename)
 	if err != nil {
-		h, _ := os.UserHomeDir()
+		h, err := os.UserHomeDir()
+		if err != nil {
+			Log(err)
+		}
 		return path.Join(h, Filename)
 	}
 	return fp
@@ -64,16 +84,8 @@ func Filepath() string {
 
 // Log an error but do not exit to the operating system.
 func Log(err error) {
-	if err != nil {
-		save(err, "")
-		switch Panic {
-		case true:
-			log.Println(fmt.Sprintf("error type %T\t: %v", err, err))
-			log.Panic(err)
-		default:
-			log.Printf("%s %s", color.Danger.Sprint("!"), err)
-		}
-	}
+	save(err)
+	Danger(err)
 }
 
 // Path returns a file or directory path with all missing elements marked in red.
@@ -98,44 +110,51 @@ func Path(name string) string {
 // Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
 func Print(a ...interface{}) {
 	if !Quiet {
-		_, err := fmt.Print(a...)
-		Log(err)
+		if _, err := fmt.Print(a...); err != nil {
+			fatalLog(err)
+		}
 	}
 }
 
 // Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
 func Printcr(a ...interface{}) {
 	if !Quiet {
-		cols := int(termSize())
-		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
-		_, err := fmt.Print(a...)
-		Log(err)
+		if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(termSize()))); err != nil {
+			fatalLog(err)
+		}
+		if _, err := fmt.Print(a...); err != nil {
+			fatalLog(err)
+		}
 	}
 }
 
 // Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
 func Printf(format string, a ...interface{}) {
 	if !Quiet {
-		_, err := fmt.Printf(format, a...)
-		Log(err)
+		if _, err := fmt.Printf(format, a...); err != nil {
+			fatalLog(err)
+		}
 	}
 }
 
 // Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
 func Println(a ...interface{}) {
 	if !Quiet {
-		_, err := fmt.Println(a...)
-		Log(err)
+		if _, err := fmt.Println(a...); err != nil {
+			fatalLog(err)
+		}
 	}
 }
 
 // Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
 func Printcrf(format string, a ...interface{}) {
 	if !Quiet {
-		cols := int(termSize())
-		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
-		_, err := fmt.Printf(format, a...)
-		Log(err)
+		if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(termSize()))); err != nil {
+			fatalLog(err)
+		}
+		if _, err := fmt.Printf(format, a...); err != nil {
+			fatalLog(err)
+		}
 	}
 }
 
@@ -144,31 +163,37 @@ func Simulate() {
 	Println(color.Notice.Sprint("use the --simulate=false flag to apply these fixes"))
 }
 
-func check(e error) {
-	if e != nil {
-		log.Printf("%s %s", color.Danger.Sprint("!"), e)
-		os.Exit(1)
-	}
+func fatal(err error) {
+	log.Printf("%s %s", color.Danger.Sprint("!"), err)
+	os.Exit(1)
+}
+
+func fatalLog(err error) {
+	save(err)
+	fatal(err)
 }
 
 // save an error to the logs.
 // path is available for unit tests.
-func save(err error, path string) (ok bool) {
-	if err == nil || fmt.Sprintf("%v", err) == "" {
+func save(err error) (ok bool) {
+	if err == nil || errors.Is(err, ErrNil) {
 		return false
 	}
 	// use UTC date and times in the log file
-	log.SetFlags(log.Ldate | log.Ltime | log.LUTC)
-	if path == "" {
-		path = Filepath()
+	log.SetFlags(flags)
+	name := Filepath()
+	p := filepath.Dir(name)
+	if _, err1 := os.Stat(p); os.IsNotExist(err1) {
+		if err2 := os.MkdirAll(p, dir); err != nil {
+			fatal(err2)
+		}
+	} else if err1 != nil {
+		fatal(err1)
 	}
-	p := filepath.Dir(path)
-	if _, e := os.Stat(p); os.IsNotExist(e) {
-		e2 := os.MkdirAll(p, 0700)
-		check(e2)
+	file, err1 := os.OpenFile(name, newfile, file)
+	if err1 != nil {
+		fatal(err1)
 	}
-	file, e := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	check(e)
 	defer file.Close()
 	log.SetOutput(file)
 	log.Print(err)

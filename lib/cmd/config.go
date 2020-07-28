@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
@@ -19,8 +22,9 @@ var configCmd = &cobra.Command{
 	Short:   "Configure the settings for this tool",
 	Aliases: []string{"cfg"},
 	Run: func(cmd *cobra.Command, args []string) {
-		err := cmd.Usage()
-		logs.Check(err)
+		if err := cmd.Usage(); err != nil {
+			log.Fatal(fmt.Errorf("config cmd usage: %w", err))
+		}
 		if len(args) != 0 || cmd.Flags().NFlag() != 0 {
 			logs.Arg("config", args)
 		}
@@ -32,7 +36,9 @@ var configCreateCmd = &cobra.Command{
 	Short:   "Create a new config file",
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
-		config.Create(cfgOWFlag)
+		if err := config.Create(cfgOWFlag); err != nil {
+			log.Fatal(fmt.Errorf("config create: %w", err))
+		}
 	},
 }
 
@@ -41,7 +47,9 @@ var configDeleteCmd = &cobra.Command{
 	Short:   "Remove the config file",
 	Aliases: []string{"d"},
 	Run: func(cmd *cobra.Command, args []string) {
-		config.Delete()
+		if err := config.Delete(); err != nil {
+			log.Fatal(fmt.Errorf("config delete: %w", err))
+		}
 	},
 }
 
@@ -59,7 +67,9 @@ var configInfoCmd = &cobra.Command{
 	Short:   "View settings configured by the config",
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
-		config.Info()
+		if err := config.Info(); err != nil {
+			log.Fatal(fmt.Errorf("config info: %w", err))
+		}
 	},
 }
 
@@ -71,7 +81,9 @@ var configSetCmd = &cobra.Command{
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
-		config.Set(cfgNameFlag)
+		if err := config.Set(cfgNameFlag); err != nil {
+			log.Fatal(fmt.Errorf("config set: %w", err))
+		}
 	},
 }
 
