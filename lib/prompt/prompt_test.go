@@ -79,3 +79,23 @@ func Test_parseyn(t *testing.T) {
 		})
 	}
 }
+
+func Test_port(t *testing.T) {
+	tests := []struct {
+		name string
+		port int
+		want bool
+	}{
+		{"-1", -1, false},
+		{"million", 1000000, false},
+		{"zero", 0, true},
+		{"1024", 1024, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := port(tt.port); got != tt.want {
+				t.Errorf("Port() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

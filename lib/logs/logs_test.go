@@ -20,32 +20,6 @@ func testTxt() string {
 	return filepath.Join(testDir("logs"), "test.log")
 }
 
-func Test_ProgressPct(t *testing.T) {
-	type args struct {
-		name  string
-		count int
-		total int
-	}
-	tests := []struct {
-		name string
-		args args
-		want float64
-	}{
-		{"", args{"", 1, 10}, float64(10)},
-		{"", args{"", 10, 10}, float64(100)},
-		{"", args{"", 0, 10}, float64(0)},
-		{"", args{"", -1, 10}, float64(-10)},
-		{"", args{"", 1, 99999}, float64(0.001000010000100001)},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ProgressPct(tt.args.name, tt.args.count, tt.args.total); got != tt.want {
-				t.Errorf("ProgressPct() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_save(t *testing.T) {
 	eerr, terr := errors.New(""), errors.New("test error: this is a test")
 	type args struct {
@@ -145,29 +119,6 @@ func TestPrints(t *testing.T) {
 	}
 }
 
-func TestProgressSum(t *testing.T) {
-	type args struct {
-		count int
-		total int
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantSum string
-	}{
-		{"empty", args{}, "0/0"},
-		{"zero", args{0, 0}, "0/0"},
-		{"1%", args{1, 100}, "1/100"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotSum := ProgressSum(tt.args.count, tt.args.total); gotSum != tt.wantSum {
-				t.Errorf("ProgressSum() = %v, want %v", gotSum, tt.wantSum)
-			}
-		})
-	}
-}
-
 func TestPath(t *testing.T) {
 	color.Enable = false
 	cw, _ := os.Getwd()
@@ -183,26 +134,6 @@ func TestPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Path(tt.name); got != tt.want {
 				t.Errorf("Path() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestPort(t *testing.T) {
-	tests := []struct {
-		name string
-		port int
-		want bool
-	}{
-		{"-1", -1, false},
-		{"million", 1000000, false},
-		{"zero", 0, true},
-		{"1024", 1024, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := Port(tt.port); got != tt.want {
-				t.Errorf("Port() = %v, want %v", got, tt.want)
 			}
 		})
 	}

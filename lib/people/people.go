@@ -13,6 +13,7 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/campoy/unique"
 	"github.com/spf13/viper"
 )
@@ -144,7 +145,7 @@ func parse(filename string, tpl string, r Request) error {
 	total := len(grp)
 	for i := range grp {
 		if r.Progress {
-			logs.ProgressPct(r.Filter, i+1, total)
+			str.Progress(r.Filter, i+1, total)
 		}
 		n := grp[i]
 		// hr element
@@ -199,7 +200,7 @@ func Print(r Request) error {
 	a := make([]string, total)
 	for i := range ppl {
 		if r.Progress {
-			logs.ProgressPct(r.Filter, i+1, total)
+			str.Progress(r.Filter, i+1, total)
 		}
 		// role
 		x := strings.Split(ppl[i], ",")
@@ -208,7 +209,7 @@ func Print(r Request) error {
 	// title and sort names
 	for i := range a {
 		if r.Progress {
-			logs.ProgressPct(r.Filter, i+1, total)
+			str.Progress(r.Filter, i+1, total)
 		}
 		a[i] = strings.Title(a[i])
 	}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/spf13/viper"
 )
 
@@ -186,7 +187,7 @@ func (r Request) iterate(groups []string) (g *[]Result, err error) {
 	lastLetter, hr := "", false
 	for i, grp := range groups {
 		if !logs.Quiet && r.Progress {
-			logs.ProgressPct(r.Filter, i+1, total)
+			str.Progress(r.Filter, i+1, total)
 		}
 		lastLetter, hr = hrElement(lastLetter, grp)
 		c, err := r.files(grp)
@@ -308,7 +309,7 @@ func Print(r Request) (total int, err error) {
 	a := make([]string, total)
 	for i := range grp {
 		if r.Progress {
-			logs.ProgressPct(r.Filter, i+1, total)
+			str.Progress(r.Filter, i+1, total)
 		}
 		// name
 		n := grp[i]

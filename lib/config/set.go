@@ -58,7 +58,7 @@ func Set(name string) error {
 		fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", rec("tcp"))
 		err = configSave(prompt.String(s))
 	case name == "connection.server.port":
-		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", logs.PortMin, logs.PortMax, rec("3306"))
+		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", prompt.PortMin, prompt.PortMax, rec("3306"))
 		err = configSave(prompt.Port())
 	case name[:10] == "directory.":
 		fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")

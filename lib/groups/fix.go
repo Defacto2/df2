@@ -30,7 +30,7 @@ func Fix(simulate bool) error {
 	switch {
 	case c > 0 && simulate:
 		logs.Printcrf("%d fixes required", c)
-		str.Simulate()
+		logs.Simulate()
 	case c == 1:
 		logs.Printcr("1 fix applied")
 	case c > 0:

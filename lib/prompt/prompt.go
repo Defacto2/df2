@@ -13,6 +13,11 @@ import (
 	"github.com/Defacto2/df2/lib/str"
 )
 
+const (
+	PortMin = 0     // PortMin is the lowest permitted network port
+	PortMax = 65535 // PortMax is the largest permitted network port
+)
+
 // Dir asks the user for a directory path and saves it.
 func Dir() string {
 	// allow multiple word user input
@@ -58,13 +63,21 @@ func Port() int64 {
 			continue
 		}
 		// check that the input a valid port
-		if v := logs.Port(int(i)); !v {
+		if v := port(int(i)); !v {
 			fmt.Printf("%s %q is out of range\n", str.X(), input)
 			check(cnt)
 			continue
 		}
 		return i
 	}
+}
+
+// port reports if the value is valid.
+func port(port int) bool {
+	if port < PortMin || port > PortMax {
+		return false
+	}
+	return true
 }
 
 // String asks the user for a string configuration value and saves it.

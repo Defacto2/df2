@@ -1,7 +1,6 @@
 package logs
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/lib/str"
 	gap "github.com/muesli/go-app-paths"
 	"gopkg.in/gookit/color.v1"
 )
@@ -19,10 +17,6 @@ const (
 	AED = "\r\003[2J"
 	// AEL is the ANSI Erase in Line sequence
 	AEL = "\r\033[0K"
-	// PortMin is the lowest permitted network port
-	PortMin = 0
-	// PortMax is the largest permitted network port
-	PortMax = 65535
 	// Filename is the default error log filename
 	Filename = "errors.log"
 )
@@ -58,6 +52,16 @@ func Check(err error) {
 	}
 }
 
+// Filepath is the absolute path and filename of the error log file.
+func Filepath() string {
+	fp, err := scope.LogPath(Filename)
+	if err != nil {
+		h, _ := os.UserHomeDir()
+		return path.Join(h, Filename)
+	}
+	return fp
+}
+
 // Log an error but do not exit to the operating system.
 func Log(err error) {
 	if err != nil {
@@ -69,6 +73,81 @@ func Log(err error) {
 		default:
 			log.Printf("%s %s", color.Danger.Sprint("!"), err)
 		}
+	}
+}
+
+// Path returns a file or directory path with all missing elements marked in red.
+func Path(name string) string {
+	a := strings.Split(name, "/")
+	var p, s string
+	for i, e := range a {
+		if e == "" {
+			s = "/"
+			continue
+		}
+		p = strings.Join(a[0:i+1], "/")
+		if _, err := os.Stat(p); os.IsNotExist(err) {
+			s = filepath.Join(s, color.Danger.Sprint(e))
+		} else {
+			s = filepath.Join(s, e)
+		}
+	}
+	return fmt.Sprint(s)
+}
+
+// Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
+func Print(a ...interface{}) {
+	if !Quiet {
+		_, err := fmt.Print(a...)
+		Log(err)
+	}
+}
+
+// Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
+func Printcr(a ...interface{}) {
+	if !Quiet {
+		cols := int(termSize())
+		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
+		_, err := fmt.Print(a...)
+		Log(err)
+	}
+}
+
+// Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
+func Printf(format string, a ...interface{}) {
+	if !Quiet {
+		_, err := fmt.Printf(format, a...)
+		Log(err)
+	}
+}
+
+// Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
+func Println(a ...interface{}) {
+	if !Quiet {
+		_, err := fmt.Println(a...)
+		Log(err)
+	}
+}
+
+// Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
+func Printcrf(format string, a ...interface{}) {
+	if !Quiet {
+		cols := int(termSize())
+		fmt.Printf("\r%s\r", strings.Repeat(" ", cols))
+		_, err := fmt.Printf(format, a...)
+		Log(err)
+	}
+}
+
+// Simulate prints the --simulate=false flag info.
+func Simulate() {
+	Println(color.Notice.Sprint("use the --simulate=false flag to apply these fixes"))
+}
+
+func check(e error) {
+	if e != nil {
+		log.Printf("%s %s", color.Danger.Sprint("!"), e)
+		os.Exit(1)
 	}
 }
 
@@ -94,88 +173,5 @@ func save(err error, path string) (ok bool) {
 	log.SetOutput(file)
 	log.Print(err)
 	log.SetOutput(os.Stderr)
-	return true
-}
-
-func check(e error) {
-	if e != nil {
-		log.Printf("%s %s", color.Danger.Sprint("!"), e)
-		os.Exit(1)
-	}
-}
-
-// Filepath is the absolute path and filename of the error log file.
-func Filepath() string {
-	fp, err := scope.LogPath(Filename)
-	if err != nil {
-		h, _ := os.UserHomeDir()
-		return path.Join(h, Filename)
-	}
-	return fp
-}
-
-// ProgressPct returns the count of total remaining as a percentage.
-func ProgressPct(name string, count, total int) float64 {
-	const fin = 100
-	r := float64(count) / float64(total) * fin
-	switch r {
-	case fin:
-		fmt.Printf("\rquerying %s %.0f %%  ", name, r)
-	default:
-		fmt.Printf("\rquerying %s %.2f %%", name, r)
-	}
-	return r
-}
-
-// ProgressSum returns the count of total remaining.
-// TODO: toggle with a configuration setting.
-func ProgressSum(count, total int) (sum string) {
-	sum = fmt.Sprintf("%d/%d", count, total)
-	fmt.Printf("\rBuilding %s", sum)
-	return sum
-}
-
-// File is a logger for common os package functions.
-// config is an optional configuration path used by cmd.config.
-func File(config string, err error) {
-	var pathError *os.PathError
-	if errors.As(err, &pathError) {
-		log.Println(str.X(), "logs file: failed to create or open file", Path(pathError.Path))
-		if config != "" {
-			Println("  to fix run:", color.Info.Sprintf("config set --name %v", config))
-		}
-		if Panic {
-			log.Panic(err)
-		}
-		os.Exit(1)
-	} else {
-		Log(err)
-	}
-}
-
-// Path returns a file or directory path with all missing elements marked in red.
-func Path(name string) string {
-	a := strings.Split(name, "/")
-	var p, s string
-	for i, e := range a {
-		if e == "" {
-			s = "/"
-			continue
-		}
-		p = strings.Join(a[0:i+1], "/")
-		if _, err := os.Stat(p); os.IsNotExist(err) {
-			s = filepath.Join(s, color.Danger.Sprint(e))
-		} else {
-			s = filepath.Join(s, e)
-		}
-	}
-	return fmt.Sprint(s)
-}
-
-// Port reports if the value is valid.
-func Port(port int) bool {
-	if port < PortMin || port > PortMax {
-		return false
-	}
 	return true
 }

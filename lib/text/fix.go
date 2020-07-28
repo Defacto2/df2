@@ -82,7 +82,7 @@ func Fix(simulate bool) error {
 		}
 	}
 	if simulate && c > 0 {
-		str.Simulate()
+		logs.Simulate()
 	} else if c == 0 {
 		logs.Println("everything is okay, there is nothing to do")
 	}
