@@ -41,6 +41,23 @@ func (t Table) String() string {
 	return ""
 }
 
+type Method int
+
+const (
+	Create Method = iota
+	Insert
+)
+
+func (m Method) String() string {
+	switch m {
+	case Create:
+		return "create"
+	case Insert:
+		return "update"
+	}
+	return ""
+}
+
 const (
 	timestamp string      = "2006-01-02 15:04:05"
 	fsql      os.FileMode = 0664
@@ -89,6 +106,7 @@ type Flags struct {
 	Parallel bool   // Run --table=all queries in parallel
 	Save     bool   // Save the output uncompressed
 	Table    Table  // Table of the database to use
+	Method   Method // Method to export
 	Tables   string // --table flag result
 	Type     string // Type of export (create|update)
 	Version  string // df2 app version pass-through
@@ -108,12 +126,12 @@ func (f Flags) ExportCronJob() error {
 		wg.Add(delta)
 		go func(f Flags) {
 			defer wg.Done()
-			f.Type = "create"
+			f.Method = Create
 			e1 = f.ExportTable()
 		}(f)
 		go func(f Flags) {
 			defer wg.Done()
-			f.Type = "update"
+			f.Method = Insert
 			e2 = f.ExportTable()
 		}(f)
 		wg.Wait()
@@ -123,11 +141,11 @@ func (f Flags) ExportCronJob() error {
 			return fmt.Errorf("export cronjob: %w", e2)
 		}
 	default:
-		f.Type = "create"
+		f.Method = Create
 		if err := f.ExportTable(); err != nil {
 			return fmt.Errorf("export cronjob create: %w", err)
 		}
-		f.Type = "update"
+		f.Method = Insert
 		if err := f.ExportTable(); err != nil {
 			return fmt.Errorf("export cronjob update: %w", err)
 		}
@@ -140,6 +158,9 @@ func (f Flags) ExportCronJob() error {
 // ExportDB saves or prints a MySQL 5.7 compatible SQL import database statement.
 func (f Flags) ExportDB() error {
 	start := time.Now()
+	if err := f.method(); err != nil {
+		return fmt.Errorf("export table: %w", err)
+	}
 	buf, err := f.queryTables()
 	if err != nil {
 		return fmt.Errorf("exportdb query: %w", err)
@@ -154,14 +175,17 @@ func (f Flags) ExportDB() error {
 
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
 func (f Flags) ExportTable() error {
+	if err := f.method(); err != nil {
+		return fmt.Errorf("export table: %w", err)
+	}
 	switch strings.ToLower(f.Tables) {
-	case "files":
+	case "files", "f":
 		f.Table = Files
-	case "groups":
+	case "groups", "g":
 		f.Table = Groups
-	case "netresources":
+	case "netresources", "n":
 		f.Table = Netresources
-	case "users":
+	case "users", "u":
 		f.Table = Users
 	default:
 		return fmt.Errorf("export table %q: %w", f.Tables, ErrNoTable)
@@ -178,7 +202,7 @@ func (f Flags) ExportTable() error {
 
 // create makes the CREATE template variable value.
 func (f Flags) create() (value string) {
-	if f.Type != "create" {
+	if f.Method != Create {
 		return ""
 	}
 	switch f.Table {
@@ -197,8 +221,8 @@ func (f Flags) create() (value string) {
 // fileName to use when writing SQL to a file.
 func (f Flags) fileName() string {
 	l, y, t := "", "export", "table"
-	if f.Type != "" {
-		y = f.Type
+	if f.Method == Create || f.Method == Insert {
+		y = f.Method.String()
 	}
 	if f.Limit > 0 {
 		l = fmt.Sprintf("%d_", f.Limit)
@@ -207,6 +231,18 @@ func (f Flags) fileName() string {
 		t = f.Table.String()
 	}
 	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
+}
+
+func (f *Flags) method() error {
+	switch strings.ToLower(f.Type) {
+	case "create", "c":
+		f.Method = Create
+	case "update", "u":
+		f.Method = Insert
+	default:
+		return fmt.Errorf("type flag %q: %w", f.Type, ErrNoMethod)
+	}
+	return nil
 }
 
 // queryDB requests columns and values of f.Table to create an INSERT INTO ? VALUES ? SQL statement.
@@ -265,7 +301,7 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 	}
 	var values colValues = vals
 	dat := TableData{VER: f.ver(), CREATE: f.create(), TABLE: f.Table.String(), INSERT: fmt.Sprint(names), SQL: fmt.Sprint(values)}
-	if f.Type == "update" {
+	if f.Method == Insert {
 		var dupes dupeKeys = col
 		dat.UPDATE = fmt.Sprint(dupes)
 	}
@@ -353,9 +389,9 @@ func (f Flags) reqDB(t Table) (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("reqdb table: %w", ErrNoTable)
 	}
 	c := Flags{
-		Table: t,
-		Type:  "create",
-		Limit: f.Limit,
+		Table:  t,
+		Method: Create,
+		Limit:  f.Limit,
 	}
 	buf, err := c.queryDB()
 	if err != nil {

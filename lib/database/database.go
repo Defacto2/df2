@@ -54,9 +54,10 @@ func (c *Connection) String() string {
 }
 
 var (
-	ErrNoID    = errors.New("unique id is does not exist in the database table")
-	ErrNoTable = errors.New("unknown database table")
-	ErrColType = errors.New("the value type is not usable with the mysql column")
+	ErrNoID     = errors.New("unique id is does not exist in the database table")
+	ErrNoTable  = errors.New("unknown database table")
+	ErrNoMethod = errors.New("unknown database export type")
+	ErrColType  = errors.New("the value type is not usable with the mysql column")
 )
 
 // Empty is used as a blank value for search maps.
