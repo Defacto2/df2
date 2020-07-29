@@ -151,6 +151,7 @@ func Create() error {
 	if _, err := os.Stdout.Write([]byte(xml.Header)); err != nil {
 		return fmt.Errorf("create stdout xml header: %w", err)
 	}
+	output = append(output, []byte("\n")...)
 	if _, err := os.Stdout.Write(output); err != nil {
 		return fmt.Errorf("create stdout: %w", err)
 	}
