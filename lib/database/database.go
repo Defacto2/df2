@@ -250,7 +250,9 @@ func IsNew(b []sql.RawBytes) bool {
 		return false
 	}
 	new, err := valid(b[2], b[3])
-	logs.Log(err)
+	if err != nil {
+		logs.Log(err)
+	}
 	return new
 }
 
