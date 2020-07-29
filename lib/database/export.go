@@ -88,7 +88,8 @@ type Flags struct {
 	CronJob  bool   //
 	Parallel bool   // Run --table=all queries in parallel
 	Save     bool   // Save the output uncompressed
-	Table    string // Table of the database to use
+	Table    Table  // Table of the database to use
+	Tables   string // --table flag result
 	Type     string // Type of export (create|update)
 	Version  string // df2 app version pass-through
 	Limit    uint   // Limit the number of records
@@ -97,7 +98,7 @@ type Flags struct {
 // ExportCronJob is intended for an operating system time-based job scheduler.
 // It creates both create and update types exports for the files table.
 func (f Flags) ExportCronJob() error {
-	f.Compress, f.Limit, f.Table = true, 0, "files"
+	f.Compress, f.Limit, f.Table = true, 0, Files
 	start := time.Now()
 	const delta = 2
 	switch f.Parallel {
@@ -153,6 +154,18 @@ func (f Flags) ExportDB() error {
 
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
 func (f Flags) ExportTable() error {
+	switch strings.ToLower(f.Tables) {
+	case "files":
+		f.Table = Files
+	case "groups":
+		f.Table = Groups
+	case "netresources":
+		f.Table = Netresources
+	case "users":
+		f.Table = Users
+	default:
+		return fmt.Errorf("export table %q: %w", f.Tables, ErrNoTable)
+	}
 	buf, err := f.queryTable()
 	if err != nil {
 		return fmt.Errorf("export table query: %w", err)
@@ -169,13 +182,13 @@ func (f Flags) create() (value string) {
 		return ""
 	}
 	switch f.Table {
-	case Files.String():
+	case Files:
 		value += newFilesTempl
-	case Groups.String():
+	case Groups:
 		value += newGroupsTempl
-	case Netresources.String():
+	case Netresources:
 		value += newNetresourcesTempl
-	case Users.String():
+	case Users:
 		value += newUsersTempl
 	}
 	return value
@@ -190,15 +203,15 @@ func (f Flags) fileName() string {
 	if f.Limit > 0 {
 		l = fmt.Sprintf("%d_", f.Limit)
 	}
-	if f.Table != "" {
-		t = f.Table
+	if f.Table < 4 {
+		t = f.Table.String()
 	}
 	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
 }
 
 // queryDB requests columns and values of f.Table to create an INSERT INTO ? VALUES ? SQL statement.
 func (f Flags) queryDB() (*bytes.Buffer, error) {
-	if err := checkTable(f.Table); err != nil {
+	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query db table: %w", err)
 	}
 	col, err := columns(f.Table)
@@ -216,7 +229,7 @@ func (f Flags) queryDB() (*bytes.Buffer, error) {
 	}
 	var values colValues = vals
 	data := TablesData{
-		Table:   f.Table,
+		Table:   f.Table.String(),
 		Columns: fmt.Sprint(names),
 		Rows:    fmt.Sprint(values),
 	}
@@ -233,7 +246,8 @@ func (f Flags) queryDB() (*bytes.Buffer, error) {
 
 // query generates the SQL import table statement.
 func (f Flags) queryTable() (*bytes.Buffer, error) {
-	if err := checkTable(f.Table); err != nil {
+
+	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query table check: %w", err)
 	}
 	col, err := columns(f.Table)
@@ -250,7 +264,7 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("query table rows: %w", err)
 	}
 	var values colValues = vals
-	dat := TableData{VER: f.ver(), CREATE: f.create(), TABLE: f.Table, INSERT: fmt.Sprint(names), SQL: fmt.Sprint(values)}
+	dat := TableData{VER: f.ver(), CREATE: f.create(), TABLE: f.Table.String(), INSERT: fmt.Sprint(names), SQL: fmt.Sprint(values)}
 	if f.Type == "update" {
 		var dupes dupeKeys = col
 		dat.UPDATE = fmt.Sprint(dupes)
@@ -335,11 +349,11 @@ func (f Flags) queryTables() (buf *bytes.Buffer, err error) {
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
 func (f Flags) reqDB(t Table) (*bytes.Buffer, error) {
-	if t.String() == "" {
+	if f.Table.check() != nil {
 		return nil, fmt.Errorf("reqdb table: %w", ErrNoTable)
 	}
 	c := Flags{
-		Table: t.String(),
+		Table: t,
 		Type:  "create",
 		Limit: f.Limit,
 	}
@@ -400,22 +414,28 @@ func (f Flags) write(buf *bytes.Buffer) error {
 	}
 }
 
-// checkTable validates table against the list of Tbls.
-func checkTable(table string) error {
-	for _, t := range tbls {
-		if strings.ToLower(table) == t {
-			return nil
-		}
+func (t Table) check() error {
+	if t < 0 || t > 3 {
+		return fmt.Errorf("check table failure %q != %s: %w", t, Tbls, ErrNoTable)
 	}
-	return fmt.Errorf("check table failure %q != %s: %w", table, Tbls, ErrNoTable)
+	return nil
 }
 
 // columns returns the column names of table.
-func columns(table string) (columns []string, err error) {
+func columns(t Table) (columns []string, err error) {
 	db := Connect()
 	defer db.Close()
-	// LIMIT 0 quickly returns an empty set
-	rows, err := db.Query("SELECT * FROM ? LIMIT 0", table)
+	var rows *sql.Rows
+	switch t {
+	case Files:
+		rows, err = db.Query("SELECT * FROM files LIMIT 0")
+	case Groups:
+		rows, err = db.Query("SELECT * FROM groups LIMIT 0")
+	case Netresources:
+		rows, err = db.Query("SELECT * FROM netresources LIMIT 0")
+	case Users:
+		rows, err = db.Query("SELECT * FROM users LIMIT 0")
+	}
 	if err != nil {
 		return nil, fmt.Errorf("columns query: %w", err)
 	} else if err := rows.Err(); err != nil {
@@ -453,14 +473,32 @@ func format(b sql.RawBytes, colType string) (string, error) {
 }
 
 // rows returns the values of table.
-func rows(table string, limit int) (values []string, err error) {
+func rows(t Table, limit int) (values []string, err error) {
 	db := Connect()
 	defer db.Close()
 	var rows *sql.Rows
 	if limit < 0 {
-		rows, err = db.Query("SELECT * FROM ?", table)
+		switch t {
+		case Files:
+			rows, err = db.Query("SELECT * FROM files")
+		case Groups:
+			rows, err = db.Query("SELECT * FROM groups")
+		case Netresources:
+			rows, err = db.Query("SELECT * FROM netresources")
+		case Users:
+			rows, err = db.Query("SELECT * FROM users")
+		}
 	} else {
-		rows, err = db.Query("SELECT * FROM ? LIMIT ?", table, limit)
+		switch t {
+		case Files:
+			rows, err = db.Query("SELECT * FROM files LIMIT ?", limit)
+		case Groups:
+			rows, err = db.Query("SELECT * FROM groups LIMIT ?", limit)
+		case Netresources:
+			rows, err = db.Query("SELECT * FROM netresources LIMIT ?", limit)
+		case Users:
+			rows, err = db.Query("SELECT * FROM users LIMIT ?", limit)
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("rows query: %w", err)
@@ -488,7 +526,9 @@ func rows(table string, limit int) (values []string, err error) {
 		}
 		for i := range vals {
 			result[i], err = format(vals[i], strings.ToLower(types[i].DatabaseTypeName()))
-			return nil, fmt.Errorf("rows %q: %w", i, err)
+			if err != nil {
+				return nil, fmt.Errorf("rows %q: %w", i, err)
+			}
 		}
 		var r row = result
 		values = append(values, fmt.Sprint(r))

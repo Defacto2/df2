@@ -64,7 +64,7 @@ func init() {
 	dataCmd.Flags().UintVarP(&dbf.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
 	dataCmd.Flags().BoolVarP(&dbf.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
 	dataCmd.Flags().BoolVarP(&dbf.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
-	dataCmd.Flags().StringVarP(&dbf.Table, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls))
+	dataCmd.Flags().StringVarP(&dbf.Tables, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls))
 	dataCmd.Flags().StringVarP(&dbf.Type, "type", "y", "update", "database export type\noptions: create or update")
 	if err := dataCmd.Flags().MarkHidden("parallel"); err != nil {
 		logs.Fatal(err)
@@ -96,7 +96,7 @@ var dataCmd = &cobra.Command{
 			if err := dbf.ExportCronJob(); err != nil {
 				log.Fatal(err)
 			}
-		case dbf.Table == "all":
+		case dbf.Tables == "all":
 			if err := dbf.ExportDB(); err != nil {
 				log.Fatal(err)
 			}
