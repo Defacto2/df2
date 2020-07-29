@@ -1,6 +1,8 @@
 package groups
 
 import (
+	"bufio"
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -182,11 +184,12 @@ func (r Request) initialism(group string) (name string, err error) {
 }
 
 func (r Request) iterate(groups ...string) (g *[]Result, err error) {
+	piped := str.Piped()
 	total := len(groups)
 	data := make([]Result, total)
 	lastLetter, hr := "", false
 	for i, grp := range groups {
-		if !logs.Quiet && r.Progress {
+		if !piped && !logs.Quiet && r.Progress {
 			str.Progress(r.Filter, i+1, total)
 		}
 		lastLetter, hr = hrElement(lastLetter, grp)
@@ -214,10 +217,12 @@ func (r Request) parse(filename string, templ string) (err error) {
 	if err != nil {
 		return fmt.Errorf("parse group: %w", err)
 	}
-	if f := r.Filter; f == "" {
-		logs.Println(total, "matching (all) records found")
-	} else {
-		logs.Println(total, "matching", f, "records found")
+	if !str.Piped() {
+		if f := r.Filter; f == "" {
+			logs.Println(total, "matching (all) records found")
+		} else {
+			logs.Println(total, "matching", f, "records found")
+		}
 	}
 	data, err := r.iterate(groups...)
 	if err != nil {
@@ -228,9 +233,15 @@ func (r Request) parse(filename string, templ string) (err error) {
 		return fmt.Errorf("parse template: %w", err)
 	}
 	if filename == "" {
-		if err = t.Execute(os.Stdout, &data); err != nil {
+		var buf bytes.Buffer
+		wr := bufio.NewWriter(&buf)
+		if err = t.Execute(wr, &data); err != nil {
 			return fmt.Errorf("parse template execute: %w", err)
 		}
+		if err := wr.Flush(); err != nil {
+			return fmt.Errorf("parse writer flush: %w", err)
+		}
+		fmt.Println(buf.String())
 		return nil
 	}
 	switch filter(r.Filter) {
@@ -307,16 +318,14 @@ func Print(r Request) (total int, err error) {
 	}
 	logs.Println(total, "matching", r.Filter, "records found")
 	a := make([]string, total)
-	for i := range grp {
+	for i, g := range grp {
 		if r.Progress {
 			str.Progress(r.Filter, i+1, total)
 		}
-		// name
-		n := grp[i]
-		s := n
+		s := g
 		// initialism
 		if r.Initialisms {
-			if in, err := initialism(n); err != nil {
+			if in, err := initialism(g); err != nil {
 				return 0, fmt.Errorf("print initalism: %w", err)
 			} else if in != "" {
 				s = fmt.Sprintf("%v [%s]", s, in)
@@ -324,7 +333,7 @@ func Print(r Request) (total int, err error) {
 		}
 		// file totals
 		if r.Counts {
-			c, err := Count(n)
+			c, err := Count(g)
 			if err != nil {
 				return 0, fmt.Errorf("print counts: %w", err)
 			}
@@ -332,9 +341,13 @@ func Print(r Request) (total int, err error) {
 				s = fmt.Sprintf("%v (%d)", s, c)
 			}
 		}
-		a = append(a, s)
+		a[i] = s
 	}
-	logs.Printf("\n%s\nTotal groups %d", strings.Join(a, ", "), total)
+	// remove empty val
+	if a[0] == "" {
+		a = a[1:]
+	}
+	logs.Printf("\n%s\nTotal groups %d\n", strings.Join(a, ", "), total)
 	return total, nil
 }
 

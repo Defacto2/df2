@@ -208,12 +208,12 @@ func Print(r Request) error {
 	}
 	logs.Println(total, "matching", r.Filter, "records found")
 	a := make([]string, total)
-	for i := range ppl {
+	for i, p := range ppl {
 		if r.Progress {
 			str.Progress(r.Filter, i+1, total)
 		}
 		// role
-		x := strings.Split(ppl[i], ",")
+		x := strings.Split(p, ",")
 		a = append(a, x...)
 	}
 	// title and sort names
@@ -227,7 +227,11 @@ func Print(r Request) error {
 	// remove duplicates
 	less := func(i, j int) bool { return a[i] < a[j] }
 	unique.Slice(&a, less)
-	fmt.Printf("\n\n%s\nTotal authors %d", strings.Join(a, ","), len(a))
+	// remove empty val
+	if a[0] == "" {
+		a = a[1:]
+	}
+	fmt.Printf("\n%s\nTotal authors %d\n", strings.Join(a, ", "), len(a))
 	return nil
 }
 
