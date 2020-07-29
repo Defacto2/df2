@@ -110,6 +110,7 @@ func List(limit uint, compress bool) error {
 	if err != nil {
 		return fmt.Errorf("list json marshal: %w", err)
 	}
+	jsonData = append(jsonData, []byte("\n")...)
 	var out bytes.Buffer
 	if !compress {
 		if err := json.Indent(&out, jsonData, "", "    "); err != nil {

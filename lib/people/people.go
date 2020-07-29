@@ -1,6 +1,8 @@
 package people
 
 import (
+	"bufio"
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -140,7 +142,9 @@ func parse(filename string, tpl string, r Request) error {
 	if f == "" {
 		f = "all"
 	}
-	logs.Println(x, "matching", f, "records found")
+	if !str.Piped() {
+		logs.Println(x, "matching", f, "records found")
+	}
 	data, cap, hr := make([]Person, len(grp)), "", false
 	total := len(grp)
 	for i := range grp {
@@ -169,9 +173,15 @@ func parse(filename string, tpl string, r Request) error {
 		return fmt.Errorf("parse h2 template: %w", err)
 	}
 	if filename == "" {
-		if err = t.Execute(os.Stdout, data); err != nil {
+		var buf bytes.Buffer
+		wr := bufio.NewWriter(&buf)
+		if err = t.Execute(wr, data); err != nil {
 			return fmt.Errorf("parse h2 execute template: %w", err)
 		}
+		if err := wr.Flush(); err != nil {
+			return fmt.Errorf("parse writer flush: %w", err)
+		}
+		fmt.Println(buf.String())
 		return nil
 	}
 	switch roles(r.Filter) {

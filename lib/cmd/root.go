@@ -167,10 +167,6 @@ func filterFlag(t interface{}, flag, val string) {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	stat, err := os.Stdout.Stat()
-	if err != nil {
-		logs.Fatal(err)
-	}
 	logs.Panic = panic
 	logs.Quiet = quiet
 	cf := config.Filepath()
@@ -189,8 +185,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		config.Config.Errors = true
 	} else if !quiet {
-		// do not print this when a command when piped to stdout
-		if (stat.Mode() & os.ModeCharDevice) != 0 {
+		if !str.Piped() {
 			logs.Println(str.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
 		}
 	}

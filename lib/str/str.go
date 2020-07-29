@@ -2,10 +2,22 @@ package str
 
 import (
 	"fmt"
+	"os"
 	"unicode/utf8"
 
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 )
+
+// Piped detects whether the program text is being piped to another operating
+// system command or sent to stdout.
+func Piped() bool {
+	stat, err := os.Stdout.Stat()
+	if err != nil {
+		logs.Fatal(err)
+	}
+	return (stat.Mode() & os.ModeCharDevice) == 0
+}
 
 // Progress returns the count of total remaining as a percentage.
 func Progress(name string, count, total int) float64 {
