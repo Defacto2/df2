@@ -93,7 +93,6 @@ type Fetched struct {
 }
 
 // Fetch a Demozoo production by its ID.
-// func Fetch(id uint) (code int, status string, api ProductionsAPIv1) {
 func Fetch(id uint) (Fetched, error) {
 	d := Production{ID: int64(id)}
 	api, err := d.data()
@@ -101,7 +100,6 @@ func Fetch(id uint) (Fetched, error) {
 		return Fetched{}, fmt.Errorf("fetched %d: %w", id, err)
 	}
 	return Fetched{Code: d.StatusCode, Status: d.Status, API: api}, nil
-	//	return d.StatusCode, d.Status, api
 }
 
 // Request proofs.
@@ -399,10 +397,10 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	r.FilePath = filepath.Join(storage, r.UUID)
 	if skip := r.download(overwrite, api, st); skip {
 		return true, nil
-	}
-	if update := r.check(); !update {
+	} else if update := r.check(); !update {
 		return true, nil
 	}
+	logs.Printcr()
 	if r.Platform == "" {
 		r.platform(api)
 	}
