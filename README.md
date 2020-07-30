@@ -83,12 +83,6 @@ To change the configuration.
 df2 config edit
 ```
 
-### Development notes
-
-df2 uses [Go modules](https://github.com/golang/go/wiki/Modules) and Go v1.14.
-
-Windows IDE users should have the `CGO_ENABLED=0` environment variable set for testing.
-
 #### Updating dependencies
 
 ```bash
