@@ -1,4 +1,5 @@
 vendor/
 df2
 df2.exe
+internal/dist/
 UPDATES.md
