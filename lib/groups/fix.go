@@ -38,8 +38,8 @@ func Fix(simulate bool) error {
 	default:
 		logs.Printcr("no fixes needed")
 	}
-	elapsed := time.Since(start)
-	logs.Print(fmt.Sprintf(", time taken %s\n", elapsed))
+	elapsed := time.Since(start).Seconds()
+	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", float64(elapsed)))
 	return nil
 }
 
