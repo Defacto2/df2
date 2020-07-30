@@ -128,7 +128,7 @@ func findDOS(name string, files contents, varNames *[]string) string {
 		ext := strings.ToLower(file.ext)                     // normalize file extensions
 		e := findVariant(fn, exe, varNames)
 		c := findVariant(fn, com, varNames)
-		fmt.Println(">", "ext", ext, "fn", fn, "chk1", base+exe)
+		fmt.Printf(" > %q, %q, chk1 %s", ext, fn, base+exe)
 		switch {
 		case ext == bat: // [random].bat
 			finds[file.name] = 1
