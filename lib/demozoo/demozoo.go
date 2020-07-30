@@ -202,6 +202,8 @@ func (req Request) Queries() error {
 				t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", requestedID, requestedID)
 			}
 			logs.Println(t)
+		} else {
+			logs.Println()
 		}
 		return nil
 	}
