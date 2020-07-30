@@ -86,17 +86,11 @@ df2 config edit
 #### Updating dependencies
 
 ```bash
-go list -m all # List all direct and indirect dependencies
-
-go list -u -m all # List all possible upgrades
+go get -u=patch ./... # Patch update all (minor)
 
 go get -u ./... # Update all (major)
 
-go get -u=patch ./... # Patch update all (minor)
-
-go build ./... # Build all
-
-go test ./... # Test all
+go list -u -m all # List all possible upgrades
 
 go mod tidy # clean go.mod by removing all unused dependencies
 ```
