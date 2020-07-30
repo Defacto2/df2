@@ -84,7 +84,7 @@ var (
 	ErrNoFile     = errors.New("file cannot be found")
 )
 
-var activeID = ""
+var requestedID = ""
 
 type Fetched struct {
 	Code   int
@@ -117,7 +117,7 @@ func (req Request) Query(id string) (err error) {
 	if err = database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %s: %w", id, err)
 	}
-	activeID = id
+	requestedID = id
 	if err := req.Queries(); err != nil {
 		return fmt.Errorf("request query queries: %w", err)
 	}
@@ -192,13 +192,13 @@ func (req Request) Queries() error {
 			r.save()
 		}
 	}
-	if activeID != "" {
+	if requestedID != "" {
 		if st.count == 0 {
 			var t string
 			if st.fetched == 0 {
-				t = fmt.Sprintf("id %q is not a Demozoo sourced file record", activeID)
+				t = fmt.Sprintf("id %q is not a Demozoo sourced file record", requestedID)
 			} else {
-				t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", activeID, activeID)
+				t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", requestedID, requestedID)
 			}
 			logs.Println(t)
 		}
@@ -527,12 +527,12 @@ func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
 func selectByID() (sql string) {
 	const w = " FROM `files` WHERE `web_id_demozoo` IS NOT NULL"
 	where := w
-	if activeID != "" {
+	if requestedID != "" {
 		switch {
-		case database.IsUUID(activeID):
-			where = fmt.Sprintf("%v AND `uuid`=%q", w, activeID)
-		case database.IsID(activeID):
-			where = fmt.Sprintf("%v AND `id`=%q", w, activeID)
+		case database.IsUUID(requestedID):
+			where = fmt.Sprintf("%v AND `uuid`=%q", w, requestedID)
+		case database.IsID(requestedID):
+			where = fmt.Sprintf("%v AND `id`=%q", w, requestedID)
 		}
 	}
 	return selectSQL + where
