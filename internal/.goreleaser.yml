@@ -1,0 +1,44 @@
+# df2 goreleaser.yaml file.
+# Documentation at http://goreleaser.com
+# Go environments https://golang.org/doc/install/source#environment
+project_name: df2
+release:
+  draft: false # setting to true breaks scoop
+  prerelease: auto
+before:
+  hooks:
+    - go mod download
+    #- gosec ./...
+    #- go generate ./... # this will create a dirty state
+env:
+  - CGO_ENABLED=0
+  - GO111MODULE=on
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  skip: true
+builds:
+  # upx compressed binaries
+  - main: ../main.go
+    id: df2
+    binary: df2
+    goos:
+      - linux
+    goarch:
+      - amd64
+    hooks:
+      post:
+        # -qq suppresses errors as freebsd is not supported
+        - upx -qq "{{ .Path }}"
+nfpms:
+  - id: "deb"
+    file_name_template: "df2"
+    builds:
+      - df2
+    vendor: Ben Garrett
+    homepage: https://github.com/Defacto2/df2
+    maintainer: Ben Garrett <code.by.ben@gmail.com>
+    description: df2 is a command-line tool for managing plus optimising the files and database of defacto2.net.
+    license: Apache 2.0
+    formats:
+      - deb
