@@ -150,7 +150,12 @@ func Restore(source, filename, destination string) (files []string, err error) {
 	} else {
 		defer a.Close()
 		if files, err = a.Extract(destination); err != nil {
-			return nil, fmt.Errorf("restore extract: %w", err)
+			if err = Unarchiver(source, filename, destination); err != nil {
+				return nil, fmt.Errorf("restore unarchiver fallback: %w", err)
+			}
+			if files, err = Readr(source, filename); err != nil {
+				return nil, fmt.Errorf("restore readr: %w", err)
+			}
 		}
 	}
 	return files, nil
