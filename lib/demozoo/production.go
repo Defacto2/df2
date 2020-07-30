@@ -44,7 +44,7 @@ func (p *Production) data() (ProductionsAPIv1, error) {
 	}
 	p.Status = r.Status
 	p.StatusCode = r.StatusCode
-	dz := ProductionsAPIv1{}
+	var dz ProductionsAPIv1
 	if len(r.Read) > 0 {
 		if err := json.Unmarshal(r.Read, &dz); err != nil {
 			return ProductionsAPIv1{}, fmt.Errorf("production data json unmarshal: %w", err)

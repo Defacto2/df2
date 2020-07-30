@@ -128,7 +128,8 @@ func (req Request) Query(id string) (err error) {
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
 func (req Request) Queries() error {
-	st, stmt, start := stat{}, selectByID(), time.Now()
+	var st stat
+	stmt, start := selectByID(), time.Now()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(stmt)

@@ -135,7 +135,7 @@ func Create() error {
 		}
 	}
 	// trim empty urls so they're not included in the xml.
-	empty := url{}
+	var empty url
 	var trimmed []url
 	for i, x := range v.Urls {
 		if x == empty {

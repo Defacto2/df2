@@ -194,7 +194,7 @@ func (p *ProductionsAPIv1) Downloads() {
 
 // Groups returns the first two author_nicks that have is_group flagged.
 func (p *ProductionsAPIv1) Groups() [2]string {
-	g := [2]string{}
+	var g [2]string
 	for i, n := range p.AuthorNicks {
 		if i > 1 || !n.Releaser.IsGroup {
 			continue

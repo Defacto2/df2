@@ -34,7 +34,7 @@ type Dir struct {
 }
 
 // D are directory paths.
-var D = Dir{}
+var D Dir
 
 // Init initializes the subdirectories and UUID structure.
 func Init(create bool) Dir {

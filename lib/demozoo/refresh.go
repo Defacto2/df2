@@ -42,7 +42,7 @@ func RefreshMeta() error {
 		scanArgs[i] = &values[i]
 	}
 	// fetch the rows
-	st := stat{}
+	var st stat
 	for rows.Next() {
 		if _, err := st.nextRefresh(records{rows, scanArgs, values}); err != nil {
 			return fmt.Errorf("refresh meta next row: %w", err)

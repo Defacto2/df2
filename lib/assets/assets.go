@@ -36,7 +36,7 @@ const (
 type files map[string]struct{}
 
 var (
-	empty  = database.Empty{}
+	empty  database.Empty
 	ignore files
 	paths  []string // a collection of directories
 	d      = directories.Init(false)
