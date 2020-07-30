@@ -61,7 +61,9 @@ func Extract(archive, filename, uuid string) error {
 		}
 	}
 	if n := th.name; n != "" {
-		images.Generate(n, uuid, true)
+		if err := images.Generate(n, uuid, true); err != nil {
+			return fmt.Errorf("extract archive generate img: %w", err)
+		}
 	}
 	if n := tx.name; n != "" {
 		f := directories.Files(uuid)
