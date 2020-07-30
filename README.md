@@ -53,22 +53,21 @@ Flags:
 Use "df2 [command] --help" for more information about a command.
 ```
 
-### Compile and install
+### Install
 
-Requires [Go v1.14+](https://golang.org/doc/install) installed and it will not compile or install on Windows due to [GCC](https://gcc.gnu.org/) and [x/sys/unix](https://pkg.go.dev/golang.org/x/sys/unix?tab=doc) requirements.
+Is built on [Go v1.14+](https://golang.org/doc/install) and is packaged for the Ubuntu Linux platform.
 
 ```bash
-cd $(mktemp -d)
-git clone git@github.com:Defacto2/df2.git .
-go install -race
+wget https://github.com/Defacto2/df2/releases/latest/download/df2.deb
+dpkg -i df2.deb
 df2 --version
 ```
 
 ### Dependencies
 
-The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) to the system PATH.
+The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) in the system `PATH`.
 
-Image conversion for [WebP support](https://en.wikipedia.org/wiki/WebP) needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html).
+[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html).
 
 ### Configuration
 
