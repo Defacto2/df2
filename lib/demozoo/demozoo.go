@@ -166,21 +166,20 @@ func (req Request) Queries() error {
 		fmt.Println()
 		st.fetched++
 		if skip, err := st.nextResult(records{rows, scanArgs, values}, req); err != nil {
-			return fmt.Errorf("request queries next row: %w", err)
+			logs.Danger(fmt.Errorf("request queries next row: %w", err))
+			continue
 		} else if skip {
 			continue
 		}
 		r, err := newRecord(st.count, values)
 		if err != nil {
-			return fmt.Errorf("request queries new record: %w", err)
-			// logs.Log(err)
-			// continue
+			logs.Danger(fmt.Errorf("request queries new record: %w", err))
+			continue
 		}
 		logs.Printcrf(r.String(st.total))
 		if skip, err := r.parseAPI(st, req.Overwrite, storage); err != nil {
-			return fmt.Errorf("request queries parse api: %w", err)
-			// logs.Log(err)
-			// continue
+			logs.Danger(fmt.Errorf("request queries parse api: %w", err))
+			continue
 		} else if skip {
 			continue
 		}
@@ -286,7 +285,7 @@ func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip b
 		}
 		name, link := api.DownloadLink()
 		if len(link) == 0 {
-			logs.Print(color.Note.Sprint("no suitable downloads found\n"))
+			logs.Print(color.Note.Sprint("no suitable downloads found"))
 			return true
 		}
 		const OK = 200
