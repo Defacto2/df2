@@ -149,10 +149,9 @@ func Println(a ...interface{}) {
 // Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
 func Printcrf(format string, a ...interface{}) {
 	if !Quiet {
-		if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(termSize()))); err != nil {
-			fatalLog(err)
-		}
-		if _, err := fmt.Printf(format, a...); err != nil {
+		if _, err := fmt.Printf("\r%s\r%s",
+			strings.Repeat(" ", int(termSize())),
+			fmt.Sprintf(format, a...)); err != nil {
 			fatalLog(err)
 		}
 	}
