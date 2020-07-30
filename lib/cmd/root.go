@@ -25,8 +25,6 @@ import (
 
 var simulate bool
 
-const version string = "1.1.0" // df2 version
-
 const verTmp = `
    df2 tool version {{.Version}}  
 `
@@ -90,12 +88,18 @@ func copyright() string {
 	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
 }
 
+// Commit:  "n/a",
+// Date:    "2020-07-30T14:14:38+10:00",
+// Version: "1.1.0",
+
 func execVersion() {
 	type VerData struct {
 		Version  string
 		Database string
 		Ansilove string
 		Webp     string
+		Commit   string
+		Date     string
 	}
 	const exeTmp = `
 ┌──────────────────────────┐
@@ -103,6 +107,8 @@ func execVersion() {
 │  ansilove: {{.Ansilove}}  │
 │  webp lib: {{.Webp}}  │
 └──────────────────────────┘
+   commit: {{.Commit}}
+     date: {{.Date}}
 `
 	p := func(s string) string {
 		switch s {
@@ -126,10 +132,12 @@ func execVersion() {
 		w = "ok"
 	}
 	var data = VerData{
-		Version:  color.Primary.Sprint(version),
+		Version:  color.Primary.Sprint(B.Version),
 		Database: p(d),
 		Ansilove: p(a),
 		Webp:     p(w),
+		Commit:   B.Commit,
+		Date:     localBuild(B.Date),
 	}
 	tmpl, err := template.New("version").Parse(exeTmp)
 	if err != nil {
@@ -139,7 +147,7 @@ func execVersion() {
 	if err := tmpl.Execute(&b, data); err != nil {
 		log.Fatal(err)
 	}
-	rootCmd.Version = color.Primary.Sprint(version) + b.String()
+	rootCmd.Version = color.Primary.Sprint(B.Version) + b.String()
 }
 
 // filterFlag compairs the value of the filter flag against the list of slice values.
@@ -163,6 +171,15 @@ func filterFlag(t interface{}, flag, val string) {
 			os.Exit(1)
 		}
 	}
+}
+
+// localBuild date of this binary executable.
+func localBuild(date string) string {
+	t, err := time.Parse(time.RFC3339, date)
+	if err != nil {
+		return date
+	}
+	return t.Local().Format("2006 Jan 2, 15:04 MST")
 }
 
 // initConfig reads in config file and ENV variables if set.

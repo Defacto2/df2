@@ -90,7 +90,7 @@ var dataCmd = &cobra.Command{
 	Aliases: []string{"d", "sql"},
 	Short:   "An SQL dump generator to export files",
 	Run: func(cmd *cobra.Command, args []string) {
-		dbf.Version = version
+		//dbf.Version = version
 		switch {
 		case dbf.CronJob:
 			if err := dbf.ExportCronJob(); err != nil {
