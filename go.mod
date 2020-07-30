@@ -9,7 +9,6 @@ require (
 	github.com/frankban/quicktest v1.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gabriel-vasile/mimetype v1.1.0
-	github.com/gen2brain/go-unarr v0.0.0-20200217175153-d083a5a1fc26
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/uuid v1.1.1
 	github.com/gookit/color v1.2.5

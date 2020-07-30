@@ -1,35 +1,8 @@
 package archive
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 )
-
-func Test_extract(t *testing.T) {
-	type args struct {
-		archive string
-		tempDir string
-	}
-
-	zip := filepath.Join(tmp, "zip")
-	os.RemoveAll(filepath.Join(zip))
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"empty", args{"", ""}, true},
-		{"zip", args{testDir("demozoo/test.zip"), zip}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := extract(tt.args.archive, tt.args.tempDir); (err != nil) != tt.wantErr {
-				t.Errorf("extract() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
 func TestExtract(t *testing.T) {
 	type args struct {

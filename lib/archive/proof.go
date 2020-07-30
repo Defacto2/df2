@@ -11,22 +11,7 @@ import (
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gabriel-vasile/mimetype"
-	unarr "github.com/gen2brain/go-unarr"
 )
-
-func extract(archive, tempDir string) error {
-	ua, err := unarr.NewArchive(archive) // do not close otherwise a panic triggers
-	if err != nil {
-		return fmt.Errorf("extract newarchive %q: %w", archive, err)
-	}
-	if _, err = ua.Extract(tempDir); err != nil {
-		return fmt.Errorf("extract: %w", err)
-	}
-	if err := ua.Close(); err != nil {
-		return fmt.Errorf("extract close: %w", err)
-	}
-	return nil
-}
 
 // Extract decompresses and parses an archive.
 // uuid is used to rename the extracted assets such as image previews.
@@ -40,10 +25,8 @@ func Extract(archive, filename, uuid string) error {
 		return fmt.Errorf("extract archive tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
-	if err := extract(archive, tempDir); err != nil {
-		if err := extractr(archive, filename, tempDir); err != nil {
-			return fmt.Errorf("extract archive extractor %q: %w", archive, err)
-		}
+	if err := Unarchiver(archive, filename, tempDir); err != nil {
+		return fmt.Errorf("extract unarchiver: %w", err)
 	}
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {

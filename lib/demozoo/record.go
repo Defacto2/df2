@@ -77,9 +77,6 @@ func (r *Record) fileZipContent() (ok bool, err error) {
 	}
 	a, err := archive.Read(r.FilePath, r.Filename)
 	if err != nil {
-		if err.Error() == "unarr: File not found" {
-			return false, fmt.Errorf("record filezipcontent archive read %q: %w", r.FilePath, ErrNoFile)
-		}
 		return false, fmt.Errorf("record filezipcontent archive read: %w", err)
 	}
 	r.FileZipContent = strings.Join(a, "\n")

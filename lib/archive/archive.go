@@ -12,7 +12,6 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
-	unarr "github.com/gen2brain/go-unarr"
 )
 
 const (
@@ -119,17 +118,8 @@ func NewExt(name, extension string) string {
 // archive is the absolute path to the archive file named as a uuid
 // filename is the original archive filename and file extension.
 func Read(archive string, filename string) (files []string, err error) {
-	a, err := unarr.NewArchive(archive)
-	if err != nil {
-		// using archiver as a fallback
-		if files, err = Readr(archive, filename); err != nil {
-			return nil, fmt.Errorf("read readr fallback: %w", err)
-		}
-		return files, nil
-	}
-	defer a.Close()
-	if files, err = a.List(); err != nil {
-		return nil, fmt.Errorf("read list: %w", err)
+	if files, err = Readr(archive, filename); err != nil {
+		return nil, fmt.Errorf("read readr fallback: %w", err)
 	}
 	return files, nil
 }
@@ -139,24 +129,11 @@ func Read(archive string, filename string) (files []string, err error) {
 // Restore relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
 func Restore(source, filename, destination string) (files []string, err error) {
-	a, err := unarr.NewArchive(source) // do not close otherwise a panic triggers
-	if err != nil {
-		if err = Unarchiver(source, filename, destination); err != nil {
-			return nil, fmt.Errorf("restore unarchiver fallback: %w", err)
-		}
-		if files, err = Readr(source, filename); err != nil {
-			return nil, fmt.Errorf("restore readr: %w", err)
-		}
-	} else {
-		defer a.Close()
-		if files, err = a.Extract(destination); err != nil {
-			if err = Unarchiver(source, filename, destination); err != nil {
-				return nil, fmt.Errorf("restore unarchiver fallback: %w", err)
-			}
-			if files, err = Readr(source, filename); err != nil {
-				return nil, fmt.Errorf("restore readr: %w", err)
-			}
-		}
+	if err = Unarchiver(source, filename, destination); err != nil {
+		return nil, fmt.Errorf("restore unarchiver: %w", err)
+	}
+	if files, err = Readr(source, filename); err != nil {
+		return nil, fmt.Errorf("restore readr: %w", err)
 	}
 	return files, nil
 }
