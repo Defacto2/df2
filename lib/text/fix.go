@@ -53,15 +53,16 @@ func Fix(simulate bool) error {
 	c := 0
 	for rows.Next() {
 		var img image
-		err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize)
-		if err != nil {
+		if err := rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize); err != nil {
 			return fmt.Errorf("fix rows scan: %w", err)
 		}
 		// TODO replace with function that handles archives
 		if !img.valid() {
 			continue
 		}
-		if ok, err := img.exist(); !ok {
+		if ok, err := img.exist(); err != nil {
+			return fmt.Errorf("fix exist: %w", err)
+		} else if !ok {
 			c++
 			logs.Printf("%d. %v", c, img)
 			input := filepath.Join(dir.UUID, img.UUID)
@@ -74,11 +75,9 @@ func Fix(simulate bool) error {
 				continue
 			}
 			if err := generate(input, img.UUID); err != nil {
-				return fmt.Errorf("fix generate: %w", err)
+				logs.Log(fmt.Errorf("fix generate: %w", err))
 			}
 			logs.Print("\n")
-		} else {
-			return fmt.Errorf("fix exist: %w", err)
 		}
 	}
 	if simulate && c > 0 {
@@ -96,8 +95,7 @@ func (i image) exist() (bool, error) {
 		if path == "" {
 			return false, nil
 		}
-		if s, err := os.Stat(filepath.Join(path, i.UUID+png)); os.IsNotExist(err) {
-			fmt.Println(s)
+		if _, err := os.Stat(filepath.Join(path, i.UUID+png)); os.IsNotExist(err) {
 			return false, nil
 		} else if err != nil {
 			return false, fmt.Errorf("image exist: %w", err)
