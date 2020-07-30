@@ -4,6 +4,7 @@ import (
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -55,7 +56,9 @@ var demozooCmd = &cobra.Command{
 			if err != nil {
 				logs.Fatal(err)
 			}
-			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzf.ping, f.Status)
+			if !str.Piped() {
+				logs.Printf("Demozoo ID %v, HTTP status %v\n", dzf.ping, f.Status)
+			}
 			if err := f.API.Print(); err != nil {
 				logs.Fatal(err)
 			}
