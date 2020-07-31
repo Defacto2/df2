@@ -1,0 +1,71 @@
+{
+  "url": "https://demozoo.org/api/v1/productions/267300/?format=json",
+  "demozoo_url": "https://demozoo.org/productions/267300/",
+  "id": 267300,
+  "title": "X-Wing Cracktro",
+  "author_nicks": [
+    {
+      "name": "THG FX",
+      "abbreviation": "THG F/X",
+      "releaser": {
+        "url": "https://demozoo.org/api/v1/releasers/46356/?format=json",
+        "id": 46356,
+        "name": "THG FX",
+        "is_group": true
+      }
+    }
+  ],
+  "author_affiliation_nicks": [],
+  "release_date": "1993",
+  "supertype": "production",
+  "platforms": [
+    {
+      "url": "https://demozoo.org/api/v1/platforms/4/?format=json",
+      "id": 4,
+      "name": "MS-Dos"
+    }
+  ],
+  "types": [
+    {
+      "url": "https://demozoo.org/api/v1/production_types/13/?format=json",
+      "id": 13,
+      "name": "Cracktro",
+      "supertype": "production"
+    }
+  ],
+  "credits": [],
+  "download_links": [
+    {
+      "link_class": "BaseUrl",
+      "url": "http://www.sensenstahl.com/untergrund_mirror/cracktro/x-wing_cracktro.zip"
+    }
+  ],
+  "external_links": [],
+  "release_parties": [],
+  "competition_placings": [],
+  "invitation_parties": [],
+  "screenshots": [
+    {
+      "original_url": "https://media.demozoo.org/screens/o/29/a3/d182.192920.png",
+      "original_width": 640,
+      "original_height": 400,
+      "standard_url": "https://media.demozoo.org/screens/s/29/a3/d182.192920.png",
+      "standard_width": 400,
+      "standard_height": 250,
+      "thumbnail_url": "https://media.demozoo.org/screens/t/29/a3/d182.192920.png",
+      "thumbnail_width": 200,
+      "thumbnail_height": 125
+    },
+    {
+      "original_url": "https://media.demozoo.org/screens/o/59/02/c416.192921.png",
+      "original_width": 320,
+      "original_height": 200,
+      "standard_url": "https://media.demozoo.org/screens/s/59/02/c416.192921.png",
+      "standard_width": 320,
+      "standard_height": 200,
+      "thumbnail_url": "https://media.demozoo.org/screens/t/59/02/c416.192921.png",
+      "thumbnail_width": 200,
+      "thumbnail_height": 125
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "url": "https://demozoo.org/api/v1/productions/188796/?format=json",
+  "demozoo_url": "https://demozoo.org/productions/188796/",
+  "id": 188796,
+  "title": "The Untouchables BBS (7)",
+  "author_nicks": [
+    {
+      "name": "Deep Freeze",
+      "abbreviation": "",
+      "releaser": {
+        "url": "https://demozoo.org/api/v1/releasers/67799/?format=json",
+        "id": 67799,
+        "name": "Deep Freeze",
+        "is_group": false
+      }
+    }
+  ],
+  "author_affiliation_nicks": [],
+  "release_date": "1993",
+  "supertype": "production",
+  "platforms": [
+    {
+      "url": "https://demozoo.org/api/v1/platforms/4/?format=json",
+      "id": 4,
+      "name": "MS-Dos"
+    }
+  ],
+  "types": [
+    {
+      "url": "https://demozoo.org/api/v1/production_types/41/?format=json",
+      "id": 41,
+      "name": "BBStro",
+      "supertype": "production"
+    },
+    {
+      "url": "https://demozoo.org/api/v1/production_types/10/?format=json",
+      "id": 10,
+      "name": "40k Intro",
+      "supertype": "production"
+    }
+  ],
+  "credits": [
+    {
+      "nick": {
+        "name": "Deep Freeze",
+        "abbreviation": "",
+        "releaser": {
+          "url": "https://demozoo.org/api/v1/releasers/67799/?format=json",
+          "id": 67799,
+          "name": "Deep Freeze",
+          "is_group": false
+        }
+      },
+      "category": "Code",
+      "role": ""
+    },
+    {
+      "nick": {
+        "name": "The Cardinal",
+        "abbreviation": "",
+        "releaser": {
+          "url": "https://demozoo.org/api/v1/releasers/46348/?format=json",
+          "id": 46348,
+          "name": "The Cardinal",
+          "is_group": false
+        }
+      },
+      "category": "Graphics",
+      "role": "Ansi"
+    }
+  ],
+  "download_links": [
+    {
+      "link_class": "BaseUrl",
+      "url": "http://www.sensenstahl.com/untergrund_mirror/bbs/the_untouchables_bbs7.zip"
+    }
+  ],
+  "external_links": [
+    {
+      "link_class": "PouetProduction",
+      "url": "https://www.pouet.net/prod.php?which=76652"
+    }
+  ],
+  "release_parties": [],
+  "competition_placings": [],
+  "invitation_parties": [],
+  "screenshots": [
+    {
+      "original_url": "https://media.demozoo.org/screens/o/6e/33/15c0.164612.png",
+      "original_width": 640,
+      "original_height": 400,
+      "standard_url": "https://media.demozoo.org/screens/s/6e/33/15c0.164612.png",
+      "standard_width": 400,
+      "standard_height": 250,
+      "thumbnail_url": "https://media.demozoo.org/screens/t/6e/33/15c0.164612.png",
+      "thumbnail_width": 200,
+      "thumbnail_height": 125
+    },
+    {
+      "original_url": "https://media.demozoo.org/screens/o/85/ec/2640.164613.png",
+      "original_width": 320,
+      "original_height": 200,
+      "standard_url": "https://media.demozoo.org/screens/s/85/ec/2640.164613.png",
+      "standard_width": 320,
+      "standard_height": 200,
+      "thumbnail_url": "https://media.demozoo.org/screens/t/85/ec/2640.164613.png",
+      "thumbnail_width": 200,
+      "thumbnail_height": 125
+    }
+  ]
+}

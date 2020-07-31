@@ -1,0 +1,285 @@
+{
+  "url": "https://demozoo.org/api/v1/productions/1/?format=json",
+  "demozoo_url": "https://demozoo.org/productions/1/",
+  "id": 1,
+  "title": "Rob Is Jarig",
+  "author_nicks": [
+    {
+      "name": "Aardbei",
+      "abbreviation": "",
+      "releaser": {
+        "url": "https://demozoo.org/api/v1/releasers/1/?format=json",
+        "id": 1,
+        "name": "Aardbei",
+        "is_group": true
+      }
+    }
+  ],
+  "author_affiliation_nicks": [],
+  "release_date": "2000-03",
+  "supertype": "production",
+  "platforms": [
+    {
+      "url": "https://demozoo.org/api/v1/platforms/1/?format=json",
+      "id": 1,
+      "name": "Windows"
+    }
+  ],
+  "types": [
+    {
+      "url": "https://demozoo.org/api/v1/production_types/1/?format=json",
+      "id": 1,
+      "name": "Demo",
+      "supertype": "production"
+    }
+  ],
+  "credits": [
+    {
+      "nick": {
+        "name": "Ile",
+        "abbreviation": "",
+        "releaser": {
+          "url": "https://demozoo.org/api/v1/releasers/2/?format=json",
+          "id": 2,
+          "name": "Ile",
+          "is_group": false
+        }
+      },
+      "category": "Code",
+      "role": ""
+    },
+    {
+      "nick": {
+        "name": "Ile",
+        "abbreviation": "",
+        "releaser": {
+          "url": "https://demozoo.org/api/v1/releasers/2/?format=json",
+          "id": 2,
+          "name": "Ile",
+          "is_group": false
+        }
+      },
+      "category": "Graphics",
+      "role": ""
+    }
+  ],
+  "download_links": [
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2000/ambience00/demo/feestje.zip"
+    },
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2003/scene_event03/demo/rob_s_birthday__o__by_random_dutch_scener__not_ile_.zip"
+    },
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2004/evoke04/demo/de_billetjes_van_avoozl_zijn_net_zo_zacht.zip"
+    },
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2005/evoke05/demo/feestje.zip"
+    },
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2006/evoke06/demo/feestje_rmx.zip"
+    },
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2007/evoke07/demo/debris2.zip"
+    },
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2007/numerica07/demo/newskool/feestje_2.zip"
+    },
+    {
+      "link_class": "SceneOrgFile",
+      "url": "https://files.scene.org/view/parties/2008/evoke08/demo/feestje.zip"
+    }
+  ],
+  "external_links": [
+    {
+      "link_class": "ModarchiveModule",
+      "url": "https://modarchive.org/module.php?162285"
+    },
+    {
+      "link_class": "PouetProduction",
+      "url": "https://www.pouet.net/prod.php?which=7084"
+    },
+    {
+      "link_class": "YoutubeVideo",
+      "url": "https://www.youtube.com/watch?v=9JC2Vi_ZniA"
+    }
+  ],
+  "release_parties": [],
+  "competition_placings": [
+    {
+      "competition": {
+        "id": 1461,
+        "name": "Demo",
+        "party": {
+          "id": 354,
+          "name": "Evoke 2004",
+          "url": "https://demozoo.org/api/v1/parties/354/?format=json"
+        }
+      },
+      "position": 10,
+      "ranking": "10",
+      "score": "31"
+    },
+    {
+      "competition": {
+        "id": 1588,
+        "name": "Demo",
+        "party": {
+          "id": 355,
+          "name": "Evoke 2005",
+          "url": "https://demozoo.org/api/v1/parties/355/?format=json"
+        }
+      },
+      "position": 11,
+      "ranking": "11",
+      "score": "14"
+    },
+    {
+      "competition": {
+        "id": 1097,
+        "name": "Demo",
+        "party": {
+          "id": 340,
+          "name": "Evoke 2006",
+          "url": "https://demozoo.org/api/v1/parties/340/?format=json"
+        }
+      },
+      "position": 4,
+      "ranking": "4",
+      "score": "99"
+    },
+    {
+      "competition": {
+        "id": 3427,
+        "name": "Demo",
+        "party": {
+          "id": 341,
+          "name": "Evoke 2007",
+          "url": "https://demozoo.org/api/v1/parties/341/?format=json"
+        }
+      },
+      "position": 9,
+      "ranking": "9",
+      "score": "24"
+    },
+    {
+      "competition": {
+        "id": 3437,
+        "name": "Demo",
+        "party": {
+          "id": 356,
+          "name": "Evoke 2008",
+          "url": "https://demozoo.org/api/v1/parties/356/?format=json"
+        }
+      },
+      "position": 1,
+      "ranking": "1",
+      "score": "234"
+    },
+    {
+      "competition": {
+        "id": 5252,
+        "name": "PC/Mac Demo",
+        "party": {
+          "id": 246,
+          "name": "Outline 2008",
+          "url": "https://demozoo.org/api/v1/parties/246/?format=json"
+        }
+      },
+      "position": 6,
+      "ranking": "6",
+      "score": "135"
+    },
+    {
+      "competition": {
+        "id": 7244,
+        "name": "Demos Newskool",
+        "party": {
+          "id": 661,
+          "name": "Numerica 2007",
+          "url": "https://demozoo.org/api/v1/parties/661/?format=json"
+        }
+      },
+      "position": 3,
+      "ranking": "disq",
+      "score": ""
+    },
+    {
+      "competition": {
+        "id": 2018,
+        "name": "Demo",
+        "party": {
+          "id": 205,
+          "name": "Scene Event 2003",
+          "url": "https://demozoo.org/api/v1/parties/205/?format=json"
+        }
+      },
+      "position": 6,
+      "ranking": "6",
+      "score": ""
+    },
+    {
+      "competition": {
+        "id": 8896,
+        "name": "Demos",
+        "party": {
+          "id": 1101,
+          "name": "BCN Party 2007",
+          "url": "https://demozoo.org/api/v1/parties/1101/?format=json"
+        }
+      },
+      "position": 4,
+      "ranking": "disq",
+      "score": ""
+    },
+    {
+      "competition": {
+        "id": 4582,
+        "name": "Demo",
+        "party": {
+          "id": 975,
+          "name": "Ambience 2000",
+          "url": "https://demozoo.org/api/v1/parties/975/?format=json"
+        }
+      },
+      "position": 9,
+      "ranking": "=9",
+      "score": "510"
+    },
+    {
+      "competition": {
+        "id": 9023,
+        "name": "Demo - Newschool",
+        "party": {
+          "id": 384,
+          "name": "Syntax 2007",
+          "url": "https://demozoo.org/api/v1/parties/384/?format=json"
+        }
+      },
+      "position": 6,
+      "ranking": "6",
+      "score": "0"
+    }
+  ],
+  "invitation_parties": [],
+  "screenshots": [
+    {
+      "original_url": "https://media.demozoo.org/screens/o/78/ab/8fe3.1.png",
+      "original_width": 320,
+      "original_height": 200,
+      "standard_url": "https://media.demozoo.org/screens/s/78/ab/8fe3.1.jpg",
+      "standard_width": 320,
+      "standard_height": 200,
+      "thumbnail_url": "https://media.demozoo.org/screens/t/78/ab/8fe3.1.jpg",
+      "thumbnail_width": 200,
+      "thumbnail_height": 125
+    }
+  ]
+}

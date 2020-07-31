@@ -204,6 +204,15 @@ func (p *ProductionsAPIv1) Groups() [2]string {
 	return g
 }
 
+// JSON returns the production API results as tabbed JSON.
+func (p *ProductionsAPIv1) JSON() ([]byte, error) {
+	js, err := json.MarshalIndent(&p, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("json marshal indent: %w", err)
+	}
+	return js, nil
+}
+
 // PouetID returns the ID value used by Pouet's which prod URL syntax
 // and its HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
