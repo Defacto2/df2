@@ -17,17 +17,17 @@ const (
 	// AED is the ANSI Erase in Display
 	AED = "\r\003[2J"
 	// AEL is the ANSI Erase in Line sequence
-	AEL = "\r\033[0K"
-	// Filename is the default error log filename
-	Filename             = "errors.log"
-	dir      os.FileMode = 0700
-	file     os.FileMode = 0600
-	flags                = log.Ldate | log.Ltime | log.LUTC
-	newfile              = os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	AEL                 = "\r\033[0K"
+	dmode   os.FileMode = 0700
+	fmode   os.FileMode = 0600
+	flags               = log.Ldate | log.Ltime | log.LUTC
+	newmode             = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 )
 
 var (
-	scope = gap.NewScope(gap.User, "df2")
+	// Filename is the default error log filename
+	Filename = "errors.log"
+	scope    = gap.NewScope(gap.User, "df2")
 	// Panic uses the panic function to handle all error logs.
 	Panic = false
 	// Quiet stops most writing to the standard output.
@@ -35,7 +35,6 @@ var (
 )
 
 var (
-	ErrNil   = errors.New("")
 	ErrNoArg = errors.New("no arguments are provided")
 )
 
@@ -180,21 +179,21 @@ func fatalLog(err error) {
 // save an error to the logs.
 // path is available for unit tests.
 func save(err error) (ok bool) {
-	if err == nil || errors.Is(err, ErrNil) {
+	if err == nil {
 		return false
 	}
 	// use UTC date and times in the log file
 	log.SetFlags(flags)
-	name := Filepath()
-	p := filepath.Dir(name)
+	f := Filepath()
+	p := filepath.Dir(f)
 	if _, err1 := os.Stat(p); os.IsNotExist(err1) {
-		if err2 := os.MkdirAll(p, dir); err != nil {
+		if err2 := os.MkdirAll(p, dmode); err != nil {
 			fatal(err2)
 		}
 	} else if err1 != nil {
 		fatal(err1)
 	}
-	file, err1 := os.OpenFile(name, newfile, file)
+	file, err1 := os.OpenFile(f, newmode, fmode)
 	if err1 != nil {
 		fatal(err1)
 	}

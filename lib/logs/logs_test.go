@@ -3,22 +3,13 @@ package logs
 import (
 	"errors"
 	"io/ioutil"
+	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"gopkg.in/gookit/color.v1"
 )
-
-func testDir(name string) string {
-	dir, _ := os.Getwd()
-	return filepath.Join(dir, "../../tests/", name)
-}
-
-func testTxt() string {
-	return filepath.Join(testDir("logs"), "test.log")
-}
 
 func TestArg(t *testing.T) {
 	type args struct {
@@ -42,15 +33,19 @@ func TestArg(t *testing.T) {
 }
 
 func Test_save(t *testing.T) {
-	eerr, terr := errors.New(""), errors.New("test error: this is a test")
+	Filename = "test.log"
+	fp, err := scope.LogPath(Filename)
+	if err != nil {
+		log.Fatal(err)
+	}
 	tests := []struct {
 		name   string
 		err    error
 		wantOk bool
 	}{
-		{"empty", nil, false},
-		{"empty", eerr, false},
-		{"ok", terr, true},
+		{"nil", nil, false},
+		{"empty", errors.New(""), true},
+		{"ok", errors.New("test error: this is a test"), true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,7 +53,7 @@ func Test_save(t *testing.T) {
 				t.Errorf("save() = %v, want %v", gotOk, tt.wantOk)
 			} else if gotOk {
 				// cleanup
-				if err := os.Remove(testTxt()); err != nil {
+				if err := os.Remove(fp); err != nil {
 					t.Fatal(err)
 				}
 			}
