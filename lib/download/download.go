@@ -181,6 +181,9 @@ func LinkPing(url string) (*http.Response, error) {
 
 // StatusColor colours the HTTP status based on its severity.
 func StatusColor(code int, status string) string {
+	if status == "" {
+		return ""
+	}
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
 	c := code
 	switch {
