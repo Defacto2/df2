@@ -20,7 +20,7 @@ func Extract(archive, filename, uuid string) error {
 		return fmt.Errorf("extract archive uuid %q: %w", uuid, err)
 	}
 	// create temp dir
-	tempDir, err := ioutil.TempDir("", "extarc-")
+	tempDir, err := ioutil.TempDir("", "proofextract-")
 	if err != nil {
 		return fmt.Errorf("extract archive tempdir %q: %w", tempDir, err)
 	}

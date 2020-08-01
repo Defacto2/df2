@@ -48,11 +48,12 @@ func Unarchiver(source, filename, destination string) error {
 	return nil
 }
 
+// TODO: test ALL archive types
 func configure(f interface{}) (err error) {
 	tar := &archiver.Tar{
 		OverwriteExisting:      true,
 		MkdirAll:               true,
-		ImplicitTopLevelFolder: true,
+		ImplicitTopLevelFolder: false,
 		ContinueOnError:        false,
 	}
 	switch v := f.(type) {
@@ -60,14 +61,11 @@ func configure(f interface{}) (err error) {
 		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Rar
 		v.OverwriteExisting = true
 		v.MkdirAll = true
-		v.ImplicitTopLevelFolder = true
+		v.ImplicitTopLevelFolder = false
 		v.ContinueOnError = false
 	case *archiver.Tar:
 		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Tar
-		v.OverwriteExisting = true
-		v.MkdirAll = true
-		v.ImplicitTopLevelFolder = true
-		v.ContinueOnError = false
+		// see tar var
 	case *archiver.TarBz2:
 		v.Tar = tar
 	case *archiver.TarGz:
@@ -83,7 +81,7 @@ func configure(f interface{}) (err error) {
 		v.OverwriteExisting = true
 		v.MkdirAll = true
 		v.SelectiveCompression = true
-		v.ImplicitTopLevelFolder = true
+		v.ImplicitTopLevelFolder = false
 		v.ContinueOnError = false
 	case *archiver.Gz, *archiver.Bz2, *archiver.Lz4, *archiver.Snappy, *archiver.Xz:
 		// nothing to customize
