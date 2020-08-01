@@ -40,22 +40,16 @@ func (r *Request) Body() error {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Link, nil)
+	defer cancel()
 	if err != nil {
-		cancel()
 		return fmt.Errorf("request body new with context: %w", err)
 	}
 	client := http.Client{}
-	go func() {
-		time.Sleep(timeout)
-		cancel()
-	}()
 	res, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("request body client do: %w", err)
 	}
-	defer func() {
-		res.Body.Close()
-	}()
+	defer res.Body.Close()
 	r.Status = res.Status
 	r.StatusCode = res.StatusCode
 	r.Read, err = ioutil.ReadAll(res.Body)
@@ -168,19 +162,16 @@ func LinkDownloadQ(name, url string) (http.Header, error) {
 
 // LinkPing connects to a URL and returns its HTTP status code and status text.
 func LinkPing(url string) (*http.Response, error) {
-	const seconds = 2 * time.Second
+	const seconds = 5 * time.Second
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, seconds)
 	req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
+	defer cancel()
 	if err != nil {
-		cancel()
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	client := &http.Client{}
-	go func() {
-		time.Sleep(seconds)
-		cancel()
-	}()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
