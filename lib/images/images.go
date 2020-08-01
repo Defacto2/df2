@@ -55,8 +55,10 @@ func Duplicate(filename, suffix string) (name string, err error) {
 }
 
 // Generate a collection of site images.
-func Generate(name, id string, remove bool) error {
-	n := name
+func Generate(src, id string, remove bool) error {
+	if _, err := os.Stat(src); os.IsNotExist(err) {
+		return fmt.Errorf("generate stat %q: %w", src, err)
+	}
 	out := func(s string, e error) {
 		if s != "" {
 			logs.Printf("  %s", s)
@@ -66,17 +68,17 @@ func Generate(name, id string, remove bool) error {
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
-	s, err := ToPng(n, NewExt(f.Img000, _png), 1500)
+	s, err := ToPng(src, NewExt(f.Img000, _png), 1500)
 	out(s, err)
-	s, err = ToWebp(n, NewExt(f.Img000, webp), true)
+	s, err = ToWebp(src, NewExt(f.Img000, webp), true)
 	out(s, err)
-	s, err = ToThumb(n, f.Img400, 400)
+	s, err = ToThumb(src, f.Img400, 400)
 	out(s, err)
-	s, err = ToThumb(n, f.Img150, 150)
+	s, err = ToThumb(src, f.Img150, 150)
 	out(s, err)
 	if remove {
-		if err := os.Remove(n); err != nil {
-			return fmt.Errorf("generate remove %q: %w", n, err)
+		if err := os.Remove(src); err != nil {
+			return fmt.Errorf("generate remove %q: %w", src, err)
 		}
 	}
 	return nil
