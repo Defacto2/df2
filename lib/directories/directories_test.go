@@ -85,4 +85,7 @@ func Test_createHolderFiles(t *testing.T) {
 	if err := os.RemoveAll(tempDir); err != nil {
 		t.Error(err)
 	}
+	if err := os.Remove("00000000-0000-0000-0000-000000000000"); err != nil {
+		t.Error(err)
+	}
 }
