@@ -65,7 +65,10 @@ func configure(f interface{}) (err error) {
 		v.ContinueOnError = false
 	case *archiver.Tar:
 		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Tar
-		// see tar var
+		v.OverwriteExisting = true
+		v.MkdirAll = true
+		v.ImplicitTopLevelFolder = false
+		v.ContinueOnError = false
 	case *archiver.TarBz2:
 		v.Tar = tar
 	case *archiver.TarGz:
@@ -83,7 +86,11 @@ func configure(f interface{}) (err error) {
 		v.SelectiveCompression = true
 		v.ImplicitTopLevelFolder = false
 		v.ContinueOnError = false
-	case *archiver.Gz, *archiver.Bz2, *archiver.Lz4, *archiver.Snappy, *archiver.Xz:
+	case *archiver.Gz,
+		*archiver.Bz2,
+		*archiver.Lz4,
+		*archiver.Snappy,
+		*archiver.Xz:
 		// nothing to customize
 	default:
 		err = fmt.Errorf("configure %v: %w", f, ErrNoCustom)
