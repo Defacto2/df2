@@ -191,7 +191,7 @@ func TestRestore(t *testing.T) {
 		{"zip", args{zip, "test.zip", tmp}, res, false},
 		{"tar", args{tar, "test.tar", tmp}, res, false},
 		{"gz", args{gz, "test.tar.gz", tmp}, res, false},
-		{"7z", args{z7, "test.7z", tmp}, res, false},
+		{"7z (unsupported)", args{z7, "test.7z", tmp}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

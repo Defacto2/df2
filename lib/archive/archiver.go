@@ -57,12 +57,17 @@ func configure(f interface{}) (err error) {
 	}
 	switch v := f.(type) {
 	case *archiver.Rar:
+		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Rar
 		v.OverwriteExisting = true
 		v.MkdirAll = true
 		v.ImplicitTopLevelFolder = true
 		v.ContinueOnError = false
 	case *archiver.Tar:
-		// nothing to customize
+		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Tar
+		v.OverwriteExisting = true
+		v.MkdirAll = true
+		v.ImplicitTopLevelFolder = true
+		v.ContinueOnError = false
 	case *archiver.TarBz2:
 		v.Tar = tar
 	case *archiver.TarGz:
@@ -74,6 +79,7 @@ func configure(f interface{}) (err error) {
 	case *archiver.TarXz:
 		v.Tar = tar
 	case *archiver.Zip:
+		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Zip
 		v.OverwriteExisting = true
 		v.MkdirAll = true
 		v.SelectiveCompression = true
