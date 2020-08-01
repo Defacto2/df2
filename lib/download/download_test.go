@@ -13,6 +13,41 @@ func testTemp() string {
 	return filepath.Join(dir, "../../tests/download")
 }
 
+func TestRequest_Body(t *testing.T) {
+	type fields struct {
+		Link       string
+		Timeout    time.Duration
+		Read       []byte
+		StatusCode int
+		Status     string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{"empty", fields{}, true},
+		{"example", fields{
+			Link:    "https://example.com",
+			Timeout: 3 * time.Second,
+		}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Request{
+				Link:       tt.fields.Link,
+				Timeout:    tt.fields.Timeout,
+				Read:       tt.fields.Read,
+				StatusCode: tt.fields.StatusCode,
+				Status:     tt.fields.Status,
+			}
+			if err := r.Body(); (err != nil) != tt.wantErr {
+				t.Errorf("Request.Body() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func Test_checkTime(t *testing.T) {
 	td := func(v int) time.Duration {
 		sec, _ := time.ParseDuration(fmt.Sprintf("%ds", v))
@@ -181,6 +216,28 @@ func TestLinkDownloadQ(t *testing.T) {
 			// cleanup
 			if err := os.Remove(testTemp()); err != nil {
 				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestStatusColor(t *testing.T) {
+	type args struct {
+		code   int
+		status string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"empty", args{}, ""},
+		{"ok", args{200, "ok"}, "[1;32mok[0m"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StatusColor(tt.args.code, tt.args.status); got != tt.want {
+				t.Errorf("StatusColor() = %v, want %v", got, tt.want)
 			}
 		})
 	}
