@@ -3,6 +3,7 @@ package images
 import (
 	_ "image/gif"
 	_ "image/jpeg"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -117,6 +118,47 @@ func TestInfo(t *testing.T) {
 				t.Errorf("Info() gotFormat = %v, want %v", gotFormat, tt.wantFormat)
 			}
 		})
+	}
+}
+
+func TestGenerate(t *testing.T) {
+	dir := testDir("images")
+	const (
+		gif = ".gif"
+		jpg = ".jpg"
+		png = ".png"
+		wbm = ".wbm"
+	)
+	type args struct {
+		src    string
+		id     string
+		remove bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"empty", args{}, true},
+		{"gif", args{filepath.Join(dir, "test"+gif), "testgen", false}, false},
+		{"jpg", args{filepath.Join(dir, "test"+jpg), "testgen", false}, false},
+		{"png", args{filepath.Join(dir, "test"+png), "testgen", false}, false},
+		{"wbm", args{filepath.Join(dir, "test"+wbm), "testgen", false}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Generate(tt.args.src, tt.args.id, tt.args.remove); (err != nil) != tt.wantErr {
+				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+	for _, ext := range []string{gif, jpg, png, wbm} {
+		if err := os.Remove(filepath.Join(dir, "test_150x"+ext)); err != nil {
+			log.Print(err)
+		}
+		if err := os.Remove(filepath.Join(dir, "test_400x"+ext)); err != nil {
+			log.Print(err)
+		}
 	}
 }
 
