@@ -2,6 +2,7 @@ package demozoo
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -119,17 +120,28 @@ func (p *ProductionsAPIv1) Authors() Authors {
 func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 	const found = 200
 	total := len(p.DownloadLinks)
+	//fmt.Println(p.DownloadLinks)
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods
 		if ok := l.parse(); !ok {
 			continue
 		}
 		// skip defacto2 links if others are available
-		if u, _ := url.Parse(l.URL); total > 1 && u.Hostname() == df2 {
+		if u, err := url.Parse(l.URL); total > 1 && u.Hostname() == df2 {
+			if flag.Lookup("test.v") != nil {
+				log.Printf("url.Parse(%s) error = %q\n", l.URL, err)
+			}
 			continue
 		}
 		ping, err := download.LinkPing(l.URL)
 		if err != nil || ping.StatusCode != found {
+			if flag.Lookup("test.v") != nil {
+				if err != nil {
+					log.Printf("download.LinkPing(%s) error = %q\n", l.URL, err)
+				} else {
+					log.Printf("download.LinkPing(%s) %v != %v\n", l.URL, ping.StatusCode, found)
+				}
+			}
 			continue
 		}
 		defer ping.Body.Close()

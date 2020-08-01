@@ -1,16 +1,58 @@
 package demozoo
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
 
-// TODO: go generate ProductionsAPIv1 as prefetched stored data using different DZ ids.
-
 const modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
+
+var example1, example2, example3 ProductionsAPIv1
+
+func init() {
+	c1 := make(chan ProductionsAPIv1)
+	c2 := make(chan ProductionsAPIv1)
+	c3 := make(chan ProductionsAPIv1)
+	go load(1, c1)
+	go load(2, c2)
+	go load(3, c3)
+	example1, example2, example3 = <-c1, <-c2, <-c3
+}
+
+func load(r int, c chan ProductionsAPIv1) {
+	var name string
+	switch r {
+	case 1:
+		name = "1"
+	case 2:
+		name = "188796"
+	case 3:
+		name = "267300"
+	default:
+		log.Fatal(fmt.Errorf("load r %d: %w", r, errors.New("unknown record value")))
+	}
+	path, err := filepath.Abs(fmt.Sprintf("../../tests/json/record_%s.json", name))
+	if err != nil {
+		log.Fatal(fmt.Errorf("path %q: %w", path, err))
+	}
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var dz ProductionsAPIv1
+	if err := json.Unmarshal(data, &dz); err != nil {
+		log.Fatal(fmt.Errorf("load json unmarshal: %w", err))
+	}
+	c <- dz
+}
 
 func Test_filename(t *testing.T) {
 	type args struct {
@@ -97,20 +139,15 @@ func mockInline(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestProductionsAPIv1_Authors(t *testing.T) {
-	prod := Production{
-		ID: 1,
-	}
-	data, err := prod.data()
-	if err != nil {
-		t.Error(err)
-	}
 	tests := []struct {
 		name string
 		p    ProductionsAPIv1
 		want Authors
 	}{
 		{"empty", ProductionsAPIv1{}, Authors{}},
-		{"record 1", data, Authors{nil, []string{"Ile"}, []string{"Ile"}, nil}},
+		{"record 1", example1, Authors{nil, []string{"Ile"}, []string{"Ile"}, nil}},
+		{"record 2", example2, Authors{nil, []string{"Deep Freeze"}, []string{"The Cardinal"}, nil}},
+		{"nick is_group", example3, Authors{nil, nil, nil, nil}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -122,13 +159,6 @@ func TestProductionsAPIv1_Authors(t *testing.T) {
 }
 
 func TestProductionsAPIv1_DownloadLink(t *testing.T) {
-	prod := Production{
-		ID: 1,
-	}
-	data, err := prod.data()
-	if err != nil {
-		t.Error(err)
-	}
 	tests := []struct {
 		name     string
 		p        ProductionsAPIv1
@@ -136,7 +166,9 @@ func TestProductionsAPIv1_DownloadLink(t *testing.T) {
 		wantLink string
 	}{
 		{"empty", ProductionsAPIv1{}, "", ""},
-		{"record 1", data, "rob_s_birthday__o__by_random_dutch_scener__not_ile_.zip", "https://files.scene.org/get:nl-http/parties/2003/scene_event03/demo/rob_s_birthday__o__by_random_dutch_scener__not_ile_.zip"},
+		{"record 1", example1, "feestje.zip", "https://files.scene.org/get:nl-http/parties/2000/ambience00/demo/feestje.zip"},
+		{"record 2", example2, "the_untouchables_bbs7.zip", "http://www.sensenstahl.com/untergrund_mirror/bbs/the_untouchables_bbs7.zip"},
+		{"record 3", example3, "x-wing_cracktro.zip", "http://www.sensenstahl.com/untergrund_mirror/cracktro/x-wing_cracktro.zip"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
