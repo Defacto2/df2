@@ -147,8 +147,6 @@ func Test_stat_fileExist(t *testing.T) {
 		{name: "missing", path: "/this/dir/does/not/exist", wantMissing: true},
 		{name: "7z", path: filepath.Join(pwd, "tests/demozoo/test.7z"), wantMissing: false},
 		{name: "zip", path: filepath.Join(pwd, "tests/demozoo/test.zip"), wantMissing: false},
-		// {"7z", fields{FilePath: "tests/demozoo"}, false}, // not supported
-		// {"zip", fields{FilePath: filepath.Join(path, "tests/demozoo/test.zip")}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
