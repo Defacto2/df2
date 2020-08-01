@@ -20,6 +20,27 @@ func testTxt() string {
 	return filepath.Join(testDir("logs"), "test.log")
 }
 
+func TestArg(t *testing.T) {
+	type args struct {
+		arg  string
+		args []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"empty", args{}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Arg(tt.args.arg, tt.args.args...); (err != nil) != tt.wantErr {
+				t.Errorf("Arg() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func Test_save(t *testing.T) {
 	eerr, terr := errors.New(""), errors.New("test error: this is a test")
 	tests := []struct {

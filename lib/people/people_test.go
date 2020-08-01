@@ -126,7 +126,7 @@ func TestDataList(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"error", args{"", Request{"error", false, false}}, false},
+		{"error", args{"", Request{"error", false, false}}, true},
 		{"ok", args{"", Request{"", false, false}}, false},
 		{"progress", args{"", Request{"", false, true}}, false},
 	}
@@ -149,7 +149,7 @@ func TestHTML(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"error", args{"", Request{"error", false, false}}, false},
+		{"error", args{"", Request{"error", false, false}}, true},
 		{"ok", args{"", Request{"", false, false}}, false},
 		{"progress", args{"", Request{"", false, true}}, false},
 	}

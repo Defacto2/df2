@@ -35,16 +35,21 @@ var (
 )
 
 var (
-	ErrNil = errors.New("")
+	ErrNil   = errors.New("")
+	ErrNoArg = errors.New("no arguments are provided")
 )
 
 // Arg returns instructions for invalid command arguments.
-func Arg(arg string, args ...string) {
+func Arg(arg string, args ...string) error {
+	if args == nil {
+		return fmt.Errorf("arg requires args: %w", ErrNoArg)
+	}
 	fmt.Printf("%s %s %s\n",
 		color.Warn.Sprint("invalid command"),
 		color.Bold.Sprintf("\"%s %s\"", arg, args[0]),
 		color.Warn.Sprint("\nplease use one of the Available Commands shown above"))
 	os.Exit(1)
+	return nil
 }
 
 func Danger(err error) {
