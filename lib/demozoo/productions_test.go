@@ -183,43 +183,40 @@ func TestProductionsAPIv1_DownloadLink(t *testing.T) {
 	}
 }
 
-func TestProductionsAPIv1_Downloads(t *testing.T) {
-	prod := Production{
-		ID: 1,
-	}
-	data, err := prod.data()
-	if err != nil {
-		t.Error(err)
+func TestProductionsAPIv1_Download(t *testing.T) {
+	dl := DownloadsAPIv1{
+		LinkClass: "SceneOrgFile",
+		URL:       "https://files.scene.org/view/parties/2000/ambience00/demo/feestje.zip",
 	}
 	tests := []struct {
-		name string
-		p    ProductionsAPIv1
+		name    string
+		p       ProductionsAPIv1
+		l       DownloadsAPIv1
+		wantErr bool
 	}{
-		{"empty", ProductionsAPIv1{}},
-		{"record 1", data},
+		{"empty", ProductionsAPIv1{}, DownloadsAPIv1{}, true},
+		{"example1", example1, DownloadsAPIv1{}, true},
+		{"example1 dl", example1, dl, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.p.Downloads()
+			if err := tt.p.Download(tt.l); (err != nil) != tt.wantErr {
+				t.Errorf("ProductionsAPIv1.Download() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
 
 func TestProductionsAPIv1_Groups(t *testing.T) {
-	prod := Production{
-		ID: 1,
-	}
-	data, err := prod.data()
-	if err != nil {
-		t.Error(err)
-	}
 	tests := []struct {
 		name string
 		p    ProductionsAPIv1
 		want [2]string
 	}{
 		{"empty", ProductionsAPIv1{}, [2]string{}},
-		{"record 1", data, [2]string{"Aardbei", ""}},
+		{"record 1", example1, [2]string{"Aardbei", ""}},
+		{"record 2", example2, [2]string{"", ""}},
+		{"record 3", example3, [2]string{"THG FX", ""}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -231,13 +228,6 @@ func TestProductionsAPIv1_Groups(t *testing.T) {
 }
 
 func TestProductionsAPIv1_PouetID(t *testing.T) {
-	prod := Production{
-		ID: 1,
-	}
-	data, err := prod.data()
-	if err != nil {
-		t.Error(err)
-	}
 	tests := []struct {
 		name           string
 		p              ProductionsAPIv1
@@ -247,7 +237,9 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 		wantErr        bool
 	}{
 		{"empty", ProductionsAPIv1{}, false, 0, 0, false},
-		{"record 1", data, true, 7084, 200, false},
+		{"record 1", example1, true, 7084, 200, false},
+		{"record 2", example2, true, 76652, 200, false},
+		{"record 3 (no pouet)", example3, true, 0, 0, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -267,20 +259,15 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 }
 
 func TestProductionsAPIv1_Print(t *testing.T) {
-	prod := Production{
-		ID: 1,
-	}
-	data, err := prod.data()
-	if err != nil {
-		t.Error(err)
-	}
 	tests := []struct {
 		name    string
 		p       ProductionsAPIv1
 		wantErr bool
 	}{
 		{"empty", ProductionsAPIv1{}, false},
-		{"record 1", data, false},
+		{"record 1", example1, false},
+		{"record 2", example2, false},
+		{"record 3", example3, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
