@@ -37,6 +37,9 @@ func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err erro
 	}
 	defer os.RemoveAll(tempDir)
 	filename, err := database.LookupFile(uuid)
+	if err != nil {
+		return Demozoo{}, fmt.Errorf("extract demozoo lookup id %q: %w", uuid, err)
+	}
 	if _, err = Restore(name, filename, tempDir); err != nil {
 		return Demozoo{}, fmt.Errorf("extract demozoo restore %q: %w", filename, err)
 	}
