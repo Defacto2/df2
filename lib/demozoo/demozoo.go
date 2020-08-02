@@ -175,6 +175,9 @@ func (req Request) Queries() error {
 			continue
 		}
 		logs.Printcrf(r.String(st.total))
+		if update := r.check(); !update {
+			continue
+		}
 		if skip, err := r.parseAPI(st, req.Overwrite, storage); err != nil {
 			logs.Danger(fmt.Errorf("request queries parse api: %w", err))
 			continue
