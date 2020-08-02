@@ -2,6 +2,7 @@ package images
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/gif"  // register GIF decoding
@@ -27,8 +28,8 @@ import (
 )
 
 const (
-	fp os.FileMode = 0666
-	fm             = os.O_RDWR | os.O_CREATE
+	fperm os.FileMode = 0666
+	fmode             = os.O_RDWR | os.O_CREATE
 )
 
 var scope = gap.NewScope(gap.User, "df2")
@@ -42,7 +43,7 @@ func Duplicate(filename, suffix string) (name string, err error) {
 	defer src.Close()
 	ext := filepath.Ext(filename)
 	fn := strings.TrimSuffix(filename, ext)
-	dest, err := os.OpenFile(fn+suffix+ext, fm, fp)
+	dest, err := os.OpenFile(fn+suffix+ext, fmode, fperm)
 	if err != nil {
 		return "", fmt.Errorf("duplicate open file %q: %w", fn, err)
 	}
@@ -84,14 +85,27 @@ func Generate(src, id string, remove bool) error {
 	return nil
 }
 
-// NewExt replaces or appends the extension to a file name.
-func NewExt(path, ext string) (name string) {
-	e := filepath.Ext(path)
-	if e == "" {
-		return path + ext
+// Move a file from the source location to the destination.
+// This is used in situations where os.rename() fails due to multiple partitions.
+func Move(src, dest string) error {
+	s, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("move open: %w", err)
 	}
-	fn := strings.TrimSuffix(path, e)
-	return fn + ext
+	defer s.Close()
+	d, err := os.OpenFile(dest, fmode, fperm)
+	if err != nil {
+		return fmt.Errorf("move create: %w", err)
+	}
+	defer d.Close()
+	_, err = io.Copy(s, d)
+	if err != nil {
+		return fmt.Errorf("move io copy: %w", err)
+	}
+	if err = os.Remove(src); err != nil {
+		return fmt.Errorf("move remove: %w", err)
+	}
+	return nil
 }
 
 // Info returns the image metadata.
@@ -108,13 +122,14 @@ func Info(name string) (height int, width int, format string, err error) {
 	return config.Height, config.Width, format, file.Close()
 }
 
-// Width returns the image width in pixels.
-func Width(name string) (width int, err error) {
-	_, width, _, err = Info(name)
-	if err != nil {
-		return 0, fmt.Errorf("width: %w", err)
+// NewExt replaces or appends the extension to a file name.
+func NewExt(path, ext string) (name string) {
+	e := filepath.Ext(path)
+	if e == "" {
+		return path + ext
 	}
-	return width, nil
+	fn := strings.TrimSuffix(path, e)
+	return fn + ext
 }
 
 // ToPng converts any supported format to a compressed PNG image.
@@ -165,30 +180,37 @@ func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
 	pfx := "_" + fmt.Sprintf("%v", sizeSquared) + "x"
 	cp, err := Duplicate(src, pfx)
 	if err != nil {
-		return print, fmt.Errorf("to thumb duplicate: %w", err)
+		return "", fmt.Errorf("to thumb duplicate: %w", err)
 	}
 	in, err := imaging.Open(cp)
 	if err != nil {
-		return print, fmt.Errorf("to thumb imaging open: %w", err)
+		return "", fmt.Errorf("to thumb imaging open: %w", err)
 	}
 	in = imaging.Resize(in, sizeSquared, 0, imaging.Lanczos)
 	in = imaging.CropAnchor(in, sizeSquared, sizeSquared, imaging.Center)
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
 	in, err = pngquant.Compress(in, "4")
 	if err != nil {
-		return print, fmt.Errorf("to thumb png quant compress: %w", err)
+		return "", fmt.Errorf("to thumb png quant compress: %w", err)
 	}
 	f := NewExt(cp, _png)
 	if err := imaging.Save(in, f); err != nil {
-		return print, fmt.Errorf("to thumb imaging save: %w", err)
+		return "", fmt.Errorf("to thumb imaging save: %w", err)
 	}
 	s := NewExt(dest, _png)
 	if err := os.Rename(f, s); err != nil {
-		return print, fmt.Errorf("to thumb rename: %w", err)
+		var le *os.LinkError // invalid cross-device link
+		if errors.As(err, &le) {
+			if err := Move(f, s); err != nil {
+				return "", fmt.Errorf("to thumb move: %w", err)
+			}
+		} else {
+			return "", fmt.Errorf("to thumb rename: %w", err)
+		}
 	}
 	if _, err := os.Stat(cp); err == nil {
 		if err := os.Remove(cp); err != nil {
-			return print, fmt.Errorf("to thumb remove %q: %w", cp, err)
+			return "", fmt.Errorf("to thumb remove %q: %w", cp, err)
 		}
 	}
 	return fmt.Sprintf("»%vx", sizeSquared), nil
@@ -215,6 +237,15 @@ func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
 		return print, fmt.Errorf("to webp run: %w", err)
 	}
 	return "»webp", nil
+}
+
+// Width returns the image width in pixels.
+func Width(name string) (width int, err error) {
+	_, width, _, err = Info(name)
+	if err != nil {
+		return 0, fmt.Errorf("width: %w", err)
+	}
+	return width, nil
 }
 
 // vendorPath is the absolute path to store webpbin vendor downloads.
