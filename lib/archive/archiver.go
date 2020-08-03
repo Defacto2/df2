@@ -1,9 +1,14 @@
 package archive
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"unicode/utf8"
 
 	"github.com/mholt/archiver"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 func extractr(archive, filename, tempDir string) error {
@@ -17,7 +22,15 @@ func extractr(archive, filename, tempDir string) error {
 // It has offers compatibility with compression formats.
 func Readr(archive, filename string) (files []string, err error) {
 	err = walkr(archive, filename, func(f archiver.File) error {
-		files = append(files, f.Name())
+		b := []byte(f.Name())
+		if !utf8.Valid(b) {
+			// handle cheecky DOS era filenames with CP437 extended characters.
+			r := transform.NewReader(bytes.NewReader(b), charmap.CodePage437.NewDecoder())
+			result, _ := ioutil.ReadAll(r)
+			files = append(files, string(result))
+		} else {
+			files = append(files, f.Name())
+		}
 		return nil
 	})
 	if err != nil {
