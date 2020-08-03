@@ -302,28 +302,20 @@ func LookupID(s string) (id uint, err error) {
 func LookupFile(s string) (name string, err error) {
 	db := Connect()
 	defer db.Close()
-	var fn interface{}
+	var n sql.NullString
 	if v, err := strconv.Atoi(s); err == nil {
-		err := db.QueryRow("SELECT filename FROM files WHERE id=?", v).Scan(&fn)
+		err := db.QueryRow("SELECT filename FROM files WHERE id=?", v).Scan(&n)
 		if err != nil {
 			return "", fmt.Errorf("lookup file by id queryrow %q: %w", s, err)
 		}
 	} else {
 		s = strings.ToLower(s)
-		err = db.QueryRow("SELECT filename FROM files WHERE uuid=?", s).Scan(&fn)
+		err = db.QueryRow("SELECT filename FROM files WHERE uuid=?", s).Scan(&n)
 		if err != nil {
 			return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", s, err)
 		}
 	}
-	// handle sql null values
-	switch fn := fn.(type) {
-	case nil:
-		return "", nil
-	case string:
-		return fn, nil
-	default:
-		return "", fmt.Errorf("lookup file type %q: %w", fn, ErrColType)
-	}
+	return n.String, nil
 }
 
 // ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
