@@ -118,7 +118,10 @@ func (p *ProductionsAPIv1) Authors() Authors {
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
 func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
-	const found = 200
+	const (
+		found       = 200
+		internalErr = 500
+	)
 	total := len(p.DownloadLinks)
 	//fmt.Println(p.DownloadLinks)
 	for _, l := range p.DownloadLinks {
@@ -142,6 +145,9 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 					log.Printf("download.LinkPing(%s) %v != %v\n", l.URL, ping.StatusCode, found)
 				}
 			}
+			// if ping.StatusCode == internalErr {
+			// 	fmt.Printf("LinkPing(%s) == 500\n", l.URL)
+			// }
 			continue
 		}
 		defer ping.Body.Close()
