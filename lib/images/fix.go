@@ -18,6 +18,8 @@ const (
 	jpg  = ".jpg"
 	jpeg = ".jpeg"
 	_png = ".png"
+	tif  = ".tif"
+	tiff = ".tiff"
 	webp = ".webp"
 )
 
@@ -88,7 +90,7 @@ func Fix(simulate bool) error {
 
 func (i Img) ext() (ok bool) {
 	switch filepath.Ext(i.Filename) {
-	case gif, jpg, jpeg, _png:
+	case gif, jpg, jpeg, _png, tif, tiff:
 		return true
 	}
 	return false
