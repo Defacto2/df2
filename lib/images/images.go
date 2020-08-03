@@ -102,24 +102,20 @@ func Generate(src, id string, remove bool) error {
 	webpOk = valid(webpLoc, err)
 	// make 400x400 thumbs
 	s, err = ToThumb(src, f.Img400, 400)
-	out(s, err)
 	if err != nil && pngOk {
-		s, err := ToThumb(pngLoc, f.Img400, 400)
-		out(s, err)
+		s, err = ToThumb(pngLoc, f.Img400, 400)
 	} else if err != nil && webpOk {
-		s, err := ToThumb(webpLoc, f.Img400, 400)
-		out(s, err)
+		s, err = ToThumb(webpLoc, f.Img400, 400)
 	}
+	out(s, err)
 	// make 150x150 thumbs
 	s, err = ToThumb(src, f.Img150, 150)
-	out(s, err)
 	if err != nil && pngOk {
-		s, err := ToThumb(pngLoc, f.Img150, 150)
-		out(s, err)
+		s, err = ToThumb(pngLoc, f.Img150, 150)
 	} else if err != nil && webpOk {
-		s, err := ToThumb(webpLoc, f.Img150, 150)
-		out(s, err)
+		s, err = ToThumb(webpLoc, f.Img150, 150)
 	}
+	out(s, err)
 	if remove {
 		if err := os.Remove(src); err != nil {
 			return fmt.Errorf("generate remove %q: %w", src, err)
