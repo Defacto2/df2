@@ -404,7 +404,6 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	} else if update := r.check(); !update {
 		return true, nil
 	}
-	logs.Printcr()
 	if r.Platform == "" {
 		r.platform(api)
 	}
@@ -472,7 +471,7 @@ func (r *Record) save() {
 		logs.Log(err)
 		return
 	}
-	logs.Printf(" • saved %v", str.Y())
+	logs.Printf(" 💾%v", str.Y())
 }
 
 func (r Record) variations() (names []string, err error) {
