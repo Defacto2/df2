@@ -74,6 +74,8 @@ func (r Record) Save() error {
 func (r *Record) fileZipContent() (ok bool, err error) {
 	if r.FilePath == "" {
 		return false, fmt.Errorf("record filezipcontent: %w", ErrFilePath)
+	} else if r.Filename == "" {
+		return false, fmt.Errorf("record filezipcontent: %w", ErrFilename)
 	}
 	a, err := archive.Read(r.FilePath, r.Filename)
 	if err != nil {
