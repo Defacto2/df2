@@ -34,6 +34,8 @@ const (
 
 var scope = gap.NewScope(gap.User, "df2")
 
+var ErrFormat = errors.New("unsupported image format")
+
 // Duplicate an image file and appends suffix to its name.
 func Duplicate(filename, suffix string) (name string, err error) {
 	src, err := os.Open(filename)
@@ -55,6 +57,20 @@ func Duplicate(filename, suffix string) (name string, err error) {
 	return name, nil
 }
 
+func valid(name string, err error) bool {
+	if err != nil {
+		return false
+	}
+	s, err := os.Stat(name)
+	if err != nil {
+		return false
+	}
+	if s.IsDir() || s.Size() < 1 {
+		return false
+	}
+	return true
+}
+
 // Generate a collection of site images.
 func Generate(src, id string, remove bool) error {
 	if _, err := os.Stat(src); os.IsNotExist(err) {
@@ -69,14 +85,41 @@ func Generate(src, id string, remove bool) error {
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
-	s, err := ToPng(src, NewExt(f.Img000, _png), 1500)
+	// convert to png
+	pngLoc, webpLoc := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
+	pngOk, webpOk := false, false
+	s, err := ToPng(src, pngLoc, 1500)
 	out(s, err)
-	s, err = ToWebp(src, NewExt(f.Img000, webp), true)
-	out(s, err)
+	pngOk = valid(pngLoc, err)
+	// convert to webp
+	if s, err = ToWebp(src, NewExt(f.Img000, webp), true); !errors.Is(err, ErrFormat) {
+		out(s, err)
+	}
+	if err != nil && pngOk {
+		s, err = ToWebp(pngLoc, webpLoc, true)
+		out(s, err)
+	}
+	webpOk = valid(webpLoc, err)
+	// make 400x400 thumbs
 	s, err = ToThumb(src, f.Img400, 400)
 	out(s, err)
+	if err != nil && pngOk {
+		s, err := ToThumb(pngLoc, f.Img400, 400)
+		out(s, err)
+	} else if err != nil && webpOk {
+		s, err := ToThumb(webpLoc, f.Img400, 400)
+		out(s, err)
+	}
+	// make 150x150 thumbs
 	s, err = ToThumb(src, f.Img150, 150)
 	out(s, err)
+	if err != nil && pngOk {
+		s, err := ToThumb(pngLoc, f.Img150, 150)
+		out(s, err)
+	} else if err != nil && webpOk {
+		s, err := ToThumb(webpLoc, f.Img150, 150)
+		out(s, err)
+	}
 	if remove {
 		if err := os.Remove(src); err != nil {
 			return fmt.Errorf("generate remove %q: %w", src, err)
@@ -219,11 +262,25 @@ func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
 // Input format can be either PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
 func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
+	valid := func(a []string, x string) bool {
+		for _, n := range a {
+			if x == n {
+				return true
+			}
+		}
+		return false
+	}
+	v := []string{_png, jpg, jpeg, tif, tiff, webp}
 	// skip if already a webp image, or handle all other errors
-	if m, err := mimetype.DetectFile(src); m.Extension() == webp {
-		return print, nil
+	m, err := mimetype.DetectFile(src)
+	if m.Extension() == webp {
+		return "", nil
 	} else if err != nil {
-		return print, fmt.Errorf("to webp mimetype detect: %w", err)
+		return "", fmt.Errorf("to webp mimetype detect: %w", err)
+	}
+	if !valid(v, m.Extension()) {
+		return "", fmt.Errorf("to webp extension %q != %s: %w",
+			m.Extension(), strings.Join(v, " "), ErrFormat)
 	}
 	const percent = 70
 	webp := webpbin.NewCWebP().
@@ -234,7 +291,7 @@ func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
 		webp.Dest(vendorPath())
 	}
 	if err = webp.Run(); err != nil {
-		return print, fmt.Errorf("to webp run: %w", err)
+		return "", fmt.Errorf("to webp run: %w", err)
 	}
 	return "»webp", nil
 }
