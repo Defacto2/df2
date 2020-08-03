@@ -81,6 +81,7 @@ var (
 	ErrRecordCnt  = errors.New("unexpected number of record values")
 	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
 	ErrFilePath   = errors.New("filepath requirement cannot be empty")
+	ErrFilename   = errors.New("filename requirement cannot be empty")
 	ErrNoFile     = errors.New("file cannot be found")
 )
 
@@ -407,15 +408,17 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	if r.Platform == "" {
 		r.platform(api)
 	}
+	//fmt.Printf("%+v\n", r)
 	switch {
-	case
-		r.Filename == "":
+	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
 		if n, _ := api.DownloadLink(); n != "" {
 			fmt.Print(n)
 			r.Filename = n
+			r.save()
 		} else {
-			fmt.Println("Filename is empty but could not find a suitable value")
+			fmt.Println("could not find a suitable value for the required filename column")
+			return true, nil
 		}
 		fallthrough
 	case
@@ -425,6 +428,7 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 		if err := r.fileMeta(); err != nil {
 			return true, fmt.Errorf("parse api: %w", err)
 		}
+		r.save()
 		fallthrough
 	case r.FileZipContent == "":
 		if zip, err := r.fileZipContent(); err != nil {
@@ -434,6 +438,7 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 				return true, fmt.Errorf("parse api: %w", err)
 			}
 		}
+		r.save()
 	}
 	return false, nil
 }
