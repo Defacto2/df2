@@ -237,7 +237,7 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 		name           string
 		p              ProductionsAPIv1
 		ping           bool
-		wantId         int
+		wantID         int
 		wantStatusCode int
 		wantErr        bool
 	}{
@@ -248,13 +248,13 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotId, gotStatusCode, err := tt.p.PouetID(tt.ping)
+			gotID, gotStatusCode, err := tt.p.PouetID(tt.ping)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ProductionsAPIv1.PouetID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotId != tt.wantId {
-				t.Errorf("ProductionsAPIv1.PouetID() gotId = %v, want %v", gotId, tt.wantId)
+			if gotID != tt.wantID {
+				t.Errorf("ProductionsAPIv1.PouetID() gotID = %v, want %v", gotID, tt.wantID)
 			}
 			if gotStatusCode != tt.wantStatusCode {
 				t.Errorf("ProductionsAPIv1.PouetID() gotStatusCode = %v, want %v", gotStatusCode, tt.wantStatusCode)
