@@ -86,7 +86,8 @@ func (dk dupeKeys) String() string {
 	for i, n := range dk {
 		dk[i] = fmt.Sprintf("`%s` = VALUES(`%s`)", n, n)
 	}
-	return fmt.Sprintf("\nON DUPLICATE KEY UPDATE %s", strings.Join(dk, ", "))
+	stmt := fmt.Sprintf("\nON DUPLICATE KEY UPDATE %s", strings.Join(dk, ", "))
+	return stmt
 }
 
 type row []string
@@ -303,7 +304,7 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 	dat := TableData{VER: f.ver(), CREATE: f.create(), TABLE: f.Table.String(), INSERT: fmt.Sprint(names), SQL: fmt.Sprint(values)}
 	if f.Method == Insert {
 		var dupes dupeKeys = col
-		dat.UPDATE = fmt.Sprint(dupes)
+		dat.UPDATE = dupes.String()
 	}
 	t := template.Must(template.New("stmt").Funcs(tmplFunc()).Parse(tableTmpl))
 	var b bytes.Buffer

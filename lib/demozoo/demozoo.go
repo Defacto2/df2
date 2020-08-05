@@ -240,7 +240,7 @@ func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
 }
 
 func (st stat) summary(elapsed time.Duration) {
-	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.count, float64(elapsed.Seconds()))
+	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.count, elapsed.Seconds())
 	logs.Println("\n" + strings.Repeat("─", len(t)))
 	logs.Println(t)
 	if st.missing > 0 {

@@ -251,7 +251,7 @@ func (s stat) summary() {
 		fmt.Print("nothing to do")
 	}
 	elapsed := time.Since(s.start).Seconds()
-	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, float64(elapsed))
+	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, elapsed)
 	logs.Printf("\n%s\n%s\n", strings.Repeat("─", len(t)), t)
 }
 
