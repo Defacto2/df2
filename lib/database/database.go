@@ -54,10 +54,13 @@ func (c *Connection) String() string {
 }
 
 var (
+	ErrColType  = errors.New("the value type is not usable with the mysql column")
+	ErrConnect  = errors.New("could not connect to the mysql database server")
 	ErrNoID     = errors.New("unique id is does not exist in the database table")
+	ErrSynID    = errors.New("id is not a valid id or uuid value")
+	ErrSynUUID  = errors.New("id is not a valid uuid")
 	ErrNoTable  = errors.New("unknown database table")
 	ErrNoMethod = errors.New("unknown database export type")
-	ErrColType  = errors.New("the value type is not usable with the mysql column")
 )
 
 // Empty is used as a blank value for search maps.
@@ -94,8 +97,8 @@ func Connect() *sql.DB {
 	c := Init()
 	db, err := sql.Open("mysql", c.String())
 	if err != nil {
-		e := errors.New(strings.Replace(err.Error(), c.Pass, "****", 1))
-		log.Fatal(fmt.Errorf("connect database open: %w", e))
+		e := strings.Replace(err.Error(), c.Pass, "****", 1)
+		log.Fatal(fmt.Errorf("connect database open: %s: %w", e, ErrConnect))
 	}
 	// ping the server to make sure the connection works
 	if err = db.Ping(); err != nil {
@@ -107,8 +110,8 @@ func Connect() *sql.DB {
 		}
 		if err, _ := err.(*net.OpError); err != nil {
 			if strings.Contains(err.Error(), "connect: connection refused") {
-				log.Fatal(fmt.Errorf("database server %v is either down or the %v %v port is blocked",
-					c.Address, c.Protocol, c.Port))
+				log.Fatal(fmt.Errorf("database server %v is either down or the %v %v port is blocked: %w",
+					c.Address, c.Protocol, c.Port, ErrConnect))
 			}
 		}
 		log.Fatal(fmt.Errorf("connect database: %w", err))
@@ -121,8 +124,8 @@ func ConnectErr() (db *sql.DB, err error) {
 	c := Init()
 	db, err = sql.Open("mysql", c.String())
 	if err != nil {
-		e := errors.New(strings.Replace(err.Error(), c.Pass, "****", 1))
-		return nil, fmt.Errorf("mysql open error: %w", e)
+		e := strings.Replace(err.Error(), c.Pass, "****", 1)
+		return nil, fmt.Errorf("mysql open error: %s: %w", e, ErrConnect)
 	}
 	if err = db.Ping(); err != nil {
 		return nil, fmt.Errorf("mysql ping error: %w", err)
@@ -138,20 +141,19 @@ func ConnectInfo() string {
 		db.Close()
 	}()
 	if err != nil {
-		e := strings.Replace(err.Error(), c.Pass, "****", 1)
-		return fmt.Sprint(fmt.Errorf(e))
+		return strings.Replace(err.Error(), c.Pass, "****", 1)
 	}
 	if err = db.Ping(); err != nil {
 		if err, ok := err.(*mysql.MySQLError); ok {
 			e := strings.Replace(err.Error(), c.User, color.Primary.Sprint(c.User), 1)
-			return fmt.Sprint(fmt.Errorf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e)))
+			return fmt.Sprintf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e))
 		}
 		if err, ok := err.(*net.OpError); ok {
 			if strings.Contains(err.Error(), "connect: connection refused") {
-				return fmt.Sprint(fmt.Errorf("%s '%v' %s",
+				return fmt.Sprintf("%s '%v' %s",
 					color.Danger.Sprint("database server"),
 					color.Primary.Sprint(c.Server),
-					color.Danger.Sprint("is either down or the port is blocked")))
+					color.Danger.Sprint("is either down or the port is blocked"))
 			}
 			return color.Danger.Sprint(err)
 		}
@@ -162,7 +164,7 @@ func ConnectInfo() string {
 // CheckID reports an error message for an incorrect universal unique record id or MySQL auto-generated id.
 func CheckID(s string) error {
 	if !IsUUID(s) && !IsID(s) {
-		return fmt.Errorf("invalid id given %q it needs to be an auto-generated MySQL id or an uuid", s)
+		return fmt.Errorf("invalid id, it needs to be an auto-generated MySQL id or an uuid: %w", ErrSynID)
 	}
 	return nil
 }
@@ -170,7 +172,8 @@ func CheckID(s string) error {
 // CheckUUID reports an error message for an incorrect universal unique record id.
 func CheckUUID(s string) error {
 	if !IsUUID(s) {
-		return fmt.Errorf("%q is an invalid uuid it requires RFC 4122 syntax: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", s)
+		const example = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", s, example, ErrSynUUID)
 	}
 	return nil
 }
