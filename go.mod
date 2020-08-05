@@ -24,7 +24,7 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
-	github.com/spf13/afero v1.3.2 // indirect
+	github.com/spf13/afero v1.3.3 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/ulikunitz/xz v0.5.7 // indirect
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
-	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1
+	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642
 	golang.org/x/text v0.3.3
 	gopkg.in/gookit/color.v1 v1.1.6
 	gopkg.in/ini.v1 v1.57.0 // indirect
