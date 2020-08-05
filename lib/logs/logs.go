@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	// AED is the ANSI Erase in Display
+	// AED is the ANSI Erase in Display.
 	AED = "\r\003[2J"
-	// AEL is the ANSI Erase in Line sequence
+	// AEL is the ANSI Erase in Line sequence.
 	AEL                 = "\r\033[0K"
 	dmode   os.FileMode = 0700
 	fmode   os.FileMode = 0600
@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	// Filename is the default error log filename
+	// Filename is the default error log filename.
 	Filename = "errors.log"
 	scope    = gap.NewScope(gap.User, "df2")
 	// Panic uses the panic function to handle all error logs.

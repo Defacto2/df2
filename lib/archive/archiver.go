@@ -61,7 +61,6 @@ func Unarchiver(source, filename, destination string) error {
 	return nil
 }
 
-// TODO: test ALL archive types
 func configure(f interface{}) (err error) {
 	tar := &archiver.Tar{
 		OverwriteExisting:      true,
