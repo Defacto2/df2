@@ -19,6 +19,11 @@ const modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
 
 var example1, example2, example3 ProductionsAPIv1
 
+var (
+	ErrAdd = errors.New("invalid add argument")
+	ErrVal = errors.New("unknown record value")
+)
+
 func init() {
 	c1 := make(chan ProductionsAPIv1)
 	c2 := make(chan ProductionsAPIv1)
@@ -39,7 +44,7 @@ func load(r int, c chan ProductionsAPIv1) {
 	case 3:
 		name = "267300"
 	default:
-		log.Fatal(fmt.Errorf("load r %d: %w", r, errors.New("unknown record value")))
+		log.Fatal(fmt.Errorf("load r %d: %w", r, ErrVal))
 	}
 	path, err := filepath.Abs(fmt.Sprintf("../../tests/json/record_%s.json", name))
 	if err != nil {
@@ -116,7 +121,7 @@ func mockHeader(add string) (header http.Header, err error) {
 	case "il":
 		handler = http.HandlerFunc(mockInline)
 	default:
-		return header, fmt.Errorf("invalid add=%q argument", add)
+		return header, fmt.Errorf("mock header %q: %w", add, ErrAdd)
 	}
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.

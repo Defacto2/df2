@@ -2,6 +2,7 @@ package groups
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Defacto2/df2/lib/database"
@@ -28,7 +29,7 @@ func (g *group) get() error {
 	}
 	defer db.Close()
 	row := db.QueryRow("SELECT `initialisms` FROM `groups` WHERE `pubname`=?", g.name)
-	if err = row.Scan(&g.initialism); err != nil && err != sql.ErrNoRows {
+	if err = row.Scan(&g.initialism); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("get row scan: %w", err)
 	}
 	return db.Close()

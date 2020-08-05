@@ -48,6 +48,7 @@ var (
 var (
 	ErrStructNil = errors.New("structure cannot be nil")
 	ErrPathEmpty = errors.New("path cannot be empty")
+	ErrTarget    = errors.New("unknown target")
 )
 
 // Clean walks through and scans directories containing UUID files
@@ -163,7 +164,7 @@ func backupParts() part {
 
 func clean(t Target, delete, human bool) error {
 	if ts := targets(t); ts == nil {
-		return errors.New("honk")
+		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
 	fmt.Printf("mess: %+v", d)
 	// connect to the database

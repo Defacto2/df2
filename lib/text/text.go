@@ -15,6 +15,7 @@ import (
 var (
 	ErrNoSrc    = errors.New("requires a source path to a directory")
 	ErrAnsiLove = errors.New("cannot access shared libraries: libansilove.so.1")
+	ErrDest     = errors.New("dest argument requires a destination filename path")
 )
 
 // generate a collection of site images.
@@ -77,7 +78,7 @@ func makePng(src, dest string) (string, error) {
 		return "", fmt.Errorf("make png stat: %w", err)
 	}
 	if dest == "" {
-		return "", errors.New("make png: dest argument requires a destination filename path")
+		return "", fmt.Errorf("make png: %w", ErrDest)
 	}
 	img := dest + png
 	cmd := exec.Command("ansilove", "-r", "-o", img, src)

@@ -11,6 +11,11 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
+var (
+	ErrEmpty = errors.New("")
+	ErrATest = errors.New("test error: this is a test")
+)
+
 func TestArg(t *testing.T) {
 	type args struct {
 		arg  string
@@ -44,8 +49,8 @@ func Test_save(t *testing.T) {
 		wantOk bool
 	}{
 		{"nil", nil, false},
-		{"empty", errors.New(""), true},
-		{"ok", errors.New("test error: this is a test"), true},
+		{"empty", ErrEmpty, true},
+		{"ok", ErrATest, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
