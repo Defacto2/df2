@@ -197,17 +197,7 @@ func (req Request) Queries() error {
 		}
 	}
 	if requestedID != "" {
-		if st.count == 0 {
-			var t string
-			if st.fetched == 0 {
-				t = fmt.Sprintf("id %q is not a Demozoo sourced file record", requestedID)
-			} else {
-				t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", requestedID, requestedID)
-			}
-			logs.Println(t)
-		} else {
-			logs.Println()
-		}
+		st.print()
 		return nil
 	}
 	st.summary(time.Since(start))
@@ -239,6 +229,20 @@ func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
 	}
 	st.count++
 	return false, nil
+}
+
+func (st stat) print() {
+	if st.count == 0 {
+		var t string
+		if st.fetched == 0 {
+			t = fmt.Sprintf("id %q is not a Demozoo sourced file record", requestedID)
+		} else {
+			t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", requestedID, requestedID)
+		}
+		logs.Println(t)
+	} else {
+		logs.Println()
+	}
 }
 
 func (st stat) summary(elapsed time.Duration) {
