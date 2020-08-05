@@ -233,7 +233,7 @@ func TestStatusColor(t *testing.T) {
 		want string
 	}{
 		{"empty", args{}, ""},
-		{"ok", args{200, "ok"}, "[1;32mok[0m"},
+		{"ok", args{200, "ok"}, "\u001b[1;32mok\u001b[0m"}, // 
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
