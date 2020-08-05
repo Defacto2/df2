@@ -9,43 +9,54 @@ import (
 	"github.com/spf13/viper"
 )
 
+const NoEditor = `no suitable editor could be found
+please set one by creating a $EDITOR environment variable in your shell configuration`
+
 // Edit a configuration file.
 func Edit() {
 	editors := [3]string{"micro", "nano", "vim"}
-	cfg, edit := viper.ConfigFileUsed(), ""
+	cfg, editor := viper.ConfigFileUsed(), ""
 	if cfg == "" {
 		configMissing("edit")
 	}
-	const missing = "no suitable editor could be found\nplease set one by creating a $EDITOR environment variable in your shell configuration"
 	if err := viper.BindEnv("editor", "EDITOR"); err != nil {
-		for _, editor := range editors {
-			if _, err := exec.LookPath(editor); err == nil {
-				edit = editor
-				break
-			}
-		}
-		if edit != "" {
-			log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
-		} else {
-			log.Panicln(missing)
-			os.Exit(1)
-		}
+		editor = fallback(editors)
 	} else {
-		edit = viper.GetString("editor")
-		if _, err := exec.LookPath(edit); err != nil {
-			if edit != "" {
-				log.Printf("%q edit command not found\n%v", edit, exec.ErrNotFound)
-			} else {
-				log.Panicln(missing)
-			}
-			os.Exit(1)
-		}
+		editor = saved()
 	}
 	// credit: https://stackoverflow.com/questions/21513321/how-to-start-vim-from-go
-	exe := exec.Command(edit, cfg)
+	exe := exec.Command(editor, cfg)
 	exe.Stdin = os.Stdin
 	exe.Stdout = os.Stdout
 	if err := exe.Run(); err != nil {
 		logs.Printf("%s\n", err)
 	}
+}
+
+func fallback(editors [3]string) (edit string) {
+	for _, app := range editors {
+		if path, err := exec.LookPath(app); err == nil && path != "" {
+			return app
+		}
+	}
+	if edit != "" {
+		log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
+	} else {
+		log.Panicln(NoEditor)
+		os.Exit(1)
+	}
+	return ""
+}
+
+func saved() string {
+	editor := viper.GetString("editor")
+	if _, err := exec.LookPath(editor); err != nil {
+		if editor != "" {
+			log.Printf("%q edit command not found\n%v", editor, exec.ErrNotFound)
+		} else {
+			log.Panicln(NoEditor)
+		}
+		os.Exit(1)
+	}
+	return editor
 }
