@@ -113,11 +113,14 @@ func execVersion() {
 	p := func(s string) string {
 		switch s {
 		case "ok":
-			return color.Success.Sprint("okay") + strings.Repeat(" ", 10-len(s))
+			const padding = 10
+			return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
 		case "missing":
-			return color.Error.Sprint("missing") + strings.Repeat(" ", 12-len(s))
+			const padding = 12
+			return color.Error.Sprint("missing") + strings.Repeat(" ", padding-len(s))
 		case "disconnect":
-			return color.Error.Sprint("disconnected") + strings.Repeat(" ", 10-len(s))
+			const padding = 10
+			return color.Error.Sprint("disconnected") + strings.Repeat(" ", padding-len(s))
 		}
 		return ""
 	}

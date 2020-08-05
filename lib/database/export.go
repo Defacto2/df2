@@ -230,7 +230,7 @@ func (f Flags) fileName() string {
 	if f.Limit > 0 {
 		l = fmt.Sprintf("%d_", f.Limit)
 	}
-	if f.Table < 4 {
+	if f.Table < Users {
 		t = f.Table.String()
 	}
 	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
