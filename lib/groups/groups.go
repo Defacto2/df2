@@ -40,6 +40,8 @@ func (f Filter) String() string {
 		return "group"
 	case Magazine:
 		return "magazine"
+	case None:
+		return ""
 	}
 	return ""
 }
