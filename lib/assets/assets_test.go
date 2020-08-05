@@ -80,7 +80,7 @@ func Test_backup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	var s = scan{
+	s := scan{
 		dir,
 		false,
 		true,

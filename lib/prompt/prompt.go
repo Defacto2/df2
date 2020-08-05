@@ -40,7 +40,6 @@ func Dir() string {
 			break // exit loop if the directory is found
 		}
 	}
-	scannerCheck(scanner)
 	return save
 }
 
@@ -138,10 +137,6 @@ func parseyn(input string, yes bool) bool {
 		return true
 	}
 	return false
-}
-
-func scannerCheck(s *bufio.Scanner) {
-
 }
 
 func read(stdin io.Reader) (input string, err error) {

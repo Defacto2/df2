@@ -340,6 +340,7 @@ func TestRecord_doseeMeta(t *testing.T) {
 		})
 	}
 }
+
 func TestRecord_fileMeta(t *testing.T) {
 	type fields struct {
 		ID   string

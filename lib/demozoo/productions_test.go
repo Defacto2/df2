@@ -128,16 +128,19 @@ func mockContentDisposition(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add(cd, "attachment")
 }
+
 func mockFilename1(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add(cd, "attachment; filename*=example.zip;")
 	w.Header().Add("modification-date", modDate)
 }
+
 func mockFilename(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add(cd, "attachment; filename=example.zip;")
 	w.Header().Add("modification-date", modDate)
 }
+
 func mockInline(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add(cd, "inline")

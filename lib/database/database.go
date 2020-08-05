@@ -436,6 +436,7 @@ func reverseInt(value uint) (reversed uint, err error) {
 	}
 	return uint(n), nil
 }
+
 func valid(deleted, updated sql.RawBytes) (bool, error) {
 	const (
 		min = -5

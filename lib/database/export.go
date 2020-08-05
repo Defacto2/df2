@@ -65,8 +65,10 @@ const (
 )
 
 // Tbls are the available tables in the database.
-var tbls = []string{Files.String(), Groups.String(), Netresources.String(), Users.String()}
-var Tbls = strings.Join(tbls, ", ")
+var (
+	tbls = []string{Files.String(), Groups.String(), Netresources.String(), Users.String()}
+	Tbls = strings.Join(tbls, ", ")
+)
 
 type colNames []string
 
@@ -283,7 +285,6 @@ func (f Flags) queryDB() (*bytes.Buffer, error) {
 
 // query generates the SQL import table statement.
 func (f Flags) queryTable() (*bytes.Buffer, error) {
-
 	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query table check: %w", err)
 	}

@@ -123,7 +123,6 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 		internalErr = 500
 	)
 	total := len(p.DownloadLinks)
-	//fmt.Println(p.DownloadLinks)
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods
 		if ok := l.parse(); !ok {
@@ -145,9 +144,6 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 					log.Printf("download.LinkPing(%s) %v != %v\n", l.URL, ping.StatusCode, found)
 				}
 			}
-			// if ping.StatusCode == internalErr {
-			// 	fmt.Printf("LinkPing(%s) == 500\n", l.URL)
-			// }
 			continue
 		}
 		defer ping.Body.Close()
@@ -166,7 +162,6 @@ func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
 
 func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 	const found = 200
-	//var l DownloadsAPIv1 = l // apply type so we can use it with methods
 	if ok := l.parse(); !ok {
 		logs.Print(" not usable\n")
 		return nil

@@ -131,7 +131,7 @@ func execVersion() {
 	if _, err := exec.LookPath("webpng"); err == nil {
 		w = "ok"
 	}
-	var data = VerData{
+	data := VerData{
 		Version:  color.Primary.Sprint(B.Version),
 		Database: p(d),
 		Ansilove: p(a),

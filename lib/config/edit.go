@@ -11,7 +11,7 @@ import (
 
 // Edit a configuration file.
 func Edit() {
-	var editors = [3]string{"micro", "nano", "vim"}
+	editors := [3]string{"micro", "nano", "vim"}
 	cfg, edit := viper.ConfigFileUsed(), ""
 	if cfg == "" {
 		configMissing("edit")

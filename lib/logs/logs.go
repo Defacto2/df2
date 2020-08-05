@@ -34,9 +34,7 @@ var (
 	Quiet = false
 )
 
-var (
-	ErrNoArg = errors.New("no arguments are provided")
-)
+var ErrNoArg = errors.New("no arguments are provided")
 
 // Arg returns instructions for invalid command arguments.
 func Arg(arg string, args ...string) error {

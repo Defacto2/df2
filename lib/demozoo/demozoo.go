@@ -409,7 +409,6 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	if r.Platform == "" {
 		r.platform(api)
 	}
-	//fmt.Printf("%+v\n", r)
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
