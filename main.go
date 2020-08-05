@@ -15,8 +15,24 @@ limitations under the License.
 */
 package main
 
-import "github.com/Defacto2/df2/lib/cmd"
+import (
+	"github.com/Defacto2/df2/lib/cmd"
+	ver "github.com/Defacto2/df2/lib/version"
+)
+
+// goreleaser generated ldflags containers
+// https://goreleaser.com/environment/#using-the-mainversion
+var version, commit, date string
 
 func main() {
+	if version != "" {
+		ver.B.Version = version
+	}
+	if commit != "" {
+		ver.B.Commit = commit
+	}
+	if date != "" {
+		ver.B.Date = date
+	}
 	cmd.Execute()
 }

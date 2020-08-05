@@ -18,6 +18,7 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/Defacto2/df2/lib/version"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -135,12 +136,12 @@ func execVersion() {
 		w = "ok"
 	}
 	data := VerData{
-		Version:  color.Primary.Sprint(B.Version),
+		Version:  color.Primary.Sprint(version.B.Version),
 		Database: p(d),
 		Ansilove: p(a),
 		Webp:     p(w),
-		Commit:   B.Commit,
-		Date:     localBuild(B.Date),
+		Commit:   version.B.Commit,
+		Date:     localBuild(version.B.Date),
 	}
 	tmpl, err := template.New("version").Parse(exeTmp)
 	if err != nil {
@@ -150,7 +151,7 @@ func execVersion() {
 	if err := tmpl.Execute(&b, data); err != nil {
 		log.Fatal(err)
 	}
-	rootCmd.Version = color.Primary.Sprint(B.Version) + b.String()
+	rootCmd.Version = color.Primary.Sprint(version.B.Version) + b.String()
 }
 
 // filterFlag compairs the value of the filter flag against the list of slice values.
