@@ -132,7 +132,7 @@ func execVersion() {
 	if _, err := exec.LookPath("ansilove"); err == nil {
 		a = "ok"
 	}
-	if _, err := exec.LookPath("webpng"); err == nil {
+	if _, err := exec.LookPath("cwebp"); err == nil {
 		w = "ok"
 	}
 	data := VerData{
