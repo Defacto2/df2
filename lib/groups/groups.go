@@ -326,7 +326,7 @@ func Print(r Request) (total int, err error) {
 		// initialism
 		if r.Initialisms {
 			if in, err := initialism(g); err != nil {
-				return 0, fmt.Errorf("print initalism: %w", err)
+				return 0, fmt.Errorf("print initialism: %w", err)
 			} else if in != "" {
 				s = fmt.Sprintf("%v [%s]", s, in)
 			}
