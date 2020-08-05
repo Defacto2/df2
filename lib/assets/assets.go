@@ -32,8 +32,11 @@ const (
 	Image
 )
 
-// files are unique UUID values used by the database and filenames.
-type files map[string]struct{}
+type (
+	// files are unique UUID values used by the database and filenames.
+	files map[string]struct{}
+	part  map[string]string
+)
 
 var (
 	empty  database.Empty
@@ -88,68 +91,74 @@ func backup(s *scan, list []os.FileInfo) error {
 	} else if s.path == "" {
 		return fmt.Errorf("backup: %w", ErrPathEmpty)
 	}
-	test := false
+	var test bool
 	if flag.Lookup("test.v") != nil {
 		test = true
 	}
-	archive := s.archive(list)
+	f := s.archive(list)
 	// identify which files should be backed up
-	part := backupPart()
+	p := backupParts()
 	if test {
-		part[s.path] = "test"
+		p[s.path] = "test"
 	}
-	//return errors.New("exitonk")
-	if _, ok := part[s.path]; ok {
-		t := time.Now().Format("2006-Jan-2-150405") // Mon Jan 2 15:04:05 MST 2006
-		name, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", part[s.path], t)), s.path
-		// create tar archive
-		newTar, err := os.Create(name)
-		if err != nil {
-			return fmt.Errorf("backup create %q: %w", name, err)
-		}
-		tw := tar.NewWriter(newTar)
-		defer tw.Close()
-		c := 0
-		// walk through `path` and match any files marked for deletion
-		// Partial source: https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
-		err = filepath.Walk(s.path, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return fmt.Errorf("backup walk %q: %w", path, err)
-			}
-			name, err := walkName(basepath, path)
-			if err != nil {
-				return fmt.Errorf("backup walk name %q: %w", path, err)
-			}
-			if _, ok := archive[name]; ok || test {
-				c++
-				if c == 1 {
-					logs.Print("archiving these files before deletion\n\n")
-				}
-				if err := writeTar(path, name, tw); err != nil {
-					return fmt.Errorf("backup write tar %q: %w", path, err)
-				}
-			}
-			return nil // no match
-		})
-		// if backup fails, then abort deletion
-		if err != nil || c == 0 {
-			// clean up any loose archives
-			newTar.Close()
-			if err := os.Remove(name); err != nil {
-				return fmt.Errorf("backup remove %q: %w", name, err)
-			}
+	if _, ok := p[s.path]; ok {
+		if err := s.backupPart(f, p, test); err != nil {
+			return fmt.Errorf("backup part: %w", err)
 		}
 	}
 	return nil
 }
 
-func backupPart() (part map[string]string) {
-	part = make(map[string]string)
-	part[d.UUID] = "uuid"
-	part[d.Img150] = "img-150xthumbs"
-	part[d.Img400] = "img-400xthumbs"
-	part[d.Img000] = "img-captures"
-	return part
+func (s *scan) backupPart(f files, p part, test bool) error {
+	t := time.Now().Format("2006-Jan-2-150405") // Mon Jan 2 15:04:05 MST 2006
+	name, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", p[s.path], t)), s.path
+	// create tar archive
+	newTar, err := os.Create(name)
+	if err != nil {
+		return fmt.Errorf("create %q: %w", name, err)
+	}
+	tw := tar.NewWriter(newTar)
+	defer tw.Close()
+	c := 0
+	// walk through `path` and match any files marked for deletion
+	// Partial source: https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
+	err = filepath.Walk(s.path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk %q: %w", path, err)
+		}
+		name, err := walkName(basepath, path)
+		if err != nil {
+			return fmt.Errorf("walk name %q: %w", path, err)
+		}
+		if _, ok := f[name]; ok || test {
+			c++
+			if c == 1 {
+				logs.Print("archiving these files before deletion\n\n")
+			}
+			if err := writeTar(path, name, tw); err != nil {
+				return fmt.Errorf("write tar %q: %w", path, err)
+			}
+		}
+		return nil // no match
+	})
+	// if backup fails, then abort deletion
+	if err != nil || c == 0 {
+		// clean up any loose archives
+		newTar.Close()
+		if err := os.Remove(name); err != nil {
+			return fmt.Errorf("remove %q: %w", name, err)
+		}
+	}
+	return nil
+}
+
+func backupParts() part {
+	p := make(part)
+	p[d.UUID] = "uuid"
+	p[d.Img150] = "img-150xthumbs"
+	p[d.Img400] = "img-400xthumbs"
+	p[d.Img000] = "img-captures"
+	return p
 }
 
 func clean(t Target, delete, human bool) error {
@@ -317,8 +326,8 @@ type scan struct {
 	m      database.IDs // UUID values fetched from the database
 }
 
-func (s *scan) archive(list []os.FileInfo) map[string]struct{} {
-	a := make(map[string]struct{})
+func (s *scan) archive(list []os.FileInfo) files {
+	a := make(files)
 	for _, file := range list {
 		if file.IsDir() {
 			continue // ignore directories

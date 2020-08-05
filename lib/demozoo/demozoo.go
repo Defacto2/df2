@@ -71,6 +71,8 @@ const (
 	cd  = "Content-Disposition"
 	cls = "PouetProduction"
 	df2 = "defacto2.net"
+	dos = "dos"
+	win = "windows"
 )
 
 const selectSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`," +
@@ -322,13 +324,13 @@ func (r *Record) doseeMeta() error {
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
+	if strings.ToLower(r.Platform) == dos && d.DOSee != "" {
 		r.DOSeeBinary = d.DOSee
 	}
 	if d.NFO != "" {
 		r.Readme = d.NFO
 	}
-	if strings.ToLower(r.Platform) == "dos" && d.DOSee != "" {
+	if strings.ToLower(r.Platform) == dos && d.DOSee != "" {
 		r.DOSeeBinary = d.DOSee
 	}
 	return nil
@@ -452,13 +454,13 @@ func (r *Record) pingPouet(api ProductionsAPIv1) error {
 }
 
 func (r *Record) platform(api ProductionsAPIv1) {
-	const dos, win = 4, 1
+	const msdos, windows = 4, 1
 	for _, p := range api.Platforms {
 		switch p.ID {
-		case dos:
-			r.Platform = "dos"
-		case win:
-			r.Platform = "windows"
+		case msdos:
+			r.Platform = dos
+		case windows:
+			r.Platform = win
 		default:
 			break
 		}
