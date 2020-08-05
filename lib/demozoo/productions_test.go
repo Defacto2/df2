@@ -1,6 +1,7 @@
 package demozoo
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 const modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
@@ -94,7 +96,10 @@ func check(t *testing.T, err error) {
 
 func mockHeader(add string) (header http.Header, err error) {
 	// source: https://blog.questionable.services/article/testing-http-handlers-go/
-	req, err := http.NewRequest("GET", "/mock-header", nil)
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	req, err := http.NewRequestWithContext(ctx, "GET", "/mock-header", nil)
+	defer cancel()
 	if err != nil {
 		return header, err
 	}
