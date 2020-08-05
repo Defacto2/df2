@@ -46,11 +46,13 @@ func Info() error {
 				logs.Printf(" %s %s", color.Success.Sprint("up"), str.Y())
 			}
 		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
-			if _, err := os.Stat(val); os.IsNotExist(err) {
+			_, err := os.Stat(val)
+			switch {
+			case os.IsNotExist(err):
 				logs.Printf(" %s %s", val, str.X())
-			} else if err != nil {
+			case err != nil:
 				return fmt.Errorf("info stat %q: %w", val, err)
-			} else {
+			default:
 				logs.Printf(" %s %s", val, str.Y())
 			}
 		case "password":

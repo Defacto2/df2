@@ -112,11 +112,13 @@ func Cronjob() error {
 		}
 		f := tag + htm
 		n := path.Join(viper.GetString("directory.html"), f)
-		if update, err := database.FileUpdate(n, last); err != nil {
+		update, err := database.FileUpdate(n, last)
+		switch {
+		case err != nil:
 			return fmt.Errorf("group cronjob file update: %w", err)
-		} else if !update {
+		case !update:
 			logs.Println(f + " has nothing to update")
-		} else {
+		default:
 			r := Request{tag, true, true, false}
 			if err := r.HTML(f); err != nil {
 				return fmt.Errorf("group cronjob html: %w", err)
