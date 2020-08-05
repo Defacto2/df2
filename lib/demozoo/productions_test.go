@@ -239,15 +239,15 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 	tests := []struct {
 		name           string
 		p              ProductionsAPIv1
-		ping           bool
 		wantID         int
 		wantStatusCode int
+		ping           bool
 		wantErr        bool
 	}{
-		{"empty", ProductionsAPIv1{}, false, 0, 0, false},
-		{"record 1", example1, true, 7084, 200, false},
-		{"record 2", example2, true, 76652, 200, false},
-		{"record 3 (no pouet)", example3, true, 0, 0, false},
+		{"empty", ProductionsAPIv1{}, 0, 0, false, false},
+		{"record 1", example1, 7084, 200, true, false},
+		{"record 2", example2, 76652, 200, true, false},
+		{"record 3 (no pouet)", example3, 0, 0, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
