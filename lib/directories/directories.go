@@ -95,19 +95,19 @@ func createDirectories() error {
 	return nil
 }
 
-// createDirectory creates a UUID subdirectory provided to path.
-func createDirectory(path string) error {
-	src, err := os.Stat(path)
+// createDirectory creates a UUID subdirectory provided to dir.
+func createDirectory(dir string) error {
+	src, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
-			return fmt.Errorf("create directory mkdir %q: %w", path, err)
+		if err = os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("create directory mkdir %q: %w", dir, err)
 		}
 		return nil
 	} else if err != nil {
-		return fmt.Errorf("create directory stat %q: %w", path, err)
+		return fmt.Errorf("create directory stat %q: %w", dir, err)
 	}
 	if src.Mode().IsRegular() {
-		return fmt.Errorf("create directory %q: %w", path, ErrPathIsFile)
+		return fmt.Errorf("create directory %q: %w", dir, ErrPathIsFile)
 	}
 	return nil
 }

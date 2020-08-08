@@ -10,7 +10,7 @@ import (
 
 func testTemp() string {
 	dir, _ := os.Getwd()
-	return filepath.Join(dir, "../../tests/download")
+	return filepath.Join(dir, "..", "..", "tests", "download")
 }
 
 func TestRequest_Body(t *testing.T) {

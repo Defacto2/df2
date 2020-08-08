@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// directories are initialized and configured by InitDefaults() in lib/cmd.go
+// directories are initialized and configured by InitDefaults() in lib/cmd.go.
 
 const (
 	cmdPath              = "df2 config"
@@ -63,7 +64,10 @@ func Check() {
 func Filepath() (dir string) {
 	dir, err := scope.ConfigPath(filename)
 	if err != nil {
-		h, _ := os.UserHomeDir()
+		h, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(fmt.Errorf("filepath userhomedir: %w", err))
+		}
 		return filepath.Join(h, filename)
 	}
 	return dir

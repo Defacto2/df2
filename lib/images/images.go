@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg" // register Jpeg decoding
 	"image/png"
 	"io"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -148,7 +149,7 @@ func Move(src, dest string) error {
 }
 
 // Info returns the image metadata.
-func Info(name string) (height int, width int, format string, err error) {
+func Info(name string) (height, width int, format string, err error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("info open %q: %w", name, err)
@@ -162,27 +163,27 @@ func Info(name string) (height int, width int, format string, err error) {
 }
 
 // NewExt replaces or appends the extension to a file name.
-func NewExt(path, ext string) (name string) {
-	e := filepath.Ext(path)
+func NewExt(name, ext string) string {
+	e := filepath.Ext(name)
 	if e == "" {
-		return path + ext
+		return name + ext
 	}
-	fn := strings.TrimSuffix(path, e)
+	fn := strings.TrimSuffix(name, e)
 	return fn + ext
 }
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
-func ToPng(src, dest string, maxDimension int) (print string, err error) {
+func ToPng(src, dest string, maxDimension int) (s string, err error) {
 	in, err := os.Open(src)
 	if err != nil {
-		return print, fmt.Errorf("to png open %s: %w", src, err)
+		return "", fmt.Errorf("to png open %s: %w", src, err)
 	}
 	defer in.Close()
 	// image.Decode will determine the format
 	img, ext, err := image.Decode(in)
 	if err != nil {
-		return print, fmt.Errorf("to png decode: %w", err)
+		return "", fmt.Errorf("to png decode: %w", err)
 	}
 	// cap image size
 	if maxDimension > 0 {
@@ -191,7 +192,7 @@ func ToPng(src, dest string, maxDimension int) (print string, err error) {
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
 	img, err = pngquant.Compress(img, "4")
 	if err != nil {
-		return print, fmt.Errorf("to png quant compress: %w", err)
+		return "", fmt.Errorf("to png quant compress: %w", err)
 	}
 	// adjust any configs to the PNG image encoder
 	cfg := png.Encoder{
@@ -200,22 +201,22 @@ func ToPng(src, dest string, maxDimension int) (print string, err error) {
 	// write the PNG data to img
 	buf := new(bytes.Buffer)
 	if err = cfg.Encode(buf, img); err != nil {
-		return print, fmt.Errorf("to png buffer encode: %w", err)
+		return "", fmt.Errorf("to png buffer encode: %w", err)
 	}
 	// save the PNG to a file
 	out, err := os.Create(dest)
 	if err != nil {
-		return print, fmt.Errorf("to png create %q: %w", dest, err)
+		return "", fmt.Errorf("to png create %q: %w", dest, err)
 	}
 	defer out.Close()
 	if _, err := buf.WriteTo(out); err != nil {
-		return print, fmt.Errorf("to png buffer write to: %w", err)
+		return "", fmt.Errorf("to png buffer write to: %w", err)
 	}
 	return fmt.Sprintf("%v»png", strings.ToLower(ext)), nil
 }
 
 // ToThumb creates a thumb from an image that is pixel squared in size.
-func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
+func ToThumb(src, dest string, sizeSquared int) (s string, err error) {
 	pfx := "_" + fmt.Sprintf("%v", sizeSquared) + "x"
 	cp, err := Duplicate(src, pfx)
 	if err != nil {
@@ -236,11 +237,11 @@ func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
 	if err := imaging.Save(in, f); err != nil {
 		return "", fmt.Errorf("to thumb imaging save: %w", err)
 	}
-	s := NewExt(dest, _png)
-	if err := os.Rename(f, s); err != nil {
+	ext := NewExt(dest, _png)
+	if err := os.Rename(f, ext); err != nil {
 		var le *os.LinkError // invalid cross-device link
 		if errors.As(err, &le) {
-			if err := Move(f, s); err != nil {
+			if err = Move(f, ext); err != nil {
 				return "", fmt.Errorf("to thumb move: %w", err)
 			}
 		} else {
@@ -257,7 +258,7 @@ func ToThumb(src, dest string, sizeSquared int) (print string, err error) {
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
 // Input format can be either PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
-func ToWebp(src, dest string, vendorTempDir bool) (print string, err error) {
+func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 	valid := func(a []string, x string) bool {
 		for _, n := range a {
 			if x == n {
@@ -305,7 +306,10 @@ func Width(name string) (width int, err error) {
 func vendorPath() string {
 	fp, err := scope.CacheDir()
 	if err != nil {
-		h, _ := os.UserHomeDir()
+		h, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(fmt.Errorf("vendorPath userhomedir: %w", err))
+		}
 		return path.Join(h, ".vendor/df2")
 	}
 	return fp

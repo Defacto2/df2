@@ -92,7 +92,7 @@ func (wc WriteCounter) printProgress() {
 	}
 }
 
-func percent(count uint64, total uint64) uint64 {
+func percent(count, total uint64) uint64 {
 	if total == 0 {
 		return 0
 	}
@@ -105,8 +105,8 @@ func progressDone(name string, written int64) {
 	logs.Printcrf("%v download saved to: %v", humanize.Bytes(uint64(written)), name)
 }
 
-// LinkDownload downloads the URL and saves it as the named file.
-func LinkDownload(name, url string) (http.Header, error) {
+// LinkDownload downloads the link and saves it as the named file.
+func LinkDownload(name, link string) (http.Header, error) {
 	// open local target file
 	out, err := os.Create(name)
 	if err != nil {
@@ -115,7 +115,7 @@ func LinkDownload(name, url string) (http.Header, error) {
 	defer out.Close()
 	// request remote file
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", link, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -136,14 +136,14 @@ func LinkDownload(name, url string) (http.Header, error) {
 }
 
 // LinkDownloadQ quietly downloads the URL and saves it to the named file.
-func LinkDownloadQ(name, url string) (http.Header, error) {
+func LinkDownloadQ(name, link string) (http.Header, error) {
 	out, err := os.Create(name)
 	if err != nil {
 		return nil, err
 	}
 	defer out.Close()
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", link, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -161,11 +161,11 @@ func LinkDownloadQ(name, url string) (http.Header, error) {
 }
 
 // LinkPing connects to a URL and returns its HTTP status code and status text.
-func LinkPing(url string) (*http.Response, error) {
+func LinkPing(link string) (*http.Response, error) {
 	const seconds = 5 * time.Second
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, seconds)
-	req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "HEAD", link, nil)
 	defer cancel()
 	if err != nil {
 		return nil, err

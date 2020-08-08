@@ -132,7 +132,7 @@ func trimThe(s string) string {
 		return s
 	}
 	l := a[len(a)-1]
-	if strings.ToLower(a[0]) == "the" && (l == "BBS" || l == "FTP") {
+	if strings.EqualFold(a[0], "the") && (l == "BBS" || l == "FTP") {
 		return strings.Join(a[1:], " ") // drop "the" prefix
 	}
 	return s

@@ -50,10 +50,12 @@ const (
 	Writers
 )
 
+const all = "all"
+
 func (r Role) String() string {
 	switch r {
 	case Everyone:
-		return "all"
+		return all
 	case Artists:
 		return "artists"
 	case Coders:
@@ -101,7 +103,7 @@ func List(role Role) (people []string, total int, err error) {
 	var persons sql.NullString
 	i := 0
 	for rows.Next() {
-		if err := rows.Scan(&persons); err != nil {
+		if err = rows.Scan(&persons); err != nil {
 			return nil, 0, fmt.Errorf("list row scan: %w", err)
 		}
 		if _, err = persons.Value(); err != nil {
@@ -133,19 +135,19 @@ func HTML(filename string, r Request) error {
 	return nil
 }
 
-func parse(filename string, tpl string, r Request) error {
+func parse(filename, tpl string, r Request) error {
 	grp, x, err := List(roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
 	f := r.Filter
 	if f == "" {
-		f = "all"
+		f = all
 	}
 	if !str.Piped() {
 		logs.Println(x, "matching", f, "records found")
 	}
-	data, cap, hr := make([]Person, len(grp)), "", false
+	data, s, hr := make([]Person, len(grp)), "", false
 	total := len(grp)
 	for i := range grp {
 		if r.Progress {
@@ -154,10 +156,10 @@ func parse(filename string, tpl string, r Request) error {
 		n := grp[i]
 		// hr element
 		switch c := n[:1]; {
-		case cap == "":
-			cap = c
-		case c != cap:
-			cap = c
+		case s == "":
+			s = c
+		case c != s:
+			s = c
 			hr = true
 		default:
 			hr = false
@@ -194,7 +196,7 @@ func parse(filename string, tpl string, r Request) error {
 		if err = t.Execute(f, data); err != nil {
 			return fmt.Errorf("parse template execute: %w", err)
 		}
-	default:
+	case Everyone:
 		return fmt.Errorf("parse %v: %w", r.Filter, ErrFilter)
 	}
 	return nil
@@ -245,7 +247,7 @@ func roles(r string) Role {
 		return Coders
 	case "artists", "a":
 		return Artists
-	case "", "all":
+	case "", all:
 		return Everyone
 	}
 	return -1

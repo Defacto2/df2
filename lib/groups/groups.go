@@ -98,7 +98,10 @@ func Count(name string) (count int, err error) {
 	db := database.Connect()
 	defer db.Close()
 	n := name
-	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n)
+	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
+		"group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR "+
+		"group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by "+
+		"LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n)
 	if err = row.Scan(&count); err != nil {
 		return 0, fmt.Errorf("group count row scan: %w", err)
 	}
@@ -216,7 +219,7 @@ func (r Request) iterate(groups ...string) (g *[]Result, err error) {
 	return &data, nil
 }
 
-func (r Request) parse(filename string, templ string) (err error) {
+func (r Request) parse(filename, templ string) (err error) {
 	groups, total, err := list(r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse group: %w", err)
@@ -280,7 +283,7 @@ func list(f string) (groups []string, total int, err error) {
 	rows, err := db.Query(s)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list groups query: %w", err)
-	} else if err := rows.Err(); err != nil {
+	} else if err = rows.Err(); err != nil {
 		return nil, 0, fmt.Errorf("list groups rows: %w", rows.Err())
 	}
 	defer rows.Close()
@@ -304,9 +307,9 @@ func MakeSlug(name string) string {
 	n = strings.ReplaceAll(n, "-", "_")
 	n = strings.ReplaceAll(n, ", ", "*")
 	n = strings.ReplaceAll(n, " & ", " ampersand ")
-	re := regexp.MustCompile(` ([0-9])`)
+	re := regexp.MustCompile(` (\d)`)
 	n = re.ReplaceAllString(n, `-$1`)
-	re = regexp.MustCompile(`[^A-Za-z0-9 \-\+\.\_\*]`) // remove all chars except these
+	re = regexp.MustCompile(`[^A-Za-z0-9 \-\+.\_\*]`) // remove all chars except these
 	n = re.ReplaceAllString(n, ``)
 	n = strings.ToLower(n)
 	re = regexp.MustCompile(` ([a-z])`)

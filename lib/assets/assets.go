@@ -13,14 +13,12 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/Defacto2/df2/lib/logs"
-	"github.com/gookit/color"
-
 	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 
 	"github.com/dustin/go-humanize"
-
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
+	"github.com/gookit/color"
 )
 
 type Target int
@@ -53,8 +51,8 @@ var (
 
 // Clean walks through and scans directories containing UUID files
 // and erases any orphans that cannot be matched to the database.
-func Clean(target string, delete, human bool) error {
-	return clean(targetfy(target), delete, human)
+func Clean(target string, remove, human bool) error {
+	return clean(targetfy(target), remove, human)
 }
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
@@ -63,7 +61,7 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 	defer db.Close()
 	// count rows
 	count := 0
-	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
+	if err = db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
 		return 0, nil, fmt.Errorf("create uuid map query row: %w", err)
 	}
 	// query database
@@ -127,7 +125,7 @@ func (s *scan) backupPart(f files, p part, test bool) error {
 		if err != nil {
 			return fmt.Errorf("walk %q: %w", path, err)
 		}
-		name, err := walkName(basepath, path)
+		name, err = walkName(basepath, path)
 		if err != nil {
 			return fmt.Errorf("walk name %q: %w", path, err)
 		}
@@ -162,7 +160,7 @@ func backupParts() part {
 	return p
 }
 
-func clean(t Target, delete, human bool) error {
+func clean(t Target, remove, human bool) error {
 	if ts := targets(t); ts == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
@@ -176,13 +174,14 @@ func clean(t Target, delete, human bool) error {
 	// parse directories
 	var sum results
 	for p := range paths {
-		s := scan{path: paths[p], delete: delete, human: human, m: m}
+		s := scan{path: paths[p], delete: remove, human: human, m: m}
 		if err := sum.calculate(s); err != nil {
 			return fmt.Errorf("clean sum calculate: %w", err)
 		}
 	}
 	// output a summary of the results
-	logs.Println(color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v", humanize.Comma(int64(sum.count)), humanize.Comma(int64(rows))))
+	logs.Println(color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v",
+		humanize.Comma(int64(sum.count)), humanize.Comma(int64(rows))))
 	if sum.fails > 0 {
 		logs.Print(fmt.Sprintf("assets clean: due to errors %v files could not be deleted\n", sum.fails))
 	}
@@ -365,7 +364,7 @@ func (s scan) scanPath() (stat results, err error) {
 	ignore = ignoreList(s.path)
 	// archive files that are to be deleted
 	if s.delete {
-		if err := backup(&s, list); err != nil {
+		if err = backup(&s, list); err != nil {
 			return stat, fmt.Errorf("scan path backup: %w", err)
 		}
 	}

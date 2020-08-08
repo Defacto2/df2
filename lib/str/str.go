@@ -37,16 +37,16 @@ func Sec(s string) string {
 	return color.Secondary.Sprint(s)
 }
 
-// Truncate shortens a string to len characters.
-func Truncate(text string, len int) string {
-	if len < 1 {
+// Truncate shortens a string to length characters.
+func Truncate(text string, length int) string {
+	if length < 1 {
 		return text
 	}
-	const new string = "…"
-	if utf8.RuneCountInString(text) <= len {
+	const s = "…"
+	if utf8.RuneCountInString(text) <= length {
 		return text
 	}
-	return text[0:len-utf8.RuneCountInString(new)] + new
+	return text[0:length-utf8.RuneCountInString(s)] + s
 }
 
 // Warn prints a warning notice.

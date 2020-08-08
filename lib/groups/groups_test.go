@@ -21,7 +21,8 @@ func Test_groupsWhere(t *testing.T) {
 		{"mag-", args{Magazine, false}, "AND section = 'magazine' AND `deletedat` IS NULL"},
 		{"bbs-", args{BBS, false}, "AND RIGHT(group_brand_for,4) = ' BBS' AND `deletedat` IS NULL"},
 		{"ftp-", args{FTP, false}, "AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL"},
-		{"grp-", args{Group, false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND `deletedat` IS NULL"},
+		{"grp-", args{Group, false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
+			"RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND `deletedat` IS NULL"},
 		{"mag+", args{Magazine, true}, "AND section = 'magazine'"},
 		{"bbs+", args{BBS, true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
 		{"ftp+", args{FTP, true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
