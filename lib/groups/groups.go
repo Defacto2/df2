@@ -262,7 +262,7 @@ func (r Request) parse(filename, templ string) (err error) {
 		if err = t.Execute(f, &data); err != nil {
 			return fmt.Errorf("parse t execute: %w", err)
 		}
-	default:
+	case None:
 		return fmt.Errorf("parse %q: %w", r.Filter, ErrFilter)
 	}
 	return nil
