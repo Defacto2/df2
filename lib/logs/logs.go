@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
-	"gopkg.in/gookit/color.v1"
 )
 
 const (

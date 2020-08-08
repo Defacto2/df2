@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"gopkg.in/gookit/color.v1"
+	"github.com/gookit/color"
 )
 
 var (

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"gopkg.in/gookit/color.v1"
+	"github.com/gookit/color"
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"

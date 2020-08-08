@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/gookit/color.v1"
+	"github.com/gookit/color"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
