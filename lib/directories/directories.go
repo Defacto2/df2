@@ -172,6 +172,7 @@ func createPlaceHolders() error {
 	return nil
 }
 
+// TODO: Blog random string generator.
 // randStringBytes generates a random string of n x characters.
 func randStringBytes(n int) (string, error) {
 	b := make([]byte, n)
