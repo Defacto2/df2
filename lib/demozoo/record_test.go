@@ -48,13 +48,20 @@ func TestRecord_sql(t *testing.T) {
 		want1  int
 	}{
 		{name: "empty", fields: fields{}, want: "", want1: 0},
-		{"filename", fields{ID: "1", Filename: "hi.txt"}, "UPDATE files SET filename=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"filesize", fields{ID: "1", Filesize: "54321"}, "UPDATE files SET filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"zip content", fields{ID: "1", FileZipContent: "HI.TXT\nHI.EXE"}, "UPDATE files SET file_zip_content=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"md5", fields{ID: "1", SumMD5: "md5placeholder"}, "UPDATE files SET file_integrity_weak=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"sha386", fields{ID: "1", Sum384: "shaplaceholder"}, "UPDATE files SET file_integrity_strong=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"lastmod", fields{ID: "1", LastMod: now}, "UPDATE files SET file_last_modified=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"a file", fields{ID: "1", Filename: "some.gif", Filesize: "5012352"}, "UPDATE files SET filename=?,filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 6},
+		{"filename", fields{ID: "1", Filename: "hi.txt"},
+			"UPDATE files SET filename=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
+		{"filesize", fields{ID: "1", Filesize: "54321"},
+			"UPDATE files SET filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
+		{"zip content", fields{ID: "1", FileZipContent: "HI.TXT\nHI.EXE"},
+			"UPDATE files SET file_zip_content=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
+		{"md5", fields{ID: "1", SumMD5: "md5placeholder"},
+			"UPDATE files SET file_integrity_weak=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
+		{"sha386", fields{ID: "1", Sum384: "shaplaceholder"},
+			"UPDATE files SET file_integrity_strong=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
+		{"lastmod", fields{ID: "1", LastMod: now},
+			"UPDATE files SET file_last_modified=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
+		{"a file", fields{ID: "1", Filename: "some.gif", Filesize: "5012352"},
+			"UPDATE files SET filename=?,filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -95,7 +102,7 @@ func TestRecord_fileZipContent(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	pwd = filepath.Join(pwd, "../..")
+	pwd = filepath.Join(pwd, "..", "..")
 	tests := []struct {
 		name    string
 		fields  fields
@@ -105,8 +112,8 @@ func TestRecord_fileZipContent(t *testing.T) {
 		{"empty", fields{}, false, true},
 		{"missing", fields{FilePath: "/dev/null"}, false, true},
 		{"dir", fields{FilePath: "tests/demozoo"}, false, true},
-		{"7zip", fields{FilePath: filepath.Join(pwd, "tests/demozoo/test.7z"), Filename: "test.7z"}, false, true},
-		{"zip", fields{FilePath: filepath.Join(pwd, "tests/demozoo/test.zip"), Filename: "test.zip"}, true, false},
+		{"7zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"), Filename: "test.7z"}, false, true},
+		{"zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.zip"), Filename: "test.zip"}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -130,7 +137,7 @@ func Test_stat_fileExist(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	pwd = filepath.Join(pwd, "../..")
+	pwd = filepath.Join(pwd, "..", "..")
 	type fields struct {
 		count   int
 		missing int
@@ -145,8 +152,8 @@ func Test_stat_fileExist(t *testing.T) {
 	}{
 		{name: "empty", path: "", wantMissing: true},
 		{name: "missing", path: "/this/dir/does/not/exist", wantMissing: true},
-		{name: "7z", path: filepath.Join(pwd, "tests/demozoo/test.7z"), wantMissing: false},
-		{name: "zip", path: filepath.Join(pwd, "tests/demozoo/test.zip"), wantMissing: false},
+		{name: "7z", path: filepath.Join(pwd, "tests", "demozoo", "test.7z"), wantMissing: false},
+		{name: "zip", path: filepath.Join(pwd, "tests", "demozoo", "test.zip"), wantMissing: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -156,7 +163,7 @@ func Test_stat_fileExist(t *testing.T) {
 				total:   tt.fields.total,
 			}
 			r.FilePath = tt.path
-			if gotMissing := st.fileExist(r); gotMissing != tt.wantMissing {
+			if gotMissing := st.fileExist(&r); gotMissing != tt.wantMissing {
 				t.Errorf("stat.fileExist() = %v, want %v", gotMissing, tt.wantMissing)
 			}
 		})

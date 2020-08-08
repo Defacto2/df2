@@ -112,7 +112,7 @@ linters:
     - exportloopref
     - gochecknoinits
     - gci
-    - gochecknoglobals
+    #- gochecknoglobals
     - goconst
     - gocritic
     - godot

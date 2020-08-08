@@ -73,7 +73,6 @@ func TestUnarchiver(t *testing.T) {
 		src = testDir("demozoo/test.zip")
 		fn  = "test.zip"
 	)
-	//"zip", args{testDir("demozoo/test.zip"), "test.zip"}, []string{"test.png", "test.txt"}, false},
 	if err != nil {
 		t.Error(err)
 	}

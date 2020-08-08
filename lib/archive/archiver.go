@@ -26,7 +26,11 @@ func Readr(archive, filename string) (files []string, err error) {
 		if !utf8.Valid(b) {
 			// handle cheecky DOS era filenames with CP437 extended characters.
 			r := transform.NewReader(bytes.NewReader(b), charmap.CodePage437.NewDecoder())
-			result, _ := ioutil.ReadAll(r)
+			var result []byte
+			result, err = ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
 			files = append(files, string(result))
 		} else {
 			files = append(files, f.Name())

@@ -24,7 +24,8 @@ func Fix() error {
 
 func updateApplications() (count int64, err error) {
 	var app database.Update
-	app.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%application%'"
+	app.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
+		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%application%'"
 	app.Args = []interface{}{"groupapplication"}
 	if count, err = app.Execute(); err != nil {
 		return 0, fmt.Errorf("update applications: %w", err)
@@ -34,7 +35,8 @@ func updateApplications() (count int64, err error) {
 
 func updateInstallers() (count int64, err error) {
 	var inst database.Update
-	inst.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%installer%'"
+	inst.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
+		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%installer%'"
 	inst.Args = []interface{}{"releaseinstall"}
 	if count, err = inst.Execute(); err != nil {
 		return 0, fmt.Errorf("update installers: %w", err)

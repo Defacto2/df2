@@ -307,7 +307,7 @@ func TestRecord_download(t *testing.T) {
 			r := &Record{
 				UUID: tt.fields.UUID,
 			}
-			if gotSkip := r.download(tt.args.overwrite, tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
+			if gotSkip := r.download(tt.args.overwrite, &tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
 				t.Errorf("Record.download() = %v, want %v", gotSkip, tt.wantSkip)
 			}
 		})

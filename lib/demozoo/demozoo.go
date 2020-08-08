@@ -136,7 +136,7 @@ func (req Request) Queries() error {
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("request queries query 1: %w", err)
-	} else if err := rows.Err(); err != nil {
+	} else if err = rows.Err(); err != nil {
 		return fmt.Errorf("request queries rows 1: %w", rows.Err())
 	}
 	defer rows.Close()
@@ -150,7 +150,7 @@ func (req Request) Queries() error {
 		scanArgs[i] = &values[i]
 	}
 	storage := directories.Init(false).UUID
-	if err := st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
+	if err = st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
 		return fmt.Errorf("req queries sum total: %w", err)
 	}
 	if st.total > 1 {
@@ -224,7 +224,7 @@ func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
 	if err := rec.rows.Scan(rec.scanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
-	if new := database.IsNew(rec.values); !new && req.flags() {
+	if n := database.IsNew(rec.values); !n && req.flags() {
 		return true, nil
 	}
 	st.count++
@@ -260,7 +260,7 @@ func (st *stat) sumTotal(rec records, req Request) error {
 		if err := rec.rows.Scan(rec.scanArgs...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
 		}
-		if new := database.IsNew(rec.values); !new && req.flags() {
+		if n := database.IsNew(rec.values); !n && req.flags() {
 			continue
 		}
 		st.total++
@@ -269,7 +269,7 @@ func (st *stat) sumTotal(rec records, req Request) error {
 }
 
 // check record to see if it needs updating.
-func (r Record) check() (update bool) {
+func (r *Record) check() (update bool) {
 	switch {
 	case
 		r.Filename == "",
@@ -285,14 +285,14 @@ func (r Record) check() (update bool) {
 	}
 }
 
-func (r *Record) download(overwrite bool, api ProductionsAPIv1, st stat) (skip bool) {
-	if st.fileExist(*r) || overwrite {
+func (r *Record) download(overwrite bool, api *ProductionsAPIv1, st stat) (skip bool) {
+	if st.fileExist(r) || overwrite {
 		if r.UUID == "" {
 			fmt.Print(color.Error.Sprint("UUID is empty, cannot continue"))
 			return true
 		}
 		name, link := api.DownloadLink()
-		if len(link) == 0 {
+		if link == "" {
 			logs.Print(color.Note.Sprint("no suitable downloads found"))
 			return true
 		}
@@ -328,14 +328,11 @@ func (r *Record) doseeMeta() error {
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	if strings.ToLower(r.Platform) == dos && d.DOSee != "" {
+	if strings.EqualFold(r.Platform, dos) && d.DOSee != "" {
 		r.DOSeeBinary = d.DOSee
 	}
 	if d.NFO != "" {
 		r.Readme = d.NFO
-	}
-	if strings.ToLower(r.Platform) == dos && d.DOSee != "" {
-		r.DOSeeBinary = d.DOSee
 	}
 	return nil
 }
@@ -401,17 +398,17 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	} else if !ok {
 		return true, nil
 	}
-	if err := r.pingPouet(api); err != nil {
+	if err := r.pingPouet(&api); err != nil {
 		return true, fmt.Errorf("parse api: %w", err)
 	}
 	r.FilePath = filepath.Join(storage, r.UUID)
-	if skip := r.download(overwrite, api, st); skip {
+	if skip := r.download(overwrite, &api, st); skip {
 		return true, nil
 	} else if update := r.check(); !update {
 		return true, nil
 	}
 	if r.Platform == "" {
-		r.platform(api)
+		r.platform(&api)
 	}
 	switch {
 	case r.Filename == "":
@@ -447,7 +444,7 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	return false, nil
 }
 
-func (r *Record) pingPouet(api ProductionsAPIv1) error {
+func (r *Record) pingPouet(api *ProductionsAPIv1) error {
 	if id, code, err := api.PouetID(true); err != nil {
 		return fmt.Errorf("ping pouet: %w", err)
 	} else if id > 0 && code < 300 {
@@ -456,7 +453,7 @@ func (r *Record) pingPouet(api ProductionsAPIv1) error {
 	return nil
 }
 
-func (r *Record) platform(api ProductionsAPIv1) {
+func (r *Record) platform(api *ProductionsAPIv1) {
 	const msdos, windows = 4, 1
 	for _, p := range api.Platforms {
 		switch p.ID {
@@ -479,7 +476,7 @@ func (r *Record) save() {
 	logs.Printf(" 💾%v", str.Y())
 }
 
-func (r Record) variations() (names []string, err error) {
+func (r *Record) variations() (names []string, err error) {
 	if r.GroupBy != "" {
 		v, err := groups.Variations(r.GroupBy)
 		if err != nil {
@@ -536,7 +533,7 @@ func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
 	return r, nil
 }
 
-func selectByID() (sql string) {
+func selectByID() (stmt string) {
 	const w = " FROM `files` WHERE `web_id_demozoo` IS NOT NULL"
 	where := w
 	if requestedID != "" {

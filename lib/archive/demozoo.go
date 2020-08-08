@@ -27,7 +27,7 @@ func (d Demozoo) String() string {
 
 // ExtractDemozoo decompresses and parses archives fetched from Demozoo.org.
 func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err error) {
-	if err := database.CheckUUID(uuid); err != nil {
+	if err = database.CheckUUID(uuid); err != nil {
 		return Demozoo{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
 	}
 	// create temp dir
@@ -82,7 +82,7 @@ func moveText(name, uuid string) (ok bool, err error) {
 	if name == "" {
 		return false, nil
 	}
-	if err := database.CheckUUID(uuid); err != nil {
+	if err = database.CheckUUID(uuid); err != nil {
 		return false, fmt.Errorf("movetext check uuid %q: %w", uuid, err)
 	}
 	f := directories.Files(uuid)
@@ -121,7 +121,7 @@ func (f finds) top() string {
 type finds map[string]int
 
 func findDOS(name string, files contents, varNames *[]string) string {
-	finds := make(finds) // filename and priority values
+	f := make(finds) // filename and priority values
 	for _, file := range files {
 		if !file.executable {
 			continue
@@ -134,26 +134,26 @@ func findDOS(name string, files contents, varNames *[]string) string {
 		fmt.Printf(" > %q, %q, chk1 %s", ext, fn, base+exe)
 		switch {
 		case ext == bat: // [random].bat
-			finds[file.name] = 1
+			f[file.name] = 1
 		case fn == base+exe: // [archive name].exe
-			finds[file.name] = 2
+			f[file.name] = 2
 		case fn == base+com: // [archive name].com
-			finds[file.name] = 3
+			f[file.name] = 3
 		case e != "":
-			finds[file.name] = 4
+			f[file.name] = 4
 		case c != "":
-			finds[file.name] = 5
+			f[file.name] = 5
 		case ext == exe: // [random].exe
-			finds[file.name] = 6
+			f[file.name] = 6
 		case ext == com: // [random].com
-			finds[file.name] = 7
+			f[file.name] = 7
 		}
 	}
-	return finds.top()
+	return f.top()
 }
 
 func findNFO(name string, files contents, varNames *[]string) string {
-	finds := make(finds) // filename and priority values
+	f := make(finds) // filename and priority values
 	for _, file := range files {
 		if !file.textfile {
 			continue
@@ -165,27 +165,27 @@ func findNFO(name string, files contents, varNames *[]string) string {
 		t := findVariant(fn, ".txt", varNames)
 		switch {
 		case fn == base+".nfo": // [archive name].nfo
-			finds[file.name] = 1
+			f[file.name] = 1
 		case n != "":
-			finds[file.name] = 2
+			f[file.name] = 2
 		case fn == base+".txt": // [archive name].txt
-			finds[file.name] = 3
+			f[file.name] = 3
 		case t != "":
-			finds[file.name] = 4
+			f[file.name] = 4
 		case ext == ".nfo": // [random].nfo
-			finds[file.name] = 5
+			f[file.name] = 5
 		case fn == "file_id.diz": // BBS file description
-			finds[file.name] = 6
+			f[file.name] = 6
 		case fn == base+".diz": // [archive name].diz
-			finds[file.name] = 7
+			f[file.name] = 7
 		case fn == ".txt": // [random].txt
-			finds[file.name] = 8
+			f[file.name] = 8
 		case fn == ".diz": // [random].diz
-			finds[file.name] = 9
+			f[file.name] = 9
 		default: // currently lacking is [group name].nfo and [group name].txt priorities
 		}
 	}
-	return finds.top()
+	return f.top()
 }
 
 func findVariant(name, ext string, varNames *[]string) string {

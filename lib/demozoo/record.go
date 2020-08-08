@@ -41,7 +41,7 @@ type Record struct {
 	LastMod        time.Time // file download last modified time
 }
 
-func (r Record) String(total int) string {
+func (r *Record) String(total int) string {
 	// calculate the number of prefixed zero characters
 	d := 4
 	if total > 0 {
@@ -54,7 +54,7 @@ func (r Record) String(total int) string {
 }
 
 // Save a file item record to the database.
-func (r Record) Save() error {
+func (r *Record) Save() error {
 	db := database.Connect()
 	defer db.Close()
 	query, args := r.sql()
@@ -85,7 +85,7 @@ func (r *Record) fileZipContent() (ok bool, err error) {
 	return true, nil
 }
 
-func (r Record) sql() (query string, args []interface{}) {
+func (r *Record) sql() (query string, args []interface{}) {
 	var set []string
 	// an range map iternation is not used due to the varied comparisons
 	if r.Filename != "" {
@@ -169,7 +169,7 @@ func (r Record) sql() (query string, args []interface{}) {
 	return query, args
 }
 
-func (st *stat) fileExist(r Record) (missing bool) {
+func (st *stat) fileExist(r *Record) (missing bool) {
 	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
 		st.missing++
 		return true

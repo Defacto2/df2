@@ -59,8 +59,10 @@ var outputCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(outputCmd)
 	outputCmd.AddCommand(dataCmd)
-	dataCmd.Flags().BoolVarP(&dbf.CronJob, "cronjob", "j", false, "data backup for the cron time-based job scheduler\nall other flags are ignored")
-	dataCmd.Flags().BoolVarP(&dbf.Compress, "compress", "c", false, fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
+	dataCmd.Flags().BoolVarP(&dbf.CronJob, "cronjob", "j", false,
+		"data backup for the cron time-based job scheduler\nall other flags are ignored")
+	dataCmd.Flags().BoolVarP(&dbf.Compress, "compress", "c", false,
+		fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
 	dataCmd.Flags().UintVarP(&dbf.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
 	dataCmd.Flags().BoolVarP(&dbf.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
 	dataCmd.Flags().BoolVarP(&dbf.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))

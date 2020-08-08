@@ -84,7 +84,7 @@ func Create() error {
 	}
 	defer rowCnt.Close()
 	for rowCnt.Next() {
-		if err := rowCnt.Scan(&count); err != nil {
+		if err = rowCnt.Scan(&count); err != nil {
 			return fmt.Errorf("create count scan: %w", err)
 		}
 	}
@@ -107,10 +107,10 @@ func Create() error {
 			return fmt.Errorf("create rows next: %w", err)
 		}
 		// check for valid createdat and updatedat entries.
-		if _, err := updatedat.Value(); err != nil {
+		if _, err = updatedat.Value(); err != nil {
 			continue
 		}
-		if _, err := createdat.Value(); err != nil {
+		if _, err = createdat.Value(); err != nil {
 			continue
 		}
 		// parse createdat and updatedat to use in the <lastmod> tag.
@@ -158,7 +158,7 @@ func Create() error {
 	return db.Close()
 }
 
-func (v *URLset) staticURLs() (c int, i int) {
+func (v *URLset) staticURLs() (c, i int) {
 	c, i, d := 0, 0, viper.GetString("directory.views")
 	for i, u := range urls {
 		file := filepath.Join(d, u, index)

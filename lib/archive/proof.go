@@ -25,7 +25,7 @@ func Extract(archive, filename, uuid string) error {
 		return fmt.Errorf("extract archive tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
-	if err := Unarchiver(archive, filename, tempDir); err != nil {
+	if err = Unarchiver(archive, filename, tempDir); err != nil {
 		return fmt.Errorf("extract unarchiver: %w", err)
 	}
 	files, err := ioutil.ReadDir(tempDir)

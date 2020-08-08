@@ -1,7 +1,5 @@
 package cmd
 
-// os.Exit() = 10x
-
 import (
 	"bytes"
 	"errors"
@@ -89,10 +87,6 @@ func copyright() string {
 	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
 }
 
-// Commit:  "n/a",
-// Date:    "2020-07-30T14:14:38+10:00",
-// Version: "1.1.0",
-
 func execVersion() {
 	type VerData struct {
 		Version  string
@@ -111,21 +105,22 @@ func execVersion() {
    commit: {{.Commit}}
      date: {{.Date}}
 `
+	const miss = "missing"
 	p := func(s string) string {
 		switch s {
 		case "ok":
 			const padding = 10
 			return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
-		case "missing":
+		case miss:
 			const padding = 12
-			return color.Error.Sprint("missing") + strings.Repeat(" ", padding-len(s))
+			return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
 		case "disconnect":
 			const padding = 10
 			return color.Error.Sprint("disconnected") + strings.Repeat(" ", padding-len(s))
 		}
 		return ""
 	}
-	a, w, d := "missing", "missing", "disconnect"
+	a, w, d := miss, miss, "disconnect"
 	if err := database.ConnectInfo(); err == "" {
 		d = "ok"
 	}

@@ -117,7 +117,7 @@ func NewExt(name, extension string) string {
 // Read returns a list of files within an rar, tar, zip or 7z archive.
 // archive is the absolute path to the archive file named as a uuid
 // filename is the original archive filename and file extension.
-func Read(archive string, filename string) (files []string, err error) {
+func Read(archive, filename string) (files []string, err error) {
 	if files, err = Readr(archive, filename); err != nil {
 		return nil, fmt.Errorf("read readr fallback: %w", err)
 	}

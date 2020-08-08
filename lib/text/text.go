@@ -36,7 +36,8 @@ installation instructions: https://github.com/ansilove/ansilove
 	fmt.Printf("  %s", s)
 	// cap images to the webp limit of 16383 pixels
 	const limit = 16383
-	if w, err := images.Width(o); w > limit {
+	var w int
+	if w, err = images.Width(o); w > limit {
 		if err != nil {
 			return fmt.Errorf("generate: %w", err)
 		}

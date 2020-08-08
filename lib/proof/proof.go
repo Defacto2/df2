@@ -73,8 +73,8 @@ func (request Request) Queries() error {
 	rows, err := db.Query(sqlSelect())
 	if err != nil {
 		return err
-	} else if err := rows.Err(); err != nil {
-		return err
+	} else if err1 := rows.Err(); err1 != nil {
+		return err1
 	}
 	defer rows.Close()
 	columns, err := rows.Columns()
@@ -103,7 +103,7 @@ func (request Request) Queries() error {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err = rows.Scan(scanArgs...); err != nil {
+		if err := rows.Scan(scanArgs...); err != nil {
 			return err
 		}
 		if request.flagSkip(values) {
@@ -119,7 +119,7 @@ func (request Request) Queries() error {
 		s.columns = columns
 		s.overwrite = request.Overwrite
 		s.values = &values
-		if err := r.iterate(s); err != nil {
+		if err := r.iterate(&s); err != nil {
 			return err
 		}
 	}
@@ -128,7 +128,7 @@ func (request Request) Queries() error {
 }
 
 // iterate through each value.
-func (r Record) iterate(s stat) error {
+func (r Record) iterate(s *stat) error {
 	var value string
 	for i, raw := range *s.values {
 		value = val(raw)
@@ -158,7 +158,7 @@ func new(values []sql.RawBytes, path string) Record {
 	return r
 }
 
-func (r Record) printID(s stat) {
+func (r Record) printID(s *stat) {
 	logs.Printcrf("%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.total)),
@@ -170,7 +170,7 @@ func (r Record) printID(s stat) {
 func (request Request) flagSkip(values []sql.RawBytes) (skip bool) {
 	if proofID != "" && request.Overwrite {
 		return false
-	} else if new := database.IsNew(values); !new && !request.AllProofs {
+	} else if n := database.IsNew(values); !n && !request.AllProofs {
 		if proofID != "" {
 			logs.Printf("skip file record id '%s' as it is not new", proofID)
 		}
@@ -242,7 +242,7 @@ func sqlSelect() string {
 	return s + " FROM `files`" + w
 }
 
-func (s stat) summary() {
+func (s *stat) summary() {
 	if proofID != "" && s.total < 1 {
 		return
 	}
@@ -278,7 +278,7 @@ func val(col sql.RawBytes) string {
 	return string(col)
 }
 
-func (r Record) zip(col sql.RawBytes, s stat) error {
+func (r Record) zip(col sql.RawBytes, s *stat) error {
 	if col == nil || s.overwrite {
 		logs.Print(" • ")
 		if u, err := r.fileZipContent(); !u {

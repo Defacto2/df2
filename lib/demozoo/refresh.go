@@ -66,22 +66,25 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 	if err != nil {
 		return true, fmt.Errorf("next refresh fetch: %w", err)
 	}
+	var ok bool
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err := r.confirm(code, status); err != nil {
+	if ok, err = r.confirm(code, status); err != nil {
 		return true, fmt.Errorf("next refresh confirm: %w", err)
 	} else if !ok {
 		return true, nil
 	}
-	if err := r.pouet(api); err != nil {
+	if err = r.pouet(&api); err != nil {
 		return true, fmt.Errorf("next refresh: %w", err)
 	}
-	r.title(api)
-	r.authors(api.Authors())
-	new, err := newRecord(st.count, rec.values)
+	r.title(&api)
+	a := api.Authors()
+	r.authors(&a)
+	var nr Record
+	nr, err = newRecord(st.count, rec.values)
 	if err != nil {
 		return true, fmt.Errorf("next refresh new record 2: %w", err)
 	}
-	if reflect.DeepEqual(new, r) {
+	if reflect.DeepEqual(nr, r) {
 		logs.Printf("• skipped %v", str.Y())
 		return true, nil
 	}
@@ -93,7 +96,7 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 	return false, nil
 }
 
-func (r *Record) authors(a Authors) {
+func (r *Record) authors(a *Authors) {
 	compare := func(n, o []string, i string) bool {
 		if !reflect.DeepEqual(n, o) {
 			logs.Printf("c%s:%s ", i, color.Secondary.Sprint(n))
@@ -105,27 +108,27 @@ func (r *Record) authors(a Authors) {
 		return true
 	}
 	if len(a.art) > 1 {
-		new, old := a.art, r.CreditArt
-		if !compare(new, old, "a") {
-			r.CreditArt = new
+		n, old := a.art, r.CreditArt
+		if !compare(n, old, "a") {
+			r.CreditArt = n
 		}
 	}
 	if len(a.audio) > 1 {
-		new, old := a.audio, r.CreditAudio
-		if !compare(new, old, "m") {
-			r.CreditAudio = new
+		n, old := a.audio, r.CreditAudio
+		if !compare(n, old, "m") {
+			r.CreditAudio = n
 		}
 	}
 	if len(a.code) > 1 {
-		new, old := a.code, r.CreditCode
-		if !compare(new, old, "c") {
-			r.CreditCode = new
+		n, old := a.code, r.CreditCode
+		if !compare(n, old, "c") {
+			r.CreditCode = n
 		}
 	}
 	if len(a.text) > 1 {
-		new, old := a.text, r.CreditText
-		if !compare(new, old, "t") {
-			r.CreditText = new
+		n, old := a.text, r.CreditText
+		if !compare(n, old, "t") {
+			r.CreditText = n
 		}
 	}
 }
@@ -147,7 +150,7 @@ func (r *Record) confirm(code int, status string) (ok bool, err error) {
 	return true, nil
 }
 
-func (r *Record) pouet(api ProductionsAPIv1) error {
+func (r *Record) pouet(api *ProductionsAPIv1) error {
 	pid, _, err := api.PouetID(false)
 	if err != nil {
 		return fmt.Errorf("pouet: %w", err)
@@ -159,7 +162,7 @@ func (r *Record) pouet(api ProductionsAPIv1) error {
 	return nil
 }
 
-func (r *Record) title(api ProductionsAPIv1) {
+func (r *Record) title(api *ProductionsAPIv1) {
 	if r.Section != Magazine.String() && !strings.EqualFold(r.Title, api.Title) {
 		logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
 		r.Title = api.Title

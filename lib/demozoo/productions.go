@@ -117,7 +117,7 @@ func (p *ProductionsAPIv1) Authors() Authors {
 }
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink() (name string, link string) {
+func (p *ProductionsAPIv1) DownloadLink() (name, link string) {
 	const (
 		found       = 200
 		internalErr = 500
@@ -229,7 +229,7 @@ func (p *ProductionsAPIv1) JSON() ([]byte, error) {
 // PouetID returns the ID value used by Pouet's which prod URL syntax
 // and its HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID(ping bool) (id int, statusCode int, err error) {
+func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
 	for _, l := range p.ExternalLinks {
 		if l.LinkClass != cls {
 			continue
@@ -243,7 +243,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id int, statusCode int, err error
 			if err != nil {
 				return 0, 0, fmt.Errorf("pouet id ping: %w", err)
 			}
-			defer resp.Body.Close()
+			resp.Body.Close()
 			return id, resp.StatusCode, nil
 		}
 		return id, 0, nil
@@ -303,11 +303,11 @@ func filename(h http.Header) (filename string) {
 // mutateURL applies fixes to known problematic URLs.
 func mutateURL(u *url.URL) *url.URL {
 	if u == nil {
-		u, err := url.Parse("")
+		s, err := url.Parse("")
 		if err != nil {
 			log.Fatal(fmt.Errorf("mutate url parse: %w", err))
 		}
-		return u
+		return s
 	}
 	switch u.Hostname() {
 	case "files.scene.org":
