@@ -25,7 +25,7 @@ func (m mockedFileInfo) ModTime() time.Time { return m.modtime }
 
 func Test_lastmod(t *testing.T) {
 	const want = "1980-01-01"
-	nyd := time.Date(1980, 1, 1, 12, 00, 00, 0, time.UTC)
+	nyd := time.Date(1980, 1, 1, 12, 0, 0, 0, time.UTC)
 	mfi := mockedFileInfo{
 		modtime: nyd,
 	}
