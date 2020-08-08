@@ -105,13 +105,20 @@ func Connect() *sql.DB {
 		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, "****", 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
-		if err, _ := err.(*mysql.MySQLError); err != nil {
-			log.Fatal(fmt.Errorf("connect database mysql: %w", err))
-		}
-		if err, _ := err.(*net.OpError); err != nil {
-			if strings.Contains(err.Error(), "connect: connection refused") {
+		switch t := err.(type) {
+		case *mysql.MySQLError:
+			log.Fatal(fmt.Errorf("connect mysql error: %w", err))
+		case *net.OpError:
+			switch t.Op {
+			case "dial":
 				log.Fatal(fmt.Errorf("database server %v is either down or the %v %v port is blocked: %w",
 					c.Address, c.Protocol, c.Port, ErrConnect))
+			case "read":
+				log.Fatal(fmt.Errorf("connect database read: %w", err))
+			case "write":
+				log.Fatal(fmt.Errorf("connect database write: %w", err))
+			default:
+				log.Fatal(fmt.Errorf("connect database op: %w", err))
 			}
 		}
 		log.Fatal(fmt.Errorf("connect database: %w", err))
