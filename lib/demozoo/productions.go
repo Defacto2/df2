@@ -111,6 +111,8 @@ func (p *ProductionsAPIv1) Authors() Authors {
 			a.art = append(a.art, n.Nick.Name)
 		case Music:
 			a.audio = append(a.audio, n.Nick.Name)
+		case Magazine:
+			// do nothing.
 		}
 	}
 	return a
