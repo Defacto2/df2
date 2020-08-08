@@ -13,6 +13,11 @@ import (
 	"github.com/Defacto2/df2/lib/str"
 )
 
+const (
+	bbs = "bbs"
+	ftp = "ftp"
+)
+
 var sim bool = true
 
 // Fix any malformed group names found in the database.
@@ -95,7 +100,9 @@ func format(s string) string {
 				}
 			}
 			switch w {
-			case "3d", "ansi", "bbs", "cd", "cgi", "dox", "eu", "ftp", "fx", "hq", "id", "ii", "iii", "iso", "pc", "pcb", "pda", "st", "uk", "us", "uss", "ussr", "vcd", "whq":
+			case "3d", "ansi", bbs, "cd", "cgi", "dox", "eu", ftp, "fx", "hq",
+				"id", "ii", "iii", "iso", "pc", "pcb", "pda", "st", "uk", "us",
+				"uss", "ussr", "vcd", "whq":
 				words[i] = strings.ToUpper(w)
 				continue
 			}

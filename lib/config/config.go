@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
@@ -74,9 +73,8 @@ func Filepath() (dir string) {
 }
 
 func configMissing(suffix string) {
-	cmd := strings.TrimSuffix(cmdPath, suffix) + "create"
 	color.Warn.Println("no config file is in use")
-	logs.Printf("to create:\t%s\n", cmd)
+	logs.Printf("to create:\t%s %s\n", cmdPath, suffix)
 }
 
 // writeConfig saves all configs to a configuration file.
