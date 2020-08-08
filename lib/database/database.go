@@ -14,11 +14,12 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
+
+	"github.com/Defacto2/df2/lib/logs"
 )
 
 // UpdateID is a user id to use with the updatedby column.

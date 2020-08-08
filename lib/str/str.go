@@ -5,8 +5,9 @@ import (
 	"os"
 	"unicode/utf8"
 
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
+
+	"github.com/Defacto2/df2/lib/logs"
 )
 
 // Piped detects whether the program text is being piped to another operating

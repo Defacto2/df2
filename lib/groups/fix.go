@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/gookit/color.v1"
+
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"gopkg.in/gookit/color.v1"
 )
 
 var sim bool = true

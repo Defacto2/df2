@@ -9,9 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
+
+	"github.com/Defacto2/df2/lib/logs"
 )
 
 const (

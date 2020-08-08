@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/spf13/cobra"
+
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/spf13/cobra"
 )
 
 type configFlags struct {

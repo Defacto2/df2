@@ -8,8 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/lib/database"
 	"github.com/spf13/viper"
+
+	"github.com/Defacto2/df2/lib/database"
 )
 
 const (

@@ -12,10 +12,11 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/spf13/viper"
+
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/spf13/viper"
 )
 
 const htm = ".htm"

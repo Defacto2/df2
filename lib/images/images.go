@@ -15,8 +15,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/lib/directories"
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/disintegration/imaging"
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
@@ -26,6 +24,9 @@ import (
 	_ "golang.org/x/image/bmp"  // register BMP decoding
 	_ "golang.org/x/image/tiff" // register TIFF decoding
 	_ "golang.org/x/image/webp" // register WebP decoding
+
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 )
 
 const (

@@ -81,6 +81,7 @@ func port(port int) bool {
 
 // String asks the user for a string configuration value and saves it.
 func String(keep string) string {
+	fmt.Println(keep)
 	// allow multiple word user input
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {

@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gookit/color"
+
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/gookit/color"
 )
 
 // Record of a file item.

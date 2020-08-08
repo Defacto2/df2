@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/lib/database"
-	"github.com/Defacto2/df2/lib/directories"
-	"github.com/Defacto2/df2/lib/logs"
-
 	"github.com/dustin/go-humanize"
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
 	"github.com/gookit/color"
+
+	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 )
 
 type Target int

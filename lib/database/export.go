@@ -12,10 +12,11 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/viper"
+
+	"github.com/Defacto2/df2/lib/logs"
 )
 
 type Table int

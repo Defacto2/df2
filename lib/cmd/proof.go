@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/proof"
-	"github.com/spf13/cobra"
 )
 
 type proofArg struct {

@@ -5,13 +5,14 @@ import (
 	"log"
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/text"
-	"github.com/spf13/cobra"
 )
 
 // fixCmd represents the fix command.

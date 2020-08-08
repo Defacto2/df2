@@ -12,14 +12,15 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gookit/color"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
 	"github.com/Defacto2/df2/lib/version"
-	"github.com/gookit/color"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var simulate bool

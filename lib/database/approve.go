@@ -9,12 +9,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Defacto2/df2/lib/directories"
-	"github.com/Defacto2/df2/lib/logs"
-	"github.com/Defacto2/df2/lib/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
+
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 )
 
 const fm os.FileMode = 0666

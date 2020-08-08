@@ -10,9 +10,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
+
+	"github.com/Defacto2/df2/lib/logs"
 )
 
 // UserAgent is the value of User-Agent request HEADER that that lets servers identify this application.

@@ -3,6 +3,9 @@ package cmd
 import (
 	"log"
 
+	"github.com/gookit/color"
+	"github.com/spf13/cobra"
+
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo"
@@ -11,8 +14,6 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/proof"
 	"github.com/Defacto2/df2/lib/text"
-	"github.com/gookit/color"
-	"github.com/spf13/cobra"
 )
 
 var newCmd = &cobra.Command{

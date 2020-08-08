@@ -6,11 +6,12 @@ import (
 	"os"
 	"path"
 
+	"github.com/gabriel-vasile/mimetype"
+
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/gabriel-vasile/mimetype"
 )
 
 // Extract decompresses and parses an archive.

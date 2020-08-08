@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/lib/database"
 	"github.com/hako/durafmt"
+
+	"github.com/Defacto2/df2/lib/database"
 )
 
 // This will eventually replace https://defacto2.net/welcome/recentfiles
@@ -113,10 +114,10 @@ func List(limit uint, compress bool) error {
 	jsonData = append(jsonData, []byte("\n")...)
 	var out bytes.Buffer
 	if !compress {
-		if err := json.Indent(&out, jsonData, "", "    "); err != nil {
+		if err = json.Indent(&out, jsonData, "", "    "); err != nil {
 			return fmt.Errorf("list json indent: %w", err)
 		}
-	} else if err := json.Compact(&out, jsonData); err != nil {
+	} else if err = json.Compact(&out, jsonData); err != nil {
 		return fmt.Errorf("list json compact: %w", err)
 	}
 	if _, err = out.WriteTo(os.Stdout); err != nil {
@@ -128,15 +129,15 @@ func List(limit uint, compress bool) error {
 	return nil
 }
 
-func sqlRecent(limit uint, includeSoftDeletes bool) (sql string) {
+func sqlRecent(limit uint, includeSoftDeletes bool) (stmt string) {
 	const (
 		sel   = "SELECT id,uuid,record_title,group_brand_for,group_brand_by,filename,date_issued_year,createdat,updatedat FROM files"
 		where = " WHERE deletedat IS NULL"
 		order = " ORDER BY createdat DESC"
 	)
-	sql = sel
+	stmt = sel
 	if includeSoftDeletes {
-		sql += where
+		stmt += where
 	}
-	return sql + order + " LIMIT " + strconv.Itoa(int(limit))
+	return stmt + order + " LIMIT " + strconv.Itoa(int(limit))
 }

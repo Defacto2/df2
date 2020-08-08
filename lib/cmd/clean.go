@@ -5,9 +5,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/Defacto2/df2/lib/assets"
 	"github.com/Defacto2/df2/lib/directories"
-	"github.com/spf13/cobra"
 )
 
 type cleanFlags struct {

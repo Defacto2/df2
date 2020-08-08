@@ -10,10 +10,11 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/Defacto2/df2/lib/logs"
-	"github.com/Defacto2/df2/lib/str"
 	"github.com/dustin/go-humanize"
 	"gopkg.in/gookit/color.v1"
+
+	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 )
 
 type item struct {

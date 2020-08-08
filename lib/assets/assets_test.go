@@ -7,9 +7,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Defacto2/df2/lib/archive"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gookit/color"
+
+	"github.com/Defacto2/df2/lib/archive"
 )
 
 func init() {

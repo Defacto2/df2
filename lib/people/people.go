@@ -12,12 +12,13 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/campoy/unique"
+	"github.com/spf13/viper"
+
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/campoy/unique"
-	"github.com/spf13/viper"
 )
 
 // Request flags for people functions.
