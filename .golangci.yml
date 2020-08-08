@@ -111,7 +111,7 @@ linters:
     - exhaustive
     - exportloopref
     - gochecknoinits
-    - gci
+    #- gci # breaks with blank named imports
     #- gochecknoglobals
     - goconst
     - gocritic
@@ -168,9 +168,9 @@ issues:
     - path: main\.go
       linters:
         - gochecknoglobals
-    - path: lib/config/config\.go
+    - path: lib/groups/groups\.go
       linters:
-        - maligned
+        - lll
     - path: lib/cmd/
       linters:
         - gochecknoglobals
@@ -185,12 +185,9 @@ issues:
         - scopelint
         - gochecknoglobals
         - unparam
-    - path: filesystem/read\.go
-      linters:
-        - unused
     # Exclude known linters from partially hard-vendored code,
     # which is impossible to exclude via "nolint" comments.
-    - path: info/info\.go
+    - path: demozoo/demozoo\.go
       text: "weak cryptographic primitive"
       linters:
         - gosec
@@ -198,6 +195,9 @@ issues:
     - linters:
         - gosec
       text: "G203:"
+    - linters:
+        - gosec
+      text: "G306:"
 run:
   skip-dirs:
     - internal
