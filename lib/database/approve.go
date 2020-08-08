@@ -43,16 +43,16 @@ func copy(name, dest string) (written int64, err error) {
 		return 0, fmt.Errorf("copy open %s: %w", name, err)
 	}
 	defer src.Close()
-	new, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, fm)
+	dst, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, fm)
 	if err != nil {
 		return 0, fmt.Errorf("copy open new %s: %w", dest, err)
 	}
-	defer new.Close()
-	written, err = io.Copy(new, src)
+	defer dst.Close()
+	written, err = io.Copy(dst, src)
 	if err != nil {
 		return 0, fmt.Errorf("copy io: %w", err)
 	}
-	return written, new.Close()
+	return written, dst.Close()
 }
 
 func printVal(i interface{}) {
@@ -99,7 +99,7 @@ func queries() error {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
-		if new := IsNew(values); !new {
+		if n := IsNew(values); !n {
 			continue
 		}
 		r.uuid = string(values[1])
@@ -139,7 +139,7 @@ type record struct {
 	hashWeak   string
 }
 
-func (r record) String() string {
+func (r *record) String() string {
 	status := str.Y()
 	if !r.save {
 		status = str.X()
@@ -149,7 +149,7 @@ func (r record) String() string {
 }
 
 // approve sets the record to be publically viewable.
-func (r record) approve() error {
+func (r *record) approve() error {
 	db := Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
@@ -173,7 +173,7 @@ func (r *record) autoID(data string) (id uint) {
 	return id
 }
 
-func (r record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
+func (r *record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
 	if !r.checkFileName(string(values[4])) {
 		printVal("!filename")
 		return false
@@ -219,7 +219,7 @@ func (r record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
 	return true
 }
 
-func (r record) checkDownload(path string) (ok bool) {
+func (r *record) checkDownload(path string) (ok bool) {
 	file := filepath.Join(fmt.Sprint(path), r.uuid)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return r.recoverDownload(path)
@@ -259,7 +259,7 @@ func (r *record) checkGroups(g1, g2 string) (ok bool) {
 	if r.groupBy == "" && r.groupFor == "" {
 		return false
 	}
-	if strings.ToLower(r.groupBy) == changeme || strings.ToLower(r.groupFor) == changeme {
+	if strings.EqualFold(r.groupBy, changeme) || strings.EqualFold(r.groupFor, changeme) {
 		return false
 	}
 	return true
@@ -275,7 +275,7 @@ func (r *record) checkHash(h1, h2 string) (ok bool) {
 	return true
 }
 
-func (r record) checkImage(path string) (ok bool) {
+func (r *record) checkImage(path string) (ok bool) {
 	if _, err := os.Stat(r.imagePath(path)); os.IsNotExist(err) {
 		return false
 	}
@@ -292,11 +292,11 @@ func (r *record) checkTags(t1, t2 string) (ok bool) {
 	return true
 }
 
-func (r record) imagePath(path string) string {
+func (r *record) imagePath(path string) string {
 	return filepath.Join(fmt.Sprint(path), r.uuid+png)
 }
 
-func (r record) recoverDownload(path string) (ok bool) {
+func (r *record) recoverDownload(path string) (ok bool) {
 	src := viper.GetString("directory.incoming.files")
 	if src == "" {
 		return false
@@ -321,7 +321,7 @@ func (r record) recoverDownload(path string) (ok bool) {
 	return true
 }
 
-func (r record) summary(rows int) {
+func (r *record) summary(rows int) {
 	t := fmt.Sprintf("Total items handled: %d", r.c)
 	d := fmt.Sprintf("Database records fetched: %d", rows)
 	if rows <= r.c {

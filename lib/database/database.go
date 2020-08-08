@@ -15,11 +15,10 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/gookit/color"
-	"github.com/spf13/viper"
-
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
+	"github.com/gookit/color"
+	"github.com/spf13/viper"
 )
 
 // UpdateID is a user id to use with the updatedby column.
@@ -253,11 +252,11 @@ func IsNew(b []sql.RawBytes) bool {
 	if b[2] == nil {
 		return false
 	}
-	new, err := valid(b[2], b[3])
+	n, err := valid(b[2], b[3])
 	if err != nil {
 		logs.Log(err)
 	}
-	return new
+	return n
 }
 
 // IsUUID reports whether string is a universal unique record id.
@@ -284,7 +283,8 @@ func LookupID(s string) (id uint, err error) {
 	db := Connect()
 	defer db.Close()
 	// auto increment numeric ids
-	if v, err := strconv.Atoi(s); err == nil {
+	var v int
+	if v, err = strconv.Atoi(s); err == nil {
 		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
 		if err = db.QueryRow("SELECT EXISTS(SELECT * FROM files WHERE id=?)", v).Scan(&id); err != nil {
 			return 0, fmt.Errorf("lookupid query row: %w", err)
@@ -306,8 +306,9 @@ func LookupFile(s string) (name string, err error) {
 	db := Connect()
 	defer db.Close()
 	var n sql.NullString
-	if v, err := strconv.Atoi(s); err == nil {
-		err := db.QueryRow("SELECT filename FROM files WHERE id=?", v).Scan(&n)
+	var v int
+	if v, err = strconv.Atoi(s); err == nil {
+		err = db.QueryRow("SELECT filename FROM files WHERE id=?", v).Scan(&n)
 		if err != nil {
 			return "", fmt.Errorf("lookup file by id queryrow %q: %w", s, err)
 		}
@@ -357,7 +358,7 @@ func ObfuscateParam(param string) string {
 }
 
 // Rename replaces all instances of the group name with a new group name.
-func Rename(new, group string) (count int64, err error) {
+func Rename(replacement, group string) (count int64, err error) {
 	db := Connect()
 	defer db.Close()
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?, group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
@@ -365,7 +366,7 @@ func Rename(new, group string) (count int64, err error) {
 		return 0, fmt.Errorf("rename group statement: %w", err)
 	}
 	defer stmt.Close()
-	res, err := stmt.Exec(new, new, group, group)
+	res, err := stmt.Exec(replacement, replacement, group, group)
 	if err != nil {
 		return 0, fmt.Errorf("rename group exec: %w", err)
 	}

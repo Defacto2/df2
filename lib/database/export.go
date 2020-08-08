@@ -118,7 +118,7 @@ type Flags struct {
 
 // ExportCronJob is intended for an operating system time-based job scheduler.
 // It creates both create and update types exports for the files table.
-func (f Flags) ExportCronJob() error {
+func (f *Flags) ExportCronJob() error {
 	f.Compress, f.Limit, f.Table = true, 0, Files
 	start := time.Now()
 	const delta = 2
@@ -127,12 +127,12 @@ func (f Flags) ExportCronJob() error {
 		var wg sync.WaitGroup
 		var e1, e2 error
 		wg.Add(delta)
-		go func(f Flags) {
+		go func(f *Flags) {
 			defer wg.Done()
 			f.Method = Create
 			e1 = f.ExportTable()
 		}(f)
-		go func(f Flags) {
+		go func(f *Flags) {
 			defer wg.Done()
 			f.Method = Insert
 			e2 = f.ExportTable()
@@ -159,7 +159,7 @@ func (f Flags) ExportCronJob() error {
 }
 
 // ExportDB saves or prints a MySQL 5.7 compatible SQL import database statement.
-func (f Flags) ExportDB() error {
+func (f *Flags) ExportDB() error {
 	start := time.Now()
 	if err := f.method(); err != nil {
 		return fmt.Errorf("export table: %w", err)
@@ -177,7 +177,7 @@ func (f Flags) ExportDB() error {
 }
 
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
-func (f Flags) ExportTable() error {
+func (f *Flags) ExportTable() error {
 	if err := f.method(); err != nil {
 		return fmt.Errorf("export table: %w", err)
 	}
@@ -204,7 +204,7 @@ func (f Flags) ExportTable() error {
 }
 
 // create makes the CREATE template variable value.
-func (f Flags) create() (value string) {
+func (f *Flags) create() (value string) {
 	if f.Method != Create {
 		return ""
 	}
@@ -222,7 +222,7 @@ func (f Flags) create() (value string) {
 }
 
 // fileName to use when writing SQL to a file.
-func (f Flags) fileName() string {
+func (f *Flags) fileName() string {
 	l, y, t := "", "export", "table"
 	if f.Method == Create || f.Method == Insert {
 		y = f.Method.String()
@@ -249,7 +249,7 @@ func (f *Flags) method() error {
 }
 
 // queryDB requests columns and values of f.Table to create an INSERT INTO ? VALUES ? SQL statement.
-func (f Flags) queryDB() (*bytes.Buffer, error) {
+func (f *Flags) queryDB() (*bytes.Buffer, error) {
 	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query db table: %w", err)
 	}
@@ -284,7 +284,7 @@ func (f Flags) queryDB() (*bytes.Buffer, error) {
 }
 
 // query generates the SQL import table statement.
-func (f Flags) queryTable() (*bytes.Buffer, error) {
+func (f *Flags) queryTable() (*bytes.Buffer, error) {
 	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query table check: %w", err)
 	}
@@ -316,7 +316,7 @@ func (f Flags) queryTable() (*bytes.Buffer, error) {
 }
 
 // queryTables generates the SQL import database and tables statement.
-func (f Flags) queryTables() (buf *bytes.Buffer, err error) {
+func (f *Flags) queryTables() (buf *bytes.Buffer, err error) {
 	const delta = 4
 	var buf1, buf2, buf3, buf4 *bytes.Buffer
 	switch f.Parallel {
@@ -324,19 +324,19 @@ func (f Flags) queryTables() (buf *bytes.Buffer, err error) {
 		var wg sync.WaitGroup
 		var e1, e2, e3, e4 error
 		wg.Add(delta)
-		go func(f Flags) {
+		go func(f *Flags) {
 			defer wg.Done()
 			buf1, e1 = f.reqDB(Files)
 		}(f)
-		go func(f Flags) {
+		go func(f *Flags) {
 			defer wg.Done()
 			buf2, e2 = f.reqDB(Groups)
 		}(f)
-		go func(f Flags) {
+		go func(f *Flags) {
 			defer wg.Done()
 			buf3, e3 = f.reqDB(Netresources)
 		}(f)
-		go func(f Flags) {
+		go func(f *Flags) {
 			defer wg.Done()
 			buf4, e4 = f.reqDB(Users)
 		}(f)
@@ -386,7 +386,7 @@ func (f Flags) queryTables() (buf *bytes.Buffer, err error) {
 }
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
-func (f Flags) reqDB(t Table) (*bytes.Buffer, error) {
+func (f *Flags) reqDB(t Table) (*bytes.Buffer, error) {
 	if f.Table.check() != nil {
 		return nil, fmt.Errorf("reqdb table: %w", ErrNoTable)
 	}
@@ -403,7 +403,7 @@ func (f Flags) reqDB(t Table) (*bytes.Buffer, error) {
 }
 
 // ver pads the df2 tool version value for use in templates.
-func (f Flags) ver() string {
+func (f *Flags) ver() string {
 	const maxChars = 9
 	pad := maxChars - len(f.Version)
 	if pad < 0 {
@@ -413,7 +413,7 @@ func (f Flags) ver() string {
 }
 
 // write the buffer to stdout, an SQL file or a compressed SQL file.
-func (f Flags) write(buf *bytes.Buffer) error {
+func (f *Flags) write(buf *bytes.Buffer) error {
 	name := path.Join(viper.GetString("directory.sql"), f.fileName())
 	switch {
 	case f.Compress:
@@ -467,19 +467,37 @@ func columns(t Table) (columns []string, err error) {
 	switch t {
 	case Files:
 		rows, err = db.Query("SELECT * FROM files LIMIT 0")
+		if err != nil {
+			return nil, fmt.Errorf("columns files query: %w", err)
+		} else if err = rows.Err(); err != nil {
+			return nil, fmt.Errorf("columns files query rows: %w", rows.Err())
+		}
+		defer rows.Close()
 	case Groups:
 		rows, err = db.Query("SELECT * FROM groups LIMIT 0")
+		if err != nil {
+			return nil, fmt.Errorf("columns groups query: %w", err)
+		} else if err = rows.Err(); err != nil {
+			return nil, fmt.Errorf("columns groups query rows: %w", rows.Err())
+		}
+		defer rows.Close()
 	case Netresources:
 		rows, err = db.Query("SELECT * FROM netresources LIMIT 0")
+		if err != nil {
+			return nil, fmt.Errorf("columns netresources query: %w", err)
+		} else if err = rows.Err(); err != nil {
+			return nil, fmt.Errorf("columns netresources query rows: %w", rows.Err())
+		}
+		defer rows.Close()
 	case Users:
 		rows, err = db.Query("SELECT * FROM users LIMIT 0")
+		if err != nil {
+			return nil, fmt.Errorf("columns users query: %w", err)
+		} else if err = rows.Err(); err != nil {
+			return nil, fmt.Errorf("columns users query rows: %w", rows.Err())
+		}
+		defer rows.Close()
 	}
-	if err != nil {
-		return nil, fmt.Errorf("columns query: %w", err)
-	} else if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("columns query rows: %w", rows.Err())
-	}
-	defer rows.Close()
 	columns, err = rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("columns rows: %w", err)
@@ -519,31 +537,73 @@ func rows(t Table, limit int) (values []string, err error) {
 		switch t {
 		case Files:
 			rows, err = db.Query("SELECT * FROM files")
+			if err != nil {
+				return nil, fmt.Errorf("rows files query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows files query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		case Groups:
 			rows, err = db.Query("SELECT * FROM groups")
+			if err != nil {
+				return nil, fmt.Errorf("rows groups query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows groups query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		case Netresources:
 			rows, err = db.Query("SELECT * FROM netresources")
+			if err != nil {
+				return nil, fmt.Errorf("rows netresources query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows netresources query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		case Users:
 			rows, err = db.Query("SELECT * FROM users")
+			if err != nil {
+				return nil, fmt.Errorf("rows users query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		}
 	} else {
 		switch t {
 		case Files:
 			rows, err = db.Query("SELECT * FROM files LIMIT ?", limit)
+			if err != nil {
+				return nil, fmt.Errorf("rows limit files query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows limit files query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		case Groups:
 			rows, err = db.Query("SELECT * FROM groups LIMIT ?", limit)
+			if err != nil {
+				return nil, fmt.Errorf("rows limit groups query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows limit groups query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		case Netresources:
 			rows, err = db.Query("SELECT * FROM netresources LIMIT ?", limit)
+			if err != nil {
+				return nil, fmt.Errorf("rows limit netresources query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows limit netresources query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		case Users:
 			rows, err = db.Query("SELECT * FROM users LIMIT ?", limit)
+			if err != nil {
+				return nil, fmt.Errorf("rows limit users query: %w", err)
+			} else if err = rows.Err(); err != nil {
+				return nil, fmt.Errorf("rows limit users query rows: %w", rows.Err())
+			}
+			defer rows.Close()
 		}
 	}
-	if err != nil {
-		return nil, fmt.Errorf("rows query: %w", err)
-	} else if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows query rows: %w", rows.Err())
-	}
-	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("rows columns: %w", err)
@@ -559,7 +619,7 @@ func rows(t Table, limit int) (values []string, err error) {
 	}
 	for rows.Next() {
 		result := make([]string, len(columns))
-		if err := rows.Scan(dest...); err != nil {
+		if err = rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("rows next: %w", err)
 		}
 		for i := range vals {
@@ -583,6 +643,9 @@ func tmplFunc() template.FuncMap {
 
 // utc returns the current UTC date and time in a MySQL timestamp format.
 func utc() string {
-	l, _ := time.LoadLocation("UTC")
+	l, err := time.LoadLocation("UTC")
+	if err != nil {
+		return fmt.Sprintf("utc error: %s", err)
+	}
 	return time.Now().In(l).Format(timestamp)
 }
