@@ -82,15 +82,3 @@ To change the configuration.
 ```bash
 df2 config edit
 ```
-
-#### Updating dependencies
-
-```bash
-go get -u=patch ./... # Patch update all (minor)
-
-go get -u ./... # Update all (major)
-
-go list -u -m all # List all possible upgrades
-
-go mod tidy # clean go.mod by removing all unused dependencies
-```
