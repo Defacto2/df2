@@ -15,14 +15,20 @@ func Test_randStringBytes(t *testing.T) {
 		args args
 		want int
 	}{
-		{"", args{0}, 0},
-		{"", args{1}, 1},
-		{"", args{10}, 10},
+		{"zero", args{0}, 0},
+		{"one", args{1}, 1},
+		{"ten", args{10}, 10},
+		{"sixty three", args{63}, 63},
+		{"sixty four", args{64}, 64},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := randStringBytes(tt.args.n); len(got) != tt.want {
-				t.Errorf("randStringBytes() = %v, want %v", len(got), tt.want)
+			got, err := randStringBytes(tt.args.n)
+			if len(got) != tt.want {
+				t.Errorf("randStringBytes() = %v, want %v\n%s", len(got), tt.want, got)
+			}
+			if err != nil {
+				t.Error(err)
 			}
 		})
 	}

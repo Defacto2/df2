@@ -1,11 +1,12 @@
 package directories
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
+	m "math/rand"
 	"os"
 	"path"
 	"reflect"
@@ -139,8 +140,12 @@ func createHolderFile(dir string, size int, prefix uint) error {
 	if _, err := os.Stat(fn); err == nil {
 		return nil // don't overwrite existing files
 	}
-	rand.Seed(time.Now().UnixNano())
-	text := []byte(randStringBytes(size))
+	m.Seed(time.Now().UnixNano())
+	r, err := randStringBytes(size)
+	if err != nil {
+		return fmt.Errorf("create holder file: %w", err)
+	}
+	text := []byte(r)
 	if err := ioutil.WriteFile(fn, text, 0644); err != nil {
 		return fmt.Errorf("write create holder file %q: %w", fn, err)
 	}
@@ -168,10 +173,14 @@ func createPlaceHolders() error {
 }
 
 // randStringBytes generates a random string of n x characters.
-func randStringBytes(n int) string {
+func randStringBytes(n int) (string, error) {
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = random[rand.Int63()%int64(len(random))]
+		p, err := rand.Prime(rand.Reader, len(random))
+		if err != nil {
+			return "", fmt.Errorf("random string bytes %d: %w", n, err)
+		}
+		b[i] = random[p.Uint64()%uint64(len(random))]
 	}
-	return string(b)
+	return string(b), nil
 }
