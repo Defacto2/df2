@@ -11,13 +11,6 @@ import (
 	"golang.org/x/text/transform"
 )
 
-func extractr(archive, filename, tempDir string) error {
-	if err := Unarchiver(archive, filename, tempDir); err != nil {
-		return fmt.Errorf("extractr: %w", err)
-	}
-	return nil
-}
-
 // Readr returns a list of files within an rar, tar or zip archive.
 // It has offers compatibility with compression formats.
 func Readr(archive, filename string) (files []string, err error) {

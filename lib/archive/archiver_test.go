@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -12,32 +11,6 @@ import (
 )
 
 var tmp = os.TempDir()
-
-func Test_extractr(t *testing.T) {
-	type args struct {
-		archive  string
-		filename string
-		tempDir  string
-	}
-	zip := filepath.Join(tmp, "zip")
-	os.RemoveAll(filepath.Join(zip))
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"empty", args{"", "", ""}, true},
-		{"zip", args{testDir("demozoo/test.zip"), "test.zip", zip}, false},
-		{"7z", args{testDir("demozoo/test.7z"), "test.7z", ""}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := extractr(tt.args.archive, tt.args.filename, tt.args.tempDir); (err != nil) != tt.wantErr {
-				t.Errorf("extractr() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
 func TestReadr(t *testing.T) {
 	type args struct {
@@ -72,6 +45,8 @@ func TestUnarchiver(t *testing.T) {
 	var (
 		src = testDir("demozoo/test.zip")
 		fn  = "test.zip"
+		z7  = testDir("demozoo/test.7z")
+		zfn = "test.7z"
 	)
 	if err != nil {
 		t.Error(err)
@@ -91,6 +66,7 @@ func TestUnarchiver(t *testing.T) {
 		{"missing fn", args{src, "", tempDir}, true},
 		{"missing dest", args{src, fn, ""}, true},
 		{"okay", args{src, fn, tempDir}, false},
+		{"7z", args{z7, zfn, tempDir}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
