@@ -537,74 +537,122 @@ func rows(t Table, limit int) (vals []string, err error) {
 	if limit < 0 {
 		switch t {
 		case Files:
-			rows, err = db.Query("SELECT * FROM files")
-			if err != nil {
-				return nil, fmt.Errorf("rows files query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows files query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return allFiles(db)
 		case Groups:
-			rows, err = db.Query("SELECT * FROM groups")
-			if err != nil {
-				return nil, fmt.Errorf("rows groups query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows groups query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return allGroups(db)
 		case Netresources:
-			rows, err = db.Query("SELECT * FROM netresources")
-			if err != nil {
-				return nil, fmt.Errorf("rows netresources query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows netresources query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return allNetresources(db)
 		case Users:
-			rows, err = db.Query("SELECT * FROM users")
-			if err != nil {
-				return nil, fmt.Errorf("rows users query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return allUsers(db)
 		}
 	} else {
 		switch t {
 		case Files:
-			rows, err = db.Query("SELECT * FROM files LIMIT ?", limit)
-			if err != nil {
-				return nil, fmt.Errorf("rows limit files query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows limit files query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return limitFiles(limit, db)
 		case Groups:
-			rows, err = db.Query("SELECT * FROM groups LIMIT ?", limit)
-			if err != nil {
-				return nil, fmt.Errorf("rows limit groups query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows limit groups query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return limitGroups(limit, db)
 		case Netresources:
-			rows, err = db.Query("SELECT * FROM netresources LIMIT ?", limit)
-			if err != nil {
-				return nil, fmt.Errorf("rows limit netresources query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows limit netresources query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return limitNetresources(limit, db)
 		case Users:
-			rows, err = db.Query("SELECT * FROM users LIMIT ?", limit)
-			if err != nil {
-				return nil, fmt.Errorf("rows limit users query: %w", err)
-			} else if err = rows.Err(); err != nil {
-				return nil, fmt.Errorf("rows limit users query rows: %w", rows.Err())
-			}
-			defer rows.Close()
+			return limitUsers(limit, db)
 		}
 	}
+	return values(rows)
+}
+
+func allFiles(db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM files")
+	if err != nil {
+		return nil, fmt.Errorf("rows files query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows files query rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	return values(rows)
+}
+
+func allGroups(db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM groups")
+	if err != nil {
+		return nil, fmt.Errorf("rows groups query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows groups query rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	return values(rows)
+}
+
+func allNetresources(db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM users")
+	if err != nil {
+		return nil, fmt.Errorf("rows users query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	return values(rows)
+}
+
+func allUsers(db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM users")
+	if err != nil {
+		return nil, fmt.Errorf("rows users query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	return values(rows)
+}
+
+func limitFiles(limit int, db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM files LIMIT ?", limit)
+	if err != nil {
+		return nil, fmt.Errorf("rows limit files query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows limit files query rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	return values(rows)
+}
+
+func limitGroups(limit int, db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM groups LIMIT ?", limit)
+	if err != nil {
+		return nil, fmt.Errorf("rows limit groups query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows limit groups query rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	return values(rows)
+}
+
+func limitNetresources(limit int, db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM netresources LIMIT ?", limit)
+	if err != nil {
+		return nil, fmt.Errorf("rows limit netresources query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows limit netresources query rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	return values(rows)
+}
+
+func limitUsers(limit int, db *sql.DB) (v []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT * FROM users LIMIT ?", limit)
+	if err != nil {
+		return nil, fmt.Errorf("rows limit users query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows limit users query rows: %w", rows.Err())
+	}
+	defer rows.Close()
 	return values(rows)
 }
 
