@@ -208,6 +208,7 @@ func (p *ProductionsAPIv1) Downloads() {
 }
 
 // JSON returns the production API results as tabbed JSON.
+// This is used by internal/generator.go.
 func (p *ProductionsAPIv1) JSON() ([]byte, error) {
 	js, err := json.MarshalIndent(&p, "", "  ")
 	if err != nil {

@@ -139,6 +139,7 @@ func LinkDownload(name, link string) (http.Header, error) {
 }
 
 // LinkDownloadQ quietly downloads the URL and saves it to the named file.
+// Not used.
 func LinkDownloadQ(name, link string) (http.Header, error) {
 	out, err := os.Create(name)
 	if err != nil {
