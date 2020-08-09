@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
-	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
 	gap "github.com/muesli/go-app-paths"
 	"github.com/nickalie/go-webpbin"
@@ -314,12 +313,4 @@ func vendorPath() string {
 		return path.Join(h, ".vendor/df2")
 	}
 	return fp
-}
-
-func filesize(name string) string {
-	f, err := os.Stat(name)
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%v", humanize.Bytes(uint64(f.Size())))
 }
