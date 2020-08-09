@@ -188,7 +188,9 @@ func TestLinkPing(t *testing.T) {
 				t.Errorf("LinkPing() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			defer p.Body.Close()
+			if err == nil {
+				p.Body.Close()
+			}
 		})
 	}
 }
