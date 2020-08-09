@@ -104,7 +104,7 @@ func Test_backup(t *testing.T) {
 	d.Backup = os.TempDir() // overwrite /opt/assets/backups
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := backup(tt.args.s, d, tt.args.list); (err != nil) != tt.wantErr {
+			if err := backup(tt.args.s, &d, tt.args.list); (err != nil) != tt.wantErr {
 				t.Errorf("backup() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -133,7 +133,7 @@ func Test_clean(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := clean(tt.args.t, d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := clean(tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("clean() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -180,7 +180,7 @@ func createTempDir() (sum int64, dir string, err error) {
 func Test_ignoreList(t *testing.T) {
 	var want struct{}
 	d := directories.Init(false)
-	if got := ignoreList("", d)["blank.png"]; !reflect.DeepEqual(got, want) {
+	if got := ignoreList("", &d)["blank.png"]; !reflect.DeepEqual(got, want) {
 		t.Errorf("ignoreList() = %v, want %v", got, want)
 	}
 }
@@ -198,7 +198,7 @@ func Test_targets(t *testing.T) {
 	d := directories.Init(false)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := targets(tt.target, d); len(got) != tt.want {
+			if got := targets(tt.target, &d); len(got) != tt.want {
 				t.Errorf("targets() = %v, want %v", got, tt.want)
 			}
 		})
