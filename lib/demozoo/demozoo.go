@@ -81,7 +81,6 @@ const selectSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesi
 	"`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 
 var (
-	ErrRecordCnt  = errors.New("unexpected number of record values")
 	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
 	ErrFilePath   = errors.New("filepath requirement cannot be empty")
 	ErrFilename   = errors.New("filename requirement cannot be empty")
