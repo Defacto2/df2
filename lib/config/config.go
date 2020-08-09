@@ -36,7 +36,6 @@ type settings struct {
 }
 
 var (
-	scope = gap.NewScope(gap.User, logs.GapUser)
 	// Config settings.
 	Config = settings{
 		Name:   filename,
@@ -61,7 +60,7 @@ func Check() {
 
 // Filepath is the absolute path and filename of the configuration file.
 func Filepath() (dir string) {
-	dir, err := scope.ConfigPath(filename)
+	dir, err := gap.NewScope(gap.User, logs.GapUser).ConfigPath(filename)
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {
