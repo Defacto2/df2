@@ -111,7 +111,6 @@ linters:
     - exhaustive
     - exportloopref
     - gochecknoinits
-    #- gci # breaks with blank named imports
     #- gochecknoglobals
     - goconst
     - gocritic
@@ -143,12 +142,13 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    #- unused
     - varcheck
     - whitespace
     # run manually using cli:
+    # - gci # breaks with blank named imports
     # - gocognit
     # - gocyclo
+    # - unused # some false positives
     # don't enable:
     # - dupl # this takes too long
     # - dogsled
