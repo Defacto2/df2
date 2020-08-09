@@ -18,18 +18,15 @@ const (
 	ftp = "ftp"
 )
 
-var sim bool = true
-
 // Fix any malformed group names found in the database.
 func Fix(simulate bool) error {
-	sim = simulate
 	names, _, err := list("")
 	if err != nil {
 		return err
 	}
 	c, start := 0, time.Now()
 	for _, name := range names {
-		if r := cleanGroup(name); r {
+		if r := cleanGroup(name, simulate); r {
 			c++
 		}
 	}
@@ -50,7 +47,7 @@ func Fix(simulate bool) error {
 }
 
 // cleanGroup fixes and saves a malformed group name.
-func cleanGroup(g string) (ok bool) {
+func cleanGroup(g string, sim bool) (ok bool) {
 	f := cleanString(g)
 	if f == g {
 		return false

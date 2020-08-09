@@ -16,10 +16,9 @@ func Test_cleanGroup(t *testing.T) {
 		{"d_f", true},
 		{"D2", false},
 	}
-	sim = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := cleanGroup(tt.name); gotOk != tt.wantOk {
+			if gotOk := cleanGroup(tt.name, false); gotOk != tt.wantOk {
 				t.Errorf("cleanGroup() = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
