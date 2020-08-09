@@ -38,7 +38,6 @@ type (
 
 var (
 	ignore files
-	paths  []string // a collection of directories
 )
 
 var (
@@ -160,7 +159,8 @@ func backupParts(d *directories.Dir) (*directories.Dir, part) {
 }
 
 func clean(t Target, d *directories.Dir, remove, human bool) error {
-	if ts := targets(t, d); ts == nil {
+	paths := targets(t, d)
+	if paths == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
 	fmt.Printf("mess: %+v", d)
@@ -231,7 +231,7 @@ func targets(t Target, d *directories.Dir) []string {
 		reset := directories.Init(false)
 		d = &reset
 	}
-	paths = nil
+	var paths []string
 	switch t {
 	case All:
 		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400, d.Img150)
