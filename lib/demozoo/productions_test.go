@@ -220,26 +220,6 @@ func TestProductionsAPIv1_Download(t *testing.T) {
 	}
 }
 
-func TestProductionsAPIv1_Groups(t *testing.T) {
-	tests := []struct {
-		name string
-		p    ProductionsAPIv1
-		want [2]string
-	}{
-		{"empty", ProductionsAPIv1{}, [2]string{}},
-		{"record 1", example1, [2]string{"Aardbei", ""}},
-		{"record 2", example2, [2]string{"", ""}},
-		{"record 3", example3, [2]string{"THG FX", ""}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Groups(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProductionsAPIv1.Groups() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestProductionsAPIv1_PouetID(t *testing.T) {
 	tests := []struct {
 		name           string
