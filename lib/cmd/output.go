@@ -81,7 +81,7 @@ func init() {
 	groupCmd.Flags().StringVarP(&gpf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	groupCmd.Flags().BoolVarP(&gpf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
-	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Roles)
+	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Roles())
 	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	outputCmd.AddCommand(recentCmd)
 	recentCmd.Flags().BoolVarP(&rcf.compress, "compress", "c", false, "remove insignificant whitespace characters")

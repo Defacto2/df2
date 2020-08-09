@@ -64,7 +64,7 @@ func TestFilters(t *testing.T) {
 		name string
 		want []string
 	}{
-		{"", strings.Split(Roles, ",")},
+		{"", strings.Split(Roles(), ",")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

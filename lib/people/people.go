@@ -70,17 +70,35 @@ func (r Role) String() string {
 	}
 }
 
+var (
+	ErrFilter = errors.New("invalid filter used")
+	ErrRole   = errors.New("unknown role")
+)
+
+// DataList prints an auto-complete list for HTML input elements.
+func DataList(filename string, r Request) error {
+	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
+	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
+	if err := parse(filename, tpl, r); err != nil {
+		return fmt.Errorf("datalist: %w", err)
+	}
+	return nil
+}
+
 // Filters is a Role slice for use with the Cobra filterFlag.
 func Filters() []string {
 	return []string{Artists.String(), Coders.String(), Musicians.String(), Writers.String()}
 }
 
-var Roles = strings.Join(Filters(), ",")
-
-var (
-	ErrFilter = errors.New("invalid filter used")
-	ErrRole   = errors.New("unknown role")
-)
+// HTML prints a snippet listing links to each person.
+func HTML(filename string, r Request) error {
+	// <h2><a href="/p/ben">Ben</a></h2><hr>
+	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
+	if err := parse(filename, tpl, r); err != nil {
+		return fmt.Errorf("html: %w", err)
+	}
+	return nil
+}
 
 // List people filtered by a role.
 func List(role Role) (people []string, total int, err error) {
@@ -116,24 +134,44 @@ func List(role Role) (people []string, total int, err error) {
 	return people, total, nil
 }
 
-// DataList prints an auto-complete list for HTML input elements.
-func DataList(filename string, r Request) error {
-	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
-	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
-	if err := parse(filename, tpl, r); err != nil {
-		return fmt.Errorf("datalist: %w", err)
+// Print lists people filtered by a role and summaries the results.
+func Print(r Request) error {
+	ppl, total, err := List(roles(r.Filter))
+	if err != nil {
+		return fmt.Errorf("print request: %w", err)
 	}
+	logs.Println(total, "matching", r.Filter, "records found")
+	a := make([]string, total)
+	for i, p := range ppl {
+		if r.Progress {
+			str.Progress(r.Filter, i+1, total)
+		}
+		// role
+		x := strings.Split(p, ",")
+		a = append(a, x...)
+	}
+	// title and sort names
+	for i := range a {
+		if r.Progress {
+			str.Progress(r.Filter, i+1, total)
+		}
+		a[i] = strings.Title(a[i])
+	}
+	sort.Strings(a)
+	// remove duplicates
+	less := func(i, j int) bool { return a[i] < a[j] }
+	unique.Slice(&a, less)
+	// remove empty val
+	if a[0] == "" {
+		a = a[1:]
+	}
+	fmt.Printf("\n%s\nTotal authors %d\n", strings.Join(a, ", "), len(a))
 	return nil
 }
 
-// HTML prints a snippet listing links to each person.
-func HTML(filename string, r Request) error {
-	// <h2><a href="/p/ben">Ben</a></h2><hr>
-	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
-	if err := parse(filename, tpl, r); err != nil {
-		return fmt.Errorf("html: %w", err)
-	}
-	return nil
+// Roles or jobs of people.
+func Roles() string {
+	return strings.Join(Filters(), ",")
 }
 
 func parse(filename, tpl string, r Request) error {
@@ -203,57 +241,6 @@ func parse(filename, tpl string, r Request) error {
 	return nil
 }
 
-// Print lists people filtered by a role and summaries the results.
-func Print(r Request) error {
-	ppl, total, err := List(roles(r.Filter))
-	if err != nil {
-		return fmt.Errorf("print request: %w", err)
-	}
-	logs.Println(total, "matching", r.Filter, "records found")
-	a := make([]string, total)
-	for i, p := range ppl {
-		if r.Progress {
-			str.Progress(r.Filter, i+1, total)
-		}
-		// role
-		x := strings.Split(p, ",")
-		a = append(a, x...)
-	}
-	// title and sort names
-	for i := range a {
-		if r.Progress {
-			str.Progress(r.Filter, i+1, total)
-		}
-		a[i] = strings.Title(a[i])
-	}
-	sort.Strings(a)
-	// remove duplicates
-	less := func(i, j int) bool { return a[i] < a[j] }
-	unique.Slice(&a, less)
-	// remove empty val
-	if a[0] == "" {
-		a = a[1:]
-	}
-	fmt.Printf("\n%s\nTotal authors %d\n", strings.Join(a, ", "), len(a))
-	return nil
-}
-
-func roles(r string) Role {
-	switch r {
-	case "writers", "w":
-		return Writers
-	case "musicians", "m":
-		return Musicians
-	case "coders", "c":
-		return Coders
-	case "artists", "a":
-		return Artists
-	case "", all:
-		return Everyone
-	}
-	return -1
-}
-
 // peopleStmt returns a complete SQL WHERE statement where the people are filtered by a role.
 func peopleStmt(role Role, softDel bool) (stmt string) {
 	del := func() string {
@@ -287,4 +274,20 @@ func peopleStmt(role Role, softDel bool) (stmt string) {
 	stmt += " ORDER BY pubCombined"
 	stmt = strings.Replace(stmt, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
 	return stmt
+}
+
+func roles(r string) Role {
+	switch r {
+	case "writers", "w":
+		return Writers
+	case "musicians", "m":
+		return Musicians
+	case "coders", "c":
+		return Coders
+	case "artists", "a":
+		return Artists
+	case "", all:
+		return Everyone
+	}
+	return -1
 }
