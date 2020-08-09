@@ -6,8 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
@@ -103,16 +101,6 @@ func FileMove(name, dest string) (written int64, err error) {
 		return 0, fmt.Errorf("filemove remove name %q: %w", name, err)
 	}
 	return written, nil
-}
-
-// NewExt swaps or appends the extension to a filename.
-func NewExt(name, extension string) string {
-	e := filepath.Ext(name)
-	if e == "" {
-		return name + extension
-	}
-	fn := strings.TrimSuffix(name, e)
-	return fn + extension
 }
 
 // Read returns a list of files within an rar, tar, zip or 7z archive.

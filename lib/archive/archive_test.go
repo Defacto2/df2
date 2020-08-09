@@ -117,30 +117,6 @@ func TestFileMove(t *testing.T) {
 	}
 }
 
-func TestNewExt(t *testing.T) {
-	type args struct {
-		name      string
-		extension string
-	}
-	tests := []struct {
-		name         string
-		args         args
-		wantFilename string
-	}{
-		{"empty", args{"", ""}, ""},
-		{"ok", args{"hello.world", ".text"}, "hello.text"},
-		{"two", args{"hello.world.txt", ".pdf"}, "hello.world.pdf"},
-		{"ok", args{"hello.world", "text"}, "hellotext"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotFilename := NewExt(tt.args.name, tt.args.extension); gotFilename != tt.wantFilename {
-				t.Errorf("NewExt() = %v, want %v", gotFilename, tt.wantFilename)
-			}
-		})
-	}
-}
-
 func TestRead(t *testing.T) {
 	type args struct {
 		archive  string
