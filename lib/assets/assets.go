@@ -37,7 +37,6 @@ type (
 )
 
 var (
-	empty  database.Empty
 	ignore files
 	paths  []string // a collection of directories
 	d      = directories.Init(false)
@@ -77,7 +76,7 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 			return 0, nil, fmt.Errorf("create uuid map row: %w", err)
 		}
 		// store record `uuid` value as a key name in the map `m` with an empty value
-		uuids[uuid] = empty
+		uuids[uuid] = database.Empty{}
 		total++
 	}
 	return total, uuids, db.Close()
@@ -199,6 +198,7 @@ func clean(t Target, remove, human bool) error {
 
 // ignoreList is used by scanPath to filter files that should not be erased.
 func ignoreList(path string) (ignore files) {
+	var empty = database.Empty{}
 	ignore = make(files)
 	ignore["00000000-0000-0000-0000-000000000000"] = empty
 	ignore["blank.png"] = empty
@@ -340,7 +340,7 @@ func (s *scan) archive(list []os.FileInfo) files {
 		// search the map `m` for `UUID`, the result is saved as a boolean to `exists`
 		_, exists := s.m[id]
 		if !exists {
-			a[fn] = empty
+			a[fn] = database.Empty{}
 		}
 	}
 	return a
