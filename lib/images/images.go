@@ -33,8 +33,6 @@ const (
 	fmode             = os.O_RDWR | os.O_CREATE
 )
 
-var scope = gap.NewScope(gap.User, logs.GapUser)
-
 var ErrFormat = errors.New("unsupported image format")
 
 // Duplicate an image file and appends suffix to its name.
@@ -304,7 +302,7 @@ func Width(name string) (width int, err error) {
 
 // vendorPath is the absolute path to store webpbin vendor downloads.
 func vendorPath() string {
-	fp, err := scope.CacheDir()
+	fp, err := gap.NewScope(gap.User, logs.GapUser).CacheDir()
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {
