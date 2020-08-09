@@ -11,6 +11,7 @@ import (
 	"github.com/gookit/color"
 
 	"github.com/Defacto2/df2/lib/archive"
+	"github.com/Defacto2/df2/lib/directories"
 )
 
 func init() {
@@ -99,10 +100,11 @@ func Test_backup(t *testing.T) {
 		{"empty", args{}, true},
 		{"ok", args{&s, list}, false},
 	}
+	d := directories.Init(false)
 	d.Backup = os.TempDir() // overwrite /opt/assets/backups
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := backup(tt.args.s, tt.args.list); (err != nil) != tt.wantErr {
+			if err := backup(tt.args.s, d, tt.args.list); (err != nil) != tt.wantErr {
 				t.Errorf("backup() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -118,6 +120,7 @@ func Test_clean(t *testing.T) {
 		delete bool
 		human  bool
 	}
+	d := directories.Init(false)
 	tests := []struct {
 		name    string
 		args    args
@@ -130,7 +133,7 @@ func Test_clean(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := clean(tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := clean(tt.args.t, d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("clean() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -176,7 +179,8 @@ func createTempDir() (sum int64, dir string, err error) {
 
 func Test_ignoreList(t *testing.T) {
 	var want struct{}
-	if got := ignoreList("")["blank.png"]; !reflect.DeepEqual(got, want) {
+	d := directories.Init(false)
+	if got := ignoreList("", d)["blank.png"]; !reflect.DeepEqual(got, want) {
 		t.Errorf("ignoreList() = %v, want %v", got, want)
 	}
 }
@@ -191,9 +195,10 @@ func Test_targets(t *testing.T) {
 		{"", Image, 3},
 		{"error", -1, 0},
 	}
+	d := directories.Init(false)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := targets(tt.target); len(got) != tt.want {
+			if got := targets(tt.target, d); len(got) != tt.want {
 				t.Errorf("targets() = %v, want %v", got, tt.want)
 			}
 		})
