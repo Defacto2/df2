@@ -14,10 +14,8 @@ import (
 )
 
 const (
-	// AED is the ANSI Erase in Display.
-	AED = "\r\003[2J"
-	// AEL is the ANSI Erase in Line sequence.
-	AEL                 = "\r\033[0K"
+	AED                 = "\r\003[2J" // ANSI Erase in Display.
+	AEL                 = "\r\033[0K" // ANSI Erase in Line sequence.
 	dmode   os.FileMode = 0700
 	fmode   os.FileMode = 0600
 	flags               = log.Ldate | log.Ltime | log.LUTC
