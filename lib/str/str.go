@@ -2,7 +2,9 @@ package str
 
 import (
 	"fmt"
+	"math"
 	"os"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/gookit/color"
@@ -26,11 +28,31 @@ func Progress(name string, count, total int) float64 {
 	r := float64(count) / float64(total) * fin
 	switch r {
 	case fin:
-		fmt.Printf("\rquerying %s %.0f %%  ", name, r)
+		fmt.Printf("\rquerying %s %s %.0f %%  ", name, bar(r), r)
 	default:
-		fmt.Printf("\rquerying %s %.2f %%", name, r)
+		fmt.Printf("\rquerying %s %s %.2f %% ", name, bar(r), r)
 	}
 	return r
+}
+
+func bar(r float64) string {
+	const (
+		c     = "\u15e7" // ᗧ
+		pad   = "\u2022" // •
+		done  = "\u00b7" // ·
+		width = 5
+		start = 0
+		end   = 100
+	)
+	pos, max := math.Ceil(r/width), end/width
+	switch {
+	case pos == start:
+		return fmt.Sprintf("(%s%s)", c, strings.Repeat(pad, max))
+	case r == end:
+		return fmt.Sprintf("(%s☺)", strings.Repeat(pad, max))
+	default:
+		return fmt.Sprintf("(%s%s%s)", strings.Repeat(done, int(pos)), c, strings.Repeat(pad, max-int(pos)))
+	}
 }
 
 // Sec prints a secondary notice.
