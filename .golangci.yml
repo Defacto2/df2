@@ -114,6 +114,7 @@ linters:
     - gochecknoglobals
     - goconst
     - gocritic
+    - gocyclo
     - godot
     - goerr113
     - goheader
@@ -147,7 +148,6 @@ linters:
     # run manually using cli:
     # - gci # breaks with blank named imports
     # - gocognit
-    # - gocyclo
     # - unused # some false positives
     # don't enable:
     # - dupl # this takes too long

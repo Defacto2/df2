@@ -530,7 +530,7 @@ func format(b sql.RawBytes, colType string) (string, error) {
 }
 
 // rows returns the values of table.
-func rows(t Table, limit int) (values []string, err error) {
+func rows(t Table, limit int) (vals []string, err error) {
 	db := Connect()
 	defer db.Close()
 	var rows *sql.Rows
@@ -605,6 +605,10 @@ func rows(t Table, limit int) (values []string, err error) {
 			defer rows.Close()
 		}
 	}
+	return values(rows)
+}
+
+func values(rows *sql.Rows) (v []string, err error) {
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("rows columns: %w", err)
@@ -630,9 +634,10 @@ func rows(t Table, limit int) (values []string, err error) {
 			}
 		}
 		var r row = result
-		values = append(values, fmt.Sprint(r))
+		v = append(v, fmt.Sprint(r))
 	}
-	return values, db.Close()
+	rows.Close()
+	return v, nil
 }
 
 // template functions.
