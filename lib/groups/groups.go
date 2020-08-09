@@ -63,9 +63,6 @@ func filter(s string) Filter {
 	return -1
 }
 
-// Filters are group categories.
-var Filters = strings.Join(Wheres(), ",")
-
 var ErrFilter = errors.New("invalid filter used")
 
 // Request flags for group functions.

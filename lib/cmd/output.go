@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -73,7 +74,7 @@ func init() {
 		logs.Fatal(err)
 	}
 	outputCmd.AddCommand(groupCmd)
-	groupCmd.Flags().StringVarP(&gpf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+groups.Filters)
+	groupCmd.Flags().StringVarP(&gpf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+strings.Join(groups.Wheres(), ","))
 	groupCmd.Flags().BoolVarP(&gpf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
 	groupCmd.Flags().BoolVarP(&gpf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
 	groupCmd.Flags().BoolVarP(&gpf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
