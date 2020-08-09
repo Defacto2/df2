@@ -26,12 +26,9 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 	"FROM `files`\n" +
 	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 
-var verb = false
-
 // Approve automatically checks and clears file records for live.
 func Approve(verbose bool) error {
-	verb = verbose
-	if err := queries(); err != nil {
+	if err := queries(verbose); err != nil {
 		return err
 	}
 	return nil
@@ -56,7 +53,7 @@ func copy(name, dest string) (written int64, err error) {
 	return written, dst.Close()
 }
 
-func printVal(i interface{}) {
+func printVal(verb bool, i interface{}) {
 	if !verb {
 		return
 	}
@@ -71,7 +68,7 @@ func printVal(i interface{}) {
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func queries() error {
+func queries(verb bool) error {
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query(newFilesSQL)
@@ -94,6 +91,7 @@ func queries() error {
 	// fetch the rows
 	var r record
 	r.c = 0
+	r.verbose = verb
 	rowCnt := 0
 	for rows.Next() {
 		rowCnt++
@@ -104,7 +102,7 @@ func queries() error {
 			continue
 		}
 		r.uuid = string(values[1])
-		printVal(fmt.Sprintf("\n%s item %04d (%v) %s %s ", str.X(),
+		printVal(verb, fmt.Sprintf("\n%s item %04d (%v) %s %s ", str.X(),
 			rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if ok := r.check(values, &dir); !ok {
 			continue
@@ -119,7 +117,7 @@ func queries() error {
 		r.c++
 		fmt.Println(r)
 	}
-	printVal("\n")
+	printVal(verb, "\n")
 	r.summary(rowCnt)
 	return nil
 }
@@ -127,6 +125,7 @@ func queries() error {
 type record struct {
 	c          int
 	save       bool
+	verbose    bool
 	id         uint
 	uuid       string
 	filename   string
@@ -176,44 +175,44 @@ func (r *record) autoID(data string) (id uint) {
 
 func (r *record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
 	if !r.checkFileName(string(values[4])) {
-		printVal("!filename")
+		printVal(r.verbose, "!filename")
 		return false
 	}
 	if !r.checkFileSize(string(values[5])) {
-		printVal("!filesize")
+		printVal(r.verbose, "!filesize")
 		return false
 	}
 	if !r.checkHash(string(values[10]), string(values[11])) {
-		printVal("!hash")
+		printVal(r.verbose, "!hash")
 		return false
 	}
 	if !r.checkFileContent(string(values[7])) {
-		printVal("!file content")
+		printVal(r.verbose, "!file content")
 		return false
 	}
 	if !r.checkGroups(string(values[14]), string(values[13])) {
-		printVal("!group")
+		printVal(r.verbose, "!group")
 		return false
 	}
 	if !r.checkTags(string(values[9]), string(values[15])) {
-		printVal("!tag")
+		printVal(r.verbose, "!tag")
 		return false
 	}
 	if !r.checkDownload(dir.UUID) {
-		printVal("!download")
+		printVal(r.verbose, "!download")
 		return false
 	}
 	if string(values[9]) != "audio" {
 		if !r.checkImage(dir.Img000) {
-			printVal("!000x")
+			printVal(r.verbose, "!000x")
 			return false
 		}
 		if !r.checkImage(dir.Img400) {
-			printVal("!400x")
+			printVal(r.verbose, "!400x")
 			return false
 		}
 		if !r.checkImage(dir.Img150) {
-			printVal("!150x")
+			printVal(r.verbose, "!150x")
 			return false
 		}
 	}
@@ -304,18 +303,18 @@ func (r *record) recoverDownload(path string) (ok bool) {
 	}
 	file := filepath.Join(src, r.filename)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		printVal("!incoming:" + file + " ")
+		printVal(r.verbose, "!incoming:"+file+" ")
 		return false
 	}
 	fc, err := copy(file, path)
 	if err != nil {
-		printVal("!filecopy ")
+		printVal(r.verbose, "!filecopy ")
 		logs.Log(err)
 		return false
 	}
-	printVal(fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
+	printVal(r.verbose, fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		printVal("!!filecopy ")
+		printVal(r.verbose, "!!filecopy ")
 		logs.Log(err)
 		return false
 	}
