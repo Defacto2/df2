@@ -66,10 +66,10 @@ const (
 )
 
 // Tbls are the available tables in the database.
-var (
-	tbls = []string{Files.String(), Groups.String(), Netresources.String(), Users.String()}
-	Tbls = strings.Join(tbls, ", ")
-)
+func Tbls() string {
+	s := []string{Files.String(), Groups.String(), Netresources.String(), Users.String()}
+	return strings.Join(s, ", ")
+}
 
 type colNames []string
 
@@ -455,7 +455,7 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 
 func (t Table) check() error {
 	if t < 0 || t > 3 {
-		return fmt.Errorf("check table failure %q != %s: %w", t, Tbls, ErrNoTable)
+		return fmt.Errorf("check table failure %q != %s: %w", t, Tbls(), ErrNoTable)
 	}
 	return nil
 }
