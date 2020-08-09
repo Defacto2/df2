@@ -50,8 +50,7 @@ func Test_sqlSelect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			proofID = tt.id
-			if got := sqlSelect(); len(got) != tt.want {
+			if got := sqlSelect(tt.id); len(got) != tt.want {
 				t.Errorf("sqlSelect() = %v, want %v", len(got), tt.want)
 			}
 		})
@@ -89,7 +88,7 @@ func Test_stat_summary(t *testing.T) {
 				total:     tt.fields.total,
 				values:    tt.fields.values,
 			}
-			s.summary()
+			s.summary("")
 		})
 	}
 }

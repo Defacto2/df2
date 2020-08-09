@@ -28,9 +28,10 @@ type Record struct {
 
 // Request proofs.
 type Request struct {
-	Overwrite   bool // overwrite existing files
-	AllProofs   bool // parse all proofs
-	HideMissing bool // ignore missing uuid files
+	Overwrite   bool   // overwrite existing files
+	AllProofs   bool   // parse all proofs
+	HideMissing bool   // ignore missing uuid files
+	byID        string // id used for proofs, either a uuid or id string
 }
 
 type stat struct {
@@ -45,14 +46,12 @@ type stat struct {
 	values    *[]sql.RawBytes // row values
 }
 
-var proofID string // ID used for proofs, either a UUID or ID string
-
 // Query parses a single proof.
-func (request Request) Query(id string) error {
+func (request *Request) Query(id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %q: %w", id, err)
 	}
-	proofID = id
+	request.byID = id
 	if err := request.Queries(); err != nil {
 		return fmt.Errorf("request queries: %w", err)
 	}
@@ -71,7 +70,7 @@ func (request Request) Queries() error {
 	s := statInit()
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(sqlSelect())
+	rows, err := db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
 	} else if err1 := rows.Err(); err1 != nil {
@@ -91,12 +90,12 @@ func (request Request) Queries() error {
 	for rows.Next() {
 		s.total++
 	}
-	if s.total < 1 && proofID != "" {
-		logs.Printf("file record id '%s' does not exist or is not a release proof\n", proofID)
+	if s.total < 1 && request.byID != "" {
+		logs.Printf("file record id '%s' does not exist or is not a release proof\n", request.byID)
 	} else if s.total > 1 {
 		logs.Println("Total records", s.total)
 	}
-	rows, err = db.Query(sqlSelect())
+	rows, err = db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
 	} else if rows.Err() != nil {
@@ -124,7 +123,7 @@ func (request Request) Queries() error {
 			return err
 		}
 	}
-	s.summary()
+	s.summary(request.byID)
 	return nil
 }
 
@@ -169,11 +168,11 @@ func (r Record) printID(s *stat) {
 
 // flagSkip uses argument flags to check if a record is to be ignored.
 func (request Request) flagSkip(values []sql.RawBytes) (skip bool) {
-	if proofID != "" && request.Overwrite {
+	if request.byID != "" && request.Overwrite {
 		return false
 	} else if n := database.IsNew(values); !n && !request.AllProofs {
-		if proofID != "" {
-			logs.Printf("skip file record id '%s' as it is not new", proofID)
+		if request.byID != "" {
+			logs.Printf("skip file record id '%s' as it is not new", request.byID)
 		}
 		return true
 	}
@@ -229,22 +228,22 @@ func (s *stat) fileSkip(r Record, hide bool) (skip bool, err error) {
 	return false, nil
 }
 
-func sqlSelect() string {
+func sqlSelect(id string) string {
 	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file_zip_content`,`updatedat`,`platform`"
 	w := " WHERE `section` = 'releaseproof'"
-	if proofID != "" {
+	if id != "" {
 		switch {
-		case database.IsUUID(proofID):
-			w = fmt.Sprintf("%v AND `uuid`=%q", w, proofID)
-		case database.IsID(proofID):
-			w = fmt.Sprintf("%v AND `id`=%q", w, proofID)
+		case database.IsUUID(id):
+			w = fmt.Sprintf("%v AND `uuid`=%q", w, id)
+		case database.IsID(id):
+			w = fmt.Sprintf("%v AND `id`=%q", w, id)
 		}
 	}
 	return s + " FROM `files`" + w
 }
 
-func (s *stat) summary() {
-	if proofID != "" && s.total < 1 {
+func (s *stat) summary(id string) {
+	if id != "" && s.total < 1 {
 		return
 	}
 	total := s.count - s.missing
