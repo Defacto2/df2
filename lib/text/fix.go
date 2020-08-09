@@ -23,8 +23,6 @@ const (
 	webp = ".webp"
 )
 
-var xdir directories.Dir
-
 // image preview and thumbnail of a text object.
 type image struct {
 	ID       uint
