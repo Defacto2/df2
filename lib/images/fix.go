@@ -24,8 +24,6 @@ const (
 	webp = ".webp"
 )
 
-var dir directories.Dir
-
 // Img is an image object.
 type Img struct {
 	ID       uint
@@ -43,7 +41,7 @@ func (i Img) String() string {
 
 // Fix generates any missing assets from downloads that are images.
 func Fix(simulate bool) error {
-	dir = directories.Init(false)
+	dir := directories.Init(false)
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image"`)
@@ -62,7 +60,7 @@ func Fix(simulate bool) error {
 		if !img.ext() {
 			continue
 		}
-		if !img.valid() {
+		if !img.valid(&dir) {
 			c++
 			logs.Printf("%d. %v", c, img)
 			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
@@ -97,7 +95,7 @@ func (i Img) ext() (ok bool) {
 	return false
 }
 
-func (i Img) valid() (ok bool) {
+func (i Img) valid(dir *directories.Dir) (ok bool) {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
 		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {

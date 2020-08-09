@@ -2,9 +2,12 @@ package images
 
 import (
 	"testing"
+
+	"github.com/Defacto2/df2/lib/directories"
 )
 
 func TestImg_valid(t *testing.T) {
+	dir := directories.Init(false)
 	tests := []struct {
 		name string
 		i    Img
@@ -14,7 +17,7 @@ func TestImg_valid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.i.valid(); got != tt.want {
+			if got := tt.i.valid(&dir); got != tt.want {
 				t.Errorf("Img.valid() = %v, want %v", got, tt.want)
 			}
 		})
