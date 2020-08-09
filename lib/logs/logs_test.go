@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gookit/color"
+	gap "github.com/muesli/go-app-paths"
 )
 
 var (
@@ -39,7 +40,7 @@ func TestArg(t *testing.T) {
 
 func Test_save(t *testing.T) {
 	Filename = "test.log"
-	fp, err := scope.LogPath(Filename)
+	fp, err := gap.NewScope(gap.User, GapUser).LogPath(Filename)
 	if err != nil {
 		log.Fatal(err)
 	}

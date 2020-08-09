@@ -36,7 +36,7 @@ type settings struct {
 }
 
 var (
-	scope = gap.NewScope(gap.User, "df2")
+	scope = gap.NewScope(gap.User, logs.GapUser)
 	// Config settings.
 	Config = settings{
 		Name:   filename,

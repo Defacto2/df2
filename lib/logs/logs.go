@@ -16,6 +16,7 @@ import (
 const (
 	AED                 = "\r\003[2J" // ANSI Erase in Display.
 	AEL                 = "\r\033[0K" // ANSI Erase in Line sequence.
+	GapUser             = "df2"       // configuration and logs subdirectory name.
 	dmode   os.FileMode = 0700
 	fmode   os.FileMode = 0600
 	flags               = log.Ldate | log.Ltime | log.LUTC
@@ -25,7 +26,6 @@ const (
 var (
 	// Filename is the default error log filename.
 	Filename = "errors.log"
-	scope    = gap.NewScope(gap.User, "df2")
 	// Panic uses the panic function to handle all error logs.
 	Panic = false
 	// Quiet stops most writing to the standard output.
@@ -71,7 +71,7 @@ func Fatal(err error) {
 
 // Filepath is the absolute path and filename of the error log file.
 func Filepath() string {
-	fp, err := scope.LogPath(Filename)
+	fp, err := gap.NewScope(gap.User, GapUser).LogPath(Filename)
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {

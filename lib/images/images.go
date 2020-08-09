@@ -33,7 +33,7 @@ const (
 	fmode             = os.O_RDWR | os.O_CREATE
 )
 
-var scope = gap.NewScope(gap.User, "df2")
+var scope = gap.NewScope(gap.User, logs.GapUser)
 
 var ErrFormat = errors.New("unsupported image format")
 
