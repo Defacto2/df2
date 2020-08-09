@@ -39,37 +39,6 @@ type URLset struct {
 	Urls    []url    `xml:"url,omitempty"`
 }
 
-var urls = [28]string{
-	"welcome",
-	"file",
-	"file/list/new",
-	"organisation/list/group",
-	"organisation/list/bbs",
-	"organisation/list/ftp",
-	"organisation/list/magazine",
-	"person/list/artists",
-	"person/list/coders",
-	"person/list/musicians",
-	"person/list/writers",
-	"search/result",
-	"defacto2",
-	"defacto2/donate",
-	"defacto2/history",
-	"defacto2/subculture",
-	"contact",
-	"commercial",
-	"code",
-	"help",
-	"help/creative-commons",
-	"help/privacy",
-	"help/browser-support",
-	"help/keyboard",
-	"help/viruses",
-	"help/allowed-uploads",
-	"help/categories",
-	"link/list",
-}
-
 // Create generates and prints the sitemap.
 func Create() error {
 	// query
@@ -99,7 +68,7 @@ func Create() error {
 	}
 	defer rows.Close()
 	// handle static urls
-	v.Urls = make([]url, len(urls)+count)
+	v.Urls = make([]url, len(urls())+count)
 	c, i := v.staticURLs()
 	// handle query results.
 	for rows.Next() {
@@ -161,7 +130,7 @@ func Create() error {
 
 func (v *URLset) staticURLs() (c, i int) {
 	c, i, d := 0, 0, viper.GetString("directory.views")
-	for i, u := range urls {
+	for i, u := range urls() {
 		file := filepath.Join(d, u, index)
 		if s, err := os.Stat(file); !os.IsNotExist(err) {
 			v.Urls[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"}
@@ -187,4 +156,37 @@ func (v *URLset) staticURLs() (c, i int) {
 
 func lastmod(s os.FileInfo) string {
 	return s.ModTime().UTC().Format("2006-01-02")
+}
+
+func urls() [28]string {
+	return [28]string{
+		"welcome",
+		"file",
+		"file/list/new",
+		"organisation/list/group",
+		"organisation/list/bbs",
+		"organisation/list/ftp",
+		"organisation/list/magazine",
+		"person/list/artists",
+		"person/list/coders",
+		"person/list/musicians",
+		"person/list/writers",
+		"search/result",
+		"defacto2",
+		"defacto2/donate",
+		"defacto2/history",
+		"defacto2/subculture",
+		"contact",
+		"commercial",
+		"code",
+		"help",
+		"help/creative-commons",
+		"help/privacy",
+		"help/browser-support",
+		"help/keyboard",
+		"help/viruses",
+		"help/allowed-uploads",
+		"help/categories",
+		"link/list",
+	}
 }
