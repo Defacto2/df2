@@ -84,7 +84,6 @@ var (
 	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
 	ErrFilePath   = errors.New("filepath requirement cannot be empty")
 	ErrFilename   = errors.New("filename requirement cannot be empty")
-	ErrNoFile     = errors.New("file cannot be found")
 )
 
 var requestedID = ""
