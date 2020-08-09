@@ -86,8 +86,6 @@ var (
 	ErrFilename   = errors.New("filename requirement cannot be empty")
 )
 
-var requestedID = ""
-
 type Fetched struct {
 	Code   int
 	Status string
@@ -110,14 +108,15 @@ type Request struct {
 	Overwrite bool // overwrite existing files
 	Refresh   bool // refresh all demozoo entries
 	Simulate  bool // simulate database save
+	byID      string
 }
 
 // Query parses a single Demozoo entry.
-func (req Request) Query(id string) (err error) {
+func (req *Request) Query(id string) (err error) {
 	if err = database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %s: %w", id, err)
 	}
-	requestedID = id
+	req.byID = id
 	if err := req.Queries(); err != nil {
 		return fmt.Errorf("request query queries: %w", err)
 	}
@@ -129,7 +128,7 @@ func (req Request) Query(id string) (err error) {
 // all parses every proof not just records waiting for approval.
 func (req Request) Queries() error {
 	var st stat
-	stmt, start := selectByID(), time.Now()
+	stmt, start := selectByID(req.byID), time.Now()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(stmt)
@@ -195,7 +194,8 @@ func (req Request) Queries() error {
 			r.save()
 		}
 	}
-	if requestedID != "" {
+	if req.byID != "" {
+		st.byID = req.byID
 		st.print()
 		return nil
 	}
@@ -216,6 +216,7 @@ type stat struct {
 	fetched int
 	missing int
 	total   int
+	byID    string
 }
 
 // nextResult checks for the next, new record.
@@ -234,9 +235,9 @@ func (st stat) print() {
 	if st.count == 0 {
 		var t string
 		if st.fetched == 0 {
-			t = fmt.Sprintf("id %q is not a Demozoo sourced file record", requestedID)
+			t = fmt.Sprintf("id %q is not a Demozoo sourced file record", st.byID)
 		} else {
-			t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", requestedID, requestedID)
+			t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", st.byID, st.byID)
 		}
 		logs.Println(t)
 	} else {
@@ -532,15 +533,15 @@ func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
 	return r, nil
 }
 
-func selectByID() (stmt string) {
+func selectByID(id string) (stmt string) {
 	const w = " FROM `files` WHERE `web_id_demozoo` IS NOT NULL"
 	where := w
-	if requestedID != "" {
+	if id != "" {
 		switch {
-		case database.IsUUID(requestedID):
-			where = fmt.Sprintf("%v AND `uuid`=%q", w, requestedID)
-		case database.IsID(requestedID):
-			where = fmt.Sprintf("%v AND `id`=%q", w, requestedID)
+		case database.IsUUID(id):
+			where = fmt.Sprintf("%v AND `uuid`=%q", w, id)
+		case database.IsID(id):
+			where = fmt.Sprintf("%v AND `id`=%q", w, id)
 		}
 	}
 	return selectSQL + where

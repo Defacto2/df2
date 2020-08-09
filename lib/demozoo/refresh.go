@@ -26,7 +26,7 @@ func RefreshMeta() error {
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(selectByID())
+	rows, err := db.Query(selectByID(""))
 	if err != nil {
 		return fmt.Errorf("refresh meta query: %w", err)
 	} else if rows.Err() != nil {
