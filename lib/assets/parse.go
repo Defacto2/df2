@@ -29,7 +29,7 @@ type item struct {
 }
 
 // parse is used by scanPath to remove matched orphans.
-func parse(s *scan, list *[]os.FileInfo) (stat results, err error) {
+func parse(s *scan, ignore files, list *[]os.FileInfo) (stat results, err error) {
 	stat = results{count: 0, fails: 0, bytes: 0}
 	for _, file := range *list {
 		if file.IsDir() {

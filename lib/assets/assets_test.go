@@ -104,7 +104,7 @@ func Test_backup(t *testing.T) {
 	d.Backup = os.TempDir() // overwrite /opt/assets/backups
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := backup(tt.args.s, &d, tt.args.list); (err != nil) != tt.wantErr {
+			if err := backup(tt.args.s, &d, nil, tt.args.list); (err != nil) != tt.wantErr {
 				t.Errorf("backup() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

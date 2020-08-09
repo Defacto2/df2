@@ -37,10 +37,6 @@ type (
 )
 
 var (
-	ignore files
-)
-
-var (
 	ErrStructNil = errors.New("structure cannot be nil")
 	ErrPathEmpty = errors.New("path cannot be empty")
 	ErrTarget    = errors.New("unknown target")
@@ -82,7 +78,7 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 }
 
 // backup is used by scanPath to backup matched orphans.
-func backup(s *scan, d *directories.Dir, list []os.FileInfo) error {
+func backup(s *scan, d *directories.Dir, ignore files, list []os.FileInfo) error {
 	if s == nil {
 		return fmt.Errorf("backup s (scan): %w", ErrStructNil)
 	} else if s.path == "" {
@@ -92,7 +88,7 @@ func backup(s *scan, d *directories.Dir, list []os.FileInfo) error {
 	if flag.Lookup("test.v") != nil {
 		test = true
 	}
-	f := s.archive(list)
+	f := s.archive(list, ignore)
 	// identify which files should be backed up
 	d, p := backupParts(d)
 	if test {
@@ -327,7 +323,7 @@ type scan struct {
 	m      database.IDs // UUID values fetched from the database
 }
 
-func (s *scan) archive(list []os.FileInfo) files {
+func (s *scan) archive(list []os.FileInfo, ignore files) files {
 	a := make(files)
 	for _, file := range list {
 		if file.IsDir() {
@@ -362,15 +358,15 @@ func (s scan) scanPath(d *directories.Dir) (stat results, err error) {
 		}
 	}
 	// files to ignore
-	ignore = ignoreList(s.path, d)
+	ignore := ignoreList(s.path, d)
 	// archive files that are to be deleted
 	if s.delete {
-		if err = backup(&s, d, list); err != nil {
+		if err = backup(&s, d, ignore, list); err != nil {
 			return stat, fmt.Errorf("scan path backup: %w", err)
 		}
 	}
 	// list and if requested, delete orphaned files
-	stat, err = parse(&s, &list)
+	stat, err = parse(&s, ignore, &list)
 	if err != nil {
 		return stat, fmt.Errorf("scan path parse: %w", err)
 	}
