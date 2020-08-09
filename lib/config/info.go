@@ -23,7 +23,7 @@ func Info() error {
 	}
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())
 	Check()
-	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath())
+	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath(logs.Filename))
 	db := database.ConnectInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {

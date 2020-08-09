@@ -39,8 +39,8 @@ func TestArg(t *testing.T) {
 }
 
 func Test_save(t *testing.T) {
-	Filename = "test.log"
-	fp, err := gap.NewScope(gap.User, GapUser).LogPath(Filename)
+	const name = "test.log"
+	fp, err := gap.NewScope(gap.User, GapUser).LogPath(name)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func Test_save(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := save(tt.err); gotOk != tt.wantOk {
+			if gotOk := save(name, tt.err); gotOk != tt.wantOk {
 				t.Errorf("save() = %v, want %v", gotOk, tt.wantOk)
 			} else if gotOk {
 				// cleanup
@@ -69,7 +69,7 @@ func Test_save(t *testing.T) {
 
 func TestFilepath(t *testing.T) {
 	t.Run("file path", func(t *testing.T) {
-		if got := Filepath(); got == "" {
+		if got := Filepath(Filename); got == "" {
 			t.Errorf("Filepath() = %q, want a directory path", got)
 		}
 	})

@@ -20,8 +20,8 @@ var logCmd = &cobra.Command{
 	Aliases: []string{},
 	Hidden:  true,
 	Run: func(cmd *cobra.Command, args []string) {
-		logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath())
-		f, err := os.Open(logs.Filepath())
+		logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath(logs.Filename))
+		f, err := os.Open(logs.Filepath(logs.Filename))
 		if err != nil {
 			logs.Fatal(err)
 		}

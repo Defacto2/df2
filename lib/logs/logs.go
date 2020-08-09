@@ -14,18 +14,17 @@ import (
 )
 
 const (
-	AED                 = "\r\003[2J" // ANSI Erase in Display.
-	AEL                 = "\r\033[0K" // ANSI Erase in Line sequence.
-	GapUser             = "df2"       // configuration and logs subdirectory name.
-	dmode   os.FileMode = 0700
-	fmode   os.FileMode = 0600
-	flags               = log.Ldate | log.Ltime | log.LUTC
-	newmode             = os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	AED      string      = "\r\003[2J"  // ANSI Erase in Display.
+	AEL      string      = "\r\033[0K"  // ANSI Erase in Line sequence.
+	GapUser  string      = "df2"        // configuration and logs subdirectory name.
+	Filename string      = "errors.log" // Filename is the default error log filename.
+	dmode    os.FileMode = 0700
+	fmode    os.FileMode = 0600
+	flags    int         = log.Ldate | log.Ltime | log.LUTC
+	newmode  int         = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 )
 
 var (
-	// Filename is the default error log filename.
-	Filename = "errors.log"
 	// Panic uses the panic function to handle all error logs.
 	Panic = false
 	// Quiet stops most writing to the standard output.
@@ -59,7 +58,7 @@ func Danger(err error) {
 
 // Fatal logs any errors and exits to the operating system with error code 1.
 func Fatal(err error) {
-	save(err)
+	save(Filename, err)
 	switch Panic {
 	case true:
 		log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
@@ -70,21 +69,21 @@ func Fatal(err error) {
 }
 
 // Filepath is the absolute path and filename of the error log file.
-func Filepath() string {
-	fp, err := gap.NewScope(gap.User, GapUser).LogPath(Filename)
+func Filepath(filename string) string {
+	fp, err := gap.NewScope(gap.User, GapUser).LogPath(filename)
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {
 			Log(err)
 		}
-		return path.Join(h, Filename)
+		return path.Join(h, filename)
 	}
 	return fp
 }
 
 // Log an error but do not exit to the operating system.
 func Log(err error) {
-	save(err)
+	save(Filename, err)
 	Danger(err)
 }
 
@@ -168,19 +167,19 @@ func fatal(err error) {
 }
 
 func fatalLog(err error) {
-	save(err)
+	save(Filename, err)
 	fatal(err)
 }
 
 // save an error to the logs.
 // path is available for unit tests.
-func save(err error) (ok bool) {
+func save(filename string, err error) (ok bool) {
 	if err == nil {
 		return false
 	}
 	// use UTC date and times in the log file
 	log.SetFlags(flags)
-	f := Filepath()
+	f := Filepath(filename)
 	p := filepath.Dir(f)
 	if _, err1 := os.Stat(p); os.IsNotExist(err1) {
 		if err2 := os.MkdirAll(p, dmode); err != nil {
