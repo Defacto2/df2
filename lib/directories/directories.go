@@ -34,9 +34,6 @@ type Dir struct {
 	UUID   string // path to file downloads with UUID as filenames
 }
 
-// D are directory paths.
-var D Dir
-
 // Init initializes the subdirectories and UUID structure.
 func Init(create bool) Dir {
 	if viper.GetString("directory.root") == "" {
@@ -53,22 +50,23 @@ func Init(create bool) Dir {
 		viper.SetDefault("directory.uuid", "/opt/assets/downloads")
 		viper.SetDefault("directory.views", "/opt/assets/views")
 	}
-	D.Img000 = viper.GetString("directory.000")
-	D.Img150 = viper.GetString("directory.150")
-	D.Img400 = viper.GetString("directory.400")
-	D.Backup = viper.GetString("directory.backup")
-	D.Emu = viper.GetString("directory.emu")
-	D.Base = viper.GetString("directory.root")
-	D.UUID = viper.GetString("directory.uuid")
+	var d Dir
+	d.Img000 = viper.GetString("directory.000")
+	d.Img150 = viper.GetString("directory.150")
+	d.Img400 = viper.GetString("directory.400")
+	d.Backup = viper.GetString("directory.backup")
+	d.Emu = viper.GetString("directory.emu")
+	d.Base = viper.GetString("directory.root")
+	d.UUID = viper.GetString("directory.uuid")
 	if create {
-		if err := createDirectories(); err != nil {
+		if err := createDirectories(&d); err != nil {
 			log.Fatal(err)
 		}
-		if err := createPlaceHolders(); err != nil {
+		if err := createPlaceHolders(&d); err != nil {
 			log.Fatal(err)
 		}
 	}
-	return D
+	return d
 }
 
 // Files initializes the full path filenames for a UUID.
@@ -83,8 +81,8 @@ func Files(name string) (dirs Dir) {
 }
 
 // createDirectories generates a series of UUID subdirectories.
-func createDirectories() error {
-	v := reflect.ValueOf(D)
+func createDirectories(dir *Dir) error {
+	v := reflect.ValueOf(dir)
 	// iterate through the D struct values
 	for i := 0; i < v.NumField(); i++ {
 		if d := fmt.Sprintf("%v", v.Field(i).Interface()); d != "" {
@@ -153,20 +151,20 @@ func createHolderFile(dir string, size int, prefix uint) error {
 }
 
 // createPlaceHolders generates a collection placeholder files in the UUID subdirectories.
-func createPlaceHolders() error {
-	if err := createHolderFiles(D.UUID, 1000000, 9); err != nil {
+func createPlaceHolders(dir *Dir) error {
+	if err := createHolderFiles(dir.UUID, 1000000, 9); err != nil {
 		return fmt.Errorf("create uuid holders: %w", err)
 	}
-	if err := createHolderFiles(D.Emu, 1000000, 2); err != nil {
+	if err := createHolderFiles(dir.Emu, 1000000, 2); err != nil {
 		return fmt.Errorf("create emu holders: %w", err)
 	}
-	if err := createHolderFiles(D.Img000, 1000000, 9); err != nil {
+	if err := createHolderFiles(dir.Img000, 1000000, 9); err != nil {
 		return fmt.Errorf("create img000 holders: %w", err)
 	}
-	if err := createHolderFiles(D.Img400, 500000, 9); err != nil {
+	if err := createHolderFiles(dir.Img400, 500000, 9); err != nil {
 		return fmt.Errorf("create img400 holders: %w", err)
 	}
-	if err := createHolderFiles(D.Img150, 100000, 9); err != nil {
+	if err := createHolderFiles(dir.Img150, 100000, 9); err != nil {
 		return fmt.Errorf("create img150 holders: %w", err)
 	}
 	return nil
