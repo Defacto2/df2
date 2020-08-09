@@ -45,6 +45,7 @@ func (r *Request) Body() error {
 	if err != nil {
 		return fmt.Errorf("request body new with context: %w", err)
 	}
+	req.Header.Set("User-Agent", UserAgent)
 	client := http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
@@ -120,6 +121,7 @@ func LinkDownload(name, link string) (http.Header, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", UserAgent)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -148,6 +150,7 @@ func LinkDownloadQ(name, link string) (http.Header, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", UserAgent)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -171,7 +174,7 @@ func LinkPing(link string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
+	req.Header.Set("User-Agent", UserAgent)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
