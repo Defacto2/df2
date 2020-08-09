@@ -23,7 +23,7 @@ const (
 	webp = ".webp"
 )
 
-var dir directories.Dir
+var xdir directories.Dir
 
 // image preview and thumbnail of a text object.
 type image struct {
@@ -41,8 +41,7 @@ func (i image) String() string {
 
 // Fix generates any missing assets from downloads that are text based.
 func Fix(simulate bool) error {
-	dir = directories.Init(false)
-	db := database.Connect()
+	dir, db := directories.Init(false), database.Connect()
 	defer db.Close()
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="text"`)
 	if err != nil {
@@ -61,7 +60,7 @@ func Fix(simulate bool) error {
 		if !img.valid() {
 			continue
 		}
-		if ok, err := img.exist(); err != nil {
+		if ok, err := img.exist(&dir); err != nil {
 			return fmt.Errorf("fix exist: %w", err)
 		} else if !ok {
 			c++
@@ -90,7 +89,7 @@ func Fix(simulate bool) error {
 }
 
 // check that [UUID].png exists in all three image subdirectories.
-func (i image) exist() (bool, error) {
+func (i image) exist(dir *directories.Dir) (bool, error) {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
 		if path == "" {

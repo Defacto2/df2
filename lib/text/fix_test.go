@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/Defacto2/df2/lib/directories"
 	"github.com/gookit/color"
 )
 
@@ -26,6 +27,7 @@ func TestImage_exists(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	dir := directories.Init(false)
 	if runtime.GOOS == "windows" {
 		dir.Img000 = path.Join(wd, "..\\..\\tests\\text\\")
 		dir.Img150 = path.Join(wd, "..\\..\\tests\\text\\")
@@ -43,7 +45,7 @@ func TestImage_exists(t *testing.T) {
 			x := image{
 				UUID: tt.fields.UUID,
 			}
-			got, err := x.exist()
+			got, err := x.exist(&dir)
 			if got != tt.want {
 				t.Errorf("image.exist() = %v, want %v", got, tt.want)
 			}
