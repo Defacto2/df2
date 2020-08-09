@@ -107,11 +107,13 @@ linters:
     - bodyclose
     - deadcode
     - depguard
+    - dupl
     - errcheck
     - exhaustive
     - exportloopref
     - gochecknoinits
     - gochecknoglobals
+    - gocognit
     - goconst
     - gocritic
     - gocyclo
@@ -147,10 +149,8 @@ linters:
     - whitespace
     # run manually using cli:
     # - gci # breaks with blank named imports
-    # - gocognit
     # - unused # some false positives
     # don't enable:
-    # - dupl # this takes too long
     # - dogsled
     # - funlen
     # - godox # flags todo/bug/fixme
