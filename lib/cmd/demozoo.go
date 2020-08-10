@@ -16,6 +16,7 @@ type demozooFlags struct {
 	simulate  bool
 	new       bool
 	refresh   bool
+	sync      bool
 	id        string // auto-generated id or a uuid
 	extract   []string
 	ping      uint
@@ -50,6 +51,10 @@ var demozooCmd = &cobra.Command{
 			}
 		case dzf.refresh:
 			if err := demozoo.RefreshMeta(); err != nil {
+				logs.Fatal(err)
+			}
+		case dzf.sync:
+			if err := demozoo.Sync(); err != nil {
 				logs.Fatal(err)
 			}
 		case dzf.ping != 0:
@@ -103,6 +108,7 @@ func init() {
 	demozooCmd.Flags().BoolVarP(&dzf.simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
 	demozooCmd.Flags().BoolVar(&dzf.overwrite, "overwrite", false, "rescan archives and overwrite all existing assets\n")
 	demozooCmd.Flags().BoolVarP(&dzf.refresh, "refresh", "r", false, "replace missing files metadata with demozoo data (SLOW)")
+	demozooCmd.Flags().BoolVarP(&dzf.sync, "sync", "s", false, "scan the demozoo api for missing bbstros and cracktros (SLOW)")
 	demozooCmd.Flags().UintVarP(&dzf.ping, "ping", "p", 0, "fetch and display a production record from the Demozoo.org API")
 	demozooCmd.Flags().UintVarP(&dzf.download, "download", "g", 0, "fetch and download a production's link file via the Demozoo.org API\n")
 	demozooCmd.Flags().StringArrayVar(&dzf.extract, "extract", make([]string, 0), `extracts and parses an archived file
