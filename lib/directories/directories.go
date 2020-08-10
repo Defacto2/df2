@@ -15,8 +15,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// random characters used by randStringBytes().
-const random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
+// random characters used by randString().
+const random string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
 
 var (
 	ErrPathIsFile = errors.New("path already exist as a file")
@@ -139,7 +139,7 @@ func createHolderFile(dir string, size int, prefix uint) error {
 		return nil // don't overwrite existing files
 	}
 	m.Seed(time.Now().UnixNano())
-	r, err := randStringBytes(size)
+	r, err := randString(size)
 	if err != nil {
 		return fmt.Errorf("create holder file: %w", err)
 	}
@@ -170,16 +170,16 @@ func createPlaceHolders(dir *Dir) error {
 	return nil
 }
 
-// TODO: Blog random string generator.
-// randStringBytes generates a random string of n x characters.
-func randStringBytes(n int) (string, error) {
-	b := make([]byte, n)
-	for i := range b {
-		p, err := rand.Prime(rand.Reader, len(random))
+// randString generates a random string of n x characters.
+func randString(n int) (string, error) {
+	s, r := make([]rune, n), []rune(random)
+	for i := range s {
+		p, err := rand.Prime(rand.Reader, len(r))
 		if err != nil {
-			return "", fmt.Errorf("random string bytes %d: %w", n, err)
+			return "", fmt.Errorf("random string n %d: %w", n, err)
 		}
-		b[i] = random[p.Uint64()%uint64(len(random))]
+		x, y := p.Uint64(), uint64(len(r))
+		s[i] = r[x%y]
 	}
-	return string(b), nil
+	return string(s), nil
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_randStringBytes(t *testing.T) {
+func Test_randString(t *testing.T) {
 	type args struct {
 		n int
 	}
@@ -23,9 +23,9 @@ func Test_randStringBytes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := randStringBytes(tt.args.n)
+			got, err := randString(tt.args.n)
 			if len(got) != tt.want {
-				t.Errorf("randStringBytes() = %v, want %v\n%s", len(got), tt.want, got)
+				t.Errorf("randString() = %v, want %v\n%s", len(got), tt.want, got)
 			}
 			if err != nil {
 				t.Error(err)
