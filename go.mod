@@ -11,7 +11,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.1.1
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/uuid v1.1.1
-	github.com/gookit/color v1.2.7
+	github.com/gookit/color v1.2.8
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/klauspost/compress v1.10.10 // indirect
 	github.com/klauspost/pgzip v1.2.4 // indirect
