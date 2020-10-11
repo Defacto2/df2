@@ -1,5 +1,7 @@
 package demozoo
 
+import "errors"
+
 /*
 TODO:
 Create an automated synchronisation with Demozoo.
@@ -20,9 +22,13 @@ bbs
 https://demozoo.org/productions/?platform=4&production_type=41
 */
 
-//api = "https://demozoo.org/api/v1/productions"
+// api = "https://demozoo.org/api/v1/productions"
 
-func Sync() error {
-	println("placeholder")
-	return nil
+var ErrSync = errors.New("placeholder")
+
+func Sync() (err error) {
+	if ph := 1 + 1; ph == 1 {
+		return ErrSync
+	}
+	return err
 }
