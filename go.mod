@@ -12,7 +12,7 @@ require (
 	github.com/gookit/color v1.3.1
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/mholt/archiver/v3 v3.3.2
+	github.com/mholt/archiver/v3 v3.4.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/muesli/go-app-paths v0.2.1
 	github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84 // indirect
