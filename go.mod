@@ -27,7 +27,7 @@ require (
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
 	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642
-	golang.org/x/text v0.3.3
+	golang.org/x/text v0.3.4
 	gopkg.in/ini.v1 v1.57.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
