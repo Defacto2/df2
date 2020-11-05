@@ -8,6 +8,11 @@ release:
     name: df2
   prerelease: auto
   name_template: '{{.Tag}}'
+milestones:
+- repo:
+    owner: Defacto2
+    name: df2
+  name_template: '{{ .Tag }}'
 scoop:
   name: df2
   commit_author:
@@ -27,19 +32,18 @@ builds:
   dir: .
   main: ../main.go
   ldflags:
-  - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
-    -X main.builtBy=goreleaser
+  - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
   binary: df2
   hooks:
     post:
     - cmd: upx -qq "{{ .Path }}"
   lang: go
+  gobinary: go
 archives:
 - id: default
   builds:
   - df2
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm
-    }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
   format: tar.gz
   files:
   - licence*
@@ -50,6 +54,7 @@ archives:
   - README*
   - changelog*
   - CHANGELOG*
+  allow_different_binary_count: false
 nfpms:
 - file_name_template: df2
   package_name: df2
@@ -61,8 +66,7 @@ nfpms:
   vendor: Ben Garrett
   homepage: https://github.com/Defacto2/df2
   maintainer: Ben Garrett <code.by.ben@gmail.com>
-  description: df2 is a command-line tool for managing plus optimising the files and
-    database of defacto2.net.
+  description: df2 is a command-line tool for managing plus optimising the files and database of defacto2.net.
   license: Apache 2.0
   bindir: /usr/local/bin
 snapshot:
