@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/frankban/quicktest v1.11.2 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/gabriel-vasile/mimetype v1.1.1
+	github.com/gabriel-vasile/mimetype v1.1.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/uuid v1.1.2
 	github.com/gookit/color v1.3.2
