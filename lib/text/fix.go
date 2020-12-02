@@ -98,11 +98,13 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 		if path == "" {
 			return false, nil
 		}
-		if _, err := os.Stat(filepath.Join(path, t.UUID+png)); os.IsNotExist(err) {
+		s, err := os.Stat(filepath.Join(path, t.UUID+png))
+		if os.IsNotExist(err) {
 			return false, nil
 		} else if err != nil {
 			return false, fmt.Errorf("image exist: %w", err)
 		}
+		fmt.Printf("  %s %b\n", s.Name(), s.Size())
 	}
 	return true, nil
 }
