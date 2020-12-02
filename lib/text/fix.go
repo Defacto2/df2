@@ -64,6 +64,7 @@ func Fix(simulate bool) error {
 		if err != nil {
 			return fmt.Errorf("fix exist: %w", err)
 		}
+		println("checking", t.Name, "result", ok)
 		if !ok {
 			c++
 			logs.Printf("%d. %v", c, t)
