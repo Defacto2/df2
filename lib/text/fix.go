@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	fixStmt = `SELECT id, uuid, filename, filesize FROM files ORDER BY id DESC WHERE platform="text"`
+	fixStmt = `SELECT id, uuid, filename, filesize FROM files ORDER BY id DESC WHERE platform = 'text'`
 
 	diz  = ".diz"
 	doc  = ".doc"
