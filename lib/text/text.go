@@ -1,3 +1,4 @@
+// Package text generates images from text files using the Ansilove/C program.
 package text
 
 import (
@@ -36,14 +37,18 @@ installation instructions: https://github.com/ansilove/ansilove
 	}
 	fmt.Printf("  %s", s)
 	// cap images to the webp limit of 16383 pixels
-	const limit = 16383
+	const (
+		webpMaxSize = 16383
+		thumbSmall  = 150
+		thumbMedium = 400
+	)
 	var w int
-	if w, err = images.Width(o); w > limit {
+	if w, err = images.Width(o); w > webpMaxSize {
 		if err != nil {
 			return fmt.Errorf("generate: %w", err)
 		}
 		fmt.Printf("width %dpx", w)
-		s, err = images.ToPng(o, images.NewExt(o, png), limit)
+		s, err = images.ToPng(o, images.NewExt(o, png), webpMaxSize)
 		if err != nil {
 			return fmt.Errorf("generate: %w", err)
 		}
@@ -54,14 +59,14 @@ installation instructions: https://github.com/ansilove/ansilove
 		return fmt.Errorf("generate: %w", err)
 	}
 	fmt.Printf("  %s", s)
-	s, err = images.ToThumb(o, f.Img400, 400)
+	s, err = images.ToThumb(o, f.Img400, thumbMedium)
 	if err != nil {
-		return fmt.Errorf("generate thumb 400px: %w", err)
+		return fmt.Errorf("generate thumb %dpx: %w", thumbMedium, err)
 	}
 	fmt.Printf("  %s", s)
-	s, err = images.ToThumb(o, f.Img150, 150)
+	s, err = images.ToThumb(o, f.Img150, thumbSmall)
 	if err != nil {
-		return fmt.Errorf("generate thumb 150px: %w", err)
+		return fmt.Errorf("generate thumb %dpx: %w", thumbSmall, err)
 	}
 	fmt.Printf("  %s", s)
 	return nil
