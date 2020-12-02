@@ -32,7 +32,8 @@ builds:
   dir: .
   main: ../main.go
   ldflags:
-  - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
+  - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    -X main.builtBy=goreleaser
   binary: df2
   hooks:
     post:
@@ -43,7 +44,8 @@ archives:
 - id: default
   builds:
   - df2
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm
+    }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
   format: tar.gz
   files:
   - licence*
@@ -66,7 +68,8 @@ nfpms:
   vendor: Ben Garrett
   homepage: https://github.com/Defacto2/df2
   maintainer: Ben Garrett <code.by.ben@gmail.com>
-  description: df2 is a command-line tool for managing plus optimising the files and database of defacto2.net.
+  description: df2 is a command-line tool for managing plus optimising the files and
+    database of defacto2.net.
   license: Apache 2.0
   bindir: /usr/local/bin
 snapshot:
