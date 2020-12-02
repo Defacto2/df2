@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
@@ -24,19 +25,19 @@ const (
 	webp = ".webp"
 )
 
-// Img is an image object.
-type Img struct {
-	ID       uint
-	UUID     string
-	Filename string
-	FileExt  string
-	Filesize int
+// imageFile is an image object.
+type imageFile struct {
+	ID   uint
+	UUID string
+	Name string
+	Ext  string
+	Size int
 }
 
-func (i Img) String() string {
+func (i imageFile) String() string {
 	return fmt.Sprintf("(%v) %v %v ",
-		color.Primary.Sprint(i.ID), i.Filename,
-		color.Info.Sprint(humanize.Bytes(uint64(i.Filesize))))
+		color.Primary.Sprint(i.ID), i.Name,
+		color.Info.Sprint(humanize.Bytes(uint64(i.Size))))
 }
 
 // Fix generates any missing assets from downloads that are images.
@@ -44,7 +45,7 @@ func Fix(simulate bool) error {
 	dir := directories.Init(false)
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image"`)
+	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image" ORDER BY id ASC`)
 	if err != nil {
 		return fmt.Errorf("images fix query: %w", err)
 	} else if rows.Err() != nil {
@@ -53,8 +54,8 @@ func Fix(simulate bool) error {
 	defer rows.Close()
 	c := 0
 	for rows.Next() {
-		var img Img
-		if err = rows.Scan(&img.ID, &img.UUID, &img.Filename, &img.Filesize); err != nil {
+		var img imageFile
+		if err = rows.Scan(&img.ID, &img.UUID, &img.Name, &img.Size); err != nil {
 			return fmt.Errorf("images fix rows scan: %w", err)
 		}
 		if !img.ext() {
@@ -87,15 +88,15 @@ func Fix(simulate bool) error {
 	return nil
 }
 
-func (i Img) ext() (ok bool) {
-	switch filepath.Ext(i.Filename) {
+func (i imageFile) ext() (ok bool) {
+	switch filepath.Ext(strings.ToLower(i.Name)) {
 	case gif, jpg, jpeg, _png, tif, tiff:
 		return true
 	}
 	return false
 }
 
-func (i Img) valid(dir *directories.Dir) (ok bool) {
+func (i imageFile) valid(dir *directories.Dir) (ok bool) {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
 		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {

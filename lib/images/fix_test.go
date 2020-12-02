@@ -10,10 +10,10 @@ func TestImg_valid(t *testing.T) {
 	dir := directories.Init(false)
 	tests := []struct {
 		name string
-		i    Img
+		i    imageFile
 		want bool
 	}{
-		{"not exist", Img{UUID: "false id"}, false},
+		{"not exist", imageFile{UUID: "false id"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -27,14 +27,14 @@ func TestImg_valid(t *testing.T) {
 func TestImg_ext(t *testing.T) {
 	tests := []struct {
 		name   string
-		i      Img
+		i      imageFile
 		wantOk bool
 	}{
-		{"empty", Img{}, false},
-		{"text", Img{Filename: "some.txt"}, false},
-		{"png", Img{Filename: "some.png"}, true},
-		{"jpeg", Img{Filename: "some other.jpeg"}, true},
-		{"jpeg", Img{Filename: "some.other.jpeg"}, true},
+		{"empty", imageFile{}, false},
+		{"text", imageFile{Name: "some.txt"}, false},
+		{"png", imageFile{Name: "some.png"}, true},
+		{"jpeg", imageFile{Name: "some other.jpeg"}, true},
+		{"jpeg", imageFile{Name: "some.other.jpeg"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
