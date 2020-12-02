@@ -104,7 +104,7 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 		} else if err != nil {
 			return false, fmt.Errorf("image exist: %w", err)
 		}
-		fmt.Printf("  %s %b\n", s.Name(), s.Size())
+		fmt.Printf("  %s %d bytes %s\n", s.Name(), s.Size(), path)
 	}
 	return true, nil
 }
