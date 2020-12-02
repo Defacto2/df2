@@ -42,7 +42,7 @@ func TestImage_exists(t *testing.T) {
 			if tt.name == "missingdir" {
 				dir.Img400 = ""
 			}
-			x := image{
+			x := textfile{
 				UUID: tt.fields.UUID,
 			}
 			got, err := x.exist(&dir)
@@ -73,8 +73,8 @@ func TestImage_valid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			x := image{
-				Filename: tt.fields.Filename,
+			x := textfile{
+				Name: tt.fields.Filename,
 			}
 			if got := x.valid(); got != tt.want {
 				t.Errorf("image.valid() = %v, want %v", got, tt.want)
@@ -102,12 +102,12 @@ func TestImage_String(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			img := image{
-				ID:       tt.fields.ID,
-				UUID:     tt.fields.UUID,
-				Filename: tt.fields.Filename,
-				FileExt:  tt.fields.FileExt,
-				Filesize: tt.fields.Filesize,
+			img := textfile{
+				ID:   tt.fields.ID,
+				UUID: tt.fields.UUID,
+				Name: tt.fields.Filename,
+				Ext:  tt.fields.FileExt,
+				Size: tt.fields.Filesize,
 			}
 			if got := img.String(); got != tt.want {
 				t.Errorf("image.String() = %q, want %q", got, tt.want)
