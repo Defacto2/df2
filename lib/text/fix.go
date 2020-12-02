@@ -15,8 +15,6 @@ import (
 )
 
 const (
-	fixStmt = `SELECT id, uuid, filename, filesize FROM files ORDER BY id DESC WHERE platform = text`
-
 	diz  = ".diz"
 	doc  = ".doc"
 	nfo  = ".nfo"
@@ -43,7 +41,7 @@ func (t textfile) String() string {
 func Fix(simulate bool) error {
 	dir, db := directories.Init(false), database.Connect()
 	defer db.Close()
-	rows, err := db.Query(fixStmt)
+	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files ORDER BY id DESC WHERE platform="text"`)
 	if err != nil {
 		return fmt.Errorf("fix db query: %w", err)
 	} else if rows.Err() != nil {
