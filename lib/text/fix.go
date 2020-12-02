@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
@@ -111,7 +112,7 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 }
 
 func (t textfile) valid() bool {
-	switch filepath.Ext(t.Name) {
+	switch filepath.Ext(strings.ToLower(t.Name)) {
 	case diz, doc, nfo, txt:
 		return true
 	}
