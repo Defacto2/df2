@@ -57,7 +57,6 @@ func Fix(simulate bool) error {
 		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size); err != nil {
 			return fmt.Errorf("fix rows scan: %w", err)
 		}
-		println("fetched", t.Name)
 		// TODO replace with function that handles archives
 		if !t.valid() {
 			continue
@@ -106,7 +105,6 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 		} else if err != nil {
 			return false, fmt.Errorf("image exist: %w", err)
 		}
-		//fmt.Printf("  %s %d bytes %s\n", s.Name(), s.Size(), path)
 	}
 	return true, nil
 }
