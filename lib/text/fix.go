@@ -18,6 +18,7 @@ import (
 const (
 	fixStmt = `SELECT id, uuid, filename, filesize FROM files WHERE platform="text" ORDER BY id ASC`
 
+	ans  = ".ans"
 	asc  = ".asc"
 	diz  = ".diz"
 	doc  = ".doc"
@@ -111,7 +112,7 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 
 func (t textfile) valid() bool {
 	switch filepath.Ext(strings.ToLower(t.Name)) {
-	case asc, diz, doc, nfo, txt:
+	case ans, asc, diz, doc, nfo, txt:
 		return true
 	}
 	return false
