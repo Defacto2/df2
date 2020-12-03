@@ -1,6 +1,6 @@
 # df2
 
-![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg) ![Lint](https://github.com/Defacto2/df2/workflows/golangci-lint/badge.svg)
+![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg)
 
 df2 is a command-line tool for managing plus optimising the files and database of defacto2.net. It is broken down into five parts.
 
