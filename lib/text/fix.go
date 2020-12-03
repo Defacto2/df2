@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	fixStmt = `SELECT id, uuid, filename, filesize FROM files WHERE platform="text" ORDER BY id ASC`
+	fixStmt = `SELECT id, uuid, filename, filesize FROM files WHERE platform="text" OR platform="ansi" ORDER BY id DESC`
 
 	ans  = ".ans"
 	asc  = ".asc"
@@ -53,9 +53,10 @@ func Fix(simulate bool) error {
 		return fmt.Errorf("fix rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	c := 0
+	c, i := 0, 0
 	for rows.Next() {
 		var t textfile
+		i++
 		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size); err != nil {
 			return fmt.Errorf("fix rows scan: %w", err)
 		}
@@ -85,6 +86,7 @@ func Fix(simulate bool) error {
 			logs.Print("\n")
 		}
 	}
+	fmt.Println("scanned", c, "fixes from", i, "text file records")
 	if simulate && c > 0 {
 		logs.Simulate()
 	} else if c == 0 {
