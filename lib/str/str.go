@@ -1,3 +1,4 @@
+// Package str are print to terminal display and colour functions.
 package str
 
 import (

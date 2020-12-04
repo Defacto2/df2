@@ -1,3 +1,4 @@
+// Package proof handles files that have the section tagged as releaseproof.
 package proof
 
 import (
@@ -73,8 +74,8 @@ func (request Request) Queries() error {
 	rows, err := db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
-	} else if err1 := rows.Err(); err1 != nil {
-		return err1
+	} else if rows.Err() != nil {
+		return rows.Err()
 	}
 	defer rows.Close()
 	columns, err := rows.Columns()
@@ -170,7 +171,8 @@ func (r Record) printID(s *stat) {
 func (request Request) flagSkip(values []sql.RawBytes) (skip bool) {
 	if request.byID != "" && request.Overwrite {
 		return false
-	} else if n := database.IsNew(values); !n && !request.AllProofs {
+	}
+	if n := database.IsNew(values); !n && !request.AllProofs {
 		if request.byID != "" {
 			logs.Printf("skip file record id '%s' as it is not new", request.byID)
 		}

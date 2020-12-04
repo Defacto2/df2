@@ -1,3 +1,5 @@
+// Package recent is a work in progress JSON generator to display the most recent files on the file.
+// It is intended to replace https://defacto2.net/welcome/recentfiles.
 package recent
 
 import (
@@ -15,8 +17,6 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 )
-
-// This will eventually replace https://defacto2.net/welcome/recentfiles
 
 // File data for new thumbnails.
 type File struct {

@@ -1,3 +1,5 @@
+// Package sitemap generates an list of pages of the website.
+// The generated XML file is stored on the site's root and can be parsed by search engine bots.
 package sitemap
 
 import (
