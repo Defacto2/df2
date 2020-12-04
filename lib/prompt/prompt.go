@@ -1,3 +1,4 @@
+// Package prompt are functions that parse stardard input loops.
 package prompt
 
 import (
@@ -14,8 +15,10 @@ import (
 )
 
 const (
-	PortMin = 0     // PortMin is the lowest permitted network port
-	PortMax = 65535 // PortMax is the largest permitted network port
+	// PortMin is the lowest permitted network port
+	PortMin = 0
+	// PortMax is the largest permitted network port
+	PortMax = 65535
 )
 
 // Dir asks the user for a directory path and saves it.

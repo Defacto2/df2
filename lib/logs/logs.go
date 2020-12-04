@@ -1,3 +1,4 @@
+// Package logs handles errors and user feedback.
 package logs
 
 import (
@@ -14,14 +15,19 @@ import (
 )
 
 const (
-	AED      string      = "\r\003[2J"  // ANSI Erase in Display.
-	AEL      string      = "\r\033[0K"  // ANSI Erase in Line sequence.
-	GapUser  string      = "df2"        // configuration and logs subdirectory name.
-	Filename string      = "errors.log" // Filename is the default error log filename.
-	dmode    os.FileMode = 0700
-	fmode    os.FileMode = 0600
-	flags    int         = log.Ldate | log.Ltime | log.LUTC
-	newmode  int         = os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	// AED ANSI Erase in Display.
+	AED string = "\r\003[2J"
+	// AEL ANSI Erase in Line sequence.
+	AEL string = "\r\033[0K"
+	// GapUser is the configuration and logs subdirectory name.
+	GapUser string = "df2"
+	// Filename is the default error log filename.
+	Filename string = "errors.log"
+
+	dmode   os.FileMode = 0700
+	fmode   os.FileMode = 0600
+	flags   int         = log.Ldate | log.Ltime | log.LUTC
+	newmode int         = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 )
 
 var (
@@ -46,6 +52,7 @@ func Arg(arg string, args ...string) error {
 	return nil
 }
 
+// Danger prints errors but continues the program.
 func Danger(err error) {
 	switch Panic {
 	case true:

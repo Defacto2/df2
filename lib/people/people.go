@@ -1,3 +1,4 @@
+// Package people deals with people, person names, aliases and their roles.
 package people
 
 import (
@@ -41,13 +42,19 @@ type Person struct {
 	Hr bool
 }
 
+// Role or jobs to categories and filter people.
 type Role int
 
 const (
+	// Everyone displays all people.
 	Everyone Role = iota
+	// Artists are graphic or video.
 	Artists
+	// Coders are programmers.
 	Coders
+	// Musicians create music or audio.
 	Musicians
+	// Writers for the documents.
 	Writers
 )
 
