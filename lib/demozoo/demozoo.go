@@ -1,3 +1,4 @@
+// Package demozoo interacts with the demozoo.org API for data scraping and file downloads.
 package demozoo
 
 import (
@@ -25,6 +26,7 @@ import (
 	"github.com/Defacto2/df2/lib/str"
 )
 
+// Category are tags for production imports.
 type Category int
 
 func (c Category) String() string {
@@ -44,10 +46,15 @@ func (c Category) String() string {
 }
 
 const (
+	// Text based files.
 	Text Category = iota
+	// Code are binary files.
 	Code
+	// Graphics are images.
 	Graphics
+	// Music is audio.
 	Music
+	// Magazine are publications.
 	Magazine
 )
 
@@ -86,6 +93,7 @@ var (
 	ErrFilename   = errors.New("filename requirement cannot be empty")
 )
 
+// Fetched production.
 type Fetched struct {
 	Code   int
 	Status string

@@ -24,8 +24,10 @@ https://demozoo.org/productions/?platform=4&production_type=41
 
 // api = "https://demozoo.org/api/v1/productions"
 
+// ErrSync is a placeholder.
 var ErrSync = errors.New("placeholder")
 
+// Sync is a placeholder.
 func Sync() (err error) {
 	if ph := 1 + 1; ph == 1 {
 		return ErrSync

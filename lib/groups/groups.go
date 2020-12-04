@@ -1,3 +1,4 @@
+// Package groups deals with group names and their initialisms.
 package groups
 
 import (
@@ -21,13 +22,19 @@ import (
 
 const htm = ".htm"
 
+// Filter group by role or function.
 type Filter int
 
 const (
+	// None returns all groups.
 	None Filter = iota
+	// BBS boards.
 	BBS
+	// FTP sites.
 	FTP
+	// Group generic roles.
 	Group
+	// Magazine publishers.
 	Magazine
 )
 

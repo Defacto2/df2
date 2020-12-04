@@ -1,3 +1,4 @@
+// Package directories interacts with the filepaths that hold files and assets.
 package directories
 
 import (
