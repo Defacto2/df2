@@ -1,3 +1,4 @@
+// Package assets handles the site resources such as file downloads, thumbnails and backups.
 package assets
 
 import (
@@ -21,12 +22,17 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
+// Target filters the file assets.
 type Target int
 
 const (
+	// All files.
 	All Target = iota
+	// Download are files for download.
 	Download
+	// Emulation are files for the DOSee emulation.
 	Emulation
+	// Image and thumbnail files.
 	Image
 )
 

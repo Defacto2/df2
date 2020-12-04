@@ -1,3 +1,4 @@
+// Package config saves and fetches settings used by the df2 tool.
 package config
 
 import (

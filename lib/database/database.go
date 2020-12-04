@@ -1,3 +1,4 @@
+// Package database interacts with the MySQL 5.7 datastore of Defacto2.
 package database
 
 import (
@@ -23,10 +24,10 @@ import (
 )
 
 // UpdateID is a user id to use with the updatedby column.
-const UpdateID string = "b66dc282-a029-4e99-85db-2cf2892fffcc"
+const UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 
 // Datetime MySQL 5.7 format.
-const Datetime string = "2006-01-02T15:04:05Z"
+const Datetime = "2006-01-02T15:04:05Z"
 
 const (
 	changeme = "changeme"
@@ -40,13 +41,20 @@ const (
 
 // Connection information for a MySQL database.
 type Connection struct {
-	Name     string // database name
-	User     string // access username
-	Pass     string // access password
-	Server   string // host server protocol, address and port
+	// Name of the database
+	Name string
+	// User name access.
+	User string
+	// Pass is the user password.
+	Pass string
+	// Server is URI to connect to the database, using the protocol, address and port.
+	Server string
+	// Protocol to connect to the database.
 	Protocol string
-	Address  string
-	Port     string
+	// Address to connect to the database.
+	Address string
+	// Port to connect to the database.
+	Port string
 }
 
 func (c *Connection) String() string {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"log"
 	"os"
 	"os/exec"
@@ -9,8 +10,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-const NoEditor = `no suitable editor could be found
-please set one by creating a $EDITOR environment variable in your shell configuration`
+// ErrNoEditor no editor error.
+var ErrNoEditor = errors.New(`no suitable editor could be found
+please set one by creating a $EDITOR environment variable in your shell configuration`)
 
 // Edit a configuration file.
 func Edit() {
@@ -42,7 +44,7 @@ func fallback(editors [3]string) (edit string) {
 	if edit != "" {
 		log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
 	} else {
-		log.Panicln(NoEditor)
+		log.Panicln(ErrNoEditor)
 		os.Exit(1)
 	}
 	return ""
@@ -54,7 +56,7 @@ func saved() string {
 		if editor != "" {
 			log.Printf("%q edit command not found\n%v", editor, exec.ErrNotFound)
 		} else {
-			log.Panicln(NoEditor)
+			log.Panicln(ErrNoEditor)
 		}
 		os.Exit(1)
 	}

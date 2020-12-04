@@ -19,12 +19,17 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
+// Table of the database.
 type Table int
 
 const (
+	// Files are file items.
 	Files Table = iota
+	// Groups are group names.
 	Groups
+	// Netresources are websites.
 	Netresources
+	// Users contain site login details.
 	Users
 )
 
@@ -42,10 +47,13 @@ func (t Table) String() string {
 	return ""
 }
 
+// Method to interact with the database.
 type Method int
 
 const (
+	// Create uses the CREATE SQL statement to make a new record.
 	Create Method = iota
+	// Insert uses the UPDATE SQL statement to edit an existing record.
 	Insert
 )
 

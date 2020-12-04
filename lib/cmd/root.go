@@ -1,3 +1,4 @@
+// Package cmd handles the commandline user interface and interactions.
 package cmd
 
 import (
@@ -26,13 +27,16 @@ import (
 var simulate bool
 
 const verTmp = `
-   df2 tool version {{.Version}}  
+   df2 tool version {{.Version}}
 `
 
 var (
-	ErrCmd  = errors.New("invalid command, please use one of the available commands")
+	// ErrCmd invalid command.
+	ErrCmd = errors.New("invalid command, please use one of the available commands")
+	// ErrNoID no id.
 	ErrNoID = errors.New("requires an id or uuid argument")
-	ErrID   = errors.New("invalid id or uuid specified")
+	// ErrID bad id.
+	ErrID = errors.New("invalid id or uuid specified")
 )
 
 var (
