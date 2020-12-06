@@ -115,7 +115,6 @@ func queries(verb bool) error {
 			r.save = false
 		}
 		r.c++
-		fmt.Println(r)
 	}
 	printVal(verb, "\n")
 	r.summary(rowCnt)
