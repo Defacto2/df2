@@ -37,6 +37,7 @@ var (
 	Quiet = false
 )
 
+// ErrNoArg no args.
 var ErrNoArg = errors.New("no arguments are provided")
 
 // Arg returns instructions for invalid command arguments.

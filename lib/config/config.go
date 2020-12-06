@@ -26,6 +26,7 @@ const (
 	file     os.FileMode = 0600
 )
 
+// ErrSaveType bad value type.
 var ErrSaveType = errors.New("unsupported value interface type")
 
 // settings configurations.
