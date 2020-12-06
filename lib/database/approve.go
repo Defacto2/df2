@@ -18,7 +18,10 @@ import (
 	"github.com/Defacto2/df2/lib/str"
 )
 
-const fm os.FileMode = 0666
+const (
+	readWriteEveryone             = 0666
+	fm                os.FileMode = readWriteEveryone
+)
 
 const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`," +
 	"`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`" +
@@ -53,22 +56,23 @@ func copy(name, dest string) (written int64, err error) {
 	return written, dst.Close()
 }
 
-func printVal(verb bool, i interface{}) {
-	if !verb {
+func verbose(v bool, i interface{}) {
+	if !v {
 		return
 	}
-	if v, ok := i.(string); ok {
-		if len(v) > 0 && v[0] == 33 {
-			logs.Printf("%s", color.Warn.Sprint(v))
-		} else {
-			logs.Printf("%s", v)
+	const exclamationMark = 33
+	if val, ok := i.(string); ok {
+		if len(val) > 0 && val[0] == exclamationMark {
+			logs.Printf("%s", color.Warn.Sprint(val))
+			return
 		}
+		logs.Printf("%s", val)
 	}
 }
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func queries(verb bool) error {
+func queries(v bool) error {
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query(newFilesSQL)
@@ -91,7 +95,7 @@ func queries(verb bool) error {
 	// fetch the rows
 	var r record
 	r.c = 0
-	r.verbose = verb
+	r.verbose = v
 	rowCnt := 0
 	for rows.Next() {
 		rowCnt++
@@ -102,7 +106,7 @@ func queries(verb bool) error {
 			continue
 		}
 		r.uuid = string(values[1])
-		printVal(verb, fmt.Sprintf("\n%s item %04d (%v) %s %s ", str.X(),
+		verbose(v, fmt.Sprintf("\n%s item %04d (%v) %s %s ", str.X(),
 			rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if ok := r.check(values, &dir); !ok {
 			continue
@@ -116,7 +120,7 @@ func queries(verb bool) error {
 		}
 		r.c++
 	}
-	printVal(verb, "\n")
+	verbose(v, "\n")
 	r.summary(rowCnt)
 	return nil
 }
@@ -173,45 +177,46 @@ func (r *record) autoID(data string) (id uint) {
 }
 
 func (r *record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
+	v := r.verbose
 	if !r.checkFileName(string(values[4])) {
-		printVal(r.verbose, "!filename")
+		verbose(v, "!filename")
 		return false
 	}
 	if !r.checkFileSize(string(values[5])) {
-		printVal(r.verbose, "!filesize")
+		verbose(v, "!filesize")
 		return false
 	}
 	if !r.checkHash(string(values[10]), string(values[11])) {
-		printVal(r.verbose, "!hash")
+		verbose(v, "!hash")
 		return false
 	}
 	if !r.checkFileContent(string(values[7])) {
-		printVal(r.verbose, "!file content")
+		verbose(v, "!file content")
 		return false
 	}
 	if !r.checkGroups(string(values[14]), string(values[13])) {
-		printVal(r.verbose, "!group")
+		verbose(v, "!group")
 		return false
 	}
 	if !r.checkTags(string(values[9]), string(values[15])) {
-		printVal(r.verbose, "!tag")
+		verbose(v, "!tag")
 		return false
 	}
 	if !r.checkDownload(dir.UUID) {
-		printVal(r.verbose, "!download")
+		verbose(v, "!download")
 		return false
 	}
 	if string(values[9]) != "audio" {
 		if !r.checkImage(dir.Img000) {
-			printVal(r.verbose, "!000x")
+			verbose(v, "!000x")
 			return false
 		}
 		if !r.checkImage(dir.Img400) {
-			printVal(r.verbose, "!400x")
+			verbose(v, "!400x")
 			return false
 		}
 		if !r.checkImage(dir.Img150) {
-			printVal(r.verbose, "!150x")
+			verbose(v, "!150x")
 			return false
 		}
 	}
@@ -296,24 +301,24 @@ func (r *record) imagePath(path string) string {
 }
 
 func (r *record) recoverDownload(path string) (ok bool) {
-	src := viper.GetString("directory.incoming.files")
+	src, v := viper.GetString("directory.incoming.files"), r.verbose
 	if src == "" {
 		return false
 	}
 	file := filepath.Join(src, r.filename)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		printVal(r.verbose, "!incoming:"+file+" ")
+		verbose(v, "!incoming:"+file+" ")
 		return false
 	}
 	fc, err := copy(file, path)
 	if err != nil {
-		printVal(r.verbose, "!filecopy ")
+		verbose(v, "!filecopy ")
 		logs.Log(err)
 		return false
 	}
-	printVal(r.verbose, fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
+	verbose(v, fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		printVal(r.verbose, "!!filecopy ")
+		verbose(v, "!!filecopy ")
 		logs.Log(err)
 		return false
 	}
@@ -322,13 +327,13 @@ func (r *record) recoverDownload(path string) (ok bool) {
 
 func (r *record) summary(rows int) {
 	t := fmt.Sprintf("Total items handled: %d", r.c)
-	d := fmt.Sprintf("Database records fetched: %d", rows)
 	if rows <= r.c {
 		logs.Println(strings.Repeat("─", len(t)))
 		logs.Println(t)
-	} else {
-		logs.Println(strings.Repeat("─", len(d)))
-		logs.Println(t)
-		logs.Println(d)
+		return
 	}
+	d := fmt.Sprintf("Database records fetched: %d", rows)
+	logs.Println(strings.Repeat("─", len(d)))
+	logs.Println(t)
+	logs.Println(d)
 }
