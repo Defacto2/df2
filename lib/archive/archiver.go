@@ -113,6 +113,13 @@ func configure(f interface{}) (err error) {
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
 func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("walkr paniced with %s in archive %s: %v\n", filename, archive, r)
+		}
+	}()
+
 	a, err := archiver.ByExtension(filename)
 	if err != nil {
 		return fmt.Errorf("walkr byextension %q: %w", filename, err)
