@@ -15,10 +15,6 @@ import (
 )
 
 const (
-	// AED ANSI Erase in Display.
-	AED string = "\r\003[2J"
-	// AEL ANSI Erase in Line sequence.
-	AEL string = "\r\033[0K"
 	// GapUser is the configuration and logs subdirectory name.
 	GapUser string = "df2"
 	// Filename is the default error log filename.
