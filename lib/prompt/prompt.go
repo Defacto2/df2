@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	// PortMin is the lowest permitted network port
+	// PortMin is the lowest permitted network port.
 	PortMin = 0
-	// PortMax is the largest permitted network port
+	// PortMax is the largest permitted network port.
 	PortMax = 65535
 )
 
