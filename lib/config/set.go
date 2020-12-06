@@ -15,9 +15,6 @@ import (
 
 // Set edits and saves a setting within a configuration file.
 func Set(name string) error {
-	rec := func(value string) string {
-		return color.Info.Sprintf("(recommend: %v)", value)
-	}
 	if viper.ConfigFileUsed() == "" {
 		configMissing("set")
 	}
@@ -42,6 +39,16 @@ func Set(name string) error {
 		os.Exit(1)
 	}
 	Config.nameFlag = name
+	if err := sets(name); err != nil {
+		return fmt.Errorf("set %s: %w", name, err)
+	}
+	return nil
+}
+
+func sets(name string) error {
+	rec := func(value string) string {
+		return color.Info.Sprintf("(recommend: %v)", value)
+	}
 	s := viper.GetString(name)
 	switch s {
 	case "":
@@ -49,31 +56,26 @@ func Set(name string) error {
 	default:
 		fmt.Printf("\n%s is currently set to \"%v\"\n", name, color.Primary.Sprint(s))
 	}
-	var err error
 	switch {
 	case name == "connection.server.host":
 		fmt.Printf("\nSet a new host, leave blank to keep as-is %v: \n", rec("localhost"))
-		err = configSave(prompt.String(s))
+		return configSave(prompt.String(s))
 	case name == "connection.server.protocol":
 		fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", rec("tcp"))
-		err = configSave(prompt.String(s))
+		return configSave(prompt.String(s))
 	case name == "connection.server.port":
 		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", prompt.PortMin, prompt.PortMax, rec("3306"))
-		err = configSave(prompt.Port())
+		return configSave(prompt.Port())
 	case name[:10] == "directory.":
 		fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")
-		err = configSave(prompt.Dir())
+		return configSave(prompt.Dir())
 	case name == "connection.password":
 		fmt.Printf("\nSet a new MySQL user encrypted or plaintext password or leave blank to keep as-is: \n")
-		err = configSave(prompt.String(s))
+		return configSave(prompt.String(s))
 	default:
 		fmt.Printf("\nSet a new value, leave blank to keep as-is or use a dash [-] to disable: \n")
-		err = configSave(prompt.String(s))
+		return configSave(prompt.String(s))
 	}
-	if err != nil {
-		return fmt.Errorf("set %s: %w", name, err)
-	}
-	return nil
 }
 
 func configSave(value interface{}) error {
