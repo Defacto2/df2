@@ -42,6 +42,8 @@ type Person struct {
 	Hr bool
 }
 
+type persons []Person
+
 // Role or jobs to categories and filter people.
 type Role int
 
@@ -126,17 +128,17 @@ func List(role Role) (people []string, total int, err error) {
 		return nil, 0, fmt.Errorf("list rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	var persons sql.NullString
+	var p sql.NullString
 	i := 0
 	for rows.Next() {
-		if err = rows.Scan(&persons); err != nil {
+		if err = rows.Scan(&p); err != nil {
 			return nil, 0, fmt.Errorf("list row scan: %w", err)
 		}
-		if _, err = persons.Value(); err != nil {
+		if _, err = p.Value(); err != nil {
 			continue
 		}
 		i++
-		people = append(people, fmt.Sprintf("%v", persons.String))
+		people = append(people, fmt.Sprintf("%v", p.String))
 	}
 	return people, total, nil
 }
@@ -193,7 +195,7 @@ func parse(filename, tpl string, r Request) error {
 	if !str.Piped() {
 		logs.Println(x, "matching", f, "records found")
 	}
-	data, s, hr := make([]Person, len(grp)), "", false
+	data, s, hr := make(persons, len(grp)), "", false
 	total := len(grp)
 	for i := range grp {
 		if r.Progress {
@@ -216,6 +218,13 @@ func parse(filename, tpl string, r Request) error {
 			Hr:   hr,
 		}
 	}
+	if err := data.template(filename, tpl, r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (data persons) template(filename, tpl string, r Request) error {
 	t, err := template.New("h2").Parse(tpl)
 	if err != nil {
 		return fmt.Errorf("parse h2 template: %w", err)
