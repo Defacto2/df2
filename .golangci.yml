@@ -192,23 +192,23 @@ issues:
     # Exclude some staticcheck messages
     - linters:
         - gosec
-      text: "G203:"
-    - linters:
-        - gosec
       text: "G306:"
     # Exclude global vars that are dependent on Cobra or Goreleaser.
     - path: main\.go
       linters:
         - gochecknoglobals
-    - linters:
+    - path: lib/config/config\.go
+      linters:
         - gochecknoglobals
-      text: "`Config` is a global variable"
-    - linters:
+      text: "Config is a global variable"
+    - path: lib/logs/logs\.go
+      linters:
         - gochecknoglobals
-      text: "`Panic` is a global variable"
-    - linters:
+      text: "Panic is a global variable"
+    - path: lib/logs/logs\.go
+      linters:
         - gochecknoglobals
-      text: "`Quiet` is a global variable"
+      text: "Quiet is a global variable"
 run:
   skip-dirs:
     - internal
