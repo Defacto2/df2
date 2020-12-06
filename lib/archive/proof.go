@@ -53,7 +53,7 @@ func Extract(archive, filename, uuid string) error {
 	return nil
 }
 
-func tasks(tempDir string) (th task, tx task, err error) {
+func tasks(tempDir string) (th, tx task, err error) {
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
 		return th, tx, fmt.Errorf("extract archive read tempdir %q: %w", tempDir, err)
