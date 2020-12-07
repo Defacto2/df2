@@ -326,51 +326,17 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 
 // queryTables generates the SQL import database and tables statement.
 func (f *Flags) queryTables() (buf *bytes.Buffer, err error) {
-	const delta = 4
 	var buf1, buf2, buf3, buf4 *bytes.Buffer
 	switch f.Parallel {
 	case true:
-		var wg sync.WaitGroup
-		var e1, e2, e3, e4 error
-		wg.Add(delta)
-		go func(f *Flags) {
-			defer wg.Done()
-			buf1, e1 = f.reqDB(Files)
-		}(f)
-		go func(f *Flags) {
-			defer wg.Done()
-			buf2, e2 = f.reqDB(Groups)
-		}(f)
-		go func(f *Flags) {
-			defer wg.Done()
-			buf3, e3 = f.reqDB(Netresources)
-		}(f)
-		go func(f *Flags) {
-			defer wg.Done()
-			buf4, e4 = f.reqDB(Users)
-		}(f)
-		wg.Wait()
-		for _, err := range []error{e1, e2, e3, e4} {
-			if err != nil {
-				return nil, fmt.Errorf("query tables: %w", err)
-			}
+		buf1, buf2, buf3, buf4, err = f.queryTablesWG()
+		if err != nil {
+			return nil, err
 		}
 	default:
-		buf1, err = f.reqDB(Files)
+		buf1, buf2, buf3, buf4, err = f.queryTablesSeq()
 		if err != nil {
-			return nil, fmt.Errorf("query tables %s: %w", Files.String(), err)
-		}
-		buf2, err = f.reqDB(Groups)
-		if err != nil {
-			return nil, fmt.Errorf("query tables %s: %w", Groups.String(), err)
-		}
-		buf3, err = f.reqDB(Netresources)
-		if err != nil {
-			return nil, fmt.Errorf("query tables %s: %w", Netresources.String(), err)
-		}
-		buf4, err = f.reqDB(Users)
-		if err != nil {
-			return nil, fmt.Errorf("query tables %s: %w", Users.String(), err)
+			return nil, err
 		}
 	}
 	data := TablesTmp{
@@ -392,6 +358,56 @@ func (f *Flags) queryTables() (buf *bytes.Buffer, err error) {
 		return nil, fmt.Errorf("query tables template execute: %w", err)
 	}
 	return &b, nil
+}
+
+func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) {
+	const delta = 4
+	var wg sync.WaitGroup
+	var e1, e2, e3, e4 error
+	wg.Add(delta)
+	go func(f *Flags) {
+		defer wg.Done()
+		buf1, e1 = f.reqDB(Files)
+	}(f)
+	go func(f *Flags) {
+		defer wg.Done()
+		buf2, e2 = f.reqDB(Groups)
+	}(f)
+	go func(f *Flags) {
+		defer wg.Done()
+		buf3, e3 = f.reqDB(Netresources)
+	}(f)
+	go func(f *Flags) {
+		defer wg.Done()
+		buf4, e4 = f.reqDB(Users)
+	}(f)
+	wg.Wait()
+	for _, err := range []error{e1, e2, e3, e4} {
+		if err != nil {
+			return nil, nil, nil, nil, fmt.Errorf("query tables: %w", err)
+		}
+	}
+	return buf1, buf2, buf3, buf4, nil
+}
+
+func (f *Flags) queryTablesSeq() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) {
+	buf1, err = f.reqDB(Files)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Files.String(), err)
+	}
+	buf2, err = f.reqDB(Groups)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Groups.String(), err)
+	}
+	buf3, err = f.reqDB(Netresources)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Netresources.String(), err)
+	}
+	buf4, err = f.reqDB(Users)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Users.String(), err)
+	}
+	return buf1, buf2, buf3, buf4, nil
 }
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
