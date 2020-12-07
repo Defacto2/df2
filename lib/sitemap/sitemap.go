@@ -66,7 +66,7 @@ func Create() error {
 	if err != nil {
 		return fmt.Errorf("create db query: %w", err)
 	} else if rows.Err() != nil {
-		return fmt.Errorf("create db rows: %w", rowCnt.Err())
+		return fmt.Errorf("create db rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	// handle static urls
@@ -85,22 +85,8 @@ func Create() error {
 		if _, err = createdat.Value(); err != nil {
 			continue
 		}
-		// parse createdat and updatedat to use in the <lastmod> tag.
-		var lastmod string
-		if ok := updatedat.Valid; ok {
-			lastmod = updatedat.String
-		} else if ok := createdat.Valid; ok {
-			lastmod = createdat.String
-		}
-		lastmodFields := strings.Fields(lastmod)
-		// NOTE: most search engines do not bother with the lastmod value so it could be removed to improve size.
-		// blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given.
-		var lastmodValue string
-		if len(lastmodFields) > 0 {
-			t := strings.Split(lastmodFields[0], "T") // example value: 2020-04-06T20:51:36Z
-			lastmodValue = t[0]
-		}
-		v.Urls[i] = url{fmt.Sprintf("%v%v", resource, database.ObfuscateParam(id)), lastmodValue, "", ""}
+		lmv := lastmodValue(createdat, updatedat)
+		v.Urls[i] = url{fmt.Sprintf("%v%v", resource, database.ObfuscateParam(id)), lmv, "", ""}
 		c++
 		if c >= limit {
 			break
@@ -128,6 +114,24 @@ func Create() error {
 		return fmt.Errorf("create stdout: %w", err)
 	}
 	return db.Close()
+}
+
+// lastmodValue parse createdat and updatedat to use in the <lastmod> tag.
+func lastmodValue(createdat, updatedat sql.NullString) (s string) {
+	var lm string
+	if ok := updatedat.Valid; ok {
+		lm = updatedat.String
+	} else if ok := createdat.Valid; ok {
+		lm = createdat.String
+	}
+	f := strings.Fields(lm)
+	// NOTE: most search engines do not bother with the lastmod value so it could be removed to improve size.
+	// blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given.
+	if len(f) > 0 {
+		t := strings.Split(f[0], "T") // example value: 2020-04-06T20:51:36Z
+		s = t[0]
+	}
+	return s
 }
 
 func (v *URLset) staticURLs() (c, i int) {
