@@ -87,77 +87,9 @@ func (r *Record) fileZipContent() (ok bool, err error) {
 }
 
 func (r *Record) sql() (query string, args []interface{}) {
-	var set []string
 	// an range map iternation is not used due to the varied comparisons
-	if r.Filename != "" {
-		set = append(set, "filename=?")
-		args = append(args, []interface{}{r.Filename}...)
-	}
-	if r.Filesize != "" {
-		set = append(set, "filesize=?")
-		args = append(args, []interface{}{r.Filesize}...)
-	}
-	if r.FileZipContent != "" {
-		set = append(set, "file_zip_content=?")
-		args = append(args, []interface{}{r.FileZipContent}...)
-	}
-	if r.SumMD5 != "" {
-		set = append(set, "file_integrity_weak=?")
-		args = append(args, []interface{}{r.SumMD5}...)
-	}
-	if r.Sum384 != "" {
-		set = append(set, "file_integrity_strong=?")
-		args = append(args, []interface{}{r.Sum384}...)
-	}
-	const errYear = 0001
-	if r.LastMod.Year() != errYear {
-		set = append(set, "file_last_modified=?")
-		args = append(args, []interface{}{r.LastMod}...)
-	}
-	if r.WebIDPouet != 0 {
-		set = append(set, "web_id_pouet=?")
-		args = append(args, []interface{}{r.WebIDPouet}...)
-	}
-	if r.WebIDDemozoo == 0 && len(set) > 0 {
-		set = append(set, "web_id_demozoo=?")
-		args = append(args, []interface{}{""}...)
-	}
-	if r.DOSeeBinary != "" {
-		set = append(set, "dosee_run_program=?")
-		args = append(args, []interface{}{r.DOSeeBinary}...)
-	}
-	if r.Readme != "" {
-		set = append(set, "retrotxt_readme=?")
-		args = append(args, []interface{}{r.Readme}...)
-	}
-	if r.Title != "" {
-		set = append(set, "record_title=?")
-		args = append(args, []interface{}{r.Title}...)
-	}
-	if len(r.CreditText) > 0 {
-		set = append(set, "credit_text=?")
-		j := strings.Join(r.CreditText, ",")
-		args = append(args, []interface{}{j}...)
-	}
-	if len(r.CreditCode) > 0 {
-		set = append(set, "credit_program=?")
-		j := strings.Join(r.CreditCode, ",")
-		args = append(args, []interface{}{j}...)
-	}
-	if len(r.CreditArt) > 0 {
-		set = append(set, "credit_illustration=?")
-		j := strings.Join(r.CreditArt, ",")
-		args = append(args, []interface{}{j}...)
-	}
-	if len(r.CreditAudio) > 0 {
-		set = append(set, "credit_audio=?")
-		j := strings.Join(r.CreditAudio, ",")
-		args = append(args, []interface{}{j}...)
-	}
-	if r.Platform != "" {
-		set = append(set, "platform=?")
-		args = append(args, []interface{}{r.Platform}...)
-	}
+	set := r.sqlSets()
+	args = r.sqlArgs(set)
 	if len(set) == 0 {
 		return "", args
 	}
@@ -168,6 +100,117 @@ func (r *Record) sql() (query string, args []interface{}) {
 	query = "UPDATE files SET " + strings.Join(set, ",") + " WHERE id=?"
 	args = append(args, []interface{}{r.ID}...)
 	return query, args
+}
+
+func (r *Record) sqlSets() []string {
+	var set []string
+	if r.Filename != "" {
+		set = append(set, "filename=?")
+	}
+	if r.Filesize != "" {
+		set = append(set, "filesize=?")
+	}
+	if r.FileZipContent != "" {
+		set = append(set, "file_zip_content=?")
+	}
+	if r.SumMD5 != "" {
+		set = append(set, "file_integrity_weak=?")
+	}
+	if r.Sum384 != "" {
+		set = append(set, "file_integrity_strong=?")
+	}
+	const errYear = 0001
+	if r.LastMod.Year() != errYear {
+		set = append(set, "file_last_modified=?")
+	}
+	if r.WebIDPouet != 0 {
+		set = append(set, "web_id_pouet=?")
+	}
+	if r.WebIDDemozoo == 0 && len(set) > 0 {
+		set = append(set, "web_id_demozoo=?")
+	}
+	if r.DOSeeBinary != "" {
+		set = append(set, "dosee_run_program=?")
+	}
+	if r.Readme != "" {
+		set = append(set, "retrotxt_readme=?")
+	}
+	if r.Title != "" {
+		set = append(set, "record_title=?")
+	}
+	if len(r.CreditText) > 0 {
+		set = append(set, "credit_text=?")
+	}
+	if len(r.CreditCode) > 0 {
+		set = append(set, "credit_program=?")
+	}
+	if len(r.CreditArt) > 0 {
+		set = append(set, "credit_illustration=?")
+	}
+	if len(r.CreditAudio) > 0 {
+		set = append(set, "credit_audio=?")
+	}
+	if r.Platform != "" {
+		set = append(set, "platform=?")
+	}
+	return set
+}
+
+func (r *Record) sqlArgs(set []string) (args []interface{}) {
+	if r.Filename != "" {
+		args = append(args, []interface{}{r.Filename}...)
+	}
+	if r.Filesize != "" {
+		args = append(args, []interface{}{r.Filesize}...)
+	}
+	if r.FileZipContent != "" {
+		args = append(args, []interface{}{r.FileZipContent}...)
+	}
+	if r.SumMD5 != "" {
+		args = append(args, []interface{}{r.SumMD5}...)
+	}
+	if r.Sum384 != "" {
+		args = append(args, []interface{}{r.Sum384}...)
+	}
+	const errYear = 0001
+	if r.LastMod.Year() != errYear {
+		args = append(args, []interface{}{r.LastMod}...)
+	}
+	if r.WebIDPouet != 0 {
+		args = append(args, []interface{}{r.WebIDPouet}...)
+	}
+	if r.WebIDDemozoo == 0 && len(set) > 0 {
+		args = append(args, []interface{}{""}...)
+	}
+	if r.DOSeeBinary != "" {
+		args = append(args, []interface{}{r.DOSeeBinary}...)
+	}
+	if r.Readme != "" {
+		args = append(args, []interface{}{r.Readme}...)
+	}
+	if r.Title != "" {
+		args = append(args, []interface{}{r.Title}...)
+	}
+	if len(r.CreditText) > 0 {
+		j := strings.Join(r.CreditText, ",")
+		args = append(args, []interface{}{j}...)
+	}
+	if len(r.CreditCode) > 0 {
+		j := strings.Join(r.CreditCode, ",")
+		args = append(args, []interface{}{j}...)
+	}
+	if len(r.CreditArt) > 0 {
+		j := strings.Join(r.CreditArt, ",")
+		args = append(args, []interface{}{j}...)
+	}
+	if len(r.CreditAudio) > 0 {
+		j := strings.Join(r.CreditAudio, ",")
+		args = append(args, []interface{}{j}...)
+	}
+	if r.Platform != "" {
+		args = append(args, []interface{}{r.Platform}...)
+	}
+	return args
 }
 
 func (st *stat) fileExist(r *Record) (missing bool) {
