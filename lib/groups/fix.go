@@ -70,6 +70,8 @@ func cleanGroup(g string, sim bool) (ok bool) {
 // cleanString fixes any malformed strings.
 func cleanString(s string) string {
 	f := trimSP(s)
+	f = stripChars(f)
+	f = stripStart(f)
 	f = strings.TrimSpace(f)
 	f = trimThe(f)
 	f = format(f)
@@ -108,6 +110,25 @@ func format(s string) string {
 		groups[j] = strings.Join(words, " ")
 	}
 	return strings.Join(groups, ",")
+}
+
+// stripChars removes incompatible characters used for groups and author names.
+func stripChars(s string) string {
+	r := regexp.MustCompile(`[^A-Za-zÀ-ÖØ-öø-ÿ0-9\-\,\& ]`)
+	return r.ReplaceAllString(s, "")
+}
+
+// stripStart removes non-alphanumeric characters from the start of the string.
+func stripStart(s string) string {
+	r := regexp.MustCompile(`[A-Za-z0-9À-ÖØ-öø-ÿ]`)
+	f := r.FindStringIndex(s)
+	if f == nil {
+		return ""
+	}
+	if f[0] != 0 {
+		return s[f[0]:]
+	}
+	return s
 }
 
 // trimDot removes any trailing dots from a string.

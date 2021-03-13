@@ -53,6 +53,55 @@ func Test_cleanString(t *testing.T) {
 	}
 }
 
+func Test_stripChars(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{""}, ""},
+		{"", args{"ooÖØöøO"}, "ooÖØöøO"},
+		{"", args{"o.o|Ö+Ø=ö^ø#O"}, "ooÖØöøO"},
+		{"", args{"A Café!"}, "A Café"},
+		{"", args{"brunräven - över"}, "brunräven - över"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := stripChars(tt.args.s); got != tt.want {
+				t.Errorf("stripChars() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_stripStart(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{""}, ""},
+		{"", args{"hello world"}, "hello world"},
+		{"", args{"--argument"}, "argument"},
+		{"", args{"!!!OMG-WTF"}, "OMG-WTF"},
+		{"", args{"#ÖØöøO"}, "ÖØöøO"},
+		{"", args{"!@#$%^&A(+)ooÖØöøO"}, "A(+)ooÖØöøO"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := stripStart(tt.args.s); got != tt.want {
+				t.Errorf("stripStart() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_trimSP(t *testing.T) {
 	type args struct {
 		s string
