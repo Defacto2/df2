@@ -86,6 +86,8 @@ func rename(replacement, credits string, r Role) (count int64, err error) {
 		query = "UPDATE `files` SET credit_audio=? WHERE credit_audio=?"
 	case Writers:
 		query = "UPDATE `files` SET credit_text=? WHERE credit_text=?"
+	case Everyone:
+		query = ""
 	}
 	db := database.Connect()
 	defer db.Close()
