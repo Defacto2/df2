@@ -42,6 +42,13 @@ type (
 	part  map[string]string
 )
 
+type scan struct {
+	path   string       // directory to scan
+	delete bool         // delete any detected orphan files
+	human  bool         // humanize values shown by print output
+	m      database.IDs // UUID values fetched from the database
+}
+
 var (
 	ErrStructNil = errors.New("structure cannot be nil")
 	ErrPathEmpty = errors.New("path cannot be empty")
@@ -320,13 +327,6 @@ func (sum *results) calculate(s scan, d *directories.Dir) error {
 	sum.count += r.count
 	sum.fails += r.fails
 	return nil
-}
-
-type scan struct {
-	path   string       // directory to scan
-	delete bool         // delete any detected orphan files
-	human  bool         // humanize values shown by print output
-	m      database.IDs // UUID values fetched from the database
 }
 
 func (s *scan) archive(list []os.FileInfo, ignore files) files {

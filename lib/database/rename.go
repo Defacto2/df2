@@ -4,7 +4,7 @@ import "regexp"
 
 // StripChars removes incompatible characters used for groups and author names.
 func StripChars(s string) string {
-	r := regexp.MustCompile(`[^A-Za-zÀ-ÖØ-öø-ÿ0-9\-\,\& ]`)
+	r := regexp.MustCompile(`[^A-Za-zÀ-ÖØ-öø-ÿ0-9\-,& ]`)
 	return r.ReplaceAllString(s, "")
 }
 

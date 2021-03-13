@@ -16,6 +16,8 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
+type finds map[string]int
+
 // Demozoo data extracted from an archive.
 type Demozoo struct {
 	DOSee string // dosee_run_program column
@@ -118,8 +120,6 @@ func (f finds) top() string {
 	}
 	return ""
 }
-
-type finds map[string]int
 
 func findDOS(name string, files contents, varNames *[]string) string {
 	f := make(finds) // filename and priority values
