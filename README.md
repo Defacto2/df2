@@ -122,3 +122,23 @@ cd df2/internal
 cd df2/internal
 ./deploy.bash
 ```
+
+#### Troubleshoot tags
+
+A common goreleaser error requires the removal of unreleased tags.
+
+> goreleaser git tag _v1.0.0_ was not made against commit
+
+```bash
+cd df2/internal
+
+# list tags
+git tag -l
+
+# delete local tag
+git tag -d v1.0.0
+
+# delete github tag
+cd df2
+git push --delete origin v1.0.0
+```
