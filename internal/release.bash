@@ -24,14 +24,8 @@ go generate ./...
 git status
 
 git add --verbose ../. &&
-    git commit -m "$newcmmt" &&
-    git tag -a $newtag -m "$newcmmt" &&
-    git push origin $newtag &&
-    git pull &&
-    echo "You can now run ./deploy.bash"
-
-# notes
-# to delete a local tag
-# git tag --delete tagname
-# to delete a remote tag
-# git push --delete origin tagname
+    git commit -m "$newcmmt"
+git tag -a $newtag -m "$newcmmt"
+git push origin $newtag
+git pull
+echo "You can now run ./deploy.bash"
