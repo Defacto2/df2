@@ -107,15 +107,18 @@ go build .
 **Test** the building of the release.
 
 ```bash
-./internal/test.bash
+cd df2/internal
+./test.bash
 ```
 
 **Build** the release. This will request a __semantic version__ and a release __comment__.
 ```bash
-./internal/release.bash
+cd df2/internal
+./release.bash
 ```
 
 **Deploy** the release to GitHub.
 ```bash
-./internal/deploy.bash
+cd df2/internal
+./deploy.bash
 ```
