@@ -67,7 +67,7 @@ func distinct(column string) (values []string, err error) {
 	return values, db.Close()
 }
 
-func print(i int64, s *string) {
+func printcr(i int64, s *string) {
 	if i == 0 {
 		logs.Printcr(*s)
 	} else {
@@ -86,7 +86,7 @@ func updatePlatforms(platforms *[]string) {
 		}
 		s := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
-		print(c, &s)
+		printcr(c, &s)
 	}
 }
 
@@ -101,7 +101,7 @@ func updateSections(sections *[]string) {
 		}
 		str := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
-		print(c, &str)
+		printcr(c, &str)
 	}
 	// set all audio platform files to use intro section
 	// releaseadvert
@@ -113,5 +113,5 @@ func updateSections(sections *[]string) {
 	}
 	str := fmt.Sprintf("%s %s \"%s\"",
 		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
-	print(c, &str)
+	printcr(c, &str)
 }

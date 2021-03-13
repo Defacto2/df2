@@ -37,21 +37,21 @@ func Approve(verbose bool) error {
 	return nil
 }
 
-// copy a file to the destination.
-func copy(name, dest string) (written int64, err error) {
+// duplicate or copy a file to the destination.
+func dupe(name, dest string) (written int64, err error) {
 	src, err := os.Open(name)
 	if err != nil {
-		return 0, fmt.Errorf("copy open %s: %w", name, err)
+		return 0, fmt.Errorf("dupe open %s: %w", name, err)
 	}
 	defer src.Close()
 	dst, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, fm)
 	if err != nil {
-		return 0, fmt.Errorf("copy open new %s: %w", dest, err)
+		return 0, fmt.Errorf("dupe open new %s: %w", dest, err)
 	}
 	defer dst.Close()
 	written, err = io.Copy(dst, src)
 	if err != nil {
-		return 0, fmt.Errorf("copy io: %w", err)
+		return 0, fmt.Errorf("dupe io: %w", err)
 	}
 	return written, dst.Close()
 }
@@ -310,7 +310,7 @@ func (r *record) recoverDownload(path string) (ok bool) {
 		verbose(v, "!incoming:"+file+" ")
 		return false
 	}
-	fc, err := copy(file, path)
+	fc, err := dupe(file, path)
 	if err != nil {
 		verbose(v, "!filecopy ")
 		logs.Log(err)
