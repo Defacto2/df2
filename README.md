@@ -55,11 +55,12 @@ Use "df2 [command] --help" for more information about a command.
 
 ## Install
 
-Is built on [Go v1.14+](https://golang.org/doc/install) and is packaged for the Ubuntu Linux platform.
+Is built on [Go v1.16](https://golang.org/doc/install) and is packaged for the Ubuntu Linux platform.
 
 ```bash
+cd ~/downloads
 wget https://github.com/Defacto2/df2/releases/latest/download/df2.deb
-dpkg -i df2.deb
+dpkg -i df2.deb # this also works for updates
 df2 --version
 ```
 
@@ -102,7 +103,7 @@ cd df2
 go build .
 ```
 
-**GitHub releasing** requires [GoReleaser](https://goreleaser.com).
+**GitHub releasing** requires [GoReleaser](https://goreleaser.com) and [upx](https://upx.github.io/).
 
 **Test** the building of the release.
 
