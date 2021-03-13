@@ -38,7 +38,7 @@ func Fix(simulate bool) error {
 	case c > 0:
 		logs.Printcrf("%d fixes applied", c)
 	default:
-		logs.Printcr("no fixes needed")
+		logs.Printcr("no group fixes needed")
 	}
 	elapsed := time.Since(start).Seconds()
 	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))

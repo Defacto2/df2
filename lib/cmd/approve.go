@@ -7,6 +7,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
+	"github.com/Defacto2/df2/lib/people"
 )
 
 var approveVerb bool
@@ -23,6 +24,9 @@ var approveCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if err := groups.Fix(simulate); err != nil {
+			log.Fatal(err)
+		}
+		if err := people.Fix(simulate); err != nil {
 			log.Fatal(err)
 		}
 	},
