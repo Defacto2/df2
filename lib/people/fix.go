@@ -15,7 +15,6 @@ import (
 func Fix(simulate bool) error {
 	c, start := 0, time.Now()
 	for _, r := range []Role{Artists, Coders, Musicians, Writers} {
-		fmt.Println(r.String())
 		credits, _, err := List(r)
 		if err != nil {
 			return err
@@ -45,7 +44,7 @@ func Fix(simulate bool) error {
 
 // cleanPeople fixes and saves a malformed group name.
 func cleanPeople(credit string, r Role, sim bool) (ok bool) {
-	rep := cleanString(credit)
+	rep := cleanPerson(cleanString(credit))
 	if rep == credit {
 		return false
 	}
@@ -63,6 +62,17 @@ func cleanPeople(credit string, r Role, sim bool) (ok bool) {
 	}
 	logs.Printf("\n%s %q %s %s (%d)", s, credit, color.Question.Sprint("⟫"), color.Info.Sprint(rep), c)
 	return ok
+}
+
+func cleanPerson(rep string) string {
+	ppl := strings.Split(rep, ",")
+	for i, person := range ppl {
+		ss := database.StripStart(person)
+		if ss != person {
+			ppl[i] = ss
+		}
+	}
+	return strings.Join(ppl, ",")
 }
 
 func rename(replacement, credits string, r Role) (count int64, err error) {
