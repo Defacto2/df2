@@ -111,7 +111,7 @@ func (request Request) Queries() error {
 			continue
 		}
 		s.count++
-		r := new(values, s.basePath)
+		r := newRec(values, s.basePath)
 		if skip, err := s.fileSkip(r, request.HideMissing); skip {
 			continue
 		} else if err != nil {
@@ -150,7 +150,7 @@ func (r Record) iterate(s *stat) error {
 	return nil
 }
 
-func new(values []sql.RawBytes, path string) Record {
+func newRec(values []sql.RawBytes, path string) Record {
 	var r Record
 	r.ID = string(values[0])
 	r.UUID = string(values[1])

@@ -41,7 +41,7 @@ var (
 
 var (
 	configName = ""
-	panic      = false // debug log
+	panics     = false // debug log
 	quiet      = false // quiet disables most printing or output to terminal
 )
 
@@ -77,7 +77,7 @@ func init() {
 	initConfig()
 	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is %s)", config.Filepath()))
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
-	rootCmd.PersistentFlags().BoolVar(&panic, "panic", false, "panic in the disco")
+	rootCmd.PersistentFlags().BoolVar(&panics, "panic", false, "panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
 		logs.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func localBuild(date string) string {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	logs.Panic = panic
+	logs.Panic = panics
 	logs.Quiet = quiet
 	cf := config.Filepath()
 	if cf != "" {
