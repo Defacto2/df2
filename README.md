@@ -26,7 +26,7 @@ df2 is a command-line tool for managing plus optimising the files and database o
 
 ```bash
 A tool to optimise and manage defacto2.net
-Copyright © 2020 Ben Garrett
+Copyright © 2020-21 Ben Garrett
 https://github.com/Defacto2/df2
 
 Usage:
@@ -67,13 +67,13 @@ df2 --version
 
 The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) in the system `PATH`.
 
-[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html).
+[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). PNG image compression relies on [pngquant](https://pngquant.org).
 
 
 #### Ubuntu installation
 
 ```bash
-sudo apt install -y ansilove webp
+sudo apt install -y ansilove pngquant webp
 ```
 
 ## Configuration
@@ -88,4 +88,34 @@ To change the configuration.
 
 ```bash
 df2 config edit
+```
+
+## Builds
+
+All changes should be tested with the `golangci-lint` [Go linters aggregator](https://golangci-lint.run/).
+
+**Local builds** can be done using the standard tools.
+
+```bash
+git clone git@github.com:Defacto2/df2.git
+cd df2
+go build .
+```
+
+**GitHub releasing** requires [GoReleaser](https://goreleaser.com).
+
+**Test** the building of the release.
+
+```bash
+./internal/test.bash
+```
+
+**Build** the release. This will request a __semantic version__ and a release __comment__.
+```bash
+./internal/release.bash
+```
+
+**Deploy** the release to GitHub.
+```bash
+./internal/deploy.bash
 ```
