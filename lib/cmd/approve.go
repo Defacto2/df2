@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/groups"
 )
 
 var approveVerb bool
@@ -16,6 +17,12 @@ var approveCmd = &cobra.Command{
 	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := database.Approve(approveVerb); err != nil {
+			log.Fatal(err)
+		}
+		if err := database.Fix(); err != nil {
+			log.Fatal(err)
+		}
+		if err := groups.Fix(simulate); err != nil {
 			log.Fatal(err)
 		}
 	},
