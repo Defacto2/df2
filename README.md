@@ -53,7 +53,7 @@ Flags:
 Use "df2 [command] --help" for more information about a command.
 ```
 
-### Install
+## Install
 
 Is built on [Go v1.14+](https://golang.org/doc/install) and is packaged for the Ubuntu Linux platform.
 
@@ -69,7 +69,14 @@ The `df2 fix text` command requires the installation of [AnsiLove/C](https://git
 
 [WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html).
 
-### Configuration
+
+#### Ubuntu installation
+
+```bash
+sudo apt install -y ansilove webp
+```
+
+## Configuration
 
 To view and test the database and directory configurations.
 
