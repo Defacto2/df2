@@ -307,7 +307,7 @@ func list(f string) (groups []string, total int, err error) {
 
 // MakeSlug takes a name and makes it into a URL friendly slug.
 func MakeSlug(name string) string {
-	n := trimSP(name)
+	n := database.TrimSP(name)
 	n = remInitialism(n)
 	n = strings.ReplaceAll(n, "-", "_")
 	n = strings.ReplaceAll(n, ", ", "*")

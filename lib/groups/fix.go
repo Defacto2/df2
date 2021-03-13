@@ -2,7 +2,6 @@ package groups
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -59,7 +58,7 @@ func cleanGroup(g string, sim bool) (ok bool) {
 	}
 	s := str.Y()
 	ok = true
-	if _, err := database.Rename(f, g); err != nil {
+	if _, err := rename(f, g); err != nil {
 		s = str.X()
 		ok = false
 	}
@@ -69,9 +68,9 @@ func cleanGroup(g string, sim bool) (ok bool) {
 
 // cleanString fixes any malformed strings.
 func cleanString(s string) string {
-	f := trimSP(s)
-	f = stripChars(f)
-	f = stripStart(f)
+	f := database.TrimSP(s)
+	f = database.StripChars(f)
+	f = database.StripStart(f)
 	f = strings.TrimSpace(f)
 	f = trimThe(f)
 	f = format(f)
@@ -112,23 +111,24 @@ func format(s string) string {
 	return strings.Join(groups, ",")
 }
 
-// stripChars removes incompatible characters used for groups and author names.
-func stripChars(s string) string {
-	r := regexp.MustCompile(`[^A-Za-zÀ-ÖØ-öø-ÿ0-9\-\,\& ]`)
-	return r.ReplaceAllString(s, "")
-}
-
-// stripStart removes non-alphanumeric characters from the start of the string.
-func stripStart(s string) string {
-	r := regexp.MustCompile(`[A-Za-z0-9À-ÖØ-öø-ÿ]`)
-	f := r.FindStringIndex(s)
-	if f == nil {
-		return ""
+// rename replaces all instances of the group name with a new group name.
+func rename(replacement, group string) (count int64, err error) {
+	db := database.Connect()
+	defer db.Close()
+	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?, group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
+	if err != nil {
+		return 0, fmt.Errorf("rename group statement: %w", err)
 	}
-	if f[0] != 0 {
-		return s[f[0]:]
+	defer stmt.Close()
+	res, err := stmt.Exec(replacement, replacement, group, group)
+	if err != nil {
+		return 0, fmt.Errorf("rename group exec: %w", err)
 	}
-	return s
+	count, err = res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("rename group rows affected: %w", err)
+	}
+	return count, db.Close()
 }
 
 // trimDot removes any trailing dots from a string.
@@ -142,12 +142,6 @@ func trimDot(s string) string {
 		return s[:len(s)-1]
 	}
 	return s
-}
-
-// trimSP removes duplicate spaces from a string.
-func trimSP(s string) string {
-	r := regexp.MustCompile(`\s+`)
-	return r.ReplaceAllString(s, " ")
 }
 
 // trimThe removes a 'the' prefix from a string.

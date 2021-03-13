@@ -373,26 +373,6 @@ func ObfuscateParam(param string) string {
 	return strconv.FormatInt(int64(b), 16) + strconv.FormatInt(int64(a), 16)
 }
 
-// Rename replaces all instances of the group name with a new group name.
-func Rename(replacement, group string) (count int64, err error) {
-	db := Connect()
-	defer db.Close()
-	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?, group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
-	if err != nil {
-		return 0, fmt.Errorf("rename group statement: %w", err)
-	}
-	defer stmt.Close()
-	res, err := stmt.Exec(replacement, replacement, group, group)
-	if err != nil {
-		return 0, fmt.Errorf("rename group exec: %w", err)
-	}
-	count, err = res.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("rename group rows affected: %w", err)
-	}
-	return count, db.Close()
-}
-
 // Total reports the number of records fetched by the supplied SQL query.
 func Total(s *string) (sum int, err error) {
 	db := Connect()

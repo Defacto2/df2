@@ -12,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/people"
 	"github.com/Defacto2/df2/lib/text"
 )
 
@@ -43,6 +44,9 @@ var fixDatabaseCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if err := groups.Fix(simulate); err != nil {
+			log.Fatal(err)
+		}
+		if err := people.Fix(simulate); err != nil {
 			log.Fatal(err)
 		}
 	},
