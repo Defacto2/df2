@@ -170,7 +170,6 @@ func (req Request) Queries() error {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		fmt.Println()
 		st.fetched++
 		if skip, err := st.nextResult(records{rows, scanArgs, values}, req); err != nil {
 			logs.Danger(fmt.Errorf("request queries next row: %w", err))
@@ -183,6 +182,7 @@ func (req Request) Queries() error {
 			logs.Danger(fmt.Errorf("request queries new record: %w", err))
 			continue
 		}
+		fmt.Println()
 		logs.Printcrf(r.String(st.total))
 		if update := r.check(); !update {
 			continue
@@ -193,9 +193,10 @@ func (req Request) Queries() error {
 		} else if skip {
 			continue
 		}
-		switch {
-		case st.total == 0:
+		if st.total == 0 {
 			break
+		}
+		switch {
 		case req.Simulate:
 			logs.Printf(" • dry-run %v", str.Y())
 		default:
@@ -470,7 +471,7 @@ func (r *Record) platform(api *ProductionsAPIv1) {
 		case windows:
 			r.Platform = win
 		default:
-			break
+			continue
 		}
 	}
 }
