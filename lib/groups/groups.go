@@ -114,7 +114,7 @@ func Count(name string) (count int, err error) {
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob() error {
+func Cronjob(force bool) error {
 	for _, tag := range Wheres() {
 		last, err := database.LastUpdate()
 		if err != nil {
@@ -122,7 +122,10 @@ func Cronjob() error {
 		}
 		f := tag + htm
 		n := path.Join(viper.GetString("directory.html"), f)
-		update, err := database.FileUpdate(n, last)
+		update := true
+		if !force {
+			update, err = database.FileUpdate(n, last)
+		}
 		switch {
 		case err != nil:
 			return fmt.Errorf("group cronjob file update: %w", err)

@@ -114,7 +114,7 @@ func (r row) String() string {
 // Flags are command line arguments.
 type Flags struct {
 	Compress bool   // Compress and save the output
-	CronJob  bool   //
+	CronJob  bool   // Run in an automated mode
 	Parallel bool   // Run --table=all queries in parallel
 	Save     bool   // Save the output uncompressed
 	Table    Table  // Table of the database to use

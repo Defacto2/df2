@@ -20,6 +20,7 @@ import (
 type groupFlags struct {
 	counts   bool
 	cronjob  bool
+	forcejob bool
 	init     bool
 	progress bool
 	filter   string
@@ -78,6 +79,7 @@ func init() {
 	groupCmd.Flags().BoolVarP(&gpf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
 	groupCmd.Flags().BoolVarP(&gpf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
 	groupCmd.Flags().BoolVarP(&gpf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
+	groupCmd.Flags().BoolVar(&gpf.forcejob, "forcejob", false, "force the running of the cronjob automated mode")
 	groupCmd.Flags().StringVarP(&gpf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	groupCmd.Flags().BoolVarP(&gpf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
@@ -117,8 +119,13 @@ var groupCmd = &cobra.Command{
 	Aliases: []string{"g", "group"},
 	Short:   "A HTML snippet generator to list groups",
 	Run: func(cmd *cobra.Command, args []string) {
-		if gpf.cronjob {
-			if err := groups.Cronjob(); err != nil {
+		switch {
+		case gpf.cronjob, gpf.forcejob:
+			force := false
+			if gpf.forcejob {
+				force = true
+			}
+			if err := groups.Cronjob(force); err != nil {
 				log.Fatal(err)
 			}
 			return
