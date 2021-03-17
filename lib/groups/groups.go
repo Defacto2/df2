@@ -130,7 +130,7 @@ func Cronjob(force bool) error {
 		case err != nil:
 			return fmt.Errorf("group cronjob file update: %w", err)
 		case !update:
-			logs.Println(f + " has nothing to update")
+			logs.Printf("%s has nothing to update (%s)\n", tag, n)
 		default:
 			r := Request{tag, true, true, false}
 			if err := r.HTML(f); err != nil {
@@ -236,7 +236,8 @@ func (r Request) parse(filename, templ string) (err error) {
 		if f := r.Filter; f == "" {
 			logs.Println(total, "matching (all) records found")
 		} else {
-			logs.Println(total, "matching", f, "records found")
+			p := path.Join(viper.GetString("directory.html"), filename)
+			logs.Printf("%d matching %s records found (%s)\n", total, f, p)
 		}
 	}
 	data, err := r.iterate(groups...)
@@ -266,8 +267,18 @@ func (r Request) parse(filename, templ string) (err error) {
 			return fmt.Errorf("parse create: %w", err)
 		}
 		defer f.Close()
+		// prepend html
+		s := fmt.Sprintf("<div class=\"pagination-statistics\"><span class=\"label label-default\">%d %s sites</span></div><div class=\"columns-list\" id=\"organisationDrillDown\">", total, r.Filter)
+		if _, err := f.WriteString(s); err != nil {
+			return fmt.Errorf("prepend html writestring: %w", err)
+		}
+		// html template
 		if err = t.Execute(f, &data); err != nil {
 			return fmt.Errorf("parse t execute: %w", err)
+		}
+		// append html
+		if _, err := f.WriteString("</div>\n"); err != nil {
+			return fmt.Errorf("append html writestring: %w", err)
 		}
 	case None:
 		return fmt.Errorf("parse %q: %w", r.Filter, ErrFilter)
