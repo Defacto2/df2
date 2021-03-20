@@ -93,23 +93,25 @@ func SQL() error {
 			freed += int(f.Size())
 		}
 	}
-	fmt.Printf("Found %d files using %s.\n", cnt, humanize.Bytes(uint64(inUse)))
+	fmt.Printf("Found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
 	if len(files) == 0 {
-		fmt.Println("Nothing to do.")
+		fmt.Println(", but there is nothing to do.")
 		return nil
 	}
+	fmt.Println(".")
 
 	fmt.Printf("Will move %d items totaling %s, leaving %s used.\n",
 		len(files), humanize.Bytes(uint64(freed)), humanize.Bytes(uint64(inUse-freed)))
 
 	n := time.Now()
-	tgz, err := os.Create(filepath.Join(saveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz", n.Year(), n.Month(), n.Day())))
+	name := filepath.Join(saveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz", n.Year(), n.Month(), n.Day()))
+	tgz, err := os.Create(name)
 	if err != nil {
 		return fmt.Errorf("sql create: %w", err)
 	}
 	defer tgz.Close()
-	errs := archive.Compress(files, tgz)
-	if errs != nil {
+
+	if errs := archive.Compress(files, tgz); errs != nil {
 		for i, err := range errs {
 			fmt.Printf("error #%d: %s\n", i+1, err)
 		}
@@ -117,7 +119,13 @@ func SQL() error {
 	}
 	fmt.Println("Archiving is complete.")
 
-	// todo: remove source files
+	if errs := archive.Delete(files); errs != nil {
+		for i, err := range errs {
+			fmt.Printf("error #%d: %s\n", i+1, err)
+		}
+		return fmt.Errorf("%d sql delete errors", len(errs))
+	}
+	fmt.Println("Freeing up space is complete.")
 
 	return nil
 }
