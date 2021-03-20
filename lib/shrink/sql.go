@@ -39,16 +39,6 @@ var (
 // p = viper.GetString("directory.incoming.previews")
 )
 
-func IncFiles() error {
-
-	return nil
-}
-
-func IncPreviews() error {
-
-	return nil
-}
-
 func SQL() error {
 	const layout = "2-1-2006"
 	const oneMonth = 730
