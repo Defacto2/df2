@@ -1,12 +1,16 @@
-package directories
+package shrink
 
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/lib/archive"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/viper"
 )
@@ -46,15 +50,19 @@ func IncPreviews() error {
 }
 
 func SQL() error {
+	const layout = "2-1-2006"
+	const oneMonth = 730
+
 	s := viper.GetString("directory.sql")
 	fmt.Printf("SQL Dir: %s\n", s)
 	c, err := ioutil.ReadDir(s)
 	if err != nil {
 		return fmt.Errorf("sql read directory: %w", err)
 	}
-	size, files, moves, moveSize := 0, 0, 0, 0
-	const layout = "2-1-2006"
-	//now, err := time.Parse(layout, time.Now().Format(layout))
+
+	cnt, freed, inUse := 0, 0, 0
+	files := []string{}
+
 	for _, f := range c {
 		if f.IsDir() {
 			continue
@@ -68,32 +76,46 @@ func SQL() error {
 		if month(m) == non {
 			continue
 		}
-		files++
-		size += int(f.Size())
-		create, err := time.Parse(layout, fmt.Sprintf("1-%d-%s", month(m), dashes[len(dashes)-1]))
+		cnt++
+		inUse += int(f.Size())
+		create, err := time.Parse(layout, fmt.Sprintf("1-%d-%s",
+			month(m), dashes[len(dashes)-1]))
 		if err != nil {
-			return err
+			fmt.Printf("error parsing date from %s: %s\n", f.Name(), err)
+			continue
 		}
-		const oneMonth = 730
-		const old = time.Hour * oneMonth * 2
-		age := time.Since(create)
-		if age > old {
+		const expire = time.Hour * oneMonth * 2
+		if time.Since(create) > expire {
 			if filepath.Ext(f.Name()) == ".sql" {
 				fmt.Printf("%s is to be moved.\n", f.Name())
 			}
-			moves++
-			moveSize += int(f.Size())
+			files = append(files, filepath.Join(s, f.Name()))
+			freed += int(f.Size())
 		}
 	}
-	fmt.Printf("Found %d files using %s.\n", files, humanize.Bytes(uint64(size)))
-	if moves > 0 {
-		fmt.Printf("Will move %d items totaling %s, leaving %s used.\n", moves, humanize.Bytes(uint64(moveSize)), humanize.Bytes(uint64(size-moveSize)))
+	fmt.Printf("Found %d files using %s.\n", cnt, humanize.Bytes(uint64(inUse)))
+	if len(files) == 0 {
+		fmt.Println("Nothing to do.")
+		return nil
 	}
-	//
-	//
-	// keep two months back, current and last month
-	// syntax = d2-sql-update-September-2020.sql.sha1
-	// slice filename and match last two items
+
+	fmt.Printf("Will move %d items totaling %s, leaving %s used.\n",
+		len(files), humanize.Bytes(uint64(freed)), humanize.Bytes(uint64(inUse-freed)))
+
+	n := time.Now()
+	tgz, err := os.Create(filepath.Join(saveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz", n.Year(), n.Month(), n.Day())))
+	if err != nil {
+		return fmt.Errorf("sql create: %w", err)
+	}
+	defer tgz.Close()
+	err = archive.Compress(files, tgz)
+	if err != nil {
+		return fmt.Errorf("sql compress: %w", err)
+	}
+	fmt.Println("Archiving is complete.")
+
+	// todo: remove source files
+
 	return nil
 }
 
@@ -127,4 +149,16 @@ func month(s string) Month {
 	default:
 		return non
 	}
+}
+
+func saveDir() string {
+	user, err := user.Current()
+	if err == nil {
+		return user.HomeDir
+	}
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatalln("shrink saveDir failed to get the user home or the working directory:", err)
+	}
+	return dir
 }
