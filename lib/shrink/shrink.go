@@ -108,9 +108,12 @@ func SQL() error {
 		return fmt.Errorf("sql create: %w", err)
 	}
 	defer tgz.Close()
-	err = archive.Compress(files, tgz)
-	if err != nil {
-		return fmt.Errorf("sql compress: %w", err)
+	errs := archive.Compress(files, tgz)
+	if errs != nil {
+		for i, err := range errs {
+			fmt.Printf("error #%d: %s\n", i+1, err)
+		}
+		return fmt.Errorf("%d sql compress errors", len(errs))
 	}
 	fmt.Println("Archiving is complete.")
 

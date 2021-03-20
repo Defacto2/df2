@@ -8,20 +8,38 @@ import (
 	"os"
 )
 
-func Compress(files []string, buf io.Writer) error {
+func Compress(files []string, buf io.Writer) (errs []error) {
 	w := tar.NewWriter(buf)
 	defer w.Close()
 
 	for _, file := range files {
 		if err := add(w, file); err != nil {
-			return fmt.Errorf("compress %s: %w", file, err)
+			errs = append(errs, fmt.Errorf("compress: %w", err))
 		}
+	}
+
+	if len(errs) > 0 {
+		return errs
 	}
 
 	return nil
 }
 
-func Store(files []string, buf io.Writer) error {
+func Delete(files []string) (errs []error) {
+	for _, file := range files {
+		if err := os.Remove(file); err != nil {
+			errs = append(errs, fmt.Errorf("delete: %w", err))
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	return nil
+}
+
+func Store(files []string, buf io.Writer) (errs []error) {
 	gw := gzip.NewWriter(buf)
 	defer gw.Close()
 	tw := tar.NewWriter(gw)
@@ -29,8 +47,12 @@ func Store(files []string, buf io.Writer) error {
 
 	for _, file := range files {
 		if err := add(tw, file); err != nil {
-			return fmt.Errorf("store %s: %w", file, err)
+			errs = append(errs, fmt.Errorf("store: %w", err))
 		}
+	}
+
+	if len(errs) > 0 {
+		return errs
 	}
 
 	return nil
