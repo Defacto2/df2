@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +14,10 @@ var shrinkCmd = &cobra.Command{
 	Short:   "Reduces the space used in directories",
 	Aliases: []string{"s"},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello world.")
+		fmt.Println("Shrinking directories")
+		if err := directories.SQL(); err != nil {
+			logs.Danger(err)
+		}
 	},
 }
 
