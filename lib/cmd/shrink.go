@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"github.com/Defacto2/df2/lib/logs"
+	"sync"
+
 	"github.com/Defacto2/df2/lib/shrink"
 	"github.com/spf13/cobra"
 )
@@ -12,9 +13,21 @@ var shrinkCmd = &cobra.Command{
 	Short:   "Reduces the space used in directories",
 	Aliases: []string{"s"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := shrink.SQL(); err != nil {
-			logs.Danger(err)
-		}
+		var wg sync.WaitGroup
+		wg.Add(3)
+		go func() {
+			shrink.SQL()
+			wg.Done()
+		}()
+		go func() {
+			shrink.Files()
+			wg.Done()
+		}()
+		go func() {
+			shrink.Previews()
+			wg.Done()
+		}()
+		wg.Wait()
 	},
 }
 

@@ -3,14 +3,13 @@ package shrink
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/lib/archive"
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/viper"
 )
@@ -33,18 +32,18 @@ const (
 	dec
 )
 
-var (
-// s = viper.GetString("directory.sql")
-// f = viper.GetString("directory.incoming.files")
-// p = viper.GetString("directory.incoming.previews")
-)
+func SQL() {
+	if err := sql(); err != nil {
+		logs.Danger(err)
+	}
+}
 
-func SQL() error {
+func sql() error {
 	const layout = "2-1-2006"
 	const oneMonth = 730
 
 	s := viper.GetString("directory.sql")
-	fmt.Printf("SQL Dir: %s\n", s)
+	fmt.Printf("SQL directory: %s\n", s)
 	c, err := ioutil.ReadDir(s)
 	if err != nil {
 		return fmt.Errorf("sql read directory: %w", err)
@@ -83,14 +82,14 @@ func SQL() error {
 			freed += int(f.Size())
 		}
 	}
-	fmt.Printf("Found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
+	fmt.Printf("SQL found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
 	if len(files) == 0 {
 		fmt.Println(", but there is nothing to do.")
 		return nil
 	}
 	fmt.Println(".")
 
-	fmt.Printf("Will move %d items totaling %s, leaving %s used.\n",
+	fmt.Printf("SQL will move %d items totaling %s, leaving %s used.\n",
 		len(files), humanize.Bytes(uint64(freed)), humanize.Bytes(uint64(inUse-freed)))
 
 	n := time.Now()
@@ -107,7 +106,7 @@ func SQL() error {
 		}
 		return fmt.Errorf("%d sql compress errors", len(errs))
 	}
-	fmt.Println("Archiving is complete.")
+	fmt.Println("SQL archiving is complete.")
 
 	if errs := archive.Delete(files); errs != nil {
 		for i, err := range errs {
@@ -115,51 +114,7 @@ func SQL() error {
 		}
 		return fmt.Errorf("%d sql delete errors", len(errs))
 	}
-	fmt.Println("Freeing up space is complete.")
+	fmt.Println("SQL freeing up space is complete.")
 
 	return nil
-}
-
-func month(s string) Month {
-	//fmt.Println(strings.ToLower(s)[:3])
-	switch strings.ToLower(s)[:3] {
-	case "jan":
-		return jan
-	case "feb":
-		return feb
-	case "mar":
-		return mar
-	case "apr":
-		return apr
-	case "may":
-		return may
-	case "jun":
-		return jun
-	case "jul":
-		return jul
-	case "aug":
-		return aug
-	case "sep":
-		return sep
-	case "oct":
-		return oct
-	case "nov":
-		return nov
-	case "dec":
-		return dec
-	default:
-		return non
-	}
-}
-
-func saveDir() string {
-	user, err := user.Current()
-	if err == nil {
-		return user.HomeDir
-	}
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatalln("shrink saveDir failed to get the user home or the working directory:", err)
-	}
-	return dir
 }
