@@ -11,6 +11,7 @@ import (
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
+	"github.com/gookit/color"
 	"github.com/spf13/viper"
 )
 
@@ -43,7 +44,7 @@ func sql() error {
 	const oneMonth = 730
 
 	s := viper.GetString("directory.sql")
-	fmt.Printf("SQL directory: %s\n", s)
+	color.Primary.Printf("SQL directory: %s\n", s)
 	c, err := ioutil.ReadDir(s)
 	if err != nil {
 		return fmt.Errorf("sql read directory: %w", err)

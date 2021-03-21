@@ -1,6 +1,7 @@
 package shrink
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,16 +10,23 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/lib/archive"
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
+	"github.com/gookit/color"
 	"github.com/spf13/viper"
 )
 
 // cd /opt/daily-defacto2/ROOT/incoming/user_submissions/files
+var ErrApprove = errors.New("cannot shrink files as there are database records waiting for public approval")
 
 func Files() {
 	s := viper.GetString("directory.incoming.files")
-	fmt.Printf("Incoming files directory: %s\n", s)
+	color.Primary.Printf("Incoming files directory: %s\n", s)
+	if err := approve("incoming"); err != nil {
+		logs.Danger(err)
+		return
+	}
 	if err := store(s, "Incoming", "incoming-files"); err != nil {
 		logs.Danger(err)
 		return
@@ -28,7 +36,10 @@ func Files() {
 
 func Previews() {
 	s := viper.GetString("directory.incoming.previews")
-	fmt.Printf("Previews incoming directory: %s\n", s)
+	color.Primary.Printf("Previews incoming directory: %s\n", s)
+	if err := approve("previews"); err != nil {
+		return
+	}
 	if err := store(s, "Previews", "incoming-preview"); err != nil {
 		logs.Danger(err)
 		return
@@ -55,7 +66,6 @@ func store(path string, cmd string, partial string) error {
 	}
 
 	if len(files) == 0 {
-		//fmt.Printf("%s has no files for backup.\n", cmd)
 		return nil
 	}
 	fmt.Printf("%s found %d files using %s for backup.\n", cmd, cnt, humanize.Bytes(uint64(inUse)))
@@ -83,5 +93,16 @@ func store(path string, cmd string, partial string) error {
 	}
 	fmt.Printf("%s freeing up space is complete.\n", cmd)
 
+	return nil
+}
+
+func approve(cmd string) error {
+	wait, err := database.Waiting()
+	if err != nil {
+		return fmt.Errorf("approve count: %w", err)
+	}
+	if wait > 0 {
+		return fmt.Errorf("%d %s files waiting approval: %w", wait, cmd, ErrApprove)
+	}
 	return nil
 }
