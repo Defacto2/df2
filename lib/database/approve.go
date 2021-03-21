@@ -29,12 +29,25 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 	"FROM `files`\n" +
 	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 
+const countWaiting = "SELECT COUNT(*)\nFROM `files`\n" +
+	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
+
 // Approve automatically checks and clears file records for live.
 func Approve(verbose bool) error {
 	if err := queries(verbose); err != nil {
 		return err
 	}
 	return nil
+}
+
+// Waiting returns the number of files requiring approval for public display.
+func Waiting() (count uint, err error) {
+	db := Connect()
+	defer db.Close()
+	if err = db.QueryRow(countWaiting).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // duplicate or copy a file to the destination.
