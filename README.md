@@ -22,6 +22,8 @@ df2 is a command-line tool for managing plus optimising the files and database o
 
 **proof** automates the parsing of files tagged as _#releaseproof_.
 
+**shrink** moves old SQL backups and incoming uploads to the user home directory ready for download and removal.
+
 ---
 
 ```bash
@@ -43,6 +45,7 @@ Available Commands:
   new         Handler for files flagged as waiting to go live
   output      JSON, HTML, SQL and sitemap generator
   proof       Handler for files tagged as #releaseproof
+  shrink      Reduces the space used in directories
 
 Flags:
       --config string   config file (default is config.yaml)
