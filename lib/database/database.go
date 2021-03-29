@@ -265,10 +265,12 @@ func IsID(s string) bool {
 
 // IsNew reports if a file record is set to unapproved.
 func IsNew(b []sql.RawBytes) bool {
-	if b[2] == nil {
+	// SQL column names can be found in the selectSQL statement in database.go
+	deletedat, updatedat := b[2], b[8]
+	if deletedat == nil {
 		return false
 	}
-	n, err := valid(b[2], b[3])
+	n, err := valid(deletedat, updatedat)
 	if err != nil {
 		logs.Log(err)
 	}
@@ -437,22 +439,23 @@ func reverseInt(value uint) (reversed uint, err error) {
 	return uint(n), nil
 }
 
-func valid(deleted, updated sql.RawBytes) (bool, error) {
+func valid(deletedat, updatedat sql.RawBytes) (bool, error) {
 	const (
 		min = -5
 		max = 5
 	)
 	// normalise the date values as sometimes updatedat & deletedat can be off by a second.
-	del, err := time.Parse(time.RFC3339, string(deleted))
+	del, err := time.Parse(time.RFC3339, string(deletedat))
 	if err != nil {
 		return false, fmt.Errorf("valid deleted time: %w", err)
 	}
-	upd, err := time.Parse(time.RFC3339, string(updated))
+	upd, err := time.Parse(time.RFC3339, string(updatedat))
 	if err != nil {
 		return false, fmt.Errorf("valid updated time: %w", err)
 	}
 	if diff := upd.Sub(del); diff.Seconds() > max || diff.Seconds() < min {
 		return false, nil
 	}
+	fmt.Println("\n", "del", del, "upd", upd, "sub", upd.Sub(del))
 	return true, nil
 }
