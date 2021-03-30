@@ -16,6 +16,6 @@ type Build struct {
 // B holds the build and version information.
 var B = Build{
 	Commit:  "n/a",
-	Date:    "2021-03-29T19:56:46+08:00",
-	Version: "v1.1.20",
+	Date:    "2021-03-30T10:45:33+08:00",
+	Version: "v1.1.21",
 }
