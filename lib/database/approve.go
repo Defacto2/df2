@@ -115,7 +115,7 @@ func queries(v bool) error {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
-		if n := IsNew(values); !n {
+		if n := NewApprove(values); !n {
 			continue
 		}
 		r.uuid = string(values[1])

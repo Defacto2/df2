@@ -233,7 +233,7 @@ func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
 	if err := rec.rows.Scan(rec.scanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
-	if n := database.IsNew(rec.values); !n && req.flags() {
+	if n := database.NewDemozoo(rec.values); !n && req.flags() {
 		return true, nil
 	}
 	st.count++
@@ -269,7 +269,7 @@ func (st *stat) sumTotal(rec records, req Request) error {
 		if err := rec.rows.Scan(rec.scanArgs...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
 		}
-		if n := database.IsNew(rec.values); !n && req.flags() {
+		if n := database.NewDemozoo(rec.values); !n && req.flags() {
 			continue
 		}
 		st.total++

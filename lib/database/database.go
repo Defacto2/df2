@@ -263,20 +263,6 @@ func IsID(s string) bool {
 	return true
 }
 
-// IsNew reports if a file record is set to unapproved.
-func IsNew(b []sql.RawBytes) bool {
-	// SQL column names can be found in the selectSQL statement in database.go
-	deletedat, updatedat := b[2], b[8]
-	if deletedat == nil {
-		return false
-	}
-	n, err := valid(deletedat, updatedat)
-	if err != nil {
-		logs.Log(err)
-	}
-	return n
-}
-
 // IsUUID reports whether string is a universal unique record id.
 func IsUUID(s string) bool {
 	if _, err := uuid.Parse(s); err != nil {
@@ -338,6 +324,48 @@ func LookupFile(s string) (name string, err error) {
 		}
 	}
 	return n.String, nil
+}
+
+// NewApprove reports if a new file record is set to unapproved.
+func NewApprove(b []sql.RawBytes) bool {
+	// SQL column names can be found in the newFilesSQL statement in approve.go
+	deletedat, updatedat := b[2], b[8]
+	if deletedat == nil {
+		return false
+	}
+	n, err := valid(deletedat, updatedat)
+	if err != nil {
+		logs.Log(err)
+	}
+	return n
+}
+
+// NewDemozoo reports if a fetched demozoo file record is set to unapproved.
+func NewDemozoo(b []sql.RawBytes) bool {
+	// SQL column names can be found in the selectSQL statement in database.go
+	deletedat, updatedat := b[2], b[8]
+	if deletedat == nil {
+		return false
+	}
+	n, err := valid(deletedat, updatedat)
+	if err != nil {
+		logs.Log(err)
+	}
+	return n
+}
+
+// NewProof reports if a fetched proof file record is set to unapproved.
+func NewProof(b []sql.RawBytes) bool {
+	// SQL column names can be found in the sqlSelect() func in proof.go
+	deletedat, updatedat := b[2], b[6]
+	if deletedat == nil {
+		return false
+	}
+	n, err := valid(deletedat, updatedat)
+	if err != nil {
+		logs.Log(err)
+	}
+	return n
 }
 
 // ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.

@@ -172,7 +172,7 @@ func (request Request) flagSkip(values []sql.RawBytes) (skip bool) {
 	if request.byID != "" && request.Overwrite {
 		return false
 	}
-	if n := database.IsNew(values); !n && !request.AllProofs {
+	if n := database.NewProof(values); !n && !request.AllProofs {
 		if request.byID != "" {
 			logs.Printf("skip file record id '%s' as it is not new", request.byID)
 		}
