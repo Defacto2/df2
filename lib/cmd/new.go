@@ -30,43 +30,38 @@ var newCmd = &cobra.Command{
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.Check()
-		// demozoo handler
+		color.Info.Println("Scan for new demozoo submissions")
 		dz := demozoo.Request{
 			All:       false,
 			Overwrite: false,
 			Refresh:   false,
 			Simulate:  false,
 		}
-		color.Info.Println("scan for new demozoo submissions")
 		if err := dz.Queries(); err != nil {
 			logs.Fatal(err)
 		}
-		// proofs handler
+		color.Info.Println("Scan for new proof submissions")
 		p := proof.Request{
 			Overwrite:   false,
 			AllProofs:   false,
 			HideMissing: false,
 		}
-		color.Info.Println("scan for new proof submissions")
 		if err := p.Queries(); err != nil {
 			logs.Fatal(err)
 		}
-		// missing image previews
-		color.Info.Println("generate missing images")
+		color.Info.Println("Generate missing images")
 		if err := images.Fix(false); err != nil {
 			logs.Fatal(err)
 		}
-		// missing text file previews
-		color.Info.Println("generate missing text previews")
+		color.Info.Println("Generate missing text previews")
 		if err := text.Fix(false); err != nil {
 			logs.Fatal(err)
 		}
-		// fix database entries
-		color.Info.Println("fix demozoo data conflicts")
+		color.Info.Println("Fix demozoo data conflicts")
 		if err := demozoo.Fix(); err != nil {
 			log.Fatal(err)
 		}
-		color.Info.Println("fix malformed database entries")
+		color.Info.Println("Fix malformed database entries")
 		if err := database.Fix(); err != nil {
 			log.Fatal(err)
 		}

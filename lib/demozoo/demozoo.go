@@ -159,7 +159,9 @@ func (req Request) Queries() error {
 	if err = st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
 		return fmt.Errorf("req queries sum total: %w", err)
 	}
-	if st.total > 1 {
+	if st.total == 0 {
+		logs.Println("nothing to do")
+	} else {
 		logs.Println("Total records", st.total)
 	}
 	rows, err = db.Query(stmt)
@@ -182,7 +184,6 @@ func (req Request) Queries() error {
 			logs.Danger(fmt.Errorf("request queries new record: %w", err))
 			continue
 		}
-		fmt.Println()
 		logs.Printcrf(r.String(st.total))
 		if update := r.check(); !update {
 			continue
@@ -207,6 +208,9 @@ func (req Request) Queries() error {
 		st.byID = req.byID
 		st.print()
 		return nil
+	}
+	if st.total > 0 {
+		fmt.Println()
 	}
 	st.summary(time.Since(start))
 	return nil
@@ -256,7 +260,7 @@ func (st stat) print() {
 
 func (st stat) summary(elapsed time.Duration) {
 	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.count, elapsed.Seconds())
-	logs.Println("\n" + strings.Repeat("─", len(t)))
+	logs.Println(strings.Repeat("─", len(t)))
 	logs.Println(t)
 	if st.missing > 0 {
 		logs.Println("UUID files not found:", st.missing)
