@@ -41,7 +41,7 @@ require (
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
 	golang.org/x/sys v0.0.0-20210313110737-8e9fff1a3a18
-	golang.org/x/text v0.3.5
+	golang.org/x/text v0.3.6
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
