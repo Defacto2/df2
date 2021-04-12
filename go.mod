@@ -14,7 +14,7 @@ require (
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/uuid v1.2.0
-	github.com/gookit/color v1.3.8
+	github.com/gookit/color v1.4.2
 	github.com/gopherjs/gopherjs v0.0.0-20210202160940-bed99a852dfe // indirect
 	github.com/hako/durafmt v0.0.0-20200710122514-c0fb7b4da026
 	github.com/klauspost/compress v1.11.12 // indirect
@@ -40,7 +40,7 @@ require (
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
-	golang.org/x/sys v0.0.0-20210313110737-8e9fff1a3a18
+	golang.org/x/sys v0.0.0-20210330210617-4fbd30eecc44
 	golang.org/x/text v0.3.5
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
