@@ -10,6 +10,7 @@ import (
 	m "math/rand"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"time"
 
@@ -183,4 +184,18 @@ func randString(n int) (string, error) {
 		s[i] = r[x%y]
 	}
 	return string(s), nil
+}
+
+func Size(path string) (count int64, bytes uint64, err error) {
+	err = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			bytes += uint64(info.Size())
+			count += 1
+		}
+		return err
+	})
+	return count, bytes, err
 }
