@@ -146,7 +146,7 @@ func createHolderFile(dir string, size int, prefix uint) error {
 		return fmt.Errorf("create holder file: %w", err)
 	}
 	text := []byte(r)
-	if err := ioutil.WriteFile(fn, text, 0644); err != nil {
+	if err := ioutil.WriteFile(fn, text, 0644); err != nil { //nolint:gosec
 		return fmt.Errorf("write create holder file %q: %w", fn, err)
 	}
 	return nil
@@ -186,8 +186,8 @@ func randString(n int) (string, error) {
 	return string(s), nil
 }
 
-func Size(path string) (count int64, bytes uint64, err error) {
-	err = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+func Size(dir string) (count int64, bytes uint64, err error) {
+	err = filepath.Walk(dir, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

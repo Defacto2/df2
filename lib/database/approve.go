@@ -44,7 +44,7 @@ func Approve(verbose bool) error {
 func Waiting() (count uint, err error) {
 	db := Connect()
 	defer db.Close()
-	if err = db.QueryRow(countWaiting).Scan(&count); err != nil {
+	if err := db.QueryRow(countWaiting).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil

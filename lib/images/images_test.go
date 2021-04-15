@@ -26,8 +26,8 @@ func testDest(ext string) string {
 	return filepath.Join(testDir("images"), "test-clone."+ext)
 }
 
-func testSqr(ext string) string {
-	return filepath.Join(testDir("images"), "test-thumb."+ext)
+func testSqr() string {
+	return filepath.Join(testDir("images"), "test-thumb.png")
 }
 
 func testTxt() string {
@@ -228,9 +228,9 @@ func TestToThumb(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", args{"", "", 0}, true},
-		{"zero size", args{testImg("png"), testSqr("png"), 0}, true},
-		{"png", args{testImg("png"), testSqr("png"), 100}, false},
-		{"gif", args{testImg("gif"), testSqr("png"), 100}, false},
+		{"zero size", args{testImg("png"), testSqr(), 0}, true},
+		{"png", args{testImg("png"), testSqr(), 100}, false},
+		{"gif", args{testImg("gif"), testSqr(), 100}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -240,7 +240,7 @@ func TestToThumb(t *testing.T) {
 				return
 			} else if str != "" {
 				// cleanup
-				if err := os.Remove(testSqr("png")); err != nil {
+				if err := os.Remove(testSqr()); err != nil {
 					t.Fatal(err)
 				}
 			}

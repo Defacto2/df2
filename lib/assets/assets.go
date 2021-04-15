@@ -45,7 +45,7 @@ type (
 type scan struct {
 	path   string       // directory to scan
 	delete bool         // delete any detected orphan files
-	human  bool         // humanize values shown by print output
+	human  bool         // humanise values shown by print output
 	m      database.IDs // UUID values fetched from the database
 }
 

@@ -33,16 +33,25 @@ const (
 	Users
 )
 
+const (
+	fs = "files"
+	gs = "groups"
+	nr = "netresources"
+	us = "users"
+	cr = "create"
+	up = "update"
+)
+
 func (t Table) String() string {
 	switch t {
 	case Files:
-		return "files"
+		return fs
 	case Groups:
-		return "groups"
+		return gs
 	case Netresources:
-		return "netresources"
+		return nr
 	case Users:
-		return "users"
+		return us
 	}
 	return ""
 }
@@ -60,9 +69,9 @@ const (
 func (m Method) String() string {
 	switch m {
 	case Create:
-		return "create"
+		return cr
 	case Insert:
-		return "update"
+		return up
 	}
 	return ""
 }
@@ -191,13 +200,13 @@ func (f *Flags) ExportTable() error {
 		return fmt.Errorf("export table: %w", err)
 	}
 	switch strings.ToLower(f.Tables) {
-	case "files", "f":
+	case fs, "f":
 		f.Table = Files
-	case "groups", "g":
+	case gs, "g":
 		f.Table = Groups
-	case "netresources", "n":
+	case nr, "n":
 		f.Table = Netresources
-	case "users", "u":
+	case us, "u":
 		f.Table = Users
 	default:
 		return fmt.Errorf("export table %q: %w", f.Tables, ErrNoTable)
@@ -247,9 +256,9 @@ func (f *Flags) fileName() string {
 
 func (f *Flags) method() error {
 	switch strings.ToLower(f.Type) {
-	case "create", "c":
+	case cr, "c":
 		f.Method = Create
-	case "update", "u":
+	case up, "u":
 		f.Method = Insert
 	default:
 		return fmt.Errorf("type flag %q: %w", f.Type, ErrNoMethod)
