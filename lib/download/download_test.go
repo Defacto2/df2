@@ -138,7 +138,7 @@ func Test_percent(t *testing.T) {
 	}
 }
 
-func TestLinkDownload(t *testing.T) {
+func TestLinkDownload_Ping(t *testing.T) {
 	type args struct {
 		name string
 		url  string
@@ -164,22 +164,6 @@ func TestLinkDownload(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-	}
-}
-
-func TestLinkPing(t *testing.T) {
-	type args struct {
-		url string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"empty", args{""}, true},
-		{"fake", args{"https://example.com"}, false},
-		{"fake", args{"https://thisisnotaurl-example.com"}, true},
-		{"fake", args{"https://example.com"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

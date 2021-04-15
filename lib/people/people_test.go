@@ -116,30 +116,7 @@ func TestPrint(t *testing.T) {
 	}
 }
 
-func TestDataList(t *testing.T) {
-	type args struct {
-		filename string
-		r        Request
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"error", args{"", Request{"error", false, false}}, true},
-		{"ok", args{"", Request{"", false, false}}, false},
-		{"progress", args{"", Request{"", false, true}}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DataList(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
-				t.Errorf("DataList() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestHTML(t *testing.T) {
+func Test_DataList_HTML(t *testing.T) {
 	type args struct {
 		filename string
 		r        Request
@@ -157,6 +134,13 @@ func TestHTML(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := HTML(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
 				t.Errorf("HTML() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := DataList(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
+				t.Errorf("DataList() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

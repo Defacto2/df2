@@ -2,7 +2,7 @@
 package demozoo
 
 import (
-	"crypto/md5"
+	"crypto/md5" // nolint: gosec
 	"crypto/sha512"
 	"database/sql"
 	"errors"
@@ -362,7 +362,7 @@ func (r *Record) fileMeta() (err error) {
 		return fmt.Errorf("record file meta open: %w", err)
 	}
 	defer f.Close()
-	h1 := md5.New()
+	h1 := md5.New() // nolint: gosec
 	if _, err := io.Copy(h1, f); err != nil {
 		return fmt.Errorf("record file meta io copy for the md5 hash: %w", err)
 	}

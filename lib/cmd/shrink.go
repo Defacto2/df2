@@ -13,8 +13,9 @@ var shrinkCmd = &cobra.Command{
 	Short:   "Reduces the space used in directories",
 	Aliases: []string{"s"},
 	Run: func(cmd *cobra.Command, args []string) {
+		const delta = 3
 		var wg sync.WaitGroup
-		wg.Add(3)
+		wg.Add(delta)
 		go func() {
 			shrink.SQL()
 			wg.Done()

@@ -60,20 +60,26 @@ const (
 	Writers
 )
 
-const all = "all"
+const (
+	all       = "all"
+	artists   = "artists"
+	coders    = "coders"
+	musicians = "musicians"
+	writers   = "writers"
+)
 
 func (r Role) String() string {
 	switch r {
 	case Everyone:
 		return all
 	case Artists:
-		return "artists"
+		return artists
 	case Coders:
-		return "coders"
+		return coders
 	case Musicians:
-		return "musicians"
+		return musicians
 	case Writers:
-		return "writers"
+		return writers
 	default:
 		return ""
 	}
@@ -294,13 +300,13 @@ func peopleStmt(role Role, softDel bool) (stmt string) {
 
 func roles(r string) Role {
 	switch r {
-	case "writers", "w":
+	case writers, "w":
 		return Writers
-	case "musicians", "m":
+	case musicians, "m":
 		return Musicians
-	case "coders", "c":
+	case coders, "c":
 		return Coders
-	case "artists", "a":
+	case artists, "a":
 		return Artists
 	case "", all:
 		return Everyone

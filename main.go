@@ -31,7 +31,7 @@ import (
 	"github.com/gookit/color"
 )
 
-// goreleaser generated ldflags containers
+// goreleaser generated ldflags containers.
 var (
 	version = "0.0.0"
 	commit  = "unset" // nolint: gochecknoglobals
@@ -46,7 +46,9 @@ func main() {
 	fs.Usage = func() {
 		// disable go flag help
 	}
-	fs.Parse(os.Args[1:])
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		log.Print(err)
+	}
 	if *ver || *v {
 		app()
 		info()
@@ -95,30 +97,34 @@ func info() {
      date: {{.Date}}
      path: {{.Path}}
 `
-	const miss = "missing"
+	const (
+		disconnect = "disconnect"
+		ok         = "ok"
+		miss       = "missing"
+	)
 	p := func(s string) string {
 		switch s {
-		case "ok":
+		case ok:
 			const padding = 10
 			return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
 		case miss:
 			const padding = 12
 			return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
-		case "disconnect":
+		case disconnect:
 			const padding = 10
 			return color.Error.Sprint("disconnected") + strings.Repeat(" ", padding-len(s))
 		}
 		return ""
 	}
-	a, w, d, bin := miss, miss, "disconnect", ""
+	a, w, d, bin := miss, miss, disconnect, ""
 	if err := database.ConnectInfo(); err == "" {
-		d = "ok"
+		d = ok
 	}
 	if _, err := exec.LookPath("ansilove"); err == nil {
-		a = "ok"
+		a = ok
 	}
 	if _, err := exec.LookPath("cwebp"); err == nil {
-		w = "ok"
+		w = ok
 	}
 	bin, err := self()
 	if err != nil {
