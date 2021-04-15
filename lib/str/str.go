@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/logs"
 )

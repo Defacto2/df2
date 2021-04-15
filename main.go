@@ -28,7 +28,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/cmd"
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 // goreleaser generated ldflags containers.

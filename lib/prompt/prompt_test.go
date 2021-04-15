@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 func TestYN(t *testing.T) {

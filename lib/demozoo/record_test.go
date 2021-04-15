@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 type fields struct {

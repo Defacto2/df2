@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize" //nolint:misspell
 	"github.com/gabriel-vasile/mimetype"
 
 	"github.com/Defacto2/df2/lib/logs"

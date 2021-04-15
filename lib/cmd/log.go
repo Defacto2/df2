@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
 

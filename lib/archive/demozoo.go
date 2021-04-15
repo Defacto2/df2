@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"

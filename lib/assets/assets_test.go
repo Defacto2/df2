@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/directories"

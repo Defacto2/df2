@@ -17,7 +17,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	"github.com/spf13/viper"
 
 	"github.com/Defacto2/df2/lib/logs"
@@ -78,7 +78,7 @@ type Empty struct{}
 // IDs are unique UUID values used by the database and filenames.
 type IDs map[string]struct{}
 
-// Init initializes the database connection using stored settings.
+// Init initialises the database connection using stored settings.
 func Init() Connection {
 	// load config from file or use defaults
 	if viper.GetString("connection.name") == "" {
@@ -434,7 +434,7 @@ func collen(s *sql.ColumnType) string {
 	return ""
 }
 
-// defaults initializes default connection settings.
+// defaults initialises default connection settings.
 func defaults() {
 	viper.SetDefault("connection.name", "defacto2-inno")
 	viper.SetDefault("connection.user", "root")

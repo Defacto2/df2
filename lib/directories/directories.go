@@ -36,7 +36,7 @@ type Dir struct {
 	UUID   string // path to file downloads with UUID as filenames
 }
 
-// Init initializes the subdirectories and UUID structure.
+// Init initialises the subdirectories and UUID structure.
 func Init(create bool) Dir {
 	if viper.GetString("directory.root") == "" {
 		viper.SetDefault("directory.000", "/opt/assets/000")
@@ -71,7 +71,7 @@ func Init(create bool) Dir {
 	return d
 }
 
-// Files initializes the full path filenames for a UUID.
+// Files initialises the full path filenames for a UUID.
 func Files(name string) (dirs Dir) {
 	dirs = Init(false)
 	dirs.UUID = path.Join(dirs.UUID, name)
@@ -193,7 +193,7 @@ func Size(path string) (count int64, bytes uint64, err error) {
 		}
 		if !info.IsDir() {
 			bytes += uint64(info.Size())
-			count += 1
+			count++
 		}
 		return err
 	})

@@ -10,14 +10,14 @@ import (
 	"path/filepath"
 
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	gap "github.com/muesli/go-app-paths"
 
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
 
-// directories are initialized and configured by InitDefaults() in lib/cmd.go.
+// directories are initialised and configured by InitDefaults() in lib/cmd.go.
 
 const (
 	cmdPath              = "df2 config"

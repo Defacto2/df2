@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 

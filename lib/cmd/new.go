@@ -4,7 +4,7 @@ package cmd
 import (
 	"log"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	"github.com/spf13/cobra"
 
 	"github.com/Defacto2/df2/lib/config"

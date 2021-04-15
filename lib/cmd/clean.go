@@ -14,7 +14,7 @@ import (
 
 type cleanFlags struct {
 	delete   bool
-	humanize bool
+	humanize bool //nolint:misspell
 	makeDirs bool
 	target   string
 }

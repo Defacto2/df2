@@ -38,16 +38,23 @@ const (
 	Magazine
 )
 
+const (
+	bb  = "bbs"
+	fp  = "ftp"
+	grp = "group"
+	mag = "magazine"
+)
+
 func (f Filter) String() string {
 	switch f {
 	case BBS:
-		return "bbs"
+		return bb
 	case FTP:
-		return "ftp"
+		return fp
 	case Group:
-		return "group"
+		return grp
 	case Magazine:
-		return "magazine"
+		return mag
 	case None:
 		return ""
 	}
@@ -56,13 +63,13 @@ func (f Filter) String() string {
 
 func filter(s string) Filter {
 	switch strings.ToLower(s) {
-	case "bbs":
+	case bb:
 		return BBS
-	case "ftp":
+	case fp:
 		return FTP
-	case "group":
+	case grp:
 		return Group
-	case "magazine":
+	case mag:
 		return Magazine
 	case "":
 		return None
