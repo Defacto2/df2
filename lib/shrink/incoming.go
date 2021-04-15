@@ -17,8 +17,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-// cd /opt/daily-defacto2/ROOT/incoming/user_submissions/files
-var ErrApprove = errors.New("cannot shrink files as there are database records waiting for public approval")
+var (
+	ErrApprove  = errors.New("cannot shrink files as there are database records waiting for public approval")
+	ErrDel      = errors.New("delete errors")
+	ErrArcStore = errors.New("archive store error")
+)
 
 func Files() {
 	s := viper.GetString("directory.incoming.files")
@@ -47,7 +50,7 @@ func Previews() {
 	fmt.Println("Previews storage is complete.")
 }
 
-func store(path string, cmd string, partial string) error {
+func store(path, cmd, partial string) error {
 	c, err := ioutil.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("store read: %w", err)
@@ -82,14 +85,14 @@ func store(path string, cmd string, partial string) error {
 		for i, err := range errs {
 			fmt.Printf("error #%d: %s\n", i+1, err)
 		}
-		return fmt.Errorf("%d %s errors", len(errs), partial)
+		return fmt.Errorf("%w: %d %s", ErrArcStore, len(errs), partial)
 	}
 
 	if errs := archive.Delete(files); errs != nil {
 		for i, err := range errs {
 			fmt.Printf("error #%d: %s\n", i+1, err)
 		}
-		return fmt.Errorf("%d %s delete errors", len(errs), strings.ToLower(partial))
+		return fmt.Errorf("%w: %d %s", ErrDel, len(errs), strings.ToLower(partial))
 	}
 	fmt.Printf("%s freeing up space is complete.\n", cmd)
 

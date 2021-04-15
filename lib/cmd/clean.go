@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -36,7 +37,7 @@ var cleanCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(cleanCmd)
 	cleanCmd.Flags().StringVarP(&clf.target, "target", "t", "all", "what file section to clean"+options(targets...))
 	cleanCmd.Flags().BoolVarP(&clf.delete, "delete", "x", false, "erase all discovered files to free up drive space")

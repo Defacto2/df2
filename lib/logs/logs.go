@@ -28,9 +28,9 @@ const (
 
 var (
 	// Panic uses the panic function to handle all error logs.
-	Panic = false
+	Panic = false // nolint:gochecknoglobals
 	// Quiet stops most writing to the standard output.
-	Quiet = false
+	Quiet = false // nolint:gochecknoglobals
 )
 
 // ErrNoArg no args.

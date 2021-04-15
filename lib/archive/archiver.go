@@ -100,7 +100,7 @@ func configure(f interface{}) (err error) {
 		*archiver.Lz4,
 		*archiver.Snappy,
 		*archiver.Xz:
-		// nothing to customize
+		// nothing to customise
 	default:
 		err = fmt.Errorf("configure %v: %w", f, ErrNoCustom)
 		return err

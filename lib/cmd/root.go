@@ -1,4 +1,5 @@
 // Package cmd handles the commandline user interface and interactions.
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -60,7 +61,7 @@ func Execute() {
 	config.Check()
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	cobra.OnInitialize()
 	initConfig()
 	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is %s)", config.Filepath()))

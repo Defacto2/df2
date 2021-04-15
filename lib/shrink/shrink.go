@@ -39,11 +39,12 @@ func month(s string) Month {
 }
 
 func saveDir() string {
-	user, err := user.Current()
+	usr, err := user.Current()
 	if err == nil {
-		return user.HomeDir
+		return usr.HomeDir
 	}
-	dir, err := os.Getwd()
+	var dir string
+	dir, err = os.Getwd()
 	if err != nil {
 		log.Fatalln("shrink saveDir failed to get the user home or the working directory:", err)
 	}

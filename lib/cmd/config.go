@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -95,7 +96,7 @@ var configSetCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	database.Init()
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)
