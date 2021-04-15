@@ -16,23 +16,146 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
+	"text/template"
+	"time"
+
 	"github.com/Defacto2/df2/lib/cmd"
-	ver "github.com/Defacto2/df2/lib/version"
+	"github.com/Defacto2/df2/lib/database"
+	"github.com/gookit/color"
 )
 
 // goreleaser generated ldflags containers
-// https://goreleaser.com/environment/#using-the-mainversion
-var version, commit, date string
+var (
+	version = "0.0.0"
+	commit  = "unset" // nolint: gochecknoglobals
+	date    = "unset" // nolint: gochecknoglobals
+)
 
 func main() {
-	if version != "" {
-		ver.B.Version = version
+	// go flag lib
+	fs := flag.NewFlagSet("df2", flag.ContinueOnError)
+	ver := fs.Bool("version", false, "version and information for this program")
+	v := fs.Bool("v", false, "alias for version")
+	fs.Usage = func() {
+		// disable go flag help
 	}
-	if commit != "" {
-		ver.B.Commit = commit
+	fs.Parse(os.Args[1:])
+	if *ver || *v {
+		app()
+		info()
+		return
 	}
-	if date != "" {
-		ver.B.Date = date
-	}
+	// cobra flag lib
 	cmd.Execute()
+}
+
+func app() {
+	type Data struct {
+		Version string
+	}
+	const verTmp = `
+   df2 tool version: {{.Version}}
+`
+	data := Data{
+		Version: color.Primary.Sprint(version),
+	}
+	tmpl, err := template.New("ver").Parse(verTmp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var b bytes.Buffer
+	if err := tmpl.Execute(&b, data); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(b.String())
+}
+
+func info() {
+	type Data struct {
+		Database string
+		Ansilove string
+		Webp     string
+		Commit   string
+		Date     string
+		Path     string
+	}
+	const exeTmp = ` ┌── requirements ──────────┐
+ │  database: {{.Database}}  │
+ │  ansilove: {{.Ansilove}}  │
+ │  webp lib: {{.Webp}}  │
+ └──────────────────────────┘
+   commit: {{.Commit}}
+     date: {{.Date}}
+     path: {{.Path}}
+`
+	const miss = "missing"
+	p := func(s string) string {
+		switch s {
+		case "ok":
+			const padding = 10
+			return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
+		case miss:
+			const padding = 12
+			return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
+		case "disconnect":
+			const padding = 10
+			return color.Error.Sprint("disconnected") + strings.Repeat(" ", padding-len(s))
+		}
+		return ""
+	}
+	a, w, d, bin := miss, miss, "disconnect", ""
+	if err := database.ConnectInfo(); err == "" {
+		d = "ok"
+	}
+	if _, err := exec.LookPath("ansilove"); err == nil {
+		a = "ok"
+	}
+	if _, err := exec.LookPath("cwebp"); err == nil {
+		w = "ok"
+	}
+	bin, err := self()
+	if err != nil {
+		bin = fmt.Sprint(err)
+	}
+
+	data := Data{
+		Database: p(d),
+		Ansilove: p(a),
+		Webp:     p(w),
+		Commit:   commit,
+		Date:     localBuild(date),
+		Path:     bin,
+	}
+	tmpl, err := template.New("checks").Parse(exeTmp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var b bytes.Buffer
+	if err := tmpl.Execute(&b, data); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(b.String())
+}
+
+func localBuild(date string) string {
+	t, err := time.Parse(time.RFC3339, date)
+	if err != nil {
+		return date
+	}
+	return t.Local().Format("2006 Jan 2, 15:04 MST")
+}
+
+func self() (string, error) {
+	exe, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("self error: %w", err)
+	}
+	return exe, nil
 }
