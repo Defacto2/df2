@@ -107,6 +107,9 @@ type Result struct {
 
 // Count returns the number of file entries associated with a group.
 func Count(name string) (count int, err error) {
+	if name == "" {
+		return 0, nil
+	}
 	db := database.Connect()
 	defer db.Close()
 	n := name
