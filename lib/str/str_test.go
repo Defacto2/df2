@@ -58,11 +58,11 @@ func Test_Progress(t *testing.T) {
 		args args
 		want float64
 	}{
-		{"", args{"", 1, 10}, float64(10)},
-		{"", args{"", 10, 10}, float64(100)},
-		{"", args{"", 0, 10}, float64(0)},
-		{"", args{"", -1, 10}, float64(-10)},
-		{"", args{"", 1, 99999}, float64(0.001000010000100001)},
+		{"ten", args{"", 1, 10}, float64(10)},
+		{"hundred", args{"", 10, 10}, float64(100)},
+		{"zero", args{"", 0, 10}, float64(0)},
+		{"negative", args{"", -1, 10}, float64(-10)},
+		{"decimal", args{"", 1, 99999}, float64(0.001000010000100001)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
