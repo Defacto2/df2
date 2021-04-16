@@ -20,6 +20,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	gap "github.com/muesli/go-app-paths"
 	"github.com/nickalie/go-webpbin"
+	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
 	_ "golang.org/x/image/bmp"  // register BMP decoding
 	_ "golang.org/x/image/tiff" // register TIFF decoding
@@ -34,7 +35,9 @@ const (
 	fmode             = os.O_RDWR | os.O_CREATE
 )
 
-var ErrFormat = errors.New("unsupported image format")
+var (
+	ErrFormat = errors.New("unsupported image format")
+)
 
 // Duplicate an image file and appends suffix to its name.
 func Duplicate(filename, suffix string) (name string, err error) {
@@ -82,6 +85,9 @@ func Generate(src, id string, remove bool) error {
 			return
 		}
 		logs.Log(e)
+	}
+	if viper.GetString("directory.root") == "" {
+		return errors.New("viper directory locations cannot be read")
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
