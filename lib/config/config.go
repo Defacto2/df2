@@ -39,7 +39,7 @@ type settings struct {
 
 var (
 	// Config settings.
-	Config = settings{
+	Config = settings{ //nolint:gochecknoglobals
 		Name:   filename,
 		Errors: false,
 		ignore: false,

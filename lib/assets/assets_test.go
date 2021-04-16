@@ -14,10 +14,6 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 )
 
-func init() {
-	color.Enable = false
-}
-
 func TestClean(t *testing.T) {
 	type args struct {
 		t      string
@@ -52,6 +48,7 @@ func TestCreateUUIDMap(t *testing.T) {
 	}{
 		{"", true, true, false},
 	}
+	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotTotal, gotUuids, err := CreateUUIDMap()
@@ -102,6 +99,7 @@ func Test_backup(t *testing.T) {
 	}
 	d := directories.Init(false)
 	d.Backup = os.TempDir() // overwrite /opt/assets/backups
+	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := backup(tt.args.s, &d, nil, tt.args.list); (err != nil) != tt.wantErr {
@@ -180,6 +178,7 @@ func createTempDir() (sum int64, dir string, err error) {
 func Test_ignoreList(t *testing.T) {
 	var want struct{}
 	d := directories.Init(false)
+	color.Enable = false
 	if got := ignoreList("", &d)["blank.png"]; !reflect.DeepEqual(got, want) {
 		t.Errorf("ignoreList() = %v, want %v", got, want)
 	}
@@ -196,6 +195,7 @@ func Test_targets(t *testing.T) {
 		{"error", -1, 0},
 	}
 	d := directories.Init(false)
+	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := targets(tt.target, &d); len(got) != tt.want {
@@ -228,6 +228,7 @@ func Test_walkName(t *testing.T) {
 		{"dir", args{dir, file}, "", true},
 		{"dir", args{dir, filepath.Join(dir, file)}, valid, false},
 	}
+	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotName, err := walkName(tt.args.basepath, tt.args.path)

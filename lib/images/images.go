@@ -79,9 +79,9 @@ func Generate(src, id string, remove bool) error {
 	out := func(s string, e error) {
 		if s != "" {
 			logs.Printf("  %s", s)
-		} else {
-			logs.Log(e)
+			return
 		}
+		logs.Log(e)
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
@@ -116,9 +116,13 @@ func Generate(src, id string, remove bool) error {
 		s, err = ToThumb(webpLoc, f.Img150, 150)
 	}
 	out(s, err)
+	return cleanup(remove, src)
+}
+
+func cleanup(remove bool, src string) error {
 	if remove {
 		if err := os.Remove(src); err != nil {
-			return fmt.Errorf("generate remove %q: %w", src, err)
+			return fmt.Errorf("generate cleanup %q: %w", src, err)
 		}
 	}
 	return nil

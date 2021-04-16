@@ -45,30 +45,12 @@ func Info(sizes bool) error {
 		case "server":
 			if db != "" {
 				logs.Printf(" %s %s", str.X(), db)
-			} else {
-				logs.Printf(" %s %s", color.Success.Sprint("up"), str.Y())
+				break
 			}
+			logs.Printf(" %s %s", color.Success.Sprint("up"), str.Y())
 		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
-			_, err := os.Stat(val)
-			switch {
-			case os.IsNotExist(err):
-				logs.Printf(" %s %s", val, str.X())
-			case err != nil:
-				return fmt.Errorf("info stat %q: %w", val, err)
-			default:
-				if !sizes {
-					logs.Printf(" %s %s", val, str.Y())
-					break
-				}
-				count, size, err := directories.Size(val)
-				if err != nil {
-					log.Println(err)
-				}
-				if count == 0 {
-					logs.Printf(" %s (0 files) %s", val, str.Y())
-					break
-				}
-				logs.Printf(" %s (%d files, %s) %s", val, count, humanize.Bytes(size), str.Y())
+			if err := parse(sizes, val); err != nil {
+				return err
 			}
 		case "password":
 			logs.Print(color.Warn.Sprint(" **********"))
@@ -76,6 +58,31 @@ func Info(sizes bool) error {
 			logs.Printf(" %s", val)
 		}
 		logs.Println()
+	}
+	return nil
+}
+
+func parse(sizes bool, val string) error {
+	_, err := os.Stat(val)
+	switch {
+	case os.IsNotExist(err):
+		logs.Printf(" %s %s", val, str.X())
+	case err != nil:
+		return fmt.Errorf("info stat %q: %w", val, err)
+	default:
+		if !sizes {
+			logs.Printf(" %s %s", val, str.Y())
+			break
+		}
+		count, size, err := directories.Size(val)
+		if err != nil {
+			log.Println(err)
+		}
+		if count == 0 {
+			logs.Printf(" %s (0 files) %s", val, str.Y())
+			break
+		}
+		logs.Printf(" %s (%d files, %s) %s", val, count, humanize.Bytes(size), str.Y())
 	}
 	return nil
 }

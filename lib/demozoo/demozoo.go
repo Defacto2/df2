@@ -417,12 +417,17 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	r.FilePath = filepath.Join(storage, r.UUID)
 	if skip := r.download(overwrite, &api, st); skip {
 		return true, nil
-	} else if update := r.check(); !update {
+	}
+	if update := r.check(); !update {
 		return true, nil
 	}
 	if r.Platform == "" {
 		r.platform(&api)
 	}
+	return r.parse(&api)
+}
+
+func (r *Record) parse(api *ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists

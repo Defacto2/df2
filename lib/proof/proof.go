@@ -74,7 +74,8 @@ func (request Request) Queries() error {
 	rows, err := db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()
@@ -91,15 +92,12 @@ func (request Request) Queries() error {
 	for rows.Next() {
 		s.total++
 	}
-	if s.total < 1 && request.byID != "" {
-		logs.Printf("file record id '%s' does not exist or is not a release proof\n", request.byID)
-	} else if s.total > 1 {
-		logs.Println("Total records", s.total)
-	}
+	s.printTotals(request)
 	rows, err = db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()
@@ -126,6 +124,15 @@ func (request Request) Queries() error {
 	}
 	s.summary(request.byID)
 	return nil
+}
+
+func (s *stat) printTotals(request Request) {
+	if s.total < 1 && request.byID != "" {
+		logs.Printf("file record id '%s' does not exist or is not a release proof\n", request.byID)
+	}
+	if s.total > 1 {
+		logs.Println("Total records", s.total)
+	}
 }
 
 // iterate through each value.
