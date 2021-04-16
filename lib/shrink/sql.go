@@ -105,12 +105,23 @@ func sql() error {
 
 	n := time.Now()
 	name := filepath.Join(saveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz", n.Year(), n.Month(), n.Day()))
+	if err := compress(name, files); err != nil {
+		return err
+	}
+
+	if err := delete(files); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func compress(name string, files []string) error {
 	tgz, err := os.Create(name)
 	if err != nil {
 		return fmt.Errorf("sql create: %w", err)
 	}
 	defer tgz.Close()
-
 	if errs := archive.Compress(files, tgz); errs != nil {
 		for i, err := range errs {
 			fmt.Printf("error #%d: %s\n", i+1, err)
@@ -118,7 +129,10 @@ func sql() error {
 		return fmt.Errorf("%w: %d", ErrSQLComp, len(errs))
 	}
 	fmt.Println("SQL archiving is complete.")
+	return nil
+}
 
+func delete(files []string) error {
 	if errs := archive.Delete(files); errs != nil {
 		for i, err := range errs {
 			fmt.Printf("error #%d: %s\n", i+1, err)
@@ -126,6 +140,5 @@ func sql() error {
 		return fmt.Errorf("%w: %d", ErrSQLDel, len(errs))
 	}
 	fmt.Println("SQL freeing up space is complete.")
-
 	return nil
 }

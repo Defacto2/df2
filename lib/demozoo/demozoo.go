@@ -134,6 +134,7 @@ func (req *Request) Query(id string) (err error) {
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
+// nolint: funlen,gocyclo
 func (req Request) Queries() error {
 	var st stat
 	stmt, start := selectByID(req.byID), time.Now()
@@ -167,7 +168,8 @@ func (req Request) Queries() error {
 	rows, err = db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("request queries query 2: %w", err)
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return fmt.Errorf("request queries rows 2: %w", rows.Err())
 	}
 	defer rows.Close()
