@@ -37,6 +37,7 @@ const (
 
 var (
 	ErrFormat = errors.New("unsupported image format")
+	ErrViper  = errors.New("viper directory locations cannot be read")
 )
 
 // Duplicate an image file and appends suffix to its name.
@@ -87,7 +88,7 @@ func Generate(src, id string, remove bool) error {
 		logs.Log(e)
 	}
 	if viper.GetString("directory.root") == "" {
-		return errors.New("viper directory locations cannot be read")
+		return ErrViper
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
