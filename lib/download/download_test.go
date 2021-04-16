@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/gookit/color"
 )
 
 func testTemp() string {
@@ -227,6 +229,7 @@ func TestStatusColor(t *testing.T) {
 		{"empty", args{}, ""},
 		{"ok", args{200, "ok"}, "ok"},
 	}
+	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := StatusColor(tt.args.code, tt.args.status); got != tt.want {
