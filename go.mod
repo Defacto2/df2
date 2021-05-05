@@ -3,7 +3,7 @@ module github.com/Defacto2/df2
 go 1.16
 
 require (
-	github.com/andybalholm/brotli v1.0.1 // indirect
+	github.com/andybalholm/brotli v1.0.2 // indirect
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.0
@@ -14,7 +14,7 @@ require (
 	github.com/gookit/color v1.4.2
 	github.com/gopherjs/gopherjs v0.0.0-20210413103415-7d3cbed7d026 // indirect
 	github.com/hako/durafmt v0.0.0-20210316092057-3a2c319c1acd
-	github.com/klauspost/compress v1.12.1 // indirect
+	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
@@ -36,8 +36,8 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
-	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
-	golang.org/x/sys v0.0.0-20210415045647-66c3f260301c
+	golang.org/x/image v0.0.0-20210504121937-7319ad40d33e
+	golang.org/x/sys v0.0.0-20210503173754-0981d6026fa6
 	golang.org/x/text v0.3.6
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
