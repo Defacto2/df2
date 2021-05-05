@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
@@ -138,6 +138,15 @@ func (r *Record) sqlSets() []string {
 	if r.Title != "" {
 		set = append(set, "record_title=?")
 	}
+	set = append(set, r.sqlCredits()...)
+	if r.Platform != "" {
+		set = append(set, "platform=?")
+	}
+	return set
+}
+
+func (r *Record) sqlCredits() []string {
+	var set []string
 	if len(r.CreditText) > 0 {
 		set = append(set, "credit_text=?")
 	}
@@ -149,9 +158,6 @@ func (r *Record) sqlSets() []string {
 	}
 	if len(r.CreditAudio) > 0 {
 		set = append(set, "credit_audio=?")
-	}
-	if r.Platform != "" {
-		set = append(set, "platform=?")
 	}
 	return set
 }
@@ -191,6 +197,14 @@ func (r *Record) sqlArgs(set []string) (args []interface{}) {
 	if r.Title != "" {
 		args = append(args, []interface{}{r.Title}...)
 	}
+	args = append(args, r.sqlCreditsArgs()...)
+	if r.Platform != "" {
+		args = append(args, []interface{}{r.Platform}...)
+	}
+	return args
+}
+
+func (r *Record) sqlCreditsArgs() (args []interface{}) {
 	if len(r.CreditText) > 0 {
 		j := strings.Join(r.CreditText, ",")
 		args = append(args, []interface{}{j}...)
@@ -206,9 +220,6 @@ func (r *Record) sqlArgs(set []string) (args []interface{}) {
 	if len(r.CreditAudio) > 0 {
 		j := strings.Join(r.CreditAudio, ",")
 		args = append(args, []interface{}{j}...)
-	}
-	if r.Platform != "" {
-		args = append(args, []interface{}{r.Platform}...)
 	}
 	return args
 }

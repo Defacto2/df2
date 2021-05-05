@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -7,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
 
@@ -45,6 +46,6 @@ var logCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(logCmd)
 }

@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -32,13 +33,20 @@ type recentFlags struct {
 	limit    uint
 }
 
+const (
+	datal = "datalist"
+	dl    = "dl"
+	htm   = "html"
+	txt   = "text"
+)
+
 var (
 	dbf database.Flags
 	gpf groupFlags
 	rcf recentFlags
 )
 
-var fmtflags = [7]string{"datalist", "html", "text", "dl", "d", "h", "t"}
+var fmtflags = [7]string{datal, htm, txt, dl, "d", "h", "t"}
 
 // outputCmd represents the output command.
 var outputCmd = &cobra.Command{
@@ -59,7 +67,7 @@ var outputCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(outputCmd)
 	outputCmd.AddCommand(dataCmd)
 	dataCmd.Flags().BoolVarP(&dbf.CronJob, "cronjob", "j", false,
@@ -133,15 +141,15 @@ var groupCmd = &cobra.Command{
 		filterFlag(groups.Wheres(), "filter", gpf.filter)
 		req := groups.Request{Filter: gpf.filter, Counts: gpf.counts, Initialisms: gpf.init, Progress: gpf.progress}
 		switch gpf.format {
-		case "datalist", "dl", "d":
+		case datal, dl, "d":
 			if err := req.DataList(""); err != nil {
 				log.Fatal(err)
 			}
-		case "html", "h", "":
+		case htm, "h", "":
 			if err := req.HTML(""); err != nil {
 				log.Fatal(err)
 			}
-		case "text", "t":
+		case txt, "t":
 			if _, err := groups.Print(req); err != nil {
 				log.Fatal(err)
 			}
@@ -169,15 +177,15 @@ var peopleCmd = &cobra.Command{
 			req = people.Request{Filter: pf.filter, Progress: pf.progress}
 		}
 		switch pf.format {
-		case "datalist", "dl", "d":
+		case datal, dl, "d":
 			if err := people.DataList("", req); err != nil {
 				log.Fatal(err)
 			}
-		case "html", "h", "":
+		case htm, "h", "":
 			if err := people.HTML("", req); err != nil {
 				log.Fatal(err)
 			}
-		case "text", "t":
+		case txt, "t":
 			if err := people.Print(req); err != nil {
 				log.Fatal(err)
 			}

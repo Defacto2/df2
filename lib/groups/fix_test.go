@@ -53,7 +53,7 @@ func Test_cleanString(t *testing.T) {
 	}
 }
 
-func Test_trimThe(t *testing.T) {
+func Test_trimThe(t *testing.T) { //nolint:dupl
 	type args struct {
 		g string
 	}

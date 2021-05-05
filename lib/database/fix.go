@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 // Fix any malformed section and platforms found in the database.

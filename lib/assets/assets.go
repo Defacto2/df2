@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"    //nolint:misspell
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
-	"github.com/gookit/color"
+	"github.com/gookit/color"          //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
@@ -45,7 +45,7 @@ type (
 type scan struct {
 	path   string       // directory to scan
 	delete bool         // delete any detected orphan files
-	human  bool         // humanize values shown by print output
+	human  bool         // humanise values shown by print output
 	m      database.IDs // UUID values fetched from the database
 }
 

@@ -117,7 +117,7 @@ func TestFileMove(t *testing.T) {
 	}
 }
 
-func TestRead(t *testing.T) {
+func TestRead(t *testing.T) { //nolint:dupl
 	type args struct {
 		archive  string
 		filename string
@@ -146,6 +146,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestRestore(t *testing.T) {
+	tmp := os.TempDir()
 	type args struct {
 		source      string
 		filename    string

@@ -314,7 +314,7 @@ func TestRecord_download(t *testing.T) {
 	}
 }
 
-func TestRecord_doseeMeta(t *testing.T) {
+func TestRecord_doseeMeta_fileMeta(t *testing.T) {
 	type fields struct {
 		ID   string
 		UUID string
@@ -338,22 +338,6 @@ func TestRecord_doseeMeta(t *testing.T) {
 				t.Errorf("Record.doseeMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
-	}
-}
-
-func TestRecord_fileMeta(t *testing.T) {
-	type fields struct {
-		ID   string
-		UUID string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{"empty", fields{}, true},
-		{"id", fields{ID: "22884"}, true},
-		{"uuid", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, true}, // because physical files are missing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

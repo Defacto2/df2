@@ -69,7 +69,7 @@ func TestMakeSlug(t *testing.T) {
 	}
 }
 
-func Test_remInitialism(t *testing.T) {
+func Test_remInitialism(t *testing.T) { //nolint:dupl
 	type args struct {
 		s string
 	}

@@ -10,6 +10,7 @@ import (
 	m "math/rand"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"time"
 
@@ -35,7 +36,7 @@ type Dir struct {
 	UUID   string // path to file downloads with UUID as filenames
 }
 
-// Init initializes the subdirectories and UUID structure.
+// Init initialises the subdirectories and UUID structure.
 func Init(create bool) Dir {
 	if viper.GetString("directory.root") == "" {
 		viper.SetDefault("directory.000", "/opt/assets/000")
@@ -70,7 +71,7 @@ func Init(create bool) Dir {
 	return d
 }
 
-// Files initializes the full path filenames for a UUID.
+// Files initialises the full path filenames for a UUID.
 func Files(name string) (dirs Dir) {
 	dirs = Init(false)
 	dirs.UUID = path.Join(dirs.UUID, name)
@@ -145,7 +146,7 @@ func createHolderFile(dir string, size int, prefix uint) error {
 		return fmt.Errorf("create holder file: %w", err)
 	}
 	text := []byte(r)
-	if err := ioutil.WriteFile(fn, text, 0644); err != nil {
+	if err := ioutil.WriteFile(fn, text, 0644); err != nil { //nolint:gosec
 		return fmt.Errorf("write create holder file %q: %w", fn, err)
 	}
 	return nil
@@ -183,4 +184,18 @@ func randString(n int) (string, error) {
 		s[i] = r[x%y]
 	}
 	return string(s), nil
+}
+
+func Size(dir string) (count int64, bytes uint64, err error) {
+	err = filepath.Walk(dir, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			bytes += uint64(info.Size())
+			count++
+		}
+		return err
+	})
+	return count, bytes, err
 }

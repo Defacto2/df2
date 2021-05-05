@@ -2,6 +2,8 @@ package archive
 
 import (
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestExtract(t *testing.T) {
@@ -28,6 +30,9 @@ func TestExtract(t *testing.T) {
 		{"zip.bz2", args{testDir("demozoo/test.bz2.zip"), "test.bz2.zip", uuid}, false},
 	}
 	for _, tt := range tests {
+		if viper.GetString("directory.root") == "" {
+			return
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			if err := Extract(tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
 				t.Errorf("Extract(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)

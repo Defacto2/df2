@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -13,7 +14,7 @@ import (
 
 type cleanFlags struct {
 	delete   bool
-	humanize bool
+	humanise bool
 	makeDirs bool
 	target   string
 }
@@ -30,17 +31,17 @@ var cleanCmd = &cobra.Command{
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		directories.Init(clf.makeDirs)
-		if err := assets.Clean(clf.target, clf.delete, clf.humanize); err != nil {
+		if err := assets.Clean(clf.target, clf.delete, clf.humanise); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(cleanCmd)
 	cleanCmd.Flags().StringVarP(&clf.target, "target", "t", "all", "what file section to clean"+options(targets...))
 	cleanCmd.Flags().BoolVarP(&clf.delete, "delete", "x", false, "erase all discovered files to free up drive space")
-	cleanCmd.Flags().BoolVar(&clf.humanize, "humanize", true, "humanize file sizes and date times")
+	cleanCmd.Flags().BoolVar(&clf.humanise, "humanise", true, "humanise file sizes and date times")
 	cleanCmd.Flags().BoolVar(&clf.makeDirs, "makedirs", false, "generate uuid directories and placeholder files")
 	cleanCmd.Flags().SortFlags = false
 	if err := cleanCmd.Flags().MarkHidden("makedirs"); err != nil {

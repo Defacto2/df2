@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/gookit/color" // nolint:misspell
 )
 
 func testTemp() string {
@@ -138,7 +140,7 @@ func Test_percent(t *testing.T) {
 	}
 }
 
-func TestLinkDownload(t *testing.T) {
+func TestLinkDownload_Ping(t *testing.T) {
 	type args struct {
 		name string
 		url  string
@@ -153,6 +155,9 @@ func TestLinkDownload(t *testing.T) {
 		{"fake", args{testTemp(), "https://thisisnotaurl-example.com"}, true},
 		{"exp", args{testTemp(), "http://example.com"}, false},
 	}
+	if _, err := os.Create(testTemp()); err != nil {
+		t.Fatal(err)
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, err := LinkDownload(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
@@ -164,22 +169,6 @@ func TestLinkDownload(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-	}
-}
-
-func TestLinkPing(t *testing.T) {
-	type args struct {
-		url string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"empty", args{""}, true},
-		{"fake", args{"https://example.com"}, false},
-		{"fake", args{"https://thisisnotaurl-example.com"}, true},
-		{"fake", args{"https://example.com"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -210,6 +199,9 @@ func TestLinkDownloadQ(t *testing.T) {
 		{"fake", args{testTemp(), "https://thisisnotaurl-example.com"}, true},
 		{"exp", args{testTemp(), "http://example.com"}, false},
 	}
+	if _, err := os.Create(testTemp()); err != nil {
+		t.Fatal(err)
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, err := LinkDownloadQ(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
@@ -235,8 +227,9 @@ func TestStatusColor(t *testing.T) {
 		want string
 	}{
 		{"empty", args{}, ""},
-		{"ok", args{200, "ok"}, "\u001b[1;32mok\u001b[0m"}, // 
+		{"ok", args{200, "ok"}, "ok"},
 	}
+	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := StatusColor(tt.args.code, tt.args.status); got != tt.want {

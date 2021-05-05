@@ -10,9 +10,7 @@ import (
 	"github.com/mholt/archiver"
 )
 
-var tmp = os.TempDir()
-
-func TestReadr(t *testing.T) {
+func TestReadr(t *testing.T) { //nolint:dupl
 	type args struct {
 		archive  string
 		filename string

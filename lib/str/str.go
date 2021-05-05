@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/logs"
 )
@@ -45,14 +45,16 @@ func bar(r float64) string {
 		start = 0
 		end   = 100
 	)
-	pos, max := math.Ceil(r/width), end/width
+	pos, max := math.Max(0, r/width), end/width
 	switch {
 	case pos == start:
 		return fmt.Sprintf("(%s%s)", c, strings.Repeat(pad, max))
 	case r == end:
 		return fmt.Sprintf("(%s☺)", strings.Repeat(pad, max))
 	default:
-		return fmt.Sprintf("(%s%s%s)", strings.Repeat(done, int(pos)), c, strings.Repeat(pad, max-int(pos)))
+		return fmt.Sprintf("(%s%s%s)",
+			strings.Repeat(done, int(pos)), c,
+			strings.Repeat(pad, max-int(pos)))
 	}
 }
 

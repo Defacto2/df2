@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dustin/go-humanize"
-	"github.com/gookit/color"
+	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/gookit/color"       //nolint:misspell
 	"github.com/spf13/viper"
 
 	"github.com/Defacto2/df2/lib/directories"
@@ -29,12 +29,25 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 	"FROM `files`\n" +
 	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 
+const countWaiting = "SELECT COUNT(*)\nFROM `files`\n" +
+	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
+
 // Approve automatically checks and clears file records for live.
 func Approve(verbose bool) error {
 	if err := queries(verbose); err != nil {
 		return err
 	}
 	return nil
+}
+
+// Waiting returns the number of files requiring approval for public display.
+func Waiting() (count uint, err error) {
+	db := Connect()
+	defer db.Close()
+	if err := db.QueryRow(countWaiting).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // duplicate or copy a file to the destination.
@@ -102,7 +115,7 @@ func queries(v bool) error {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
-		if n := IsNew(values); !n {
+		if n := NewApprove(values); !n {
 			continue
 		}
 		r.uuid = string(values[1])

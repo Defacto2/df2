@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -40,7 +41,7 @@ var proofCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(proofCmd)
 	proofCmd.Flags().StringVarP(&prf.id, "id", "i", "", "id or uuid to handle only one proof")
 	proofCmd.Flags().BoolVar(&prf.overwrite, "overwrite", false, "rescan archives and overwrite all existing images")

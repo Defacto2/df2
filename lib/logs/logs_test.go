@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	gap "github.com/muesli/go-app-paths"
 )
 

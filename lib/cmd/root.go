@@ -1,34 +1,25 @@
 // Package cmd handles the commandline user interface and interactions.
+// nolint:gochecknoglobals
 package cmd
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/Defacto2/df2/lib/config"
-	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/Defacto2/df2/lib/version"
 )
 
 var simulate bool
-
-const verTmp = `
-   df2 tool version {{.Version}}
-`
 
 var (
 	// ErrCmd invalid command.
@@ -59,8 +50,6 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	execVersion()
-	rootCmd.SetVersionTemplate(verTmp)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(color.Warn.Sprintf("%s", err))
 		e := err.Error()
@@ -72,7 +61,7 @@ func Execute() {
 	config.Check()
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	cobra.OnInitialize()
 	initConfig()
 	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is %s)", config.Filepath()))
@@ -90,68 +79,6 @@ func copyright() string {
 		return strconv.Itoa(c) // © 2020
 	}
 	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
-}
-
-func execVersion() {
-	type VerData struct {
-		Version  string
-		Database string
-		Ansilove string
-		Webp     string
-		Commit   string
-		Date     string
-	}
-	const exeTmp = `
-┌──────────────────────────┐
-│  database: {{.Database}}  │
-│  ansilove: {{.Ansilove}}  │
-│  webp lib: {{.Webp}}  │
-└──────────────────────────┘
-   commit: {{.Commit}}
-     date: {{.Date}}
-`
-	const miss = "missing"
-	p := func(s string) string {
-		switch s {
-		case "ok":
-			const padding = 10
-			return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
-		case miss:
-			const padding = 12
-			return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
-		case "disconnect":
-			const padding = 10
-			return color.Error.Sprint("disconnected") + strings.Repeat(" ", padding-len(s))
-		}
-		return ""
-	}
-	a, w, d := miss, miss, "disconnect"
-	if err := database.ConnectInfo(); err == "" {
-		d = "ok"
-	}
-	if _, err := exec.LookPath("ansilove"); err == nil {
-		a = "ok"
-	}
-	if _, err := exec.LookPath("cwebp"); err == nil {
-		w = "ok"
-	}
-	data := VerData{
-		Version:  color.Primary.Sprint(version.B.Version),
-		Database: p(d),
-		Ansilove: p(a),
-		Webp:     p(w),
-		Commit:   version.B.Commit,
-		Date:     localBuild(version.B.Date),
-	}
-	tmpl, err := template.New("version").Parse(exeTmp)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var b bytes.Buffer
-	if err := tmpl.Execute(&b, data); err != nil {
-		log.Fatal(err)
-	}
-	rootCmd.Version = color.Primary.Sprint(version.B.Version) + b.String()
 }
 
 // filterFlag compairs the value of the filter flag against the list of slice values.
@@ -175,15 +102,6 @@ func filterFlag(t interface{}, flag, val string) {
 			os.Exit(1)
 		}
 	}
-}
-
-// localBuild date of this binary executable.
-func localBuild(date string) string {
-	t, err := time.Parse(time.RFC3339, date)
-	if err != nil {
-		return date
-	}
-	return t.Local().Format("2006 Jan 2, 15:04 MST")
 }
 
 // initConfig reads in config file and ENV variables if set.

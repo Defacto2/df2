@@ -1,0 +1,29 @@
+# df2 Goreleaser file.
+#
+# test the config:
+# goreleaser check
+# goreleaser release --skip-publish --skip-validate --rm-dist
+
+before:
+  hooks:
+    - go mod tidy
+env:
+  - CGO_ENABLED=0
+
+builds:
+  - id: df2
+    binary: df2
+    goos: ['linux']
+    goarch: ['amd64']
+
+nfpms:
+  - id: deb
+    builds: ['df2']
+    file_name_template: "{{ .ProjectName }}"
+    vendor: Ben Garrett
+    homepage: https://github.com/Defacto2/df2
+    maintainer: Ben Garrett <code.by.ben@gmail.com>
+    description: df2 is a command-line tool for managing plus optimising the files and database of defacto2.net.
+    license: Apache 2.0
+    formats:
+      - deb

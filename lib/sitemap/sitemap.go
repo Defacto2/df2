@@ -44,28 +44,19 @@ type URLset struct {
 // Create generates and prints the sitemap.
 func Create() error {
 	// query
-	id, v, count := "", &URLset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}, 0
+	id, v := "", &URLset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	var createdat, updatedat sql.NullString
-	dbc := database.Connect()
-	defer dbc.Close()
-	rowCnt, err := dbc.Query("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL")
+	count, err := nullsDeleteAt()
 	if err != nil {
-		return fmt.Errorf("create count query: %w", err)
-	} else if rowCnt.Err() != nil {
-		return fmt.Errorf("create count rows: %w", rowCnt.Err())
-	}
-	defer rowCnt.Close()
-	for rowCnt.Next() {
-		if err = rowCnt.Scan(&count); err != nil {
-			return fmt.Errorf("create count scan: %w", err)
-		}
+		return err
 	}
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query("SELECT `id`,`createdat`,`updatedat` FROM `files` WHERE `deletedat` IS NULL")
 	if err != nil {
 		return fmt.Errorf("create db query: %w", err)
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return fmt.Errorf("create db rows: %w", rows.Err())
 	}
 	defer rows.Close()
@@ -114,6 +105,25 @@ func Create() error {
 		return fmt.Errorf("create stdout: %w", err)
 	}
 	return db.Close()
+}
+
+func nullsDeleteAt() (count int, err error) {
+	dbc := database.Connect()
+	defer dbc.Close()
+	rowCnt, err := dbc.Query("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL")
+	if err != nil {
+		return count, fmt.Errorf("create count query: %w", err)
+	}
+	if rowCnt.Err() != nil {
+		return count, fmt.Errorf("create count rows: %w", rowCnt.Err())
+	}
+	defer rowCnt.Close()
+	for rowCnt.Next() {
+		if err = rowCnt.Scan(&count); err != nil {
+			return count, fmt.Errorf("create count scan: %w", err)
+		}
+	}
+	return count, nil
 }
 
 // lastmodValue parse createdat and updatedat to use in the <lastmod> tag.

@@ -2,7 +2,7 @@
 package demozoo
 
 import (
-	"crypto/md5"
+	"crypto/md5" // nolint: gosec
 	"crypto/sha512"
 	"database/sql"
 	"errors"
@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
@@ -134,6 +134,7 @@ func (req *Request) Query(id string) (err error) {
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
+// nolint: funlen,gocyclo
 func (req Request) Queries() error {
 	var st stat
 	stmt, start := selectByID(req.byID), time.Now()
@@ -159,13 +160,16 @@ func (req Request) Queries() error {
 	if err = st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
 		return fmt.Errorf("req queries sum total: %w", err)
 	}
-	if st.total > 1 {
+	if st.total == 0 {
+		logs.Println("nothing to do")
+	} else {
 		logs.Println("Total records", st.total)
 	}
 	rows, err = db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("request queries query 2: %w", err)
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return fmt.Errorf("request queries rows 2: %w", rows.Err())
 	}
 	defer rows.Close()
@@ -182,7 +186,6 @@ func (req Request) Queries() error {
 			logs.Danger(fmt.Errorf("request queries new record: %w", err))
 			continue
 		}
-		fmt.Println()
 		logs.Printcrf(r.String(st.total))
 		if update := r.check(); !update {
 			continue
@@ -207,6 +210,9 @@ func (req Request) Queries() error {
 		st.byID = req.byID
 		st.print()
 		return nil
+	}
+	if st.total > 0 {
+		fmt.Println()
 	}
 	st.summary(time.Since(start))
 	return nil
@@ -233,7 +239,7 @@ func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
 	if err := rec.rows.Scan(rec.scanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
-	if n := database.IsNew(rec.values); !n && req.flags() {
+	if n := database.NewDemozoo(rec.values); !n && req.flags() {
 		return true, nil
 	}
 	st.count++
@@ -256,7 +262,7 @@ func (st stat) print() {
 
 func (st stat) summary(elapsed time.Duration) {
 	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.count, elapsed.Seconds())
-	logs.Println("\n" + strings.Repeat("─", len(t)))
+	logs.Println(strings.Repeat("─", len(t)))
 	logs.Println(t)
 	if st.missing > 0 {
 		logs.Println("UUID files not found:", st.missing)
@@ -269,7 +275,7 @@ func (st *stat) sumTotal(rec records, req Request) error {
 		if err := rec.rows.Scan(rec.scanArgs...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
 		}
-		if n := database.IsNew(rec.values); !n && req.flags() {
+		if n := database.NewDemozoo(rec.values); !n && req.flags() {
 			continue
 		}
 		st.total++
@@ -358,7 +364,7 @@ func (r *Record) fileMeta() (err error) {
 		return fmt.Errorf("record file meta open: %w", err)
 	}
 	defer f.Close()
-	h1 := md5.New()
+	h1 := md5.New() // nolint: gosec
 	if _, err := io.Copy(h1, f); err != nil {
 		return fmt.Errorf("record file meta io copy for the md5 hash: %w", err)
 	}
@@ -413,12 +419,17 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	r.FilePath = filepath.Join(storage, r.UUID)
 	if skip := r.download(overwrite, &api, st); skip {
 		return true, nil
-	} else if update := r.check(); !update {
+	}
+	if update := r.check(); !update {
 		return true, nil
 	}
 	if r.Platform == "" {
 		r.platform(&api)
 	}
+	return r.parse(&api)
+}
+
+func (r *Record) parse(api *ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/lib/directories"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 func TestImage_exists(t *testing.T) {

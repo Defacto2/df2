@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -97,7 +98,7 @@ var fixZipCmmtCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(fixCmd)
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)

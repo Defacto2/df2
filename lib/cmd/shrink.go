@@ -1,8 +1,10 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
-	"fmt"
+	"sync"
 
+	"github.com/Defacto2/df2/lib/shrink"
 	"github.com/spf13/cobra"
 )
 
@@ -12,10 +14,25 @@ var shrinkCmd = &cobra.Command{
 	Short:   "Reduces the space used in directories",
 	Aliases: []string{"s"},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello world.")
+		const delta = 3
+		var wg sync.WaitGroup
+		wg.Add(delta)
+		go func() {
+			shrink.SQL()
+			wg.Done()
+		}()
+		go func() {
+			shrink.Files()
+			wg.Done()
+		}()
+		go func() {
+			shrink.Previews()
+			wg.Done()
+		}()
+		wg.Wait()
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(shrinkCmd)
 }

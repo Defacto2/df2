@@ -38,16 +38,23 @@ const (
 	Magazine
 )
 
+const (
+	bb  = "bbs"
+	fp  = "ftp"
+	grp = "group"
+	mag = "magazine"
+)
+
 func (f Filter) String() string {
 	switch f {
 	case BBS:
-		return "bbs"
+		return bb
 	case FTP:
-		return "ftp"
+		return fp
 	case Group:
-		return "group"
+		return grp
 	case Magazine:
-		return "magazine"
+		return mag
 	case None:
 		return ""
 	}
@@ -56,13 +63,13 @@ func (f Filter) String() string {
 
 func filter(s string) Filter {
 	switch strings.ToLower(s) {
-	case "bbs":
+	case bb:
 		return BBS
-	case "ftp":
+	case fp:
 		return FTP
-	case "group":
+	case grp:
 		return Group
-	case "magazine":
+	case mag:
 		return Magazine
 	case "":
 		return None
@@ -100,6 +107,9 @@ type Result struct {
 
 // Count returns the number of file entries associated with a group.
 func Count(name string) (count int, err error) {
+	if name == "" {
+		return 0, nil
+	}
 	db := database.Connect()
 	defer db.Close()
 	n := name
@@ -144,7 +154,8 @@ func Cronjob(force bool) error {
 // DataList prints an auto-complete list for HTML input elements.
 func (r Request) DataList(filename string) error {
 	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
-	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}<option value="{{.Name}}" label="{{.Name}}">{{end}}`
+	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}`
+	tpl += `<option value="{{.Name}}" label="{{.Name}}">{{end}}`
 	if err := r.parse(filename, tpl); err != nil {
 		return fmt.Errorf("datalist parse template: %w", err)
 	}
@@ -154,7 +165,8 @@ func (r Request) DataList(filename string) error {
 // HTML prints a snippet listing links to each group, with an optional file count.
 func (r Request) HTML(filename string) error {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
-	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
+	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>`
+	tpl += `{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
 	if err := r.parse(filename, tpl); err != nil {
 		return fmt.Errorf("html parse template: %w", err)
 	}
@@ -268,8 +280,9 @@ func (r Request) parse(filename, templ string) (err error) {
 		}
 		defer f.Close()
 		// prepend html
-		s := fmt.Sprintf("<div class=\"pagination-statistics\"><span class=\"label label-default\">%d %s sites</span></div><div class=\"columns-list\" id=\"organisationDrillDown\">", total, r.Filter)
-		if _, err := f.WriteString(s); err != nil {
+		s := "<div class=\"pagination-statistics\"><span class=\"label label-default\">"
+		s += fmt.Sprintf("%d %s sites</span></div><div class=\"columns-list\" id=\"organisationDrillDown\">", total, r.Filter)
+		if _, err = f.WriteString(s); err != nil {
 			return fmt.Errorf("prepend html writestring: %w", err)
 		}
 		// html template
@@ -286,7 +299,7 @@ func (r Request) parse(filename, templ string) (err error) {
 	return nil
 }
 
-// list all organizations or filtered groups.
+// list all organisations or filtered groups.
 func list(f string) (groups []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
@@ -336,7 +349,7 @@ func MakeSlug(name string) string {
 	return n
 }
 
-// Print list organizations or groups filtered by a name and summaries the results.
+// Print list organisations or groups filtered by a name and summaries the results.
 func Print(r Request) (total int, err error) {
 	grp, total, err := list(r.Filter)
 	if err != nil {

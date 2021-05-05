@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -17,7 +18,10 @@ type configFlags struct {
 	overwrite bool
 }
 
-var cfgf configFlags
+var (
+	cfgf     configFlags
+	infoSize bool
+)
 
 // configCmd represents the config command.
 var configCmd = &cobra.Command{
@@ -72,7 +76,7 @@ var configInfoCmd = &cobra.Command{
 	Short:   "View settings configured by the config",
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Info(); err != nil {
+		if err := config.Info(infoSize); err != nil {
 			log.Fatal(fmt.Errorf("config info: %w", err))
 		}
 	},
@@ -92,7 +96,7 @@ var configSetCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	database.Init()
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)
@@ -101,6 +105,7 @@ func init() {
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configEditCmd)
 	configCmd.AddCommand(configInfoCmd)
+	configInfoCmd.Flags().BoolVarP(&infoSize, "size", "s", false, "display directory sizes and file counts (SLOW)")
 	configCmd.AddCommand(configSetCmd)
 	configSetCmd.Flags().StringVarP(&cfgf.name, "name", "n", "", `the configuration path to edit in dot syntax (see examples)
 	to see a list of names run: df2 config info`)

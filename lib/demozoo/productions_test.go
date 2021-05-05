@@ -17,14 +17,14 @@ import (
 
 const modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
 
-var example1, example2, example3 ProductionsAPIv1
+var example1, example2, example3 ProductionsAPIv1 //nolint:gochecknoglobals
 
 var (
 	ErrAdd = errors.New("invalid add argument")
 	ErrVal = errors.New("unknown record value")
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	c1 := make(chan ProductionsAPIv1)
 	c2 := make(chan ProductionsAPIv1)
 	c3 := make(chan ProductionsAPIv1)

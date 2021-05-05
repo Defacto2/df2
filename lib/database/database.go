@@ -17,7 +17,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 	"github.com/spf13/viper"
 
 	"github.com/Defacto2/df2/lib/logs"
@@ -78,7 +78,7 @@ type Empty struct{}
 // IDs are unique UUID values used by the database and filenames.
 type IDs map[string]struct{}
 
-// Init initializes the database connection using stored settings.
+// Init initialises the database connection using stored settings.
 func Init() Connection {
 	// load config from file or use defaults
 	if viper.GetString("connection.name") == "" {
@@ -263,18 +263,6 @@ func IsID(s string) bool {
 	return true
 }
 
-// IsNew reports if a file record is set to unapproved.
-func IsNew(b []sql.RawBytes) bool {
-	if b[2] == nil {
-		return false
-	}
-	n, err := valid(b[2], b[3])
-	if err != nil {
-		logs.Log(err)
-	}
-	return n
-}
-
 // IsUUID reports whether string is a universal unique record id.
 func IsUUID(s string) bool {
 	if _, err := uuid.Parse(s); err != nil {
@@ -336,6 +324,48 @@ func LookupFile(s string) (name string, err error) {
 		}
 	}
 	return n.String, nil
+}
+
+// NewApprove reports if a new file record is set to unapproved.
+func NewApprove(b []sql.RawBytes) bool {
+	// SQL column names can be found in the newFilesSQL statement in approve.go
+	deletedat, updatedat := b[2], b[8]
+	if deletedat == nil {
+		return false
+	}
+	n, err := valid(deletedat, updatedat)
+	if err != nil {
+		logs.Log(err)
+	}
+	return n
+}
+
+// NewDemozoo reports if a fetched demozoo file record is set to unapproved.
+func NewDemozoo(b []sql.RawBytes) bool {
+	// SQL column names can be found in the selectSQL statement in database.go
+	deletedat, updatedat := b[2], b[8]
+	if deletedat == nil {
+		return false
+	}
+	n, err := valid(deletedat, updatedat)
+	if err != nil {
+		logs.Log(err)
+	}
+	return n
+}
+
+// NewProof reports if a fetched proof file record is set to unapproved.
+func NewProof(b []sql.RawBytes) bool {
+	// SQL column names can be found in the sqlSelect() func in proof.go
+	deletedat, updatedat := b[2], b[6]
+	if deletedat == nil {
+		return false
+	}
+	n, err := valid(deletedat, updatedat)
+	if err != nil {
+		logs.Log(err)
+	}
+	return n
 }
 
 // ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
@@ -404,7 +434,7 @@ func collen(s *sql.ColumnType) string {
 	return ""
 }
 
-// defaults initializes default connection settings.
+// defaults initialises default connection settings.
 func defaults() {
 	viper.SetDefault("connection.name", "defacto2-inno")
 	viper.SetDefault("connection.user", "root")
@@ -437,22 +467,23 @@ func reverseInt(value uint) (reversed uint, err error) {
 	return uint(n), nil
 }
 
-func valid(deleted, updated sql.RawBytes) (bool, error) {
+func valid(deletedat, updatedat sql.RawBytes) (bool, error) {
 	const (
 		min = -5
 		max = 5
 	)
 	// normalise the date values as sometimes updatedat & deletedat can be off by a second.
-	del, err := time.Parse(time.RFC3339, string(deleted))
+	del, err := time.Parse(time.RFC3339, string(deletedat))
 	if err != nil {
 		return false, fmt.Errorf("valid deleted time: %w", err)
 	}
-	upd, err := time.Parse(time.RFC3339, string(updated))
+	upd, err := time.Parse(time.RFC3339, string(updatedat))
 	if err != nil {
 		return false, fmt.Errorf("valid updated time: %w", err)
 	}
 	if diff := upd.Sub(del); diff.Seconds() > max || diff.Seconds() < min {
 		return false, nil
 	}
+	fmt.Println("\n", "del", del, "upd", upd, "sub", upd.Sub(del))
 	return true, nil
 }

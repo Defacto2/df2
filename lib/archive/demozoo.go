@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
@@ -97,7 +97,7 @@ func moveText(name, uuid string) (ok bool, err error) {
 	return true, nil
 }
 
-// top returns the highest prioritized filename from a collection of finds.
+// top returns the highest prioritised filename from a collection of finds.
 func (f finds) top() string {
 	if len(f) == 0 {
 		return ""
@@ -128,8 +128,8 @@ func findDOS(name string, files contents, varNames *[]string) string {
 			continue
 		}
 		base := strings.TrimSuffix(name, filepath.Ext(name)) // base filename without extension
-		fn := strings.ToLower(file.name)                     // normalize filenames
-		ext := strings.ToLower(file.ext)                     // normalize file extensions
+		fn := strings.ToLower(file.name)                     // normalise filenames
+		ext := strings.ToLower(file.ext)                     // normalise file extensions
 		e := findVariant(fn, exe, varNames)
 		c := findVariant(fn, com, varNames)
 		fmt.Printf(" > %q, %q, chk1 %s", ext, fn, base+exe)
@@ -160,8 +160,8 @@ func findNFO(name string, files contents, varNames *[]string) string {
 			continue
 		}
 		base := strings.TrimSuffix(name, file.ext) // base filename without extension
-		fn := strings.ToLower(file.name)           // normalize filenames
-		ext := strings.ToLower(file.ext)           // normalize file extensions
+		fn := strings.ToLower(file.name)           // normalise filenames
+		ext := strings.ToLower(file.ext)           // normalise file extensions
 		n := findVariant(fn, ".nfo", varNames)
 		t := findVariant(fn, ".txt", varNames)
 		switch {

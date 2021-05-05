@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 func TestIsID(t *testing.T) {

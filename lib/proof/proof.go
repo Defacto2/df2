@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/gookit/color" //nolint:misspell
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
@@ -74,7 +74,8 @@ func (request Request) Queries() error {
 	rows, err := db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()
@@ -91,15 +92,12 @@ func (request Request) Queries() error {
 	for rows.Next() {
 		s.total++
 	}
-	if s.total < 1 && request.byID != "" {
-		logs.Printf("file record id '%s' does not exist or is not a release proof\n", request.byID)
-	} else if s.total > 1 {
-		logs.Println("Total records", s.total)
-	}
+	s.printTotals(request)
 	rows, err = db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()
@@ -126,6 +124,15 @@ func (request Request) Queries() error {
 	}
 	s.summary(request.byID)
 	return nil
+}
+
+func (s *stat) printTotals(request Request) {
+	if s.total < 1 && request.byID != "" {
+		logs.Printf("file record id '%s' does not exist or is not a release proof\n", request.byID)
+	}
+	if s.total > 1 {
+		logs.Println("Total records", s.total)
+	}
 }
 
 // iterate through each value.
@@ -172,7 +179,7 @@ func (request Request) flagSkip(values []sql.RawBytes) (skip bool) {
 	if request.byID != "" && request.Overwrite {
 		return false
 	}
-	if n := database.IsNew(values); !n && !request.AllProofs {
+	if n := database.NewProof(values); !n && !request.AllProofs {
 		if request.byID != "" {
 			logs.Printf("skip file record id '%s' as it is not new", request.byID)
 		}

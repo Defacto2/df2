@@ -1,3 +1,4 @@
+// nolint:gochecknoglobals
 package cmd
 
 import (
@@ -100,7 +101,7 @@ var demozooCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(demozooCmd)
 	demozooCmd.Flags().BoolVarP(&dzf.new, "new", "n", false, "scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().BoolVar(&dzf.all, "all", false, "scan all files with demozoo links (SLOW)")

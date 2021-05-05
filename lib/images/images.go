@@ -20,6 +20,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	gap "github.com/muesli/go-app-paths"
 	"github.com/nickalie/go-webpbin"
+	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
 	_ "golang.org/x/image/bmp"  // register BMP decoding
 	_ "golang.org/x/image/tiff" // register TIFF decoding
@@ -34,7 +35,10 @@ const (
 	fmode             = os.O_RDWR | os.O_CREATE
 )
 
-var ErrFormat = errors.New("unsupported image format")
+var (
+	ErrFormat = errors.New("unsupported image format")
+	ErrViper  = errors.New("viper directory locations cannot be read")
+)
 
 // Duplicate an image file and appends suffix to its name.
 func Duplicate(filename, suffix string) (name string, err error) {
@@ -79,9 +83,12 @@ func Generate(src, id string, remove bool) error {
 	out := func(s string, e error) {
 		if s != "" {
 			logs.Printf("  %s", s)
-		} else {
-			logs.Log(e)
+			return
 		}
+		logs.Log(e)
+	}
+	if viper.GetString("directory.root") == "" {
+		return ErrViper
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
@@ -116,9 +123,13 @@ func Generate(src, id string, remove bool) error {
 		s, err = ToThumb(webpLoc, f.Img150, 150)
 	}
 	out(s, err)
+	return cleanup(remove, src)
+}
+
+func cleanup(remove bool, src string) error {
 	if remove {
 		if err := os.Remove(src); err != nil {
-			return fmt.Errorf("generate remove %q: %w", src, err)
+			return fmt.Errorf("generate cleanup %q: %w", src, err)
 		}
 	}
 	return nil
