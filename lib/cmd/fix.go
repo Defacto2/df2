@@ -15,6 +15,7 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/people"
 	"github.com/Defacto2/df2/lib/text"
+	"github.com/Defacto2/df2/lib/zipcmmt"
 )
 
 // fixCmd represents the fix command.
@@ -86,11 +87,23 @@ var fixTextCmd = &cobra.Command{
 	},
 }
 
+var fixZipCmmtCmd = &cobra.Command{
+	Use:     "zip",
+	Short:   "Extract missing comments from zip archives",
+	Aliases: []string{"z"},
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := zipcmmt.Fix(simulate); err != nil {
+			log.Fatal(err)
+		}
+	},
+}
+
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(fixCmd)
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
 	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.AddCommand(fixTextCmd)
+	fixCmd.AddCommand(fixZipCmmtCmd)
 	fixCmd.PersistentFlags().BoolVarP(&simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
 }
