@@ -8,9 +8,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gookit/color" //nolint:misspell
-
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 // Piped detects whether the program text is being piped to another operating
@@ -49,7 +48,8 @@ func bar(r float64) string {
 	switch {
 	case pos == start:
 		return fmt.Sprintf("(%s%s)", c, strings.Repeat(pad, max))
-	case r == end:
+	case r == end,
+		pos > float64(max):
 		return fmt.Sprintf("(%s☺)", strings.Repeat(pad, max))
 	default:
 		return fmt.Sprintf("(%s%s%s)",

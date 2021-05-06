@@ -102,17 +102,18 @@ func TestList(t *testing.T) {
 
 func TestPrint(t *testing.T) {
 	tests := []struct {
-		name string
-		r    Request
+		name    string
+		r       Request
+		wantErr bool
 	}{
-		{"empty", Request{}},
-		{"regular", Request{"writer", false, true}},
-		{"error", Request{"error", false, true}},
+		{"empty", Request{}, false},
+		{"unknown", Request{"unknown", false, true}, true},
+		{"regular", Request{"writers", false, true}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Print(tt.r); err != nil {
-				t.Errorf("Print() error = %v", err)
+			if err := Print(tt.r); (err != nil) != tt.wantErr {
+				t.Errorf("Print() error = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}
