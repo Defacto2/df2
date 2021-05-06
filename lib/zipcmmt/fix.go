@@ -24,14 +24,11 @@ type zipfile struct {
 	Name string // file name
 	Ext  string // file extension
 	Size int    // file size in bytes
-	//Magic string // file magic type
+	// Magic string // file magic type
 }
 
 func Fix(simulate bool) error {
-
 	fmt.Println("zip comments")
-
-	//dir
 	dir, db := directories.Init(false), database.Connect()
 	defer db.Close()
 	rows, err := db.Query(fixStmt)

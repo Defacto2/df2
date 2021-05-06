@@ -111,7 +111,9 @@ func TestPrint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			Print(tt.r)
+			if err := Print(tt.r); err != nil {
+				t.Errorf("Print() error = %v", err)
+			}
 		})
 	}
 }
