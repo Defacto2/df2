@@ -7,11 +7,10 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/dustin/go-humanize" //nolint:misspell
-	"github.com/gookit/color"       //nolint:misspell
-
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
+	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/gookit/color"       //nolint:misspell
 )
 
 var (
@@ -36,19 +35,14 @@ installation instructions: https://github.com/ansilove/ansilove
 		return fmt.Errorf("generate: %w", err)
 	}
 	fmt.Printf("  %s", s)
-	// cap images to the webp limit of 16383 pixels
-	const (
-		webpMaxSize = 16383
-		thumbSmall  = 150
-		thumbMedium = 400
-	)
-	var w int
-	if w, err = images.Width(o); w > webpMaxSize {
+	const thumbSmall, thumbMedium = 150, 400
+	var w, h int
+	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
 		if err != nil {
 			return fmt.Errorf("generate: %w", err)
 		}
-		fmt.Printf("width %dpx", w)
-		s, err = images.ToPng(o, images.NewExt(o, png), webpMaxSize)
+		cw, ch := images.WebPCalc(w, h)
+		s, err = images.ToPng(o, images.NewExt(o, png), ch, cw)
 		if err != nil {
 			return fmt.Errorf("generate: %w", err)
 		}
@@ -88,22 +82,24 @@ func makePng(src, dest string) (string, error) {
 		return "", fmt.Errorf("make png: %w", ErrDest)
 	}
 	img := dest + png
-	cmd := exec.Command("ansilove", "-r", "-o", img, src)
+	// ansilove -q # supress output messages
+	// ansilove -r # create Retina @2x output file
+	// ansilove -o # specify output filename/path
+	cmd := exec.Command("ansilove", "-q", "-r", "-o", img, src)
 	out, err := cmd.Output()
 	if err != nil && err.Error() == "exit status 127" {
 		return "", fmt.Errorf("make png ansilove: %w", ErrAnsiLove)
 	} else if err != nil {
 		return "", fmt.Errorf("make png ansilove %q: %w", out, err)
 	}
-	wd, err := os.Getwd()
+	_, err = os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("make png working directory: %w", err)
 	}
-	exe, err := os.Executable()
+	_, err = os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("make png failed to obtain exe: %w", err)
 	}
-	fmt.Printf("%s - %s", wd, exe)
 	stat, err := os.Stat(img)
 	if err != nil && os.IsNotExist(err) {
 		return "", fmt.Errorf("make png stat %q: %w", img, err)

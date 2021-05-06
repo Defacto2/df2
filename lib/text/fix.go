@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dustin/go-humanize" //nolint:misspell
-	"github.com/gookit/color"       //nolint:misspell
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/gookit/color"       //nolint:misspell
 )
 
 const (
@@ -26,6 +26,20 @@ const (
 	png  = ".png"
 	txt  = ".txt"
 	webp = ".webp"
+
+	// 7z,arc,ark,arj,cab,gz,lha,lzh,rar,tar,tar.gz,zip
+	z7  = ".7z"
+	arc = ".arc"
+	arj = ".arj"
+	bz2 = ".bz2"
+	cab = ".cab"
+	gz  = ".gz"
+	lha = ".lha"
+	lzh = ".lzh"
+	rar = ".rar"
+	tar = ".tar"
+	tgz = ".tar.gz"
+	zip = ".zip"
 )
 
 // textfile is a text file object.
@@ -60,10 +74,11 @@ func Fix(simulate bool) error {
 		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size); err != nil {
 			return fmt.Errorf("fix rows scan: %w", err)
 		}
-		// TODO replace with function that handles archives
 		if !t.valid() {
+			// TODO: extract textfiles from archives.
 			continue
 		}
+		// Missing PNG images.
 		ok, err := t.exist(&dir)
 		if err != nil {
 			return fmt.Errorf("fix exist: %w", err)
@@ -85,6 +100,23 @@ func Fix(simulate bool) error {
 			}
 			logs.Print("\n")
 		}
+		// Missing WebP images.
+		wfp := filepath.Join(dir.Img000, t.UUID+webp)
+		_, err = os.Stat(wfp)
+		if os.IsNotExist(err) {
+			src := filepath.Join(dir.Img000, t.UUID+png)
+			logs.Printf("%s", t.UUID+png)
+			s, err := images.ToWebp(src, wfp, true)
+			if err != nil {
+				logs.Log(fmt.Errorf("fix generate: %w", err))
+				continue
+			}
+			logs.Printf(" %s\n", s)
+			continue
+		} else if err != nil {
+			logs.Log(fmt.Errorf("webp stat: %w", err))
+			continue
+		}
 	}
 	fmt.Println("scanned", c, "fixes from", i, "text file records")
 	if simulate && c > 0 {
@@ -102,11 +134,14 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 		if path == "" {
 			return false, nil
 		}
-		_, err := os.Stat(filepath.Join(path, t.UUID+png))
+		s, err := os.Stat(filepath.Join(path, t.UUID+png))
 		if os.IsNotExist(err) {
 			return false, nil
 		} else if err != nil {
 			return false, fmt.Errorf("image exist: %w", err)
+		}
+		if s.Size() == 0 {
+			return false, nil
 		}
 	}
 	return true, nil
@@ -114,8 +149,8 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 
 func (t textfile) valid() bool {
 	switch filepath.Ext(strings.ToLower(t.Name)) {
-	case ans, asc, diz, doc, nfo, txt:
-		return true
+	case z7, arc, arj, bz2, cab, gz, lha, lzh, rar, tar, tgz, zip:
+		return false
 	}
-	return false
+	return true
 }

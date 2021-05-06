@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
 	gap "github.com/muesli/go-app-paths"
@@ -25,12 +27,11 @@ import (
 	_ "golang.org/x/image/bmp"  // register BMP decoding
 	_ "golang.org/x/image/tiff" // register TIFF decoding
 	_ "golang.org/x/image/webp" // register WebP decoding
-
-	"github.com/Defacto2/df2/lib/directories"
-	"github.com/Defacto2/df2/lib/logs"
 )
 
 const (
+	WebpMaxSize = 16383
+
 	fperm os.FileMode = 0666
 	fmode             = os.O_RDWR | os.O_CREATE
 )
@@ -95,11 +96,11 @@ func Generate(src, id string, remove bool) error {
 	// convert to png
 	pngLoc, webpLoc := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
 	pngOk, webpOk := false, false
-	s, err := ToPng(src, pngLoc, 1500)
+	s, err := ToPng(src, pngLoc, 1500, 1500)
 	out(s, err)
 	pngOk = valid(pngLoc, err)
 	// convert to webp
-	if s, err = ToWebp(src, NewExt(f.Img000, webp), true); !errors.Is(err, ErrFormat) {
+	if s, err = ToWebp(src, webpLoc, true); !errors.Is(err, ErrFormat) {
 		out(s, err)
 	}
 	if err != nil && pngOk {
@@ -159,7 +160,7 @@ func Move(src, dest string) error {
 }
 
 // Info returns the image metadata.
-func Info(name string) (height, width int, format string, err error) {
+func Info(name string) (width, height int, format string, err error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("info open %q: %w", name, err)
@@ -169,7 +170,7 @@ func Info(name string) (height, width int, format string, err error) {
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("info decode config: %w", err)
 	}
-	return config.Height, config.Width, format, file.Close()
+	return config.Width, config.Height, format, file.Close()
 }
 
 // NewExt replaces or appends the extension to a file name.
@@ -184,7 +185,7 @@ func NewExt(name, ext string) string {
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
-func ToPng(src, dest string, maxDimension int) (s string, err error) {
+func ToPng(src, dest string, width, height int) (s string, err error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return "", fmt.Errorf("to png open %s: %w", src, err)
@@ -196,8 +197,8 @@ func ToPng(src, dest string, maxDimension int) (s string, err error) {
 		return "", fmt.Errorf("to png decode: %w", err)
 	}
 	// cap image size
-	if maxDimension > 0 {
-		img = imaging.Thumbnail(img, maxDimension, maxDimension, imaging.Lanczos)
+	if width > 0 || height > 0 {
+		img = imaging.Thumbnail(img, width, height, imaging.Lanczos)
 	}
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
 	img, err = pngquant.Compress(img, "4")
@@ -289,6 +290,10 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 		return "", fmt.Errorf("to webp extension %q != %s: %w",
 			m.Extension(), strings.Join(v, " "), ErrFormat)
 	}
+	src, err = cropWebP(src)
+	if err != nil {
+		return "", fmt.Errorf("to webp crop: %w", err)
+	}
 	const percent = 70
 	webp := webpbin.NewCWebP().
 		Quality(percent).
@@ -298,14 +303,73 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 		webp.Dest(vendorPath())
 	}
 	if err = webp.Run(); err != nil {
+		cleanupWebP(dest)
 		return "", fmt.Errorf("to webp run: %w", err)
 	}
 	return "»webp", nil
 }
 
+func cleanupWebP(name string) error {
+	s, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("cleanWebP stat: %w", err)
+	}
+	if s.Size() == 0 {
+		if err := os.Remove(name); err != nil {
+			return fmt.Errorf("cleanWebP remove: %w", err)
+		}
+	}
+	return nil
+}
+
+// cropWebP crops an image to be usable size for WebP conversion.
+func cropWebP(src string) (string, error) {
+	w, h, _, err := Info(src)
+	if err != nil {
+		return "", fmt.Errorf("to webp size: %w", err)
+	}
+	if w+h > WebpMaxSize {
+		cropW, cropH := WebPCalc(w, h)
+		ext := filepath.Ext(src)
+		fn := strings.TrimSuffix(src, ext)
+		crop := fn + "-cropped" + ext
+		_, err := ToPng(src, crop, cropW, cropH)
+		if err != nil {
+			return "", fmt.Errorf("webp crop: %w", err)
+		}
+		defer os.Remove(crop)
+		return crop, nil
+	}
+	return src, nil
+}
+
+// WebPCalc calculates the largest permitted sizes for a valid WebP crop.
+func WebPCalc(width, height int) (w, h int) {
+	if width+height <= WebpMaxSize {
+		return width, height
+	}
+	if width == height {
+		r := WebpMaxSize / 2
+		return r, r
+	}
+	big, small := height, width
+	if width > height {
+		big, small = width, height
+	}
+	r := big - small + (WebpMaxSize - big)
+	if width > height {
+		return r, small
+	}
+	return small, r
+
+}
+
 // Width returns the image width in pixels.
 func Width(name string) (width int, err error) {
-	_, width, _, err = Info(name)
+	width, _, _, err = Info(name)
 	if err != nil {
 		return 0, fmt.Errorf("width: %w", err)
 	}
