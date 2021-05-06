@@ -6,13 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dustin/go-humanize" //nolint:misspell
-	"github.com/gookit/color"       //nolint:misspell
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/gookit/color"       //nolint:misspell
 )
 
 const (
@@ -26,6 +25,20 @@ const (
 	png  = ".png"
 	txt  = ".txt"
 	webp = ".webp"
+
+	// 7z,arc,ark,arj,cab,gz,lha,lzh,rar,tar,tar.gz,zip
+	z7  = ".7z"
+	arc = ".arc"
+	arj = ".arj"
+	bz2 = ".bz2"
+	cab = ".cab"
+	gz  = ".gz"
+	lha = ".lha"
+	lzh = ".lzh"
+	rar = ".rar"
+	tar = ".tar"
+	tgz = ".tar.gz"
+	zip = ".zip"
 )
 
 // textfile is a text file object.
@@ -85,6 +98,7 @@ func Fix(simulate bool) error {
 			}
 			logs.Print("\n")
 		}
+		// TODO: WEBP?
 	}
 	fmt.Println("scanned", c, "fixes from", i, "text file records")
 	if simulate && c > 0 {
@@ -102,11 +116,14 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 		if path == "" {
 			return false, nil
 		}
-		_, err := os.Stat(filepath.Join(path, t.UUID+png))
+		s, err := os.Stat(filepath.Join(path, t.UUID+png))
 		if os.IsNotExist(err) {
 			return false, nil
 		} else if err != nil {
 			return false, fmt.Errorf("image exist: %w", err)
+		}
+		if s.Size() == 0 {
+			return false, nil
 		}
 	}
 	return true, nil
@@ -114,8 +131,8 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 
 func (t textfile) valid() bool {
 	switch filepath.Ext(strings.ToLower(t.Name)) {
-	case ans, asc, diz, doc, nfo, txt:
-		return true
+	case z7, arc, arj, bz2, cab, gz, lha, lzh, rar, tar, tgz, zip:
+		return false
 	}
-	return false
+	return true
 }
