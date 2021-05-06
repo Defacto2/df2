@@ -4,9 +4,6 @@ package cmd
 import (
 	"log"
 
-	"github.com/gookit/color" //nolint:misspell
-	"github.com/spf13/cobra"
-
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo"
@@ -15,6 +12,8 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/proof"
 	"github.com/Defacto2/df2/lib/text"
+	"github.com/gookit/color" //nolint:misspell
+	"github.com/spf13/cobra"
 )
 
 var newCmd = &cobra.Command{
@@ -31,7 +30,7 @@ var newCmd = &cobra.Command{
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config.Check()
-		color.Info.Println("Scan for new demozoo submissions")
+		color.Info.Println("1. scan for new demozoo submissions")
 		dz := demozoo.Request{
 			All:       false,
 			Overwrite: false,
@@ -41,7 +40,7 @@ var newCmd = &cobra.Command{
 		if err := dz.Queries(); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("Scan for new proof submissions")
+		color.Info.Println("2. scan for new proof submissions")
 		p := proof.Request{
 			Overwrite:   false,
 			AllProofs:   false,
@@ -50,19 +49,19 @@ var newCmd = &cobra.Command{
 		if err := p.Queries(); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("Generate missing images")
+		color.Info.Println("3. generate missing images")
 		if err := images.Fix(false); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("Generate missing text previews")
+		color.Info.Println("4. generate missing text previews")
 		if err := text.Fix(false); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("Fix demozoo data conflicts")
+		color.Info.Println("5. fix demozoo data conflicts")
 		if err := demozoo.Fix(); err != nil {
 			log.Fatal(err)
 		}
-		color.Info.Println("Fix malformed database entries")
+		color.Info.Println("6. fix malformed database entries")
 		if err := database.Fix(); err != nil {
 			log.Fatal(err)
 		}
