@@ -317,19 +317,19 @@ func TestToWebp(t *testing.T) {
 
 func TestWebPCalc(t *testing.T) {
 	type args struct {
-		height int
 		width  int
+		height int
 	}
 	tests := []struct {
 		name  string
 		args  args
-		wantH int
 		wantW int
+		wantH int
 	}{
 		{"zero", args{0, 0}, 0, 0},
-		{"ignore", args{500, 600}, 500, 600},
-		{"15000 long", args{15000, 5000}, 11383, 5000},
-		{"super long", args{869356, 640}, 15743, 640},
+		{"ignore", args{600, 500}, 600, 500},
+		{"15000 long", args{5000, 15000}, 11383, 5000},
+		{"super long", args{640, 869356}, 15743, 640},
 		{"square", args{15000, 15000}, 8191, 8191},
 		{"sm square", args{500, 500}, 500, 500},
 	}

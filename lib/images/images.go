@@ -361,9 +361,9 @@ func WebPCalc(width, height int) (w, h int) {
 	}
 	r := big - small + (WebpMaxSize - big)
 	if width > height {
-		return r, small
+		return small, r
 	}
-	return small, r
+	return r, small
 
 }
 
