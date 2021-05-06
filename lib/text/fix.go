@@ -17,17 +17,10 @@ import (
 
 const (
 	fixStmt = `SELECT id, uuid, filename, filesize FROM files WHERE platform="text" OR platform="ansi" ORDER BY id DESC`
-
-	ans  = ".ans"
-	asc  = ".asc"
-	diz  = ".diz"
-	doc  = ".doc"
-	nfo  = ".nfo"
+	// Images.
 	png  = ".png"
-	txt  = ".txt"
 	webp = ".webp"
-
-	// 7z,arc,ark,arj,cab,gz,lha,lzh,rar,tar,tar.gz,zip
+	// Archives.
 	z7  = ".7z"
 	arc = ".arc"
 	arj = ".arj"
@@ -87,7 +80,7 @@ func Fix(simulate bool) error {
 			c++
 			logs.Printf("%d. %v", c, t)
 			name := filepath.Join(dir.UUID, t.UUID)
-			if _, err := os.Stat(name); os.IsNotExist(err) {
+			if _, err = os.Stat(name); os.IsNotExist(err) {
 				logs.Printf("%s\n", str.X())
 				continue
 			}
@@ -95,26 +88,12 @@ func Fix(simulate bool) error {
 				logs.Printf("%s\n", color.Question.Sprint("?"))
 				continue
 			}
-			if err := generate(name, t.UUID); err != nil {
+			if err = generate(name, t.UUID); err != nil {
 				logs.Log(fmt.Errorf("fix generate: %w", err))
 			}
 			logs.Print("\n")
 		}
-		// Missing WebP images.
-		wfp := filepath.Join(dir.Img000, t.UUID+webp)
-		_, err = os.Stat(wfp)
-		if os.IsNotExist(err) {
-			src := filepath.Join(dir.Img000, t.UUID+png)
-			logs.Printf("%s", t.UUID+png)
-			s, err := images.ToWebp(src, wfp, true)
-			if err != nil {
-				logs.Log(fmt.Errorf("fix generate: %w", err))
-				continue
-			}
-			logs.Printf(" %s\n", s)
-			continue
-		} else if err != nil {
-			logs.Log(fmt.Errorf("webp stat: %w", err))
+		if !t.webP(dir.Img000) {
 			continue
 		}
 	}
@@ -125,6 +104,29 @@ func Fix(simulate bool) error {
 		logs.Println("everything is okay, there is nothing to do")
 	}
 	return nil
+}
+
+// webP discovers and generates missing WebP images.
+func (t textfile) webP(imgDir string) bool {
+	var err error
+	wfp := filepath.Join(imgDir, t.UUID+webp)
+	_, err = os.Stat(wfp)
+	if os.IsNotExist(err) {
+		src := filepath.Join(imgDir, t.UUID+png)
+		logs.Printf("%s", t.UUID+png)
+		var s string
+		s, err = images.ToWebp(src, wfp, true)
+		if err != nil {
+			logs.Log(fmt.Errorf("fix generate: %w", err))
+			return false
+		}
+		logs.Printf(" %s\n", s)
+		return false
+	} else if err != nil {
+		logs.Log(fmt.Errorf("webp stat: %w", err))
+		return false
+	}
+	return true
 }
 
 // check that [UUID].png exists in all three image subdirectories.

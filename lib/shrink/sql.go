@@ -109,7 +109,7 @@ func sql() error {
 		return err
 	}
 
-	if err := delete(files); err != nil {
+	if err := remove(files); err != nil {
 		return err
 	}
 
@@ -132,7 +132,7 @@ func compress(name string, files []string) error {
 	return nil
 }
 
-func delete(files []string) error {
+func remove(files []string) error {
 	if errs := archive.Delete(files); errs != nil {
 		for i, err := range errs {
 			fmt.Printf("error #%d: %s\n", i+1, err)

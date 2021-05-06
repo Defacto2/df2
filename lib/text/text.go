@@ -82,7 +82,7 @@ func makePng(src, dest string) (string, error) {
 		return "", fmt.Errorf("make png: %w", ErrDest)
 	}
 	img := dest + png
-	// ansilove -q # supress output messages
+	// ansilove -q # suppress output messages
 	// ansilove -r # create Retina @2x output file
 	// ansilove -o # specify output filename/path
 	cmd := exec.Command("ansilove", "-q", "-r", "-o", img, src)

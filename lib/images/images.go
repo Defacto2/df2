@@ -303,7 +303,9 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 		webp.Dest(vendorPath())
 	}
 	if err = webp.Run(); err != nil {
-		cleanupWebP(dest)
+		if err = cleanupWebP(dest); err != nil {
+			return "", fmt.Errorf("to webp cleanup: %w", err)
+		}
 		return "", fmt.Errorf("to webp run: %w", err)
 	}
 	return "»webp", nil
@@ -361,10 +363,9 @@ func WebPCalc(width, height int) (w, h int) {
 	}
 	r := big - small + (WebpMaxSize - big)
 	if width > height {
-		return r, small
+		return small, r
 	}
-	return small, r
-
+	return r, small
 }
 
 // Width returns the image width in pixels.

@@ -65,10 +65,11 @@ func TestImage_valid(t *testing.T) {
 		fields fields
 		want   bool
 	}{
-		{"empty", fields{""}, false},
-		{"no ext", fields{"hello"}, false},
+		{"empty", fields{""}, true},
+		{"no ext", fields{"hello"}, true},
 		{"doc", fields{"hello.doc"}, true},
 		{"two exts", fields{"hello.world.doc"}, true},
+		{"bz2", fields{"hello.bz2"}, false},
 		{"zip", fields{"hello.zip"}, false},
 	}
 	for _, tt := range tests {
