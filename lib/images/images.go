@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
 	gap "github.com/muesli/go-app-paths"
@@ -25,9 +27,6 @@ import (
 	_ "golang.org/x/image/bmp"  // register BMP decoding
 	_ "golang.org/x/image/tiff" // register TIFF decoding
 	_ "golang.org/x/image/webp" // register WebP decoding
-
-	"github.com/Defacto2/df2/lib/directories"
-	"github.com/Defacto2/df2/lib/logs"
 )
 
 const (
@@ -289,7 +288,14 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 		return "", fmt.Errorf("to webp extension %q != %s: %w",
 			m.Extension(), strings.Join(v, " "), ErrFormat)
 	}
-	const percent = 70
+	const percent, maxSize = 70, 16383
+	h, w, _, err := Info(src)
+	if err != nil {
+		return "", fmt.Errorf("to webp size: %w", err)
+	}
+	if h+w >= maxSize {
+		return "»webp [skipped]", nil
+	}
 	webp := webpbin.NewCWebP().
 		Quality(percent).
 		InputFile(src).
@@ -298,9 +304,26 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 		webp.Dest(vendorPath())
 	}
 	if err = webp.Run(); err != nil {
+		cleanupWebP(dest)
 		return "", fmt.Errorf("to webp run: %w", err)
 	}
 	return "»webp", nil
+}
+
+func cleanupWebP(name string) error {
+	s, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("cleanWebP stat: %w", err)
+	}
+	if s.Size() == 0 {
+		if err := os.Remove(name); err != nil {
+			return fmt.Errorf("cleanWebP remove: %w", err)
+		}
+	}
+	return nil
 }
 
 // Width returns the image width in pixels.
