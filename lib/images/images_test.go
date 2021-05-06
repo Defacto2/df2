@@ -103,7 +103,7 @@ func TestInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotHeight, gotWidth, gotFormat, err := Info(tt.name)
+			gotWidth, gotHeight, gotFormat, err := Info(tt.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Info() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -188,9 +188,9 @@ func TestWidth(t *testing.T) {
 
 func TestToPng(t *testing.T) {
 	type args struct {
-		src          string
-		dest         string
-		maxDimension int
+		src    string
+		dest   string
+		height int
 	}
 	tests := []struct {
 		name    string
@@ -207,7 +207,7 @@ func TestToPng(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ToPng(tt.args.src, tt.args.dest, tt.args.maxDimension)
+			_, err := ToPng(tt.args.src, tt.args.dest, tt.args.height, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToPng() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -310,6 +310,37 @@ func TestToWebp(t *testing.T) {
 				if err := os.Remove(testDest("webp")); err != nil {
 					t.Fatal(err)
 				}
+			}
+		})
+	}
+}
+
+func TestWebPCalc(t *testing.T) {
+	type args struct {
+		height int
+		width  int
+	}
+	tests := []struct {
+		name  string
+		args  args
+		wantH int
+		wantW int
+	}{
+		{"zero", args{0, 0}, 0, 0},
+		{"ignore", args{500, 600}, 500, 600},
+		{"15000 long", args{15000, 5000}, 11383, 5000},
+		{"super long", args{869356, 640}, 15743, 640},
+		{"square", args{15000, 15000}, 8191, 8191},
+		{"sm square", args{500, 500}, 500, 500},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotW, gotH := WebPCalc(tt.args.width, tt.args.height)
+			if gotW != tt.wantW {
+				t.Errorf("WebPCalc() gotW = %v, want %v", gotW, tt.wantW)
+			}
+			if gotH != tt.wantH {
+				t.Errorf("WebPCalc() gotH = %v, want %v", gotH, tt.wantH)
 			}
 		})
 	}

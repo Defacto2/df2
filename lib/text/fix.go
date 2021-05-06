@@ -8,6 +8,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
 	"github.com/dustin/go-humanize" //nolint:misspell
@@ -73,10 +74,11 @@ func Fix(simulate bool) error {
 		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size); err != nil {
 			return fmt.Errorf("fix rows scan: %w", err)
 		}
-		// TODO replace with function that handles archives
 		if !t.valid() {
+			// TODO: extract textfiles from archives.
 			continue
 		}
+		// Missing PNG images.
 		ok, err := t.exist(&dir)
 		if err != nil {
 			return fmt.Errorf("fix exist: %w", err)
@@ -98,7 +100,23 @@ func Fix(simulate bool) error {
 			}
 			logs.Print("\n")
 		}
-		// TODO: WEBP?
+		// Missing WebP images.
+		wfp := filepath.Join(dir.Img000, t.UUID+webp)
+		_, err = os.Stat(wfp)
+		if os.IsNotExist(err) {
+			src := filepath.Join(dir.Img000, t.UUID+png)
+			logs.Printf("%s", t.UUID+png)
+			s, err := images.ToWebp(src, wfp, true)
+			if err != nil {
+				logs.Log(fmt.Errorf("fix generate: %w", err))
+				continue
+			}
+			logs.Printf(" %s\n", s)
+			continue
+		} else if err != nil {
+			logs.Log(fmt.Errorf("webp stat: %w", err))
+			continue
+		}
 	}
 	fmt.Println("scanned", c, "fixes from", i, "text file records")
 	if simulate && c > 0 {
