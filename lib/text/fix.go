@@ -1,11 +1,13 @@
 package text
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
@@ -16,10 +18,13 @@ import (
 )
 
 const (
-	fixStmt = `SELECT id, uuid, filename, filesize FROM files WHERE platform="text" OR platform="ansi" ORDER BY id DESC`
+	fixStmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme " +
+		"FROM files WHERE platform=\"text\" OR platform=\"ansi\" ORDER BY id DESC"
 	// Images.
 	png  = ".png"
 	webp = ".webp"
+	// Texts.
+	txt = ".txt"
 	// Archives.
 	z7  = ".7z"
 	arc = ".arc"
@@ -37,14 +42,16 @@ const (
 
 // textfile is a text file object.
 type textfile struct {
-	ID   uint   // database id
-	UUID string // database unique id
-	Name string // file name
-	Ext  string // file extension
-	Size int    // file size in bytes
+	ID       uint           // database id
+	UUID     string         // database unique id
+	Name     string         // file name
+	Ext      string         // file extension
+	Size     int            // file size in bytes
+	NoReadme sql.NullBool   // disable the display of a readme
+	Readme   sql.NullString // filename of a readme textfile
 }
 
-func (t textfile) String() string {
+func (t *textfile) String() string {
 	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(t.ID), t.Name,
 		color.Info.Sprint(humanize.Bytes(uint64(t.Size))))
 }
@@ -64,34 +71,25 @@ func Fix(simulate bool) error {
 	for rows.Next() {
 		var t textfile
 		i++
-		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size); err != nil {
+		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme); err != nil {
 			return fmt.Errorf("fix rows scan: %w", err)
 		}
-		if !t.valid() {
-			// TODO: extract textfiles from archives.
-			continue
-		}
-		// Missing PNG images.
 		ok, err := t.exist(&dir)
 		if err != nil {
 			return fmt.Errorf("fix exist: %w", err)
 		}
+		if !t.valid() {
+			// Extract textfiles from archives.
+			t.extract(&dir)
+			t.generate(ok, dir.UUID)
+			continue
+		}
 		if !ok {
+			// Convert raw textfiles to PNGs.
 			c++
-			logs.Printf("%d. %v", c, t)
-			name := filepath.Join(dir.UUID, t.UUID)
-			if _, err = os.Stat(name); os.IsNotExist(err) {
-				logs.Printf("%s\n", str.X())
+			if !t.png(c, simulate, dir.UUID) {
 				continue
 			}
-			if simulate {
-				logs.Printf("%s\n", color.Question.Sprint("?"))
-				continue
-			}
-			if err = generate(name, t.UUID); err != nil {
-				logs.Log(fmt.Errorf("fix generate: %w", err))
-			}
-			logs.Print("\n")
 		}
 		if !t.webP(dir.Img000) {
 			continue
@@ -106,8 +104,72 @@ func Fix(simulate bool) error {
 	return nil
 }
 
-// webP discovers and generates missing WebP images.
-func (t textfile) webP(imgDir string) bool {
+// extract a textfile readme from an archive.
+func (t *textfile) extract(dir *directories.Dir) {
+	if t.NoReadme.Valid && !t.NoReadme.Bool {
+		return
+	}
+	if !t.Readme.Valid {
+		return
+	}
+	s := strings.Split(t.Readme.String, ",")
+	f, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
+	if err != nil {
+		return
+	}
+	found := false
+	for _, key := range f {
+		if key == s[0] {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return
+	}
+	tmp, src := os.TempDir(), filepath.Join(dir.UUID, t.UUID)
+	dest := filepath.Join(tmp, s[0])
+	if err = archive.Extractor(src, t.Name, s[0], tmp); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = os.Rename(dest, src+txt); err != nil {
+		defer os.Remove(dest)
+		logs.Log(fmt.Errorf("extract and move: %w", err))
+	}
+}
+
+// png generates PNG format image assets from a textfile.
+func (t *textfile) png(c int, simulate bool, dir string) bool {
+	logs.Printf("%d. %v", c, t)
+	name := filepath.Join(dir, t.UUID)
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		logs.Printf("%s\n", str.X())
+		return false
+	}
+	if simulate {
+		logs.Printf("%s\n", color.Question.Sprint("?"))
+		return false
+	}
+	if err := generate(name, t.UUID); err != nil {
+		logs.Log(fmt.Errorf("fix generate: %w", err))
+	}
+	logs.Print("\n")
+	return true
+}
+
+// generate PNG format image assets from an extracted textfile.
+func (t *textfile) generate(ok bool, dir string) {
+	if !ok {
+		n := filepath.Join(dir, t.UUID) + txt
+		if err := generate(n, t.UUID); err != nil {
+			logs.Log(fmt.Errorf("fix extract generate: %w", err))
+		}
+	}
+}
+
+// webP finds and generates missing WebP format images.
+func (t *textfile) webP(imgDir string) bool {
 	var err error
 	wfp := filepath.Join(imgDir, t.UUID+webp)
 	_, err = os.Stat(wfp)
@@ -130,7 +192,7 @@ func (t textfile) webP(imgDir string) bool {
 }
 
 // check that [UUID].png exists in all three image subdirectories.
-func (t textfile) exist(dir *directories.Dir) (bool, error) {
+func (t *textfile) exist(dir *directories.Dir) (bool, error) {
 	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
 	for _, path := range dirs {
 		if path == "" {
@@ -149,7 +211,8 @@ func (t textfile) exist(dir *directories.Dir) (bool, error) {
 	return true, nil
 }
 
-func (t textfile) valid() bool {
+// valid confirms that the named file is not a known archive.
+func (t *textfile) valid() bool {
 	switch filepath.Ext(strings.ToLower(t.Name)) {
 	case z7, arc, arj, bz2, cab, gz, lha, lzh, rar, tar, tgz, zip:
 		return false

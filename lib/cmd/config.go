@@ -91,7 +91,6 @@ var configSetCmd = &cobra.Command{
 	Short:   "Change a configuration",
 	Long:    configSetLong,
 	Aliases: []string{"s"},
-	// TODO: add long with information on how to view settings
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
