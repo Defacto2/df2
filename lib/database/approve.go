@@ -360,5 +360,5 @@ func (r *record) summary(rows int) {
 	}
 	d := fmt.Sprintf("%d database new records were skipped", rows-r.c)
 	l := strings.Repeat("─", len(d))
-	logs.Printf("%s\n%s\nb%s\n%s\n", l, t, d, l)
+	logs.Printf("%s\n%s\n%s\n%s\n", l, t, d, l)
 }
