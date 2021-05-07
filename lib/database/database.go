@@ -15,12 +15,11 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/gookit/color" //nolint:misspell
 	"github.com/spf13/viper"
-
-	"github.com/Defacto2/df2/lib/logs"
 )
 
 // UpdateID is a user id to use with the updatedby column.
@@ -329,11 +328,11 @@ func LookupFile(s string) (name string, err error) {
 // NewApprove reports if a new file record is set to unapproved.
 func NewApprove(b []sql.RawBytes) bool {
 	// SQL column names can be found in the newFilesSQL statement in approve.go
-	deletedat, updatedat := b[2], b[8]
+	deletedat, createdat := b[2], b[3]
 	if deletedat == nil {
 		return false
 	}
-	n, err := valid(deletedat, updatedat)
+	n, err := valid(deletedat, createdat)
 	if err != nil {
 		logs.Log(err)
 	}
@@ -484,6 +483,5 @@ func valid(deletedat, updatedat sql.RawBytes) (bool, error) {
 	if diff := upd.Sub(del); diff.Seconds() > max || diff.Seconds() < min {
 		return false, nil
 	}
-	fmt.Println("\n", "del", del, "upd", upd, "sub", upd.Sub(del))
 	return true, nil
 }
