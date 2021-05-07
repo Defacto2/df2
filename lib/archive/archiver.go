@@ -4,12 +4,35 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"unicode/utf8"
 
 	"github.com/mholt/archiver"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
 )
+
+// Extractor extracts a file from the given archive file into the destination folder.
+// The archive format is selected implicitly.
+// Archiver relies on the filename extension to determine which
+// decompression format to use, which must be supplied using filename.
+func Extractor(source, filename, extract, destination string) error {
+	f, err := archiver.ByExtension(filename)
+	if err != nil {
+		return fmt.Errorf("extractor byextension %q: %w", filename, err)
+	}
+	if err := configure(f); err != nil {
+		return fmt.Errorf("extractor configure: %w", err)
+	}
+	e, ok := f.(archiver.Extractor)
+	if !ok {
+		return fmt.Errorf("extractor %s (%T): %w", filename, f, ErrNotArc)
+	}
+	if err := e.Extract(source, extract, destination); err != nil {
+		return fmt.Errorf("extractor: %w", err)
+	}
+	return nil
+}
 
 // Readr returns a list of files within an rar, tar or zip archive.
 // It has offers compatibility with compression formats.
@@ -115,7 +138,7 @@ func configure(f interface{}) (err error) {
 func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("walkr paniced with %s in archive %s: %v\n", filename, archive, r)
+			fmt.Printf("walkr paniced with %s in archive %s: %v\n", filename, filepath.Base(archive), r)
 		}
 	}()
 
@@ -128,7 +151,7 @@ func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
 		return fmt.Errorf("walkr %s (%T): %w", filename, a, ErrWalkrFmt)
 	}
 	if err := w.Walk(archive, walkFn); err != nil {
-		return fmt.Errorf("walkr %q: %w", archive, err)
+		return fmt.Errorf("walkr %q: %w", filepath.Base(archive), err)
 	}
 	return nil
 }
