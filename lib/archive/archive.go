@@ -8,10 +8,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize" //nolint:misspell
 	"github.com/gabriel-vasile/mimetype"
-
-	"github.com/Defacto2/df2/lib/logs"
 )
 
 const (
@@ -109,24 +108,26 @@ func FileMove(name, dest string) (written int64, err error) {
 }
 
 // Read returns a list of files within an rar, tar, zip or 7z archive.
-// archive is the absolute path to the archive file named as a uuid
+// uuid is the absolute path to the archive file named as a unique id.
 // filename is the original archive filename and file extension.
-func Read(archive, filename string) (files []string, err error) {
-	if files, err = Readr(archive, filename); err != nil {
+func Read(uuid, filename string) (files []string, err error) {
+	if files, err = Readr(uuid, filename); err != nil {
 		return nil, fmt.Errorf("read readr fallback: %w", err)
 	}
 	return files, nil
 }
 
 // Restore unpacks or decompresses a given archive file to the destination.
-// The archive format is selected implicitly.
-// Restore relies on the filename extension to determine which
-// decompression format to use, which must be supplied using filename.
-func Restore(source, filename, destination string) (files []string, err error) {
-	if err = Unarchiver(source, filename, destination); err != nil {
+// The archive format is selected implicitly. Restore relies on the filename
+// extension to determine which decompression format to use, which must be
+// supplied using filename.
+// uuid is the absolute path to the archive file named as a unique id.
+// filename is the original archive filename and file extension.
+func Restore(uuid, filename, destination string) (files []string, err error) {
+	if err = Unarchiver(uuid, filename, destination); err != nil {
 		return nil, fmt.Errorf("restore unarchiver: %w", err)
 	}
-	if files, err = Readr(source, filename); err != nil {
+	if files, err = Readr(uuid, filename); err != nil {
 		return nil, fmt.Errorf("restore readr: %w", err)
 	}
 	return files, nil

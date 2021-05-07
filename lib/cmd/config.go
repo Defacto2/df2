@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/spf13/cobra"
-
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/spf13/cobra"
 )
 
 type configFlags struct {
@@ -82,11 +81,16 @@ var configInfoCmd = &cobra.Command{
 	},
 }
 
+const configSetLong = `Change a configuration setting using the name flag. After requesting
+a setting change you will be prompted for a new value which will be validated.
+See the examples for usage syntax and also see the --name flag description for
+the command to list the available seettings.`
+
 var configSetCmd = &cobra.Command{
 	Use:     "set",
 	Short:   "Change a configuration",
+	Long:    configSetLong,
 	Aliases: []string{"s"},
-	// TODO: add long with information on how to view settings
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {

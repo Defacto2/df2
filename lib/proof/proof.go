@@ -10,13 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color" //nolint:misspell
-
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/gookit/color" //nolint:misspell
 )
 
 // Record of a file item.
@@ -295,8 +294,8 @@ func (r Record) zip(col sql.RawBytes, s *stat) error {
 		} else if err != nil {
 			return fmt.Errorf("zip content: %w", err)
 		}
-		if err := archive.Extract(r.File, r.Name, r.UUID); err != nil {
-			return fmt.Errorf("zip extract: %w", err)
+		if err := archive.Proof(r.File, r.Name, r.UUID); err != nil {
+			return fmt.Errorf("zip proof: %w", err)
 		} else if err := r.approve(); err != nil {
 			return fmt.Errorf("zip approve: %w", err)
 		}

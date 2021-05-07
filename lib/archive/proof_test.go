@@ -34,8 +34,8 @@ func TestExtract(t *testing.T) {
 			return
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Extract(tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
-				t.Errorf("Extract(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)
+			if err := Proof(tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
+				t.Errorf("Proof(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)
 			}
 		})
 	}

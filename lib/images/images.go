@@ -303,7 +303,7 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 		webp.Dest(vendorPath())
 	}
 	if err = webp.Run(); err != nil {
-		if err1 := cleanupWebP(dest); err != nil {
+		if err1 := cleanupWebP(dest); err1 != nil {
 			return "", fmt.Errorf("to webp cleanup: %w", err1)
 		}
 		return "", fmt.Errorf("to webp run: %w", err)
