@@ -115,7 +115,7 @@ func queries(v bool) error {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
 		verbose(v, fmt.Sprintf("\nitem %04d (%v) %s %s ", rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
-		if n := NewApprove(values); !n {
+		if na, dz := NewApprove(values), NewDemozoo(values); !na && !dz {
 			verbose(v, fmt.Sprintf(" %s", str.X()))
 			continue
 		}
