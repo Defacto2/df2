@@ -6,28 +6,27 @@ import (
 	"os"
 	"path"
 
-	"github.com/gabriel-vasile/mimetype"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/gabriel-vasile/mimetype"
 )
 
-// Extract decompresses and parses an archive.
+// Proof decompresses and parses an archive.
 // uuid is used to rename the extracted assets such as image previews.
-func Extract(archive, filename, uuid string) error {
+func Proof(archive, filename, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
-		return fmt.Errorf("extract archive uuid %q: %w", uuid, err)
+		return fmt.Errorf("archive uuid %q: %w", uuid, err)
 	}
 	// create temp dir
 	tempDir, err := ioutil.TempDir("", "proofextract-")
 	if err != nil {
-		return fmt.Errorf("extract archive tempdir %q: %w", tempDir, err)
+		return fmt.Errorf("archive tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
 	if err = Unarchiver(archive, filename, tempDir); err != nil {
-		return fmt.Errorf("extract unarchiver: %w", err)
+		return fmt.Errorf("unarchiver: %w", err)
 	}
 	th, tx, err := tasks(tempDir)
 	if err != nil {
@@ -35,19 +34,19 @@ func Extract(archive, filename, uuid string) error {
 	}
 	if n := th.name; n != "" {
 		if err := images.Generate(n, uuid, true); err != nil {
-			return fmt.Errorf("extract archive generate img: %w", err)
+			return fmt.Errorf("archive generate img: %w", err)
 		}
 	}
 	if n := tx.name; n != "" {
 		f := directories.Files(uuid)
 		if _, err := FileMove(n, f.UUID+txt); err != nil {
-			return fmt.Errorf("extract archive filemove %q: %w", n, err)
+			return fmt.Errorf("archive filemove %q: %w", n, err)
 		}
 		logs.Print("  »txt")
 	}
 	if x := true; !x {
 		if err := dir(tempDir); err != nil {
-			return fmt.Errorf("extract archive dir %q: %w", tempDir, err)
+			return fmt.Errorf("archive dir %q: %w", tempDir, err)
 		}
 	}
 	return nil
