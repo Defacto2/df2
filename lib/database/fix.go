@@ -1,8 +1,11 @@
 package database
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color" //nolint:misspell
@@ -10,6 +13,11 @@ import (
 
 // Fix any malformed section and platforms found in the database.
 func Fix() error {
+	start := time.Now()
+	updateNamedTitles()
+	elapsed := time.Since(start).Seconds()
+	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+
 	dist, err := distinct("section")
 	if err != nil {
 		return fmt.Errorf("fix distinct section: %w", err)
@@ -75,21 +83,6 @@ func printcr(i int64, s *string) {
 	}
 }
 
-func updatePlatforms(platforms *[]string) {
-	var u Update
-	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
-	for _, p := range *platforms {
-		u.Args = []interface{}{strings.ToLower(p), p}
-		c, err := u.Execute()
-		if err != nil {
-			logs.Log(err)
-		}
-		s := fmt.Sprintf("%s %s \"%s\"",
-			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
-		printcr(c, &s)
-	}
-}
-
 func updateSections(sections *[]string) {
 	var u Update
 	u.Query = "UPDATE files SET section=? WHERE `section`=?"
@@ -114,4 +107,47 @@ func updateSections(sections *[]string) {
 	str := fmt.Sprintf("%s %s \"%s\"",
 		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
 	printcr(c, &str)
+}
+
+func updatePlatforms(platforms *[]string) {
+	var u Update
+	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
+	for _, p := range *platforms {
+		u.Args = []interface{}{strings.ToLower(p), p}
+		c, err := u.Execute()
+		if err != nil {
+			logs.Log(err)
+		}
+		s := fmt.Sprintf("%s %s \"%s\"",
+			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
+		printcr(c, &s)
+	}
+}
+
+func updateNamedTitles() {
+	ctx := context.Background()
+	db := Connect()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	result, err := tx.ExecContext(ctx, "UPDATE files SET record_title=\"\" WHERE files.record_title=files.filename")
+	if err != nil {
+		if err1 := tx.Rollback(); err1 != nil {
+			log.Fatal(err1)
+		}
+		log.Fatal(err)
+	}
+	if err = tx.Commit(); err != nil {
+		log.Fatal(err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if rows == 0 {
+		logs.Print("no named title fixes needed")
+		return
+	}
+	logs.Printcrf("%d named title fixes applied", rows)
 }
