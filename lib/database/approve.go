@@ -9,13 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dustin/go-humanize" //nolint:misspell
-	"github.com/gookit/color"       //nolint:misspell
-	"github.com/spf13/viper"
-
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/gookit/color"       //nolint:misspell
+	"github.com/spf13/viper"
 )
 
 const (
@@ -115,25 +114,30 @@ func queries(v bool) error {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
+		verbose(v, fmt.Sprintf("\nitem %04d (%v) %s %s ", rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if n := NewApprove(values); !n {
+			verbose(v, fmt.Sprintf(" %s", str.X()))
 			continue
 		}
 		r.uuid = string(values[1])
-		verbose(v, fmt.Sprintf("\n%s item %04d (%v) %s %s ", str.X(),
-			rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if ok := r.check(values, &dir); !ok {
+			verbose(v, fmt.Sprintf(" %s", str.X()))
 			continue
 		}
 		r.save = true
 		if r.autoID(string(values[0])) == 0 {
 			r.save = false
 		} else if err := r.approve(); err != nil {
+			verbose(v, fmt.Sprintf(" %s", str.X()))
 			logs.Log(err)
 			r.save = false
 		}
+		verbose(v, fmt.Sprintf(" %s", str.Y()))
 		r.c++
 	}
-	verbose(v, "\n")
+	if rowCnt > 0 {
+		verbose(v, "\n")
+	}
 	r.summary(rowCnt)
 	return nil
 }
@@ -339,14 +343,22 @@ func (r *record) recoverDownload(path string) (ok bool) {
 }
 
 func (r *record) summary(rows int) {
-	t := fmt.Sprintf("Total items handled: %d", r.c)
-	if rows <= r.c {
-		logs.Println(strings.Repeat("─", len(t)))
-		logs.Println(t)
+	if rows == 0 {
+		const m = "No files were approved"
+		l := strings.Repeat("─", len(m))
+		logs.Printf("%s\n%s\n%s\n", l, m, l)
 		return
 	}
-	d := fmt.Sprintf("Database records fetched: %d", rows)
-	logs.Println(strings.Repeat("─", len(d)))
-	logs.Println(t)
-	logs.Println(d)
+	t := fmt.Sprintf("%d new files approved", r.c)
+	if r.c == 1 {
+		t = fmt.Sprintf("%d new file approved", r.c)
+	}
+	if rows <= r.c {
+		l := strings.Repeat("─", len(t))
+		logs.Printf("%s\n%s\n%s\n", l, t, l)
+		return
+	}
+	d := fmt.Sprintf("%d database new records were skipped", rows-r.c)
+	l := strings.Repeat("─", len(d))
+	logs.Printf("%s\n%s\nb%s\n%s\n", l, t, d, l)
 }
