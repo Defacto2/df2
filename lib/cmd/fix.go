@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/groups"
@@ -16,6 +14,7 @@ import (
 	"github.com/Defacto2/df2/lib/people"
 	"github.com/Defacto2/df2/lib/text"
 	"github.com/Defacto2/df2/lib/zipcmmt"
+	"github.com/spf13/cobra"
 )
 
 // fixCmd represents the fix command.
@@ -87,12 +86,18 @@ var fixTextCmd = &cobra.Command{
 	},
 }
 
+var fixZipCmmt struct {
+	ascii   bool
+	unicode bool
+	ow      bool
+}
+
 var fixZipCmmtCmd = &cobra.Command{
 	Use:     "zip",
 	Short:   "Extract missing comments from zip archives",
 	Aliases: []string{"z"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcmmt.Fix(simulate); err != nil {
+		if err := zipcmmt.Fix(fixZipCmmt.ascii, fixZipCmmt.unicode, fixZipCmmt.ow); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -106,4 +111,7 @@ func init() { // nolint:gochecknoinits
 	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.AddCommand(fixZipCmmtCmd)
 	fixCmd.PersistentFlags().BoolVarP(&simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ascii, "print", "p", false, "also print saved comments to the stdout")
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.unicode, "unicode", "u", false, "also convert saved comments into Unicode and print to the stdout")
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ow, "overwrite", "o", false, "overwrite all existing saved comments")
 }
