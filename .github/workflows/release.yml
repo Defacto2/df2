@@ -21,6 +21,10 @@ jobs:
         with:
           go-version: 1.16
       -
+        name: Install dependencies
+        run: |
+          apt install libmagickwand-6.q16-dev netpbm
+      -
         name: Cache Go modules
         uses: actions/cache@v2.1.5
         with:
