@@ -2,6 +2,7 @@ package images
 
 import (
 	"errors"
+	"fmt"
 
 	"gopkg.in/gographics/imagick.v2/imagick"
 )
@@ -21,7 +22,7 @@ func ToMagick(src, dest string) error {
 	defer mw.Destroy()
 
 	if err := mw.ReadImage(src); err != nil {
-		return err
+		return fmt.Errorf("imagick read: %w", err)
 	}
 
 	gif := mw.GetImageFormat()
@@ -30,7 +31,7 @@ func ToMagick(src, dest string) error {
 	}
 
 	if err := mw.WriteImage(dest); err != nil {
-		return err
+		return fmt.Errorf("imagick write: %w", err)
 	}
 
 	return nil
