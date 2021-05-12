@@ -3,6 +3,7 @@ package images
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"gopkg.in/gographics/imagick.v2/imagick"
 )
@@ -22,7 +23,8 @@ func ToMagick(src, dest string) error {
 	defer mw.Destroy()
 
 	if err := mw.ReadImage(src); err != nil {
-		return fmt.Errorf("imagick read: %w", err)
+		log.Println("imagick requirements: have you installed libmagickwand-dev-6 and netpbm?")
+		log.Fatalln(err)
 	}
 
 	gif := mw.GetImageFormat()
