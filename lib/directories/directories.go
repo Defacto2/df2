@@ -12,13 +12,30 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
 // random characters used by randString().
-const random string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
+const (
+	random string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
+
+	// Archives.
+	z7  = ".7z"
+	arc = ".arc"
+	arj = ".arj"
+	bz2 = ".bz2"
+	cab = ".cab"
+	gz  = ".gz"
+	lha = ".lha"
+	lzh = ".lzh"
+	rar = ".rar"
+	tar = ".tar"
+	tgz = ".tar.gz"
+	zip = ".zip"
+)
 
 var (
 	ErrPathIsFile = errors.New("path already exist as a file")
@@ -69,6 +86,15 @@ func Init(create bool) Dir {
 		}
 	}
 	return d
+}
+
+// ArchiveExt checks that the named file uses a known archive extension.
+func ArchiveExt(name string) bool {
+	switch filepath.Ext(strings.ToLower(name)) {
+	case z7, arc, arj, bz2, cab, gz, lha, lzh, rar, tar, tgz, zip:
+		return true
+	}
+	return false
 }
 
 // Files initialises the full path filenames for a UUID.

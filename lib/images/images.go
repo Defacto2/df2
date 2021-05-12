@@ -94,34 +94,44 @@ func Generate(src, id string, remove bool) error {
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
 	// convert to png
-	pngLoc, webpLoc := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
-	pngOk, webpOk := false, false
-	s, err := ToPng(src, pngLoc, 1500, 1500)
+	pngDest, webpDest := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
+	s, err := ToPng(src, pngDest, 1500, 1500)
 	out(s, err)
-	pngOk = valid(pngLoc, err)
+	// use imagemagick to convert unsupported image formats into PNG
+	if !valid(pngDest, err) {
+		err1 := ToMagick(src, pngDest)
+		if err1 != nil {
+			out(s, err1)
+			return cleanup(remove, src)
+		}
+		if !valid(pngDest, err1) {
+			return cleanup(remove, src)
+		}
+		src = pngDest
+	}
 	// convert to webp
-	if s, err = ToWebp(src, webpLoc, true); !errors.Is(err, ErrFormat) {
+	if s, err = ToWebp(src, webpDest, true); !errors.Is(err, ErrFormat) {
 		out(s, err)
 	}
-	if err != nil && pngOk {
-		s, err = ToWebp(pngLoc, webpLoc, true)
+	if err != nil {
+		s, err = ToWebp(pngDest, webpDest, true)
 		out(s, err)
 	}
-	webpOk = valid(webpLoc, err)
+	webpOk := valid(webpDest, err)
 	// make 400x400 thumbs
 	s, err = ToThumb(src, f.Img400, 400)
-	if err != nil && pngOk {
-		s, err = ToThumb(pngLoc, f.Img400, 400)
+	if err != nil {
+		s, err = ToThumb(pngDest, f.Img400, 400)
 	} else if err != nil && webpOk {
-		s, err = ToThumb(webpLoc, f.Img400, 400)
+		s, err = ToThumb(webpDest, f.Img400, 400)
 	}
 	out(s, err)
 	// make 150x150 thumbs
 	s, err = ToThumb(src, f.Img150, 150)
-	if err != nil && pngOk {
-		s, err = ToThumb(pngLoc, f.Img150, 150)
+	if err != nil {
+		s, err = ToThumb(pngDest, f.Img150, 150)
 	} else if err != nil && webpOk {
-		s, err = ToThumb(webpLoc, f.Img150, 150)
+		s, err = ToThumb(webpDest, f.Img150, 150)
 	}
 	out(s, err)
 	return cleanup(remove, src)

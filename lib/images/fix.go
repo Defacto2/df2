@@ -6,13 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dustin/go-humanize" //nolint:misspell
-	"github.com/gookit/color"       //nolint:misspell
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/gookit/color"       //nolint:misspell
 )
 
 const (
@@ -58,7 +57,7 @@ func Fix(simulate bool) error {
 		if err = rows.Scan(&img.ID, &img.UUID, &img.Name, &img.Size); err != nil {
 			return fmt.Errorf("images fix rows scan: %w", err)
 		}
-		if !img.ext() {
+		if directories.ArchiveExt(img.Name) {
 			continue
 		}
 		if !img.valid(&dir) {

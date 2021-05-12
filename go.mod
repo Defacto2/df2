@@ -32,5 +32,6 @@ require (
 	golang.org/x/image v0.0.0-20210504121937-7319ad40d33e
 	golang.org/x/sys v0.0.0-20210507161434-a76c4d0a0096
 	golang.org/x/text v0.3.6
+	gopkg.in/gographics/imagick.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
