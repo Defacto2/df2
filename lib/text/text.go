@@ -2,6 +2,7 @@
 package text
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -25,20 +26,61 @@ var (
 	ErrMeNF     = errors.New("readme not found in archive")
 )
 
+// reduce the length of the textfile so it can be parsed by AnsiLove.
+func reduce(src, uuid string) (string, error) {
+	fmt.Print(" will attempt to reduce the length of file")
+
+	f, err := os.Open(src)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	save, err := os.CreateTemp(os.TempDir(), uuid+"_reduce")
+	if err != nil {
+		return "", err
+	}
+	defer save.Close()
+
+	const maxLines = 500
+	scanner, writer := bufio.NewScanner(f), bufio.NewWriter(save)
+	scanner.Split(bufio.ScanLines)
+	line := 0
+	for scanner.Scan() {
+		line++
+		if _, err := writer.WriteString(scanner.Text() + "\n"); err != nil {
+			os.Remove(save.Name())
+			return "", err
+		}
+		if line > maxLines {
+			break
+		}
+	}
+	return save.Name(), nil
+}
+
 // generate a collection of site images.
-func generate(name, id string) error {
-	n, f := name, directories.Files(id)
-	o := f.Img000 + png
-	s, err := makePng(n, f.Img000)
-	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
-		const note = `
+func generate(name, uuid string) error {
+	const note = `
 this command requires the installation of AnsiLove/C
 installation instructions: https://github.com/ansilove/ansilove
 `
+	n, f := name, directories.Files(uuid)
+	o := f.Img000 + png
+	s, err := makePng(n, f.Img000)
+	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
 		fmt.Println(note)
 		return fmt.Errorf("generate ansilove not found: %w", err)
-	} else if err != nil {
-		return fmt.Errorf("generate ansilove: %w", err)
+	} else if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
+		tmp, err1 := reduce(f.UUID, uuid)
+		if err1 != nil {
+			return fmt.Errorf("ansilove reduce: %w", err1)
+		}
+		s, err = makePng(tmp, f.Img000)
+		defer os.Remove(tmp)
+	}
+	if err != nil {
+		return fmt.Errorf("generate: %w", err)
 	}
 	fmt.Printf("  %s", s)
 	const thumbSmall, thumbMedium = 150, 400
@@ -78,24 +120,22 @@ func makePng(src, dest string) (string, error) {
 	if src == "" {
 		return "", fmt.Errorf("make png: %w", ErrNoSrc)
 	}
-
+	if dest == "" {
+		return "", fmt.Errorf("make png: %w", ErrDest)
+	}
 	_, err := os.Stat(src)
 	if err != nil && os.IsNotExist(err) {
 		return "", fmt.Errorf("make png missing %q: %w", src, err)
 	} else if err != nil {
 		return "", fmt.Errorf("make png stat: %w", err)
 	}
-	if dest == "" {
-		return "", fmt.Errorf("make png: %w", ErrDest)
-	}
-
-	img := dest + png
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// ansilove -q # suppress output messages
 	// ansilove -r # create Retina @2x output file
 	// ansilove -o # specify output filename/path
+	img := dest + png
 	cmd := exec.CommandContext(ctx, "ansilove", "-q", "-r", "-o", img, src)
 	out, err := cmd.Output()
 	if err != nil && err.Error() == "exit status 127" {

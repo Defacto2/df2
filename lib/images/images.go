@@ -312,6 +312,9 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 	if vendorTempDir {
 		webp.Dest(vendorPath())
 	}
+	if strings.HasSuffix(src, "-cropped.png") {
+		defer os.Remove(src)
+	}
 	if err = webp.Run(); err != nil {
 		if err1 := cleanupWebP(dest); err1 != nil {
 			return "", fmt.Errorf("to webp cleanup: %w", err1)
@@ -352,7 +355,6 @@ func cropWebP(src string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("webp crop: %w", err)
 		}
-		defer os.Remove(crop)
 		return crop, nil
 	}
 	return src, nil
