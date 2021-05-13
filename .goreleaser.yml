@@ -8,7 +8,7 @@ before:
   hooks:
     - go mod tidy
 env:
-  - CGO_ENABLED=1
+  - CGO_ENABLED=0
 
 builds:
   - id: df2

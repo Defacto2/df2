@@ -84,15 +84,17 @@ func info() {
 		Database string
 		Ansilove string
 		Webp     string
+		Magick   string
 		Commit   string
 		Date     string
 		Path     string
 	}
-	const exeTmp = ` ┌── requirements ──────────┐
- │  database: {{.Database}}  │
- │  ansilove: {{.Ansilove}}  │
- │  webp lib: {{.Webp}}  │
- └──────────────────────────┘
+	const exeTmp = ` ┌── requirements ─────────────┐
+ │  database:     {{.Database}}  │
+ │  ansilove:     {{.Ansilove}}  │
+ │  webp lib:     {{.Webp}}  │
+ │  image magick: {{.Magick}}  │
+ └─────────────────────────────┘
    commit: {{.Commit}}
      date: {{.Date}}
      path: {{.Path}}
@@ -105,10 +107,10 @@ func info() {
 	p := func(s string) string {
 		switch s {
 		case ok:
-			const padding = 10
+			const padding = 9
 			return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
 		case miss:
-			const padding = 12
+			const padding = 11
 			return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
 		case disconnect:
 			const padding = 10
@@ -116,7 +118,8 @@ func info() {
 		}
 		return ""
 	}
-	a, w, d, bin := miss, miss, disconnect, ""
+	a, w, m, d, bin := miss, miss, miss, disconnect, ""
+	//var mv []byte
 	if err := database.ConnectInfo(); err == "" {
 		d = ok
 	}
@@ -125,6 +128,9 @@ func info() {
 	}
 	if _, err := exec.LookPath("cwebp"); err == nil {
 		w = ok
+	}
+	if _, err := exec.LookPath("convert"); err == nil {
+		m = ok
 	}
 	bin, err := self()
 	if err != nil {
@@ -135,6 +141,7 @@ func info() {
 		Database: p(d),
 		Ansilove: p(a),
 		Webp:     p(w),
+		Magick:   p(m),
 		Commit:   commit,
 		Date:     localBuild(date),
 		Path:     bin,

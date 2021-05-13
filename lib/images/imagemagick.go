@@ -1,40 +1,77 @@
 package images
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
-	"log"
-
-	"gopkg.in/gographics/imagick.v2/imagick"
+	"os/exec"
+	"time"
 )
 
-// imagemagick functions require the ImageMagick C library.
-// Installation: sudo apt install libmagickwand-dev-6 netpbm
+// imagemagick tools require the installation of ImageMagick v6.
+// ubuntu: sudo apt install imagemagick
+//
+// Convert Between Image Formats
+// https://imagemagick.org/script/convert.php
 
-var ErrFmt = errors.New("imagemagick c does not support this image")
+var ErrFmt = errors.New("imagemagick does not support this image")
 
-// ToMagick uses the imagemagick C library to convert an image to PNG.
+// ToMagick uses the magick convert command to convert an image to PNG.
 func ToMagick(src, dest string) error {
 
-	imagick.Initialize()
-	defer imagick.Terminate()
-
-	mw := imagick.NewMagickWand()
-	defer mw.Destroy()
-
-	if err := mw.ReadImage(src); err != nil {
-		log.Println("imagick requirements: have you installed libmagickwand-dev-6 and netpbm?")
-		log.Fatalln(err)
+	if _, err := IDMagick(src); err != nil {
+		return err
 	}
 
-	gif := mw.GetImageFormat()
-	if gif == "" {
-		return ErrFmt
+	// command on ubuntu: magick convert rose.jpg -resize 50% rose.png
+	const file = "convert"
+	var args = []string{src, dest}
+
+	path, err := exec.LookPath(file)
+	if err != nil {
+		return err
 	}
 
-	if err := mw.WriteImage(dest); err != nil {
-		return fmt.Errorf("imagick write: %w", err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, path, args...)
+	fmt.Printf("running %s %s\n", file, args)
+	out, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+	if len(out) > 0 {
+		fmt.Println("magick:", out)
 	}
 
 	return nil
+}
+
+func IDMagick(src string) ([]byte, error) {
+
+	const file = "identify"
+	var args = []string{src}
+
+	path, err := exec.LookPath(file)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, path, args...)
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	const unknown = "no decode delegate for this image format"
+	if bytes.Contains(out, []byte(unknown)) {
+		return nil, ErrFmt
+	}
+
+	return out, nil
 }
