@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/mholt/archiver"
@@ -142,6 +143,7 @@ func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
 		}
 	}()
 
+	filename = strings.ToLower(filename)
 	a, err := archiver.ByExtension(filename)
 	if err != nil {
 		return fmt.Errorf("walkr byextension %q: %w", filename, err)

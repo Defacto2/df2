@@ -83,6 +83,9 @@ func Fix(simulate bool) error {
 			// Extract textfiles from archives.
 			if err := t.extract(&dir); errors.Is(err, ErrMeUnk) {
 				continue
+			} else if errors.Is(err, ErrMeNo) {
+				fmt.Println(t.String(), t.UUID, err)
+				continue
 			} else if err != nil {
 				fmt.Println(t.String(), err)
 				continue
