@@ -217,18 +217,18 @@ func (t *textfile) textPng(c int, dir string) bool {
 // webP finds and generates missing WebP format images.
 func (t *textfile) webP(c int, imgDir string) bool {
 	name := filepath.Join(imgDir, t.UUID+webp)
+	c++
 	if sw, err := os.Stat(name); err == nil && sw.Size() > 0 {
 		return true
 	} else if !os.IsNotExist(err) && err != nil {
-		logs.Log(fmt.Errorf("webp stat: %w", err))
 		logs.Printf("%s\n", str.X())
+		logs.Log(fmt.Errorf("webp stat: %w", err))
 		return false
 	}
-	c++
 	logs.Printf("%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
-	if st, err := os.Stat(name); os.IsNotExist(err) || st.Size() == 0 {
-		logs.Printf("%s\n", str.X())
+	if st, err := os.Stat(src); os.IsNotExist(err) || st.Size() == 0 {
+		logs.Printf("%s (no src png)\n", str.X())
 		return false
 	}
 	s, err := images.ToWebp(src, name, true)
