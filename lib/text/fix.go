@@ -104,7 +104,7 @@ func Fix(simulate bool) error {
 			}
 		}
 		// missing webp specific images that rely on PNG sources
-		if !t.webP(i, dir.Img000) {
+		if !t.webP(c, dir.Img000) {
 			continue
 		}
 	}
@@ -216,27 +216,27 @@ func (t *textfile) textPng(c int, dir string) bool {
 
 // webP finds and generates missing WebP format images.
 func (t *textfile) webP(c int, imgDir string) bool {
-	logs.Printf("%d. %v", c, t)
 	name := filepath.Join(imgDir, t.UUID+webp)
-	if sw, err := os.Stat(name); os.IsNotExist(err) || sw.Size() == 0 {
-		src := filepath.Join(imgDir, t.UUID+png)
-		if st, err := os.Stat(name); os.IsNotExist(err) || st.Size() == 0 {
-			logs.Printf("%s\n", str.X())
-			return false
-		}
-		s, err := images.ToWebp(src, name, true)
-		if err != nil {
-			logs.Log(fmt.Errorf("fix webp: %w", err))
-			logs.Printf("%s\n", str.X())
-			return false
-		}
-		logs.Printf("%s\n", s)
+	if sw, err := os.Stat(name); err == nil && sw.Size() > 0 {
 		return true
-	} else if err != nil {
+	} else if !os.IsNotExist(err) && err != nil {
 		logs.Log(fmt.Errorf("webp stat: %w", err))
 		logs.Printf("%s\n", str.X())
 		return false
 	}
-	logs.Printf("%s\n", str.Y())
+	c++
+	logs.Printf("%d. %v", c, t)
+	src := filepath.Join(imgDir, t.UUID+png)
+	if st, err := os.Stat(name); os.IsNotExist(err) || st.Size() == 0 {
+		logs.Printf("%s\n", str.X())
+		return false
+	}
+	s, err := images.ToWebp(src, name, true)
+	if err != nil {
+		logs.Log(fmt.Errorf("fix webp: %w", err))
+		logs.Printf("%s\n", str.X())
+		return false
+	}
+	logs.Printf("%s\n", s)
 	return true
 }
