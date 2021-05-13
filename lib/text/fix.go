@@ -84,7 +84,9 @@ func Fix(simulate bool) error {
 				fmt.Println(t.String(), err)
 				continue
 			}
-			t.generate(ok, dir.UUID)
+			if err := t.generate(ok, dir.UUID); err != nil {
+				logs.Print(err)
+			}
 			continue
 		}
 		if !ok {
@@ -110,10 +112,10 @@ func Fix(simulate bool) error {
 // extract a textfile readme from an archive.
 func (t *textfile) extract(dir *directories.Dir) error {
 	if t.NoReadme.Valid && !t.NoReadme.Bool {
-		return ErrMeNo
+		return nil
 	}
 	if !t.Readme.Valid {
-		return nil
+		return ErrMeUnk
 	}
 	s := strings.Split(t.Readme.String, ",")
 	f, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
@@ -162,13 +164,19 @@ func (t *textfile) png(c int, simulate bool, dir string) bool {
 }
 
 // generate PNG format image assets from an extracted textfile.
-func (t *textfile) generate(ok bool, dir string) {
+func (t *textfile) generate(ok bool, dir string) error {
 	if !ok {
 		n := filepath.Join(dir, t.UUID) + txt
+		if _, err := os.Stat(n); os.IsNotExist(err) {
+			return fmt.Errorf("t.generate: %w", os.ErrNotExist)
+		} else if err != nil {
+			return fmt.Errorf("fix uuid+tx: %s: %w", t.UUID, err)
+		}
 		if err := generate(n, t.UUID); err != nil {
-			logs.Log(fmt.Errorf("fix uuid+txt: %w", err))
+			return fmt.Errorf("fix uuid+txt: %w", err)
 		}
 	}
+	return nil
 }
 
 // webP finds and generates missing WebP format images.
@@ -185,7 +193,7 @@ func (t *textfile) webP(imgDir string) bool {
 			logs.Log(fmt.Errorf("fix webp: %w", err))
 			return false
 		}
-		logs.Printf(" %s\n", s)
+		logs.Print(s)
 		return false
 	} else if err != nil {
 		logs.Log(fmt.Errorf("webp stat: %w", err))
