@@ -18,6 +18,7 @@ import (
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
 func Extractor(source, filename, extract, destination string) error {
+	filename = strings.ToLower(filename)
 	f, err := archiver.ByExtension(filename)
 	if err != nil {
 		return fmt.Errorf("extractor byextension %q: %w", filename, err)
