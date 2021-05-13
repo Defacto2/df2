@@ -2,7 +2,6 @@ package text
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -82,8 +81,7 @@ func Fix(simulate bool) error {
 		if !t.valid() {
 			// Extract textfiles from archives.
 			if err := t.extract(&dir); err != nil {
-				fmt.Print(t)
-				fmt.Println(err)
+				fmt.Println(t.String(), err)
 				continue
 			}
 			t.generate(ok, dir.UUID)
@@ -109,19 +107,13 @@ func Fix(simulate bool) error {
 	return nil
 }
 
-var (
-	ErrMeNo  = errors.New("no readme chosen")
-	ErrMeUnk = errors.New("unknown readme")
-	ErrMeNF  = errors.New("readme not found in archive")
-)
-
 // extract a textfile readme from an archive.
 func (t *textfile) extract(dir *directories.Dir) error {
 	if t.NoReadme.Valid && !t.NoReadme.Bool {
 		return ErrMeNo
 	}
 	if !t.Readme.Valid {
-		return ErrMeUnk
+		return nil
 	}
 	s := strings.Split(t.Readme.String, ",")
 	f, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
