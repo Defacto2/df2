@@ -79,8 +79,8 @@ func Fix(simulate bool) error {
 		if err != nil {
 			return fmt.Errorf("fix exist: %w", err)
 		}
-		if !t.valid() {
-			// Extract textfiles from archives.
+		// missing images + source is an archive
+		if !ok && t.archive() {
 			if err := t.extract(&dir); errors.Is(err, ErrMeUnk) {
 				continue
 			} else if errors.Is(err, ErrMeNo) {
@@ -90,19 +90,20 @@ func Fix(simulate bool) error {
 				fmt.Println(t.String(), err)
 				continue
 			}
-			if err := t.generate(ok, dir.UUID); err != nil {
+			if err := t.extractedImgs(dir.UUID); err != nil {
 				fmt.Println(t.String(), err)
 			}
 			continue
 		}
+		// missing images + source is a textfile
 		if !ok {
-			// Convert raw textfiles to PNGs.
 			c++
-			if !t.png(c, simulate, dir.UUID) {
+			if !t.textPng(c, dir.UUID) {
 				continue
 			}
 		}
-		if !t.webP(dir.Img000) {
+		// missing webp specific images that rely on PNG sources
+		if !t.webP(c, dir.Img000) {
 			continue
 		}
 	}
@@ -113,6 +114,35 @@ func Fix(simulate bool) error {
 		logs.Println("everything is okay, there is nothing to do")
 	}
 	return nil
+}
+
+// archive confirms that the named file is a known archive.
+func (t *textfile) archive() bool {
+	switch filepath.Ext(strings.ToLower(t.Name)) {
+	case z7, arc, arj, bz2, cab, gz, lha, lzh, rar, tar, tgz, zip:
+		return true
+	}
+	return false
+}
+
+// check that [UUID].png exists in all three image subdirectories.
+func (t *textfile) exist(dir *directories.Dir) (bool, error) {
+	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
+	for _, path := range dirs {
+		if path == "" {
+			return false, nil
+		}
+		s, err := os.Stat(filepath.Join(path, t.UUID+png))
+		if os.IsNotExist(err) {
+			return false, nil
+		} else if err != nil {
+			return false, fmt.Errorf("image exist: %w", err)
+		}
+		if s.Size() == 0 {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // extract a textfile readme from an archive.
@@ -145,93 +175,63 @@ func (t *textfile) extract(dir *directories.Dir) error {
 	}
 	if err = os.Rename(dest, src+txt); err != nil {
 		defer os.Remove(dest)
-		return fmt.Errorf("extract -> move: %w", err)
+		return fmt.Errorf("extract+move: %w", err)
+	}
+	return nil
+}
+
+// extractedImgs generates PNG and Webp image assets from a textfile extracted from an archive.
+func (t *textfile) extractedImgs(dir string) error {
+	n := filepath.Join(dir, t.UUID) + txt
+	if _, err := os.Stat(n); os.IsNotExist(err) {
+		return fmt.Errorf("t.extImgs: %w", os.ErrNotExist)
+	} else if err != nil {
+		return fmt.Errorf("fix extImg: %s: %w", t.UUID, err)
+	}
+	if err := generate(n, t.UUID); err != nil {
+		return fmt.Errorf("fix extImg: %w", err)
 	}
 	return nil
 }
 
 // png generates PNG format image assets from a textfile.
-func (t *textfile) png(c int, simulate bool, dir string) bool {
+func (t *textfile) textPng(c int, dir string) bool {
 	logs.Printf("%d. %v", c, t)
 	name := filepath.Join(dir, t.UUID)
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		logs.Printf("%s\n", str.X())
 		return false
-	}
-	if simulate {
-		logs.Printf("%s\n", color.Question.Sprint("?"))
+	} else if err != nil {
+		logs.Log(fmt.Errorf("txtpng stat: %w", err))
 		return false
 	}
 	if err := generate(name, t.UUID); err != nil {
-		logs.Log(fmt.Errorf("fix png: %w", err))
+		logs.Log(fmt.Errorf("fix txtpng: %w", err))
+		return false
 	}
 	logs.Print("\n")
 	return true
 }
 
-// generate PNG format image assets from an extracted textfile.
-func (t *textfile) generate(ok bool, dir string) error {
-	if !ok {
-		n := filepath.Join(dir, t.UUID) + txt
-		if _, err := os.Stat(n); os.IsNotExist(err) {
-			return fmt.Errorf("t.generate: %w", os.ErrNotExist)
-		} else if err != nil {
-			return fmt.Errorf("fix uuid+tx: %s: %w", t.UUID, err)
-		}
-		if err := generate(n, t.UUID); err != nil {
-			return fmt.Errorf("fix uuid+txt: %w", err)
-		}
-	}
-	return nil
-}
-
 // webP finds and generates missing WebP format images.
-func (t *textfile) webP(imgDir string) bool {
-	var err error
-	wfp := filepath.Join(imgDir, t.UUID+webp)
-	_, err = os.Stat(wfp)
-	if os.IsNotExist(err) {
+func (t *textfile) webP(c int, imgDir string) bool {
+	logs.Printf("%d. %v", c, t)
+	name := filepath.Join(imgDir, t.UUID+webp)
+	if sw, err := os.Stat(name); os.IsNotExist(err) || sw.Size() == 0 {
 		src := filepath.Join(imgDir, t.UUID+png)
-		logs.Printf("%s", t.UUID+png)
-		var s string
-		s, err = images.ToWebp(src, wfp, true)
+		if st, err := os.Stat(name); os.IsNotExist(err) || st.Size() == 0 {
+			logs.Printf("%s\n", str.X())
+			return false
+		}
+		s, err := images.ToWebp(src, name, true)
 		if err != nil {
 			logs.Log(fmt.Errorf("fix webp: %w", err))
 			return false
 		}
-		logs.Print(s)
-		return false
+		logs.Printf("%s\n", s)
+		return true
 	} else if err != nil {
 		logs.Log(fmt.Errorf("webp stat: %w", err))
-		return false
-	}
-	return true
-}
-
-// check that [UUID].png exists in all three image subdirectories.
-func (t *textfile) exist(dir *directories.Dir) (bool, error) {
-	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
-	for _, path := range dirs {
-		if path == "" {
-			return false, nil
-		}
-		s, err := os.Stat(filepath.Join(path, t.UUID+png))
-		if os.IsNotExist(err) {
-			return false, nil
-		} else if err != nil {
-			return false, fmt.Errorf("image exist: %w", err)
-		}
-		if s.Size() == 0 {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-// valid confirms that the named file is not a known archive.
-func (t *textfile) valid() bool {
-	switch filepath.Ext(strings.ToLower(t.Name)) {
-	case z7, arc, arj, bz2, cab, gz, lha, lzh, rar, tar, tgz, zip:
 		return false
 	}
 	return true

@@ -56,7 +56,7 @@ func TestImage_exists(t *testing.T) {
 	}
 }
 
-func TestImage_valid(t *testing.T) {
+func TestImage_archive(t *testing.T) {
 	type fields struct {
 		Filename string
 	}
@@ -65,19 +65,19 @@ func TestImage_valid(t *testing.T) {
 		fields fields
 		want   bool
 	}{
-		{"empty", fields{""}, true},
-		{"no ext", fields{"hello"}, true},
-		{"doc", fields{"hello.doc"}, true},
-		{"two exts", fields{"hello.world.doc"}, true},
-		{"bz2", fields{"hello.bz2"}, false},
-		{"zip", fields{"hello.zip"}, false},
+		{"empty", fields{""}, false},
+		{"no ext", fields{"hello"}, false},
+		{"doc", fields{"hello.doc"}, false},
+		{"two exts", fields{"hello.world.doc"}, false},
+		{"bz2", fields{"hello.bz2"}, true},
+		{"zip", fields{"hello.zip"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			x := textfile{
 				Name: tt.fields.Filename,
 			}
-			if got := x.valid(); got != tt.want {
+			if got := x.archive(); got != tt.want {
 				t.Errorf("image.valid() = %v, want %v", got, tt.want)
 			}
 		})

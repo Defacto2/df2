@@ -19,6 +19,7 @@ var (
 	ErrNoSrc    = errors.New("requires a source path to a directory")
 	ErrAnsiLove = errors.New("cannot access shared libraries: libansilove.so.1")
 	ErrDest     = errors.New("dest argument requires a destination filename path")
+	ErrZero     = errors.New("source file is 0 bytes")
 	ErrMeNo     = errors.New("no readme chosen")
 	ErrMeUnk    = errors.New("unknown readme")
 	ErrMeNF     = errors.New("readme not found in archive")
