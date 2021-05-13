@@ -81,6 +81,7 @@ func Fix(simulate bool) error {
 		}
 		// missing images + source is an archive
 		if !ok && t.archive() {
+			c++
 			if err := t.extract(&dir); errors.Is(err, ErrMeUnk) {
 				continue
 			} else if errors.Is(err, ErrMeNo) {
@@ -103,7 +104,7 @@ func Fix(simulate bool) error {
 			}
 		}
 		// missing webp specific images that rely on PNG sources
-		if !t.webP(c, dir.Img000) {
+		if !t.webP(i, dir.Img000) {
 			continue
 		}
 	}
@@ -226,13 +227,16 @@ func (t *textfile) webP(c int, imgDir string) bool {
 		s, err := images.ToWebp(src, name, true)
 		if err != nil {
 			logs.Log(fmt.Errorf("fix webp: %w", err))
+			logs.Printf("%s\n", str.X())
 			return false
 		}
 		logs.Printf("%s\n", s)
 		return true
 	} else if err != nil {
 		logs.Log(fmt.Errorf("webp stat: %w", err))
+		logs.Printf("%s\n", str.X())
 		return false
 	}
+	logs.Printf("%s\n", str.Y())
 	return true
 }
