@@ -2,6 +2,7 @@ package text
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -80,7 +81,11 @@ func Fix(simulate bool) error {
 		}
 		if !t.valid() {
 			// Extract textfiles from archives.
-			t.extract(&dir)
+			if err := t.extract(&dir); err != nil {
+				fmt.Print(t)
+				fmt.Println(err)
+				continue
+			}
 			t.generate(ok, dir.UUID)
 			continue
 		}
@@ -104,18 +109,24 @@ func Fix(simulate bool) error {
 	return nil
 }
 
+var (
+	ErrMeNo  = errors.New("no readme chosen")
+	ErrMeUnk = errors.New("unknown readme")
+	ErrMeNF  = errors.New("readme not found in archive")
+)
+
 // extract a textfile readme from an archive.
-func (t *textfile) extract(dir *directories.Dir) {
+func (t *textfile) extract(dir *directories.Dir) error {
 	if t.NoReadme.Valid && !t.NoReadme.Bool {
-		return
+		return ErrMeNo
 	}
 	if !t.Readme.Valid {
-		return
+		return ErrMeUnk
 	}
 	s := strings.Split(t.Readme.String, ",")
 	f, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
 	if err != nil {
-		return
+		return err
 	}
 	found := false
 	for _, key := range f {
@@ -125,18 +136,18 @@ func (t *textfile) extract(dir *directories.Dir) {
 		}
 	}
 	if !found {
-		return
+		return ErrMeNF
 	}
 	tmp, src := os.TempDir(), filepath.Join(dir.UUID, t.UUID)
 	dest := filepath.Join(tmp, s[0])
 	if err = archive.Extractor(src, t.Name, s[0], tmp); err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	if err = os.Rename(dest, src+txt); err != nil {
 		defer os.Remove(dest)
-		logs.Log(fmt.Errorf("extract and move: %w", err))
+		return fmt.Errorf("extract -> move: %w", err)
 	}
+	return nil
 }
 
 // png generates PNG format image assets from a textfile.
