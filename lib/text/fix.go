@@ -2,6 +2,7 @@ package text
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -80,7 +81,9 @@ func Fix(simulate bool) error {
 		}
 		if !t.valid() {
 			// Extract textfiles from archives.
-			if err := t.extract(&dir); err != nil {
+			if err := t.extract(&dir); errors.Is(err, ErrMeUnk) {
+				continue
+			} else if err != nil {
 				fmt.Println(t.String(), err)
 				continue
 			}
@@ -115,7 +118,7 @@ func (t *textfile) extract(dir *directories.Dir) error {
 		return ErrMeNo
 	}
 	if !t.Readme.Valid {
-		return nil
+		return ErrMeUnk
 	}
 	s := strings.Split(t.Readme.String, ",")
 	f, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
