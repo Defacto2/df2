@@ -112,10 +112,10 @@ func Fix(simulate bool) error {
 // extract a textfile readme from an archive.
 func (t *textfile) extract(dir *directories.Dir) error {
 	if t.NoReadme.Valid && !t.NoReadme.Bool {
-		return nil
+		return ErrMeNo
 	}
 	if !t.Readme.Valid {
-		return ErrMeUnk
+		return nil
 	}
 	s := strings.Split(t.Readme.String, ",")
 	f, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
