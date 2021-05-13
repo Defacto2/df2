@@ -85,7 +85,7 @@ func Fix(simulate bool) error {
 				continue
 			}
 			if err := t.generate(ok, dir.UUID); err != nil {
-				logs.Print(err)
+				fmt.Println(t.String(), err)
 			}
 			continue
 		}
