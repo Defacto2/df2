@@ -2,10 +2,12 @@
 package text
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
@@ -75,6 +77,7 @@ func makePng(src, dest string) (string, error) {
 	if src == "" {
 		return "", fmt.Errorf("make png: %w", ErrNoSrc)
 	}
+
 	_, err := os.Stat(src)
 	if err != nil && os.IsNotExist(err) {
 		return "", fmt.Errorf("make png missing %q: %w", src, err)
@@ -84,31 +87,39 @@ func makePng(src, dest string) (string, error) {
 	if dest == "" {
 		return "", fmt.Errorf("make png: %w", ErrDest)
 	}
+
 	img := dest + png
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	// ansilove -q # suppress output messages
 	// ansilove -r # create Retina @2x output file
 	// ansilove -o # specify output filename/path
-	cmd := exec.Command("ansilove", "-q", "-r", "-o", img, src)
+	cmd := exec.CommandContext(ctx, "ansilove", "-q", "-r", "-o", img, src)
 	out, err := cmd.Output()
 	if err != nil && err.Error() == "exit status 127" {
-		return "", fmt.Errorf("make png ansilove: %w", ErrAnsiLove)
+		return "", fmt.Errorf("make ansilove: %w", ErrAnsiLove)
 	} else if err != nil {
-		return "", fmt.Errorf("make png ansilove %q: %w", out, err)
+		return "", fmt.Errorf("make ansilove %q: %w", out, err)
 	}
+
 	_, err = os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("make png working directory: %w", err)
 	}
+
 	_, err = os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("make png failed to obtain exe: %w", err)
 	}
+
 	stat, err := os.Stat(img)
 	if err != nil && os.IsNotExist(err) {
 		return "", fmt.Errorf("make png stat %q: %w", img, err)
 	} else if err != nil {
 		return "", fmt.Errorf("make png stat: %w", err)
 	}
+
 	return fmt.Sprintf("✓ text » png %v\n%s",
 		humanize.Bytes(uint64(stat.Size())), color.Secondary.Sprintf("%s", out)), nil
 }
