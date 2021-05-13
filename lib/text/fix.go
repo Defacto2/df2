@@ -152,7 +152,7 @@ func (t *textfile) png(c int, simulate bool, dir string) bool {
 		return false
 	}
 	if err := generate(name, t.UUID); err != nil {
-		logs.Log(fmt.Errorf("fix generate: %w", err))
+		logs.Log(fmt.Errorf("fix png: %w", err))
 	}
 	logs.Print("\n")
 	return true
@@ -163,7 +163,7 @@ func (t *textfile) generate(ok bool, dir string) {
 	if !ok {
 		n := filepath.Join(dir, t.UUID) + txt
 		if err := generate(n, t.UUID); err != nil {
-			logs.Log(fmt.Errorf("fix extract generate: %w", err))
+			logs.Log(fmt.Errorf("fix uuid+txt: %w", err))
 		}
 	}
 }
@@ -179,7 +179,7 @@ func (t *textfile) webP(imgDir string) bool {
 		var s string
 		s, err = images.ToWebp(src, wfp, true)
 		if err != nil {
-			logs.Log(fmt.Errorf("fix generate: %w", err))
+			logs.Log(fmt.Errorf("fix webp: %w", err))
 			return false
 		}
 		logs.Printf(" %s\n", s)

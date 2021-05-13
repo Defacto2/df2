@@ -32,25 +32,25 @@ installation instructions: https://github.com/ansilove/ansilove
 		fmt.Println(note)
 		return fmt.Errorf("generate ansilove not found: %w", err)
 	} else if err != nil {
-		return fmt.Errorf("generate: %w", err)
+		return fmt.Errorf("generate ansilove: %w", err)
 	}
 	fmt.Printf("  %s", s)
 	const thumbSmall, thumbMedium = 150, 400
 	var w, h int
 	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
 		if err != nil {
-			return fmt.Errorf("generate: %w", err)
+			return fmt.Errorf("generate info: %w", err)
 		}
 		cw, ch := images.WebPCalc(w, h)
 		s, err = images.ToPng(o, images.NewExt(o, png), ch, cw)
 		if err != nil {
-			return fmt.Errorf("generate: %w", err)
+			return fmt.Errorf("generate calc: %w", err)
 		}
 		fmt.Printf("  %s", s)
 	}
 	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
 	if err != nil {
-		return fmt.Errorf("generate: %w", err)
+		return fmt.Errorf("generate webp: %w", err)
 	}
 	fmt.Printf("  %s", s)
 	s, err = images.ToThumb(o, f.Img400, thumbMedium)

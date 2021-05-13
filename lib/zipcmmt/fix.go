@@ -68,7 +68,7 @@ func Fix(ascii, unicode, overwrite bool) error {
 			z.save(dir.UUID)
 			continue
 		}
-		go z.save(dir.UUID)
+		z.save(dir.UUID)
 	}
 	elapsed := time.Since(start).Seconds()
 	if ascii || unicode {
