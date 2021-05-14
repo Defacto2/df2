@@ -297,7 +297,7 @@ func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
 		return "", fmt.Errorf("to webp mimetype detect: %w", err)
 	}
 	if !valid(v, m.Extension()) {
-		return "", fmt.Errorf("to webp extension %q != %s: %w",
+		return "", fmt.Errorf("to webp mimetype %q != %s: %w",
 			m.Extension(), strings.Join(v, " "), ErrFormat)
 	}
 	src, err = cropWebP(src)
@@ -347,6 +347,7 @@ func cropWebP(src string) (string, error) {
 		return "", fmt.Errorf("to webp size: %w", err)
 	}
 	if w+h > WebpMaxSize {
+		fmt.Printf("crop to %dx%d", w, h)
 		cropW, cropH := WebPCalc(w, h)
 		ext := filepath.Ext(src)
 		fn := strings.TrimSuffix(src, ext)
