@@ -44,7 +44,7 @@ func fallback(editors [3]string) (edit string) {
 	if edit != "" {
 		log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
 	} else {
-		log.Panicln(ErrNoEditor)
+		log.Print(ErrNoEditor)
 		os.Exit(1)
 	}
 	return ""
@@ -56,7 +56,7 @@ func saved() string {
 		if editor != "" {
 			log.Printf("%q edit command not found\n%v", editor, exec.ErrNotFound)
 		} else {
-			log.Panicln(ErrNoEditor)
+			log.Print(ErrNoEditor)
 		}
 		os.Exit(1)
 	}
