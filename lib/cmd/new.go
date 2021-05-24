@@ -12,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/proof"
 	"github.com/Defacto2/df2/lib/text"
+	"github.com/Defacto2/df2/lib/zipcontent"
 	"github.com/gookit/color" //nolint:misspell
 	"github.com/spf13/cobra"
 )
@@ -50,6 +51,11 @@ var newCmd = &cobra.Command{
 		}
 		if err := p.Queries(); err != nil {
 			logs.Fatal(err)
+		}
+		i++
+		color.Info.Printf("%d. scan for empty archives\n", i)
+		if err := zipcontent.Fix(); err != nil {
+			log.Fatal(err)
 		}
 		i++
 		color.Info.Printf("%d. generate missing images\n", i)

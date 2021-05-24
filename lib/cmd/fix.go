@@ -14,6 +14,7 @@ import (
 	"github.com/Defacto2/df2/lib/people"
 	"github.com/Defacto2/df2/lib/text"
 	"github.com/Defacto2/df2/lib/zipcmmt"
+	"github.com/Defacto2/df2/lib/zipcontent"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +34,17 @@ var fixCmd = &cobra.Command{
 			logs.Fatal(err)
 		}
 		logs.Danger(fmt.Errorf("fix cmd %q: %w", args[0], ErrCmd))
+	},
+}
+
+var fixArchivesCmd = &cobra.Command{
+	Use:     "archives",
+	Short:   "Repair archives listing empty content",
+	Aliases: []string{"a"},
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := zipcontent.Fix(); err != nil {
+			log.Fatal(fmt.Errorf("archives fix: %w", err))
+		}
 	},
 }
 
@@ -105,6 +117,7 @@ var fixZipCmmtCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(fixCmd)
+	fixCmd.AddCommand(fixArchivesCmd)
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
 	fixCmd.AddCommand(fixImagesCmd)
