@@ -29,8 +29,9 @@ var newCmd = &cobra.Command{
       fix demozoo
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
+		i := 1
 		config.Check()
-		color.Info.Println("1. scan for new demozoo submissions")
+		color.Info.Printf("%d. scan for new demozoo submissions\n", i)
 		dz := demozoo.Request{
 			All:       false,
 			Overwrite: false,
@@ -40,7 +41,8 @@ var newCmd = &cobra.Command{
 		if err := dz.Queries(); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("2. scan for new proof submissions")
+		i++
+		color.Info.Printf("%d. scan for new proof submissions\n", i)
 		p := proof.Request{
 			Overwrite:   false,
 			AllProofs:   false,
@@ -49,19 +51,23 @@ var newCmd = &cobra.Command{
 		if err := p.Queries(); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("3. generate missing images")
+		i++
+		color.Info.Printf("%d. generate missing images\n", i)
 		if err := images.Fix(false); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("4. generate missing text previews")
+		i++
+		color.Info.Printf("%d. generate missing text previews\n", i)
 		if err := text.Fix(false); err != nil {
 			logs.Fatal(err)
 		}
-		color.Info.Println("5. fix demozoo data conflicts")
+		i++
+		color.Info.Printf("%d. fix demozoo data conflicts\n", i)
 		if err := demozoo.Fix(); err != nil {
 			log.Fatal(err)
 		}
-		color.Info.Println("6. fix malformed database entries")
+		i++
+		color.Info.Printf("%d. fix malformed database entries\n", i)
 		if err := database.Fix(); err != nil {
 			log.Fatal(err)
 		}
