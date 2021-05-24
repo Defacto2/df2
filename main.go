@@ -1,3 +1,5 @@
+package main
+
 /*
 Copyright © 2021 Ben Garrett <code.by.ben@gmail.com>
 
@@ -13,7 +15,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package main
 
 import (
 	"bytes"
@@ -119,7 +120,6 @@ func info() {
 		return ""
 	}
 	a, w, m, d, bin := miss, miss, miss, disconnect, ""
-	//var mv []byte
 	if err := database.ConnectInfo(); err == "" {
 		d = ok
 	}
