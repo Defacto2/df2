@@ -22,6 +22,7 @@ require (
 	github.com/muesli/go-app-paths v0.2.1
 	github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84 // indirect
 	github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e
+	github.com/nwaples/rardecode v1.1.0
 	github.com/pelletier/go-toml v1.9.1 // indirect
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.7 // indirect

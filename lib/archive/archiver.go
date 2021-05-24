@@ -1,6 +1,8 @@
 package archive
 
 import (
+	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mholt/archiver"
+	"github.com/nwaples/rardecode"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
 )
@@ -40,7 +43,21 @@ func Extractor(source, filename, extract, destination string) error {
 // It has offers compatibility with compression formats.
 func Readr(archive, filename string) (files []string, err error) {
 	err = walkr(archive, filename, func(f archiver.File) error {
-		b := []byte(f.Name())
+		if f.IsDir() {
+			return nil
+		}
+		fn := ""
+		switch h := f.Header.(type) {
+		case zip.FileHeader:
+			fn = h.Name
+		case *tar.Header:
+			fn = h.Name
+		case *rardecode.FileHeader:
+			fn = h.Name
+		default:
+			fn = f.Name()
+		}
+		b := []byte(fn)
 		if !utf8.Valid(b) {
 			// handle cheecky DOS era filenames with CP437 extended characters.
 			r := transform.NewReader(bytes.NewReader(b), charmap.CodePage437.NewDecoder())
@@ -51,7 +68,7 @@ func Readr(archive, filename string) (files []string, err error) {
 			}
 			files = append(files, string(result))
 		} else {
-			files = append(files, f.Name())
+			files = append(files, fn)
 		}
 		return nil
 	})
