@@ -422,6 +422,14 @@ func Total(s *string) (sum int, err error) {
 	return sum, db.Close()
 }
 
+// Val returns the column value as either a string or "NULL".
+func Val(col sql.RawBytes) string {
+	if col == nil {
+		return "NULL"
+	}
+	return string(col)
+}
+
 func collen(s *sql.ColumnType) string {
 	l, ok := s.Length()
 	if !ok {

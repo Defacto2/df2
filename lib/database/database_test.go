@@ -159,3 +159,23 @@ func TestObfuscateParam(t *testing.T) {
 		})
 	}
 }
+
+func TestVal(t *testing.T) {
+	type args struct {
+		col sql.RawBytes
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"null", args{nil}, "NULL"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Val(tt.args.col); got != tt.want {
+				t.Errorf("Val() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

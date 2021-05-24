@@ -41,7 +41,7 @@ type stat struct {
 	count     int             // row index
 	missing   int             // missing UUID files count
 	overwrite bool            // --overwrite flag value
-	start     time.Time       //
+	start     time.Time       // processing time
 	total     int             // total rows
 	values    *[]sql.RawBytes // row values
 }
@@ -138,7 +138,7 @@ func (s *stat) printTotals(request Request) {
 func (r Record) iterate(s *stat) error {
 	var value string
 	for i, raw := range *s.values {
-		value = val(raw)
+		value = database.Val(raw)
 		switch s.columns[i] {
 		case "id":
 			r.printID(s)
@@ -277,13 +277,6 @@ func updateZipContent(id string, items int, content string) error {
 	}
 	logs.Printf("%d items", items)
 	return db.Close()
-}
-
-func val(col sql.RawBytes) string {
-	if col == nil {
-		return "NULL"
-	}
-	return string(col)
 }
 
 func (r Record) zip(col sql.RawBytes, s *stat) error {

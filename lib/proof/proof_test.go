@@ -93,26 +93,6 @@ func Test_stat_summary(t *testing.T) {
 	}
 }
 
-func Test_val(t *testing.T) {
-	type args struct {
-		col sql.RawBytes
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"null", args{nil}, "NULL"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := val(tt.args.col); got != tt.want {
-				t.Errorf("val() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_stat_fileSkip(t *testing.T) {
 	type fields struct {
 		base      string
