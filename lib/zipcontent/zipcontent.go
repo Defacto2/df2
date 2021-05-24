@@ -146,8 +146,17 @@ func (r *Record) files(col sql.RawBytes, s *stat) (err error) {
 		if r.NFO = archive.FindNFO(r.Name, r.Files...); r.NFO != "" {
 			logs.Printf(", text file: %s", r.NFO)
 			if _, err := os.Stat(r.File + txt); os.IsNotExist(err) {
-				if err1 := archive.Extractor(r.File, r.Name, r.NFO, filepath.Join(s.basePath, r.UUID+txt)); err1 != nil {
+				tmp, err1 := os.MkdirTemp(os.TempDir(), "zipcontent")
+				if err1 != nil {
 					return err1
+				}
+				defer os.RemoveAll(tmp)
+				if err2 := archive.Extractor(r.File, r.Name, r.NFO, tmp); err2 != nil {
+					return err2
+				}
+				src := filepath.Join(tmp, r.NFO)
+				if _, err3 := archive.FileMove(src, filepath.Join(s.basePath, r.UUID+txt)); err3 != nil {
+					return err3
 				}
 				logs.Print(", extracted")
 			}
@@ -169,15 +178,29 @@ func (r Record) id(s *stat) {
 }
 
 func (r Record) save() error {
+	const (
+		files = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=? WHERE id=?"
+		nfo   = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,retrotxt_readme=?,retrotxt_no_readme=? WHERE id=?"
+	)
+	var err error
+	var update *sql.Stmt
 	db := database.Connect()
 	defer db.Close()
-	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=? WHERE id=?")
+	if r.NFO == "" {
+		update, err = db.Prepare(files)
+	} else {
+		update, err = db.Prepare(nfo)
+	}
 	if err != nil {
 		return fmt.Errorf("update zip content db prepare: %w", err)
 	}
 	defer update.Close()
 	content := strings.Join(r.Files, "\n")
-	if _, err := update.Exec(content, database.UpdateID, r.ID); err != nil {
+	if r.NFO == "" {
+		if _, err := update.Exec(content, database.UpdateID, r.ID); err != nil {
+			return fmt.Errorf("update zip content update exec: %w", err)
+		}
+	} else if _, err := update.Exec(content, database.UpdateID, r.NFO, 0, r.ID); err != nil {
 		return fmt.Errorf("update zip content update exec: %w", err)
 	}
 	logs.Printf(" %s", str.Y())
