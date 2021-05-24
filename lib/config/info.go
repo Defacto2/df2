@@ -40,7 +40,7 @@ func Info(sizes bool) error {
 			logs.Println()
 			continue
 		}
-		val := strings.TrimSpace(strings.Join(s[1:], ""))
+		val := strings.TrimSpace(strings.Join(s[1:], ":"))
 		switch strings.TrimSpace(s[0]) {
 		case "server":
 			if db != "" {
