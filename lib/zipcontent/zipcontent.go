@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -133,6 +134,7 @@ func (r Record) iterate(s *stat) error {
 
 // files reads an archive and saves its content to the database.
 func (r *Record) files(col sql.RawBytes, s *stat) (err error) {
+	const txt = ".txt"
 	logs.Print(" • ")
 	r.Files, err = archive.Read(r.File, r.Name)
 	if err != nil {
@@ -143,6 +145,12 @@ func (r *Record) files(col sql.RawBytes, s *stat) (err error) {
 	if r.NFO == "" {
 		if r.NFO = archive.FindNFO(r.Name, r.Files...); r.NFO != "" {
 			logs.Printf(", text file: %s", r.NFO)
+			if _, err := os.Stat(r.File + txt); os.IsNotExist(err) {
+				if err1 := archive.Extractor(r.File, r.Name, r.NFO, filepath.Join(s.basePath, r.UUID+txt)); err1 != nil {
+					return err1
+				}
+				logs.Print(", extracted")
+			}
 		}
 	}
 	if err := r.save(); err != nil {
@@ -168,18 +176,15 @@ func (r Record) save() error {
 		return fmt.Errorf("update zip content db prepare: %w", err)
 	}
 	defer update.Close()
-	// content := strings.Join(r.Files, "\n")
-	// if _, err := update.Exec(content, database.UpdateID, r.ID); err != nil {
-	// 	return fmt.Errorf("update zip content update exec: %w", err)
-	// }
+	content := strings.Join(r.Files, "\n")
+	if _, err := update.Exec(content, database.UpdateID, r.ID); err != nil {
+		return fmt.Errorf("update zip content update exec: %w", err)
+	}
 	logs.Printf(" %s", str.Y())
 	return db.Close()
 }
 
 func (s *stat) summary() {
-	if s.total < 1 {
-		return
-	}
 	total := s.count - s.missing
 	if total == 0 {
 		fmt.Print("nothing to do")
