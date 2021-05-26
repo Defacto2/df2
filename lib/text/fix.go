@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	fixStmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme " +
-		"FROM files WHERE platform=\"text\" OR platform=\"ansi\" ORDER BY id DESC"
+	fixStmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme, platform " +
+		"FROM files WHERE platform=\"text\" OR platform=\"textamiga\" OR platform=\"ansi\" ORDER BY id DESC"
 	// Images.
 	png  = ".png"
 	webp = ".webp"
@@ -47,6 +47,7 @@ type textfile struct {
 	UUID     string         // database unique id
 	Name     string         // file name
 	Ext      string         // file extension
+	Platform string         // file platform classification
 	Size     int            // file size in bytes
 	NoReadme sql.NullBool   // disable the display of a readme
 	Readme   sql.NullString // filename of a readme textfile
@@ -72,7 +73,7 @@ func Fix(simulate bool) error {
 	for rows.Next() {
 		var t textfile
 		i++
-		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme); err != nil {
+		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err != nil {
 			return fmt.Errorf("fix rows scan: %w", err)
 		}
 		ok, err := t.exist(&dir)
@@ -189,7 +190,8 @@ func (t *textfile) extractedImgs(dir string) error {
 	} else if err != nil {
 		return fmt.Errorf("fix extImg: %s: %w", t.UUID, err)
 	}
-	if err := generate(n, t.UUID); err != nil {
+	amiga := bool(t.Platform == "textamiga")
+	if err := generate(n, t.UUID, amiga); err != nil {
 		return fmt.Errorf("fix extImg: %w", err)
 	}
 	return nil
@@ -206,7 +208,8 @@ func (t *textfile) textPng(c int, dir string) bool {
 		logs.Log(fmt.Errorf("txtpng stat: %w", err))
 		return false
 	}
-	if err := generate(name, t.UUID); err != nil {
+	amiga := bool(t.Platform == "textamiga")
+	if err := generate(name, t.UUID, amiga); err != nil {
 		logs.Log(fmt.Errorf("fix txtpng: %w", err))
 		return false
 	}

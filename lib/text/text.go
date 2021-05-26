@@ -60,14 +60,14 @@ func reduce(src, uuid string) (string, error) {
 }
 
 // generate a collection of site images.
-func generate(name, uuid string) error {
+func generate(name, uuid string, amiga bool) error {
 	const note = `
 this command requires the installation of AnsiLove/C
 installation instructions: https://github.com/ansilove/ansilove
 `
 	n, f := name, directories.Files(uuid)
 	o := f.Img000 + png
-	s, err := makePng(n, f.Img000)
+	s, err := makePng(n, f.Img000, amiga)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
 		fmt.Println(note)
 		return fmt.Errorf("generate ansilove not found: %w", err)
@@ -76,7 +76,7 @@ installation instructions: https://github.com/ansilove/ansilove
 		if err1 != nil {
 			return fmt.Errorf("ansilove reduce: %w", err1)
 		}
-		s, err = makePng(tmp, f.Img000)
+		s, err = makePng(tmp, f.Img000, amiga)
 		defer os.Remove(tmp)
 	}
 	if err != nil {
@@ -116,7 +116,7 @@ installation instructions: https://github.com/ansilove/ansilove
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
-func makePng(src, dest string) (string, error) {
+func makePng(src, dest string, amiga bool) (string, error) {
 	if src == "" {
 		return "", fmt.Errorf("make png: %w", ErrNoSrc)
 	}
@@ -135,8 +135,14 @@ func makePng(src, dest string) (string, error) {
 	// ansilove -q # suppress output messages
 	// ansilove -r # create Retina @2x output file
 	// ansilove -o # specify output filename/path
+	// ansilove -f # select font for supported formats: 80x25 (default), topaz+, 80x50, ...
 	img := dest + png
-	cmd := exec.CommandContext(ctx, "ansilove", "-q", "-r", "-o", img, src)
+	args := []string{"-q", "-r", "-o", img}
+	if amiga {
+		args = append(args, "-f", "topaz+")
+	}
+	args = append(args, src)
+	cmd := exec.CommandContext(ctx, "ansilove", args...)
 	out, err := cmd.Output()
 	if err != nil && err.Error() == "exit status 127" {
 		return "", fmt.Errorf("make ansilove: %w", ErrAnsiLove)

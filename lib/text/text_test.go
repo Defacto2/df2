@@ -1,34 +1,39 @@
 package text
 
 import (
-	"os"
-	"path"
 	"path/filepath"
 	"testing"
 )
 
 func Test_makePng(t *testing.T) {
-	wd, _ := os.Getwd()
-	src := path.Join(wd, "../../tests/text/test.txt")
-	dst := path.Join(wd, "../../tests/text/test")
+	dst, err := filepath.Abs("../../tests/text/test")
+	if err != nil {
+		t.Error(err)
+	}
+	src, err := filepath.Abs("../../tests/text/test.txt")
+	if err != nil {
+		t.Error(err)
+	}
 	type args struct {
-		src  string
-		dest string
+		src   string
+		dest  string
+		amiga bool
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"empty", args{"", ""}, true},
-		{"missing src", args{"", dst}, true},
-		{"missing dst", args{src, ""}, true},
-		{"invalid src", args{src + "invalidate", dst}, true},
-		{"text", args{src, dst}, false},
+		{"empty", args{"", "", false}, true},
+		{"missing src", args{"", dst, false}, true},
+		{"missing dst", args{src, "", false}, true},
+		{"invalid src", args{src + "invalidate", dst, false}, true},
+		{"text", args{src, dst, false}, false},
+		//{"amiga", args{src, dst, true}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := makePng(tt.args.src, tt.args.dest)
+			_, err := makePng(tt.args.src, tt.args.dest, tt.args.amiga)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("makePng() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -47,22 +52,24 @@ func Test_generate(t *testing.T) {
 		t.Error(err)
 	}
 	type args struct {
-		name string
-		id   string
+		name  string
+		id    string
+		amiga bool
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"test", args{"", ""}, true},
-		{"missing", args{"abce", "1"}, true},
-		{"gif", args{gif, "1"}, true},
-		{"txt", args{txt, "1"}, true},
+		{"test", args{"", "", false}, true},
+		{"missing", args{"abce", "1", false}, true},
+		{"gif", args{gif, "1", false}, true},
+		{"txt", args{txt, "1", false}, true},
+		{"amiga", args{txt, "1", true}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := generate(tt.args.name, tt.args.id)
+			err := generate(tt.args.name, tt.args.id, tt.args.amiga)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generate() error = %v, wantErr %v", err, tt.wantErr)
 				return
