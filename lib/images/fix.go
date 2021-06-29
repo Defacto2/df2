@@ -96,7 +96,7 @@ func (i imageFile) ext() (ok bool) {
 }
 
 func (i imageFile) valid(dir *directories.Dir) (ok bool) {
-	dirs := [3]string{dir.Img000, dir.Img400}
+	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
 		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {
 			return true
