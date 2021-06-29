@@ -3,6 +3,7 @@ package text
 import (
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -11,6 +12,9 @@ import (
 )
 
 func TestImage_exists(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
 	type fields struct {
 		UUID string
 	}
@@ -28,15 +32,8 @@ func TestImage_exists(t *testing.T) {
 		t.Error(err)
 	}
 	dir := directories.Init(false)
-	if runtime.GOOS == "windows" {
-		dir.Img000 = path.Join(wd, "..\\..\\tests\\text\\")
-		dir.Img150 = path.Join(wd, "..\\..\\tests\\text\\")
-		dir.Img400 = path.Join(wd, "..\\..\\tests\\text\\")
-	} else {
-		dir.Img000 = path.Join(wd, "../../tests/text/")
-		dir.Img150 = path.Join(wd, "../../tests/text/")
-		dir.Img400 = path.Join(wd, "../../tests/text/")
-	}
+	dir.Img000 = filepath.Clean(path.Join(wd, "../../tests/text/"))
+	dir.Img400 = filepath.Clean(path.Join(wd, "../../tests/text/"))
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.name == "missingdir" {
@@ -47,10 +44,10 @@ func TestImage_exists(t *testing.T) {
 			}
 			got, err := x.exist(&dir)
 			if got != tt.want {
-				t.Errorf("image.exist() = %v, want %v", got, tt.want)
+				t.Errorf("image.exist(%s) = %v, want %v", &dir, got, tt.want)
 			}
 			if err != nil {
-				t.Errorf("image.exists() err = %v", err)
+				t.Errorf("image.exists(%s) err = %v", &dir, err)
 			}
 		})
 	}

@@ -126,14 +126,6 @@ func Generate(src, id string, remove bool) error {
 		s, err = ToThumb(webpDest, f.Img400, 400)
 	}
 	out(s, err)
-	// make 150x150 thumbs
-	s, err = ToThumb(src, f.Img150, 150)
-	if err != nil {
-		s, err = ToThumb(pngDest, f.Img150, 150)
-	} else if err != nil && webpOk {
-		s, err = ToThumb(webpDest, f.Img150, 150)
-	}
-	out(s, err)
 	return cleanup(remove, src)
 }
 

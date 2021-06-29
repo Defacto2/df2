@@ -129,7 +129,7 @@ func (t *textfile) archive() bool {
 
 // check that [UUID].png exists in all three image subdirectories.
 func (t *textfile) exist(dir *directories.Dir) (bool, error) {
-	dirs := [3]string{dir.Img000, dir.Img150, dir.Img400}
+	dirs := [3]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
 		if path == "" {
 			return false, nil

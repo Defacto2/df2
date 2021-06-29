@@ -48,7 +48,7 @@ func Info(sizes bool) error {
 				break
 			}
 			logs.Printf(" %s %s", color.Success.Sprint("up"), str.Y())
-		case `"000"`, `"150"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
+		case `"000"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
 			if err := parse(sizes, val); err != nil {
 				return err
 			}

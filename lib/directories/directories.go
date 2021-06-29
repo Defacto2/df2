@@ -45,7 +45,6 @@ var (
 // Dir is a collection of paths containing files.
 type Dir struct {
 	Img000 string // path to screencaptures and previews
-	Img150 string // path to 150x150 squared thumbnails
 	Img400 string // path to 400x400 squared thumbnails
 	Backup string // path to the backup archives or previously removed files
 	Emu    string // path to the DOSee emulation files
@@ -57,7 +56,6 @@ type Dir struct {
 func Init(create bool) Dir {
 	if viper.GetString("directory.root") == "" {
 		viper.SetDefault("directory.000", "/opt/assets/000")
-		viper.SetDefault("directory.150", "/opt/assets/150")
 		viper.SetDefault("directory.400", "/opt/assets/400")
 		viper.SetDefault("directory.backup", "/opt/assets/backups")
 		viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
@@ -71,7 +69,6 @@ func Init(create bool) Dir {
 	}
 	var d Dir
 	d.Img000 = viper.GetString("directory.000")
-	d.Img150 = viper.GetString("directory.150")
 	d.Img400 = viper.GetString("directory.400")
 	d.Backup = viper.GetString("directory.backup")
 	d.Emu = viper.GetString("directory.emu")
@@ -104,7 +101,6 @@ func Files(name string) (dirs Dir) {
 	dirs.Emu = path.Join(dirs.Emu, name)
 	dirs.Img000 = path.Join(dirs.Img000, name)
 	dirs.Img400 = path.Join(dirs.Img400, name)
-	dirs.Img150 = path.Join(dirs.Img150, name)
 	return dirs
 }
 
@@ -191,9 +187,6 @@ func createPlaceHolders(dir *Dir) error {
 	}
 	if err := createHolderFiles(dir.Img400, 500000, 9); err != nil {
 		return fmt.Errorf("create img400 holders: %w", err)
-	}
-	if err := createHolderFiles(dir.Img150, 100000, 9); err != nil {
-		return fmt.Errorf("create img150 holders: %w", err)
 	}
 	return nil
 }

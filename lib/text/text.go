@@ -83,7 +83,7 @@ installation instructions: https://github.com/ansilove/ansilove
 		return fmt.Errorf("generate: %w", err)
 	}
 	fmt.Printf("  %s", s)
-	const thumbSmall, thumbMedium = 150, 400
+	const thumbMedium = 400
 	var w, h int
 	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
 		if err != nil {
@@ -104,11 +104,6 @@ installation instructions: https://github.com/ansilove/ansilove
 	s, err = images.ToThumb(o, f.Img400, thumbMedium)
 	if err != nil {
 		return fmt.Errorf("generate thumb %dpx: %w", thumbMedium, err)
-	}
-	fmt.Printf("  %s", s)
-	s, err = images.ToThumb(o, f.Img150, thumbSmall)
-	if err != nil {
-		return fmt.Errorf("generate thumb %dpx: %w", thumbSmall, err)
 	}
 	fmt.Printf("  %s", s)
 	return nil

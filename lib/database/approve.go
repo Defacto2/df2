@@ -232,10 +232,6 @@ func (r *record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
 			verbose(v, "!400x")
 			return false
 		}
-		if !r.checkImage(dir.Img150) {
-			verbose(v, "!150x")
-			return false
-		}
 	}
 	return true
 }

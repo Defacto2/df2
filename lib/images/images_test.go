@@ -153,9 +153,6 @@ func TestGenerate(t *testing.T) {
 		})
 	}
 	for _, ext := range []string{gif, jpg, png, wbm} {
-		if err := os.Remove(filepath.Join(dir, "test_150x"+ext)); err != nil {
-			log.Print(err)
-		}
 		if err := os.Remove(filepath.Join(dir, "test_400x"+ext)); err != nil {
 			log.Print(err)
 		}

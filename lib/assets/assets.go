@@ -161,7 +161,6 @@ func (s *scan) backupPart(f files, d *directories.Dir, p part, test bool) error 
 func backupParts(d *directories.Dir) (*directories.Dir, part) {
 	p := make(part)
 	p[d.UUID] = "uuid"
-	p[d.Img150] = "img-150xthumbs"
 	p[d.Img400] = "img-400xthumbs"
 	p[d.Img000] = "img-captures"
 	return d, p
@@ -243,13 +242,13 @@ func targets(t Target, d *directories.Dir) []string {
 	var paths []string
 	switch t {
 	case All:
-		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400, d.Img150)
+		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400)
 	case Download:
 		paths = append(paths, d.UUID, d.Backup)
 	case Emulation:
 		paths = append(paths, d.Emu)
 	case Image:
-		paths = append(paths, d.Img000, d.Img400, d.Img150)
+		paths = append(paths, d.Img000, d.Img400)
 	}
 	return paths
 }

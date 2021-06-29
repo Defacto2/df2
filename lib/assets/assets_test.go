@@ -190,8 +190,8 @@ func Test_targets(t *testing.T) {
 		target Target
 		want   int
 	}{
-		{"", All, 6},
-		{"", Image, 3},
+		{"", All, 5},
+		{"", Image, 2},
 		{"error", -1, 0},
 	}
 	d := directories.Init(false)
