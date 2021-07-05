@@ -10,7 +10,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/frankban/quicktest v1.13.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.3.0
+	github.com/gabriel-vasile/mimetype v1.3.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/uuid v1.2.0
 	github.com/gookit/color v1.4.2
