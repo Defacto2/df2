@@ -12,7 +12,7 @@ require (
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.3.0
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/gookit/color v1.4.2
 	github.com/gopherjs/gopherjs v0.0.0-20210621113107-84c6004145de // indirect
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
