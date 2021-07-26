@@ -305,8 +305,9 @@ github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84 h1:/6MoQlTd
 github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84/go.mod h1:Eeech2fhQ/E4bS8cdc3+SGABQ+weQYGyWBvZ/mNr5uY=
 github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e h1:NcleRt+E6V0lJABX0HFeSy5DyYy1vJDQLQ7aikZ8FIw=
 github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e/go.mod h1:lABBy6pa22cz0NzXl1TGiinuga3gujXkssyoUxc3kVk=
-github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
+github.com/nwaples/rardecode v1.1.1 h1:+HXp/QFE49Q6qJ3xw0rf1owaNcntNr4q+tsHy8qGUdw=
+github.com/nwaples/rardecode v1.1.1/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
