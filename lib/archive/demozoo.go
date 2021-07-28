@@ -24,6 +24,8 @@ type Demozoo struct {
 	NFO   string // retrotxt_readme column
 }
 
+const fileDiz = "file_id.diz"
+
 func (d Demozoo) String() string {
 	return fmt.Sprintf("using %q for DOSee and %q as the NFO or text", d.DOSee, d.NFO)
 }
@@ -154,6 +156,7 @@ func findDOS(name string, files contents, varNames *[]string) string {
 }
 
 func findNFO(name string, files contents, varNames *[]string) string {
+	const diz, nfo, txt = ".diz", ".nfo", ".txt"
 	f := make(finds) // filename and priority values
 	for _, file := range files {
 		if !file.textfile {
@@ -162,26 +165,26 @@ func findNFO(name string, files contents, varNames *[]string) string {
 		base := strings.TrimSuffix(name, file.ext) // base filename without extension
 		fn := strings.ToLower(file.name)           // normalise filenames
 		ext := strings.ToLower(file.ext)           // normalise file extensions
-		n := findVariant(fn, ".nfo", varNames)
-		t := findVariant(fn, ".txt", varNames)
+		n := findVariant(fn, nfo, varNames)
+		t := findVariant(fn, txt, varNames)
 		switch {
-		case fn == base+".nfo": // [archive name].nfo
+		case fn == base+nfo: // [archive name].nfo
 			f[file.name] = 1
 		case n != "":
 			f[file.name] = 2
-		case fn == base+".txt": // [archive name].txt
+		case fn == base+txt: // [archive name].txt
 			f[file.name] = 3
 		case t != "":
 			f[file.name] = 4
-		case ext == ".nfo": // [random].nfo
+		case ext == nfo: // [random].nfo
 			f[file.name] = 5
-		case fn == "file_id.diz": // BBS file description
+		case fn == fileDiz: // BBS file description
 			f[file.name] = 6
-		case fn == base+".diz": // [archive name].diz
+		case fn == base+diz: // [archive name].diz
 			f[file.name] = 7
-		case fn == ".txt": // [random].txt
+		case fn == txt: // [random].txt
 			f[file.name] = 8
-		case fn == ".diz": // [random].diz
+		case fn == diz: // [random].diz
 			f[file.name] = 9
 		default: // currently lacking is [group name].nfo and [group name].txt priorities
 		}

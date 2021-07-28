@@ -5,7 +5,6 @@ import "testing"
 func TestFindNFO(t *testing.T) {
 	var empty []string
 	const (
-		ff1 = "file_id.diz"
 		ff2 = "hi.nfo"
 		ff3 = "random.txt"
 	)
@@ -20,9 +19,9 @@ func TestFindNFO(t *testing.T) {
 	}{
 		{"empty", args{"", empty}, ""},
 		{"empty zip", args{"hi.zip", empty}, ""},
-		{"1 file", args{"hi.zip", []string{ff1}}, "file_id.diz"},
-		{"2 files", args{"hi.zip", []string{ff1, ff2}}, "hi.nfo"},
-		{"3 files", args{"hi.zip", []string{ff1, ff2, ff3}}, "hi.nfo"},
+		{"1 file", args{"hi.zip", []string{fileDiz}}, fileDiz},
+		{"2 files", args{"hi.zip", []string{fileDiz, ff2}}, "hi.nfo"},
+		{"3 files", args{"hi.zip", []string{fileDiz, ff2, ff3}}, "hi.nfo"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
