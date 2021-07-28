@@ -29,6 +29,7 @@ const UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 const Datetime = "2006-01-02T15:04:05Z"
 
 const (
+	null     = "NULL"
 	changeme = "changeme"
 	z7       = ".7z"
 	arj      = ".arj"
@@ -399,7 +400,8 @@ func ObfuscateParam(param string) string {
 	// base 64 conversion
 	a ^= 461
 	b += 154
-	return strconv.FormatInt(int64(b), 16) + strconv.FormatInt(int64(a), 16)
+	const hex = 16
+	return strconv.FormatInt(int64(b), hex) + strconv.FormatInt(int64(a), hex)
 }
 
 // Total reports the number of records fetched by the supplied SQL query.
@@ -425,7 +427,7 @@ func Total(s *string) (sum int, err error) {
 // Val returns the column value as either a string or "NULL".
 func Val(col sql.RawBytes) string {
 	if col == nil {
-		return "NULL"
+		return null
 	}
 	return string(col)
 }

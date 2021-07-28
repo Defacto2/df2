@@ -169,7 +169,7 @@ func TestVal(t *testing.T) {
 		args args
 		want string
 	}{
-		{"null", args{nil}, "NULL"},
+		{"null", args{nil}, null},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

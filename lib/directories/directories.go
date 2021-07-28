@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	m "math/rand"
@@ -20,6 +21,9 @@ import (
 
 // random characters used by randString().
 const (
+	dirMode  fs.FileMode = 0755
+	fileMode fs.FileMode = 0644
+
 	random string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
 
 	// Archives.
@@ -122,7 +126,7 @@ func createDirectories(dir *Dir) error {
 func createDirectory(dir string) error {
 	src, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		if err = os.MkdirAll(dir, 0755); err != nil {
+		if err = os.MkdirAll(dir, dirMode); err != nil {
 			return fmt.Errorf("create directory mkdir %q: %w", dir, err)
 		}
 		return nil
@@ -168,7 +172,7 @@ func createHolderFile(dir string, size int, prefix uint) error {
 		return fmt.Errorf("create holder file: %w", err)
 	}
 	text := []byte(r)
-	if err := ioutil.WriteFile(fn, text, 0644); err != nil { //nolint:gosec
+	if err := ioutil.WriteFile(fn, text, fileMode); err != nil {
 		return fmt.Errorf("write create holder file %q: %w", fn, err)
 	}
 	return nil
@@ -176,16 +180,17 @@ func createHolderFile(dir string, size int, prefix uint) error {
 
 // createPlaceHolders generates a collection placeholder files in the UUID subdirectories.
 func createPlaceHolders(dir *Dir) error {
-	if err := createHolderFiles(dir.UUID, 1000000, 9); err != nil {
+	const oneMB, halfMB, twoFiles, nineFiles = 1000000, 500000, 2, 9
+	if err := createHolderFiles(dir.UUID, oneMB, nineFiles); err != nil {
 		return fmt.Errorf("create uuid holders: %w", err)
 	}
-	if err := createHolderFiles(dir.Emu, 1000000, 2); err != nil {
+	if err := createHolderFiles(dir.Emu, oneMB, twoFiles); err != nil {
 		return fmt.Errorf("create emu holders: %w", err)
 	}
-	if err := createHolderFiles(dir.Img000, 1000000, 9); err != nil {
+	if err := createHolderFiles(dir.Img000, oneMB, nineFiles); err != nil {
 		return fmt.Errorf("create img000 holders: %w", err)
 	}
-	if err := createHolderFiles(dir.Img400, 500000, 9); err != nil {
+	if err := createHolderFiles(dir.Img400, halfMB, nineFiles); err != nil {
 		return fmt.Errorf("create img400 holders: %w", err)
 	}
 	return nil

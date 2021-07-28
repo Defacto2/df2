@@ -33,10 +33,7 @@ const countWaiting = "SELECT COUNT(*)\nFROM `files`\n" +
 
 // Approve automatically checks and clears file records for live.
 func Approve(verbose bool) error {
-	if err := queries(verbose); err != nil {
-		return err
-	}
-	return nil
+	return queries(verbose)
 }
 
 // Waiting returns the number of files requiring approval for public display.

@@ -19,7 +19,6 @@ var ErrFmt = errors.New("imagemagick does not support this image")
 
 // ToMagick uses the magick convert command to convert an image to PNG.
 func ToMagick(src, dest string) error {
-
 	if _, err := IDMagick(src); err != nil {
 		return err
 	}
@@ -50,7 +49,6 @@ func ToMagick(src, dest string) error {
 }
 
 func IDMagick(src string) ([]byte, error) {
-
 	const file = "identify"
 	var args = []string{src}
 
@@ -59,7 +57,8 @@ func IDMagick(src string) ([]byte, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	const three = 3 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), three)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, path, args...)

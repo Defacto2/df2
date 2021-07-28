@@ -96,7 +96,8 @@ func Generate(src, id string, remove bool) error {
 	// these funcs use dependencies that are not thread safe
 	// convert to png
 	pngDest, webpDest := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
-	s, err := ToPng(src, pngDest, 1500, 1500)
+	const width = 1500
+	s, err := ToPng(src, pngDest, width, width)
 	out(s, err)
 	// use imagemagick to convert unsupported image formats into PNG
 	if !valid(pngDest, err) {

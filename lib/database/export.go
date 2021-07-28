@@ -543,7 +543,7 @@ func columns(t Table) (columns []string, err error) {
 func format(b sql.RawBytes, colType string) (string, error) {
 	switch {
 	case string(b) == "":
-		return "NULL", nil
+		return null, nil
 	case strings.Contains(colType, "char"):
 		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(string(b), `'`, `\'`)), nil
 	case strings.Contains(colType, "int"):
