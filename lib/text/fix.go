@@ -39,6 +39,8 @@ const (
 	tar = ".tar"
 	tgz = ".tar.gz"
 	zip = ".zip"
+
+	amigaTxt = "textamiga"
 )
 
 // textfile is a text file object.
@@ -69,44 +71,10 @@ func Fix(simulate bool) error {
 		return fmt.Errorf("fix rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	c, i := 0, 0
+	i, c := 0, 0
 	for rows.Next() {
-		var t textfile
-		i++
-		if err := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err != nil {
-			return fmt.Errorf("fix rows scan: %w", err)
-		}
-		ok, err := t.exist(&dir)
-		if err != nil {
-			return fmt.Errorf("fix exist: %w", err)
-		}
-		// missing images + source is an archive
-		if !ok && t.archive() {
-			c++
-			if err1 := t.extract(&dir); errors.Is(err1, ErrMeUnk) {
-				continue
-			} else if errors.Is(err1, ErrMeNo) {
-				continue
-			} else if err1 != nil {
-				fmt.Println(t.String(), err1)
-				continue
-			}
-			if err1 := t.extractedImgs(dir.UUID); err1 != nil {
-				fmt.Println(t.String(), err1)
-			}
-			continue
-		}
-		// missing images + source is a textfile
-		if !ok {
-			c++
-			if !t.textPng(c, dir.UUID) {
-				continue
-			}
-		}
-		// missing webp specific images that rely on PNG sources
-		c, err = t.webP(c, dir.Img000)
-		if err != nil {
-			logs.Println(err)
+		if i, c, err = fixRow(i, c, &dir, rows); err != nil {
+			return err
 		}
 	}
 	fmt.Println("scanned", c, "fixes from", i, "text file records")
@@ -116,6 +84,47 @@ func Fix(simulate bool) error {
 		logs.Println("everything is okay, there is nothing to do")
 	}
 	return nil
+}
+
+func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records int, err error) {
+	var t textfile
+	i++
+	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
+		return i, c, fmt.Errorf("fix rows scan: %w", err1)
+	}
+	ok, err := t.exist(dir)
+	if err != nil {
+		return i, c, fmt.Errorf("fix exist: %w", err)
+	}
+	// missing images + source is an archive
+	if !ok && t.archive() {
+		c++
+		if err1 := t.extract(dir); errors.Is(err1, ErrMeUnk) {
+			return i, c, nil
+		} else if errors.Is(err1, ErrMeNo) {
+			return i, c, nil
+		} else if err1 != nil {
+			fmt.Println(t.String(), err1)
+			return i, c, nil
+		}
+		if err1 := t.extractedImgs(dir.UUID); err1 != nil {
+			fmt.Println(t.String(), err1)
+		}
+		return i, c, nil
+	}
+	// missing images + source is a textfile
+	if !ok {
+		c++
+		if !t.textPng(c, dir.UUID) {
+			return i, c, nil
+		}
+	}
+	// missing webp specific images that rely on PNG sources
+	c, err = t.webP(c, dir.Img000)
+	if err != nil {
+		logs.Println(err)
+	}
+	return i, c, nil
 }
 
 // archive confirms that the named file is a known archive.
@@ -172,8 +181,8 @@ func (t *textfile) extract(dir *directories.Dir) error {
 	}
 	tmp, src := os.TempDir(), filepath.Join(dir.UUID, t.UUID)
 	dest := filepath.Join(tmp, s[0])
-	if err = archive.Extractor(src, t.Name, s[0], tmp); err != nil {
-		return err
+	if err1 := archive.Extractor(src, t.Name, s[0], tmp); err1 != nil {
+		return err1
 	}
 	if err = os.Rename(dest, src+txt); err != nil {
 		defer os.Remove(dest)
@@ -190,7 +199,7 @@ func (t *textfile) extractedImgs(dir string) error {
 	} else if err != nil {
 		return fmt.Errorf("fix extImg: %s: %w", t.UUID, err)
 	}
-	amiga := bool(t.Platform == "textamiga")
+	amiga := bool(t.Platform == amigaTxt)
 	if err := generate(n, t.UUID, amiga); err != nil {
 		return fmt.Errorf("fix extImg: %w", err)
 	}
@@ -208,7 +217,7 @@ func (t *textfile) textPng(c int, dir string) bool {
 		logs.Log(fmt.Errorf("txtpng stat: %w", err))
 		return false
 	}
-	amiga := bool(t.Platform == "textamiga")
+	amiga := bool(t.Platform == amigaTxt)
 	if err := generate(name, t.UUID, amiga); err != nil {
 		logs.Log(fmt.Errorf("fix txtpng: %w", err))
 		return false

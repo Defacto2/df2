@@ -79,40 +79,39 @@ func Fix(ascii, unicode, overwrite bool) error {
 	return nil
 }
 
-func (z *zipfile) save(path string) bool {
+func (z *zipfile) save(path string) {
 	file := filepath.Join(fmt.Sprint(path), z.UUID)
 	name := file + filename
 	// Open a zip archive for reading.
 	r, err := zip.OpenReader(file)
 	if err != nil {
 		log.Println(err)
-		return false
+		return
 	}
 	defer r.Close()
 	// Parse and save zip comment
 	if cmmt := r.Comment; cmmt != "" {
 		if strings.TrimSpace(cmmt) == "" {
-			return false
+			return
 		}
 		if strings.Contains(cmmt, sceneOrg) {
-			return false
+			return
 		}
 		z.print(&cmmt)
 		f, err := os.Create(name)
 		if err != nil {
 			log.Panicln(err)
-			return false
+			return
 		}
 		defer f.Close()
 		if i, err := f.Write([]byte(cmmt)); err != nil {
 			log.Panicln(err)
-			return false
+			return
 		} else if i == 0 {
 			os.Remove(name)
-			return false
+			return
 		}
 	}
-	return true
 }
 
 func (z *zipfile) print(cmmt *string) {
@@ -122,14 +121,14 @@ func (z *zipfile) print(cmmt *string) {
 	}
 	fmt.Println("")
 	if z.ascii {
-		z.printAscii(cmmt)
+		z.printASCII(cmmt)
 	}
 	if z.unicode {
 		z.printUnicode(cmmt)
 	}
 }
 
-func (z *zipfile) printAscii(cmmt *string) {
+func (z *zipfile) printASCII(cmmt *string) {
 	fmt.Printf("%s%s\n", *cmmt, resetCmd)
 }
 

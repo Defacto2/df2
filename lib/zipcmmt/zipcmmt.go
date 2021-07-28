@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func (z zipfile) checkDownload(path string) (ok bool) {
+func (z *zipfile) checkDownload(path string) (ok bool) {
 	file := filepath.Join(fmt.Sprint(path), z.UUID)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return false
@@ -14,7 +14,7 @@ func (z zipfile) checkDownload(path string) (ok bool) {
 	return true
 }
 
-func (z zipfile) checkCmmtFile(path string) (ok bool) {
+func (z *zipfile) checkCmmtFile(path string) (ok bool) {
 	if z.overwrite {
 		return true
 	}
