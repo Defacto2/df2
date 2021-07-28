@@ -52,15 +52,15 @@ func main() {
 		log.Print(err)
 	}
 	if *ver || *v {
-		app()
-		info()
+		fmt.Println(app())
+		fmt.Println(info())
 		return
 	}
 	// cobra flag lib
 	cmd.Execute()
 }
 
-func app() {
+func app() string {
 	type Data struct {
 		Version string
 	}
@@ -78,10 +78,10 @@ func app() {
 	if err := tmpl.Execute(&b, data); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(b.String())
+	return b.String()
 }
 
-func info() {
+func info() string {
 	type Data struct {
 		Database string
 		Ansilove string
@@ -158,7 +158,7 @@ func info() {
 	if err := tmpl.Execute(&b, data); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(b.String())
+	return b.String()
 }
 
 func localBuild(date string) string {
