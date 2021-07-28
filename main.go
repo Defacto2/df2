@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"text/template"
 	"time"
@@ -89,16 +90,18 @@ func info() {
 		Commit   string
 		Date     string
 		Path     string
+		GoVer    string
 	}
 	const exeTmp = ` ┌── requirements ─────────────┐
  │  database:     {{.Database}}  │
  │  ansilove:     {{.Ansilove}}  │
  │  webp lib:     {{.Webp}}  │
- │  image magick: {{.Magick}}  │
+ │  imagemagick:  {{.Magick}}  │
  └─────────────────────────────┘
+     path: {{.Path}}
    commit: {{.Commit}}
      date: {{.Date}}
-     path: {{.Path}}
+   golang: {{.GoVer}}
 `
 	const (
 		disconnect = "disconnect"
@@ -114,8 +117,8 @@ func info() {
 			const padding = 11
 			return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
 		case disconnect:
-			const padding = 10
-			return color.Error.Sprint("disconnected") + strings.Repeat(" ", padding-len(s))
+			const padding = 11
+			return color.Error.Sprint("disconnect") + strings.Repeat(" ", padding-len(s))
 		}
 		return ""
 	}
@@ -145,6 +148,7 @@ func info() {
 		Commit:   commit,
 		Date:     localBuild(date),
 		Path:     bin,
+		GoVer:    strings.Replace(runtime.Version(), "go", "", 1),
 	}
 	tmpl, err := template.New("checks").Parse(exeTmp)
 	if err != nil {
