@@ -108,12 +108,7 @@ func sql() error {
 	if err := compress(name, files); err != nil {
 		return err
 	}
-
-	if err := remove(files); err != nil {
-		return err
-	}
-
-	return nil
+	return remove(files)
 }
 
 func compress(name string, files []string) error {

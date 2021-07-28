@@ -68,6 +68,7 @@ var outputCmd = &cobra.Command{
 }
 
 func init() { // nolint:gochecknoinits
+	const fifteen = 15
 	rootCmd.AddCommand(outputCmd)
 	outputCmd.AddCommand(dataCmd)
 	dataCmd.Flags().BoolVarP(&dbf.CronJob, "cronjob", "j", false,
@@ -95,7 +96,7 @@ func init() { // nolint:gochecknoinits
 	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
 	outputCmd.AddCommand(recentCmd)
 	recentCmd.Flags().BoolVarP(&rcf.compress, "compress", "c", false, "remove insignificant whitespace characters")
-	recentCmd.Flags().UintVarP(&rcf.limit, "limit", "l", 15, "limit the number of rows returned")
+	recentCmd.Flags().UintVarP(&rcf.limit, "limit", "l", fifteen, "limit the number of rows returned")
 	outputCmd.AddCommand(sitemapCmd)
 }
 

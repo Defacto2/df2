@@ -74,7 +74,7 @@ func init() { // nolint:gochecknoinits
 
 // copyright returns a © Copyright year, or a range of years.
 func copyright() string {
-	var y, c int = time.Now().Year(), 2020
+	y, c := time.Now().Year(), 2020
 	if y == c {
 		return strconv.Itoa(c) // © 2020
 	}

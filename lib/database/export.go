@@ -545,11 +545,11 @@ func format(b sql.RawBytes, colType string) (string, error) {
 	case string(b) == "":
 		return "NULL", nil
 	case strings.Contains(colType, "char"):
-		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(fmt.Sprintf(`%s`, b), `'`, `\'`)), nil
+		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(string(b), `'`, `\'`)), nil
 	case strings.Contains(colType, "int"):
-		return fmt.Sprintf("%s", b), nil
+		return string(b), nil
 	case colType == "text":
-		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(fmt.Sprintf(`%s`, b), `'`, `\'`)), nil
+		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(string(b), `'`, `\'`)), nil
 	case colType == "datetime":
 		s := string(b)
 		t, err := time.Parse(time.RFC3339, s)

@@ -29,9 +29,10 @@ var logCmd = &cobra.Command{
 		scanner := bufio.NewScanner(f)
 		c := 0
 		scanner.Text()
+		const maxSplit = 5
 		for scanner.Scan() {
 			c++
-			s := strings.SplitN(scanner.Text(), " ", 5)
+			s := strings.SplitN(scanner.Text(), " ", maxSplit)
 			t, err := time.Parse("2006/01/02 15:04:05", strings.Join(s[0:2], " "))
 			if err != nil {
 				fmt.Printf("%d. %v\n", c, scanner.Text())

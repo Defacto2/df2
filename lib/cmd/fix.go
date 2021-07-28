@@ -123,8 +123,12 @@ func init() { // nolint:gochecknoinits
 	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.AddCommand(fixZipCmmtCmd)
-	fixCmd.PersistentFlags().BoolVarP(&simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ascii, "print", "p", false, "also print saved comments to the stdout")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.unicode, "unicode", "u", false, "also convert saved comments into Unicode and print to the stdout")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ow, "overwrite", "o", false, "overwrite all existing saved comments")
+	fixCmd.PersistentFlags().BoolVarP(&simulate, "dry-run", "d", false,
+		"simulate the fixes and display the expected changes")
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ascii, "print", "p", false,
+		"also print saved comments to the stdout")
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.unicode, "unicode", "u", false,
+		"also convert saved comments into Unicode and print to the stdout")
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ow, "overwrite", "o", false,
+		"overwrite all existing saved comments")
 }

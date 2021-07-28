@@ -124,8 +124,8 @@ func makePng(src, dest string, amiga bool) (string, error) {
 	} else if err != nil {
 		return "", fmt.Errorf("make png stat: %w", err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	const ten = 10 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), ten)
 	defer cancel()
 	// ansilove -q # suppress output messages
 	// ansilove -r # create Retina @2x output file

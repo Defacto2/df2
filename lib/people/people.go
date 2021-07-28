@@ -224,10 +224,7 @@ func parse(filename, tpl string, r Request) error {
 			Hr:   hr,
 		}
 	}
-	if err := data.template(filename, tpl, r); err != nil {
-		return err
-	}
-	return nil
+	return data.template(filename, tpl, r)
 }
 
 func (data persons) template(filename, tpl string, r Request) error {

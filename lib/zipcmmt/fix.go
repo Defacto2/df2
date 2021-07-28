@@ -79,7 +79,7 @@ func Fix(ascii, unicode, overwrite bool) error {
 	return nil
 }
 
-func (z zipfile) save(path string) bool {
+func (z *zipfile) save(path string) bool {
 	file := filepath.Join(fmt.Sprint(path), z.UUID)
 	name := file + filename
 	// Open a zip archive for reading.
@@ -115,7 +115,7 @@ func (z zipfile) save(path string) bool {
 	return true
 }
 
-func (z zipfile) print(cmmt *string) {
+func (z *zipfile) print(cmmt *string) {
 	fmt.Printf("\n%v. - %s", z.ID, z.Name)
 	if z.Magic.Valid {
 		fmt.Printf(" [%s]", z.Magic.String)
@@ -129,11 +129,11 @@ func (z zipfile) print(cmmt *string) {
 	}
 }
 
-func (z zipfile) printAscii(cmmt *string) {
+func (z *zipfile) printAscii(cmmt *string) {
 	fmt.Printf("%s%s\n", *cmmt, resetCmd)
 }
 
-func (z zipfile) printUnicode(cmmt *string) {
+func (z *zipfile) printUnicode(cmmt *string) {
 	b, err := rt.D437(*cmmt)
 	if err != nil {
 		fmt.Printf("Could not convert to Unicode:\n%s%s\n", *cmmt, resetCmd)

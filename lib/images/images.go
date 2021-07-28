@@ -31,6 +31,7 @@ import (
 
 const (
 	WebpMaxSize = 16383
+	thumbWidth  = 400
 
 	fperm os.FileMode = 0666
 	fmode             = os.O_RDWR | os.O_CREATE
@@ -119,11 +120,11 @@ func Generate(src, id string, remove bool) error {
 	}
 	webpOk := valid(webpDest, err)
 	// make 400x400 thumbs
-	s, err = ToThumb(src, f.Img400, 400)
+	s, err = ToThumb(src, f.Img400, thumbWidth)
 	if err != nil {
-		s, err = ToThumb(pngDest, f.Img400, 400)
+		s, err = ToThumb(pngDest, f.Img400, thumbWidth)
 	} else if err != nil && webpOk {
-		s, err = ToThumb(webpDest, f.Img400, 400)
+		s, err = ToThumb(webpDest, f.Img400, thumbWidth)
 	}
 	out(s, err)
 	return cleanup(remove, src)

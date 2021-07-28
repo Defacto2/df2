@@ -457,7 +457,7 @@ func remInitialism(s string) string {
 
 // groupsStmt returns a complete SQL WHERE statement where the groups are filtered.
 func groupsStmt(f Filter, includeSoftDeletes bool) (stmt string, err error) {
-	var inc, skip bool = includeSoftDeletes, false
+	var inc, skip = includeSoftDeletes, false
 	if f > -1 {
 		skip = true
 	}

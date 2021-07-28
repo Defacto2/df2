@@ -48,8 +48,8 @@ func Dir() string {
 
 // Port asks the user for a port configuration value and returns the input.
 func Port() int64 {
-	var input string
-	cnt := 0
+	cnt, input := 0, ""
+	const decimal = 10
 	for {
 		input = ""
 		cnt++
@@ -58,7 +58,7 @@ func Port() int64 {
 			check(cnt)
 			continue
 		}
-		i, err := strconv.ParseInt(input, 10, 0)
+		i, err := strconv.ParseInt(input, decimal, 0)
 		if err != nil && input != "" {
 			fmt.Printf("%s %v\n", str.X(), input)
 			check(cnt)
@@ -108,7 +108,7 @@ func String(keep string) string {
 
 // YN asks the user for a yes or no input.
 func YN(query string, yes bool) bool {
-	var y, n string = "Y", "n"
+	y, n := "Y", "n"
 	if !yes {
 		y, n = "y", "N"
 	}

@@ -30,6 +30,7 @@ type item struct {
 
 // parse is used by scanPath to remove matched orphans.
 func parse(s *scan, ignore files, list *[]os.FileInfo) (stat results, err error) {
+	const padding = 2
 	stat = results{count: 0, fails: 0, bytes: 0}
 	for _, file := range *list {
 		if file.IsDir() {
@@ -40,7 +41,7 @@ func parse(s *scan, ignore files, list *[]os.FileInfo) (stat results, err error)
 		}
 		i := item{human: s.human, name: file.Name()}
 		uuid := strings.TrimSuffix(i.name, filepath.Ext(i.name))
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
 		// search the map `m` for `UUID`, the result is saved as a boolean to `exists`
 		_, exists := s.m[uuid]
 		if !exists {

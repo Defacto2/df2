@@ -14,18 +14,19 @@ import (
 )
 
 const (
-	bat  = ".bat"
-	bmp  = ".bmp"
-	com  = ".com"
-	diz  = ".diz"
-	exe  = ".exe"
-	gif  = ".gif"
-	jpg  = ".jpg"
-	nfo  = ".nfo"
-	png  = ".png"
-	tiff = ".tiff"
-	txt  = ".txt"
-	webp = ".webp"
+	CreateMode = 0666
+	bat        = ".bat"
+	bmp        = ".bmp"
+	com        = ".com"
+	diz        = ".diz"
+	exe        = ".exe"
+	gif        = ".gif"
+	jpg        = ".jpg"
+	nfo        = ".nfo"
+	png        = ".png"
+	tiff       = ".tiff"
+	txt        = ".txt"
+	webp       = ".webp"
 )
 
 type content struct {
@@ -79,7 +80,7 @@ func FileCopy(name, dest string) (written int64, err error) {
 		return 0, fmt.Errorf("filecopy open %q: %w", name, err)
 	}
 	defer src.Close()
-	dst, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0666)
+	dst, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, CreateMode)
 	if err != nil {
 		return 0, fmt.Errorf("filecopy dest %q: %w", dest, err)
 	}

@@ -29,7 +29,6 @@ func Test_makePng(t *testing.T) {
 		{"missing dst", args{src, "", false}, true},
 		{"invalid src", args{src + "invalidate", dst, false}, true},
 		{"text", args{src, dst, false}, false},
-		//{"amiga", args{src, dst, true}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

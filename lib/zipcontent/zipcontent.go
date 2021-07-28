@@ -16,7 +16,7 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/gookit/color"
+	"github.com/gookit/color" // nolint: misspell
 )
 
 // Record of a file item.
@@ -112,7 +112,7 @@ func where() string {
 }
 
 // iterate through each value.
-func (r Record) iterate(s *stat) error {
+func (r *Record) iterate(s *stat) error {
 	var value string
 	for i, raw := range *s.values {
 		value = database.Val(raw)
@@ -123,7 +123,7 @@ func (r Record) iterate(s *stat) error {
 			database.DateTime(raw)
 		case "filename":
 			logs.Printf("%v", value)
-			if err := r.files(raw, s); err != nil {
+			if err := r.files(s); err != nil {
 				return err
 			}
 		default:
@@ -133,7 +133,7 @@ func (r Record) iterate(s *stat) error {
 }
 
 // files reads an archive and saves its content to the database.
-func (r *Record) files(col sql.RawBytes, s *stat) (err error) {
+func (r *Record) files(s *stat) (err error) {
 	const txt = ".txt"
 	logs.Print(" • ")
 	r.Files, err = archive.Read(r.File, r.Name)
@@ -169,7 +169,7 @@ func (r *Record) files(col sql.RawBytes, s *stat) (err error) {
 	return nil
 }
 
-func (r Record) id(s *stat) {
+func (r *Record) id(s *stat) {
 	logs.Printcrf("%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.total)),
@@ -177,7 +177,7 @@ func (r Record) id(s *stat) {
 		color.Primary.Sprint(r.ID))
 }
 
-func (r Record) save() error {
+func (r *Record) save() error {
 	const (
 		files = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=? WHERE id=?"
 		nfo   = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,retrotxt_readme=?,retrotxt_no_readme=? WHERE id=?"

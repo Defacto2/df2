@@ -83,16 +83,16 @@ func Fix(simulate bool) error {
 		// missing images + source is an archive
 		if !ok && t.archive() {
 			c++
-			if err := t.extract(&dir); errors.Is(err, ErrMeUnk) {
+			if err1 := t.extract(&dir); errors.Is(err1, ErrMeUnk) {
 				continue
-			} else if errors.Is(err, ErrMeNo) {
+			} else if errors.Is(err1, ErrMeNo) {
 				continue
-			} else if err != nil {
-				fmt.Println(t.String(), err)
+			} else if err1 != nil {
+				fmt.Println(t.String(), err1)
 				continue
 			}
-			if err := t.extractedImgs(dir.UUID); err != nil {
-				fmt.Println(t.String(), err)
+			if err1 := t.extractedImgs(dir.UUID); err1 != nil {
+				fmt.Println(t.String(), err1)
 			}
 			continue
 		}

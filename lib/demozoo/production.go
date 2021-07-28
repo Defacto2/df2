@@ -62,7 +62,8 @@ func production(id int64) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("production parse: %w", err)
 	}
-	u.Path = path.Join(u.Path, strconv.FormatInt(id, 10)) // append ID
+	const decimal = 10
+	u.Path = path.Join(u.Path, strconv.FormatInt(id, decimal)) // append ID
 	q := u.Query()
 	q.Set("format", "json") // append format=json
 	u.RawQuery = q.Encode()

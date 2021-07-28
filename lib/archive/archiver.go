@@ -101,7 +101,7 @@ func Unarchiver(source, filename, destination string) error {
 }
 
 func configure(f interface{}) (err error) {
-	tar := &archiver.Tar{
+	cfg := &archiver.Tar{
 		OverwriteExisting:      true,
 		MkdirAll:               true,
 		ImplicitTopLevelFolder: false,
@@ -121,15 +121,15 @@ func configure(f interface{}) (err error) {
 		v.ImplicitTopLevelFolder = false
 		v.ContinueOnError = false
 	case *archiver.TarBz2:
-		v.Tar = tar
+		v.Tar = cfg
 	case *archiver.TarGz:
-		v.Tar = tar
+		v.Tar = cfg
 	case *archiver.TarLz4:
-		v.Tar = tar
+		v.Tar = cfg
 	case *archiver.TarSz:
-		v.Tar = tar
+		v.Tar = cfg
 	case *archiver.TarXz:
-		v.Tar = tar
+		v.Tar = cfg
 	case *archiver.Zip:
 		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Zip
 		v.OverwriteExisting = true
