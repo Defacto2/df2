@@ -513,10 +513,11 @@ func groupsWhere(f Filter, softDel bool) (stmt string, err error) {
 	default:
 		stmt = "AND `deletedat` IS NULL"
 	}
+	const andLen = 4
 	l := len(stmt)
-	if l > 4 && stmt[l-4:] == " AND" {
-		logs.Printf("%q|", stmt[l-4:])
-		return stmt[:l-4], nil
+	if l > andLen && stmt[l-andLen:] == " AND" {
+		logs.Printf("%q|", stmt[l-andLen:])
+		return stmt[:l-andLen], nil
 	}
 	return stmt, nil
 }

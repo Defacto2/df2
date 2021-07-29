@@ -69,6 +69,7 @@ func TestMakeSlug(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_remInitialism(t *testing.T) { //nolint:dupl
 	type args struct {
 		s string
@@ -150,6 +151,7 @@ func Test_groupsStmt(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_hrElement(t *testing.T) {
 	type args struct {
 		cap   string
@@ -179,6 +181,7 @@ func Test_hrElement(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestRequest_parse(t *testing.T) {
 	type args struct {
 		filename string
@@ -228,6 +231,7 @@ func TestCount(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestPrint(t *testing.T) {
 	tests := []struct {
 		name      string

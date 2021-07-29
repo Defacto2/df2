@@ -101,6 +101,7 @@ func Test_trimDot(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_format(t *testing.T) {
 	tests := []struct {
 		s    string

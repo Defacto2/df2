@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	bbs = "bbs"
-	ftp = "ftp"
+	bbs   = "bbs"
+	ftp   = "ftp"
+	space = " "
 )
 
 // Fix any malformed group names found in the database.
@@ -85,7 +86,7 @@ func format(s string) string {
 	}
 	groups := strings.Split(s, ",")
 	for j, g := range groups {
-		words := strings.Split(g, " ")
+		words := strings.Split(g, space)
 		last := len(words) - 1
 		for i, w := range words {
 			w = strings.ToLower(w)
@@ -106,7 +107,7 @@ func format(s string) string {
 			}
 			words[i] = strings.Title(w)
 		}
-		groups[j] = strings.Join(words, " ")
+		groups[j] = strings.Join(words, space)
 	}
 	return strings.Join(groups, ",")
 }
@@ -147,13 +148,13 @@ func trimDot(s string) string {
 // trimThe removes a 'the' prefix from a string.
 func trimThe(s string) string {
 	const short = 2
-	a := strings.Split(s, " ")
+	a := strings.Split(s, space)
 	if len(a) < short {
 		return s
 	}
 	l := a[len(a)-1]
 	if strings.EqualFold(a[0], "the") && (l == "BBS" || l == "FTP") {
-		return strings.Join(a[1:], " ") // drop "the" prefix
+		return strings.Join(a[1:], space) // drop "the" prefix
 	}
 	return s
 }
