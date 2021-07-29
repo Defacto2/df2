@@ -6,8 +6,9 @@ import (
 )
 
 func BenchmarkCreate(b *testing.B) {
+	const limit = 10
 	for i := 0; i < b.N; i++ {
-		if err := List(10, true); err != nil {
+		if err := List(limit, true); err != nil {
 			log.Print(err)
 		}
 	}

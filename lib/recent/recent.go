@@ -36,31 +36,33 @@ type files struct {
 	Data []data    `json:"DATA"`
 }
 
+const id, uuid, recordtitle, groupbrandfor, groupbrandby, filename, dateissuedyear, createdat = 0, 1, 2, 3, 4, 5, 6, 7
+
 var ErrJSON = errors.New("data fails json validation")
 
 func (f *File) parse(values []sql.RawBytes) {
-	if id := string(values[0]); id != "" {
+	if id := string(values[id]); id != "" {
 		f.URLID = database.ObfuscateParam(id)
 	}
-	f.UUID = strings.ToLower(string(values[1]))
-	if t, err := time.Parse(time.RFC3339, string(values[7])); err != nil {
+	f.UUID = strings.ToLower(string(values[uuid]))
+	if t, err := time.Parse(time.RFC3339, string(values[createdat])); err != nil {
 		f.timeAgo = "Sometime"
 	} else {
 		f.timeAgo = fmt.Sprint(durafmt.Parse(time.Since(t)).LimitFirstN(1))
 	}
-	if rt := string(values[2]); rt != "" {
-		f.title = fmt.Sprintf("%s (%s)", values[2], values[5])
+	if rt := string(values[recordtitle]); rt != "" {
+		f.title = fmt.Sprintf("%s (%s)", values[recordtitle], values[filename])
 	} else {
-		f.title = string(values[5])
+		f.title = string(values[filename])
 	}
-	if g := string(values[3]); g != "" {
+	if g := string(values[groupbrandfor]); g != "" {
 		f.group = g
-	} else if g := string(values[4]); g != "" {
+	} else if g := string(values[groupbrandby]); g != "" {
 		f.group = g
 	} else {
 		f.group = "an unknown group"
 	}
-	if y := string(values[6]); y != "" {
+	if y := string(values[dateissuedyear]); y != "" {
 		i, err := strconv.Atoi(y)
 		if err == nil {
 			f.year = i
@@ -94,9 +96,7 @@ func List(limit uint, compress bool) error {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	f := files{
-		Cols: [3]string{"uuid", "urlid", "title"},
-	}
+	f := files{Cols: [...]string{"uuid", "urlid", "title"}}
 	for rows.Next() {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("list rows next: %w", err)
@@ -105,7 +105,7 @@ func List(limit uint, compress bool) error {
 		}
 		var v File
 		v.parse(values)
-		f.Data = append(f.Data, [3]string{v.UUID, v.URLID, v.Title})
+		f.Data = append(f.Data, [...]string{v.UUID, v.URLID, v.Title})
 	}
 	jsonData, err := json.Marshal(f)
 	if err != nil {
