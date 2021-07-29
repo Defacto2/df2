@@ -34,12 +34,13 @@ const (
 )
 
 const (
-	fs = "files"
-	gs = "groups"
-	nr = "netresources"
-	us = "users"
-	cr = "create"
-	up = "update"
+	fs         = "files"
+	gs         = "groups"
+	nr         = "netresources"
+	us         = "users"
+	cr         = "create"
+	up         = "update"
+	apostrophe = "'"
 )
 
 func (t Table) String() string {
@@ -115,8 +116,8 @@ type row []string
 func (r row) String() string {
 	s := strings.Join(r, ",\t")
 	s = strings.ReplaceAll(s, `\\'`, `\'`)
-	s = strings.ReplaceAll(s, `"'`, `'`)
-	s = strings.ReplaceAll(s, `'"`, `'`)
+	s = strings.ReplaceAll(s, `"'`, apostrophe)
+	s = strings.ReplaceAll(s, `'"`, apostrophe)
 	return fmt.Sprintf("(%s)", s)
 }
 
@@ -402,21 +403,25 @@ func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error
 func (f *Flags) queryTablesSeq() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) {
 	buf1, err = f.reqDB(Files)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Files.String(), err)
+		return nil, nil, nil, nil, qttErr(Files.String(), err)
 	}
 	buf2, err = f.reqDB(Groups)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Groups.String(), err)
+		return nil, nil, nil, nil, qttErr(Groups.String(), err)
 	}
 	buf3, err = f.reqDB(Netresources)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Netresources.String(), err)
+		return nil, nil, nil, nil, qttErr(Netresources.String(), err)
 	}
 	buf4, err = f.reqDB(Users)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("query tables %s: %w", Users.String(), err)
+		return nil, nil, nil, nil, qttErr(Users.String(), err)
 	}
 	return buf1, buf2, buf3, buf4, nil
+}
+
+func qttErr(s string, err error) error {
+	return fmt.Errorf("query tables %s: %w", s, err)
 }
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
@@ -487,7 +492,8 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 }
 
 func (t Table) check() error {
-	if t < 0 || t > 3 {
+	const outOfRange = 4
+	if t < 0 || t >= outOfRange {
 		return fmt.Errorf("check table failure %q != %s: %w", t, Tbls(), ErrNoTable)
 	}
 	return nil
@@ -545,11 +551,11 @@ func format(b sql.RawBytes, colType string) (string, error) {
 	case string(b) == "":
 		return null, nil
 	case strings.Contains(colType, "char"):
-		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(string(b), `'`, `\'`)), nil
+		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(string(b), apostrophe, `\'`)), nil
 	case strings.Contains(colType, "int"):
 		return string(b), nil
 	case colType == "text":
-		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(string(b), `'`, `\'`)), nil
+		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(string(b), apostrophe, `\'`)), nil
 	case colType == "datetime":
 		s := string(b)
 		t, err := time.Parse(time.RFC3339, s)

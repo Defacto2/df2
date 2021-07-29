@@ -18,8 +18,24 @@ import (
 )
 
 const (
-	readWriteEveryone             = 0666
-	fm                os.FileMode = readWriteEveryone
+	fm       os.FileMode = 0666
+	changeme             = "changeme"
+	z7                   = ".7z"
+	arj                  = ".arj"
+	bz2                  = ".bz2"
+	png                  = ".png"
+	rar                  = ".rar"
+	zip                  = ".zip"
+
+	filename       = 4
+	filesize       = 5
+	filezipcontent = 7
+	platform       = 9
+	hashstrong     = 10
+	hashweak       = 11
+	groupbrandfor  = 13
+	groupbrandby   = 14
+	section        = 15
 )
 
 const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`," +
@@ -82,6 +98,9 @@ func verbose(v bool, i interface{}) {
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
 func queries(v bool) error {
+	x := func() string {
+		return fmt.Sprintf(" %s", str.X())
+	}
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query(newFilesSQL)
@@ -113,19 +132,19 @@ func queries(v bool) error {
 		}
 		verbose(v, fmt.Sprintf("\nitem %04d (%v) %s %s ", rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if na, dz := NewApprove(values), NewDemozoo(values); !na && !dz {
-			verbose(v, fmt.Sprintf(" %s", str.X()))
+			verbose(v, x())
 			continue
 		}
 		r.uuid = string(values[1])
 		if ok := r.check(values, &dir); !ok {
-			verbose(v, fmt.Sprintf(" %s", str.X()))
+			verbose(v, x())
 			continue
 		}
 		r.save = true
 		if r.autoID(string(values[0])) == 0 {
 			r.save = false
 		} else if err := r.approve(); err != nil {
-			verbose(v, fmt.Sprintf(" %s", str.X()))
+			verbose(v, x())
 			logs.Log(err)
 			r.save = false
 		}
@@ -192,27 +211,27 @@ func (r *record) autoID(data string) (id uint) {
 
 func (r *record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
 	v := r.verbose
-	if !r.checkFileName(string(values[4])) {
+	if !r.checkFileName(string(values[filename])) {
 		verbose(v, "!filename")
 		return false
 	}
-	if !r.checkFileSize(string(values[5])) {
+	if !r.checkFileSize(string(values[filesize])) {
 		verbose(v, "!filesize")
 		return false
 	}
-	if !r.checkHash(string(values[10]), string(values[11])) {
+	if !r.checkHash(string(values[hashstrong]), string(values[hashweak])) {
 		verbose(v, "!hash")
 		return false
 	}
-	if !r.checkFileContent(string(values[7])) {
+	if !r.checkFileContent(string(values[filezipcontent])) {
 		verbose(v, "!file content")
 		return false
 	}
-	if !r.checkGroups(string(values[14]), string(values[13])) {
+	if !r.checkGroups(string(values[groupbrandby]), string(values[groupbrandfor])) {
 		verbose(v, "!group")
 		return false
 	}
-	if !r.checkTags(string(values[9]), string(values[15])) {
+	if !r.checkTags(string(values[platform]), string(values[section])) {
 		verbose(v, "!tag")
 		return false
 	}
@@ -220,7 +239,7 @@ func (r *record) check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
 		verbose(v, "!download")
 		return false
 	}
-	if string(values[9]) != "audio" {
+	if string(values[platform]) != "audio" {
 		if !r.checkImage(dir.Img000) {
 			verbose(v, "!000x")
 			return false

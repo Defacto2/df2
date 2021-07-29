@@ -22,21 +22,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// UpdateID is a user id to use with the updatedby column.
-const UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
-
-// Datetime MySQL 5.7 format.
-const Datetime = "2006-01-02T15:04:05Z"
-
 const (
-	null     = "NULL"
-	changeme = "changeme"
-	z7       = ".7z"
-	arj      = ".arj"
-	bz2      = ".bz2"
-	png      = ".png"
-	rar      = ".rar"
-	zip      = ".zip"
+	// Datetime MySQL 5.7 format.
+	Datetime = "2006-01-02T15:04:05Z"
+	// UpdateID is a user id to use with the updatedby column.
+	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
+
+	hide = "****"
+	null = "NULL"
 )
 
 // Connection information for a MySQL database.
@@ -105,12 +98,12 @@ func Connect() *sql.DB {
 	c := Init()
 	db, err := sql.Open("mysql", c.String())
 	if err != nil {
-		e := strings.Replace(err.Error(), c.Pass, "****", 1)
+		e := strings.Replace(err.Error(), c.Pass, hide, 1)
 		log.Fatal(fmt.Errorf("connect database open: %s: %w", e, ErrConnect))
 	}
 	// ping the server to make sure the connection works
 	if err = db.Ping(); err != nil {
-		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, "****", 1)))
+		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
 		switch t := err.(type) {
@@ -139,7 +132,7 @@ func ConnectErr() (db *sql.DB, err error) {
 	c := Init()
 	db, err = sql.Open("mysql", c.String())
 	if err != nil {
-		e := strings.Replace(err.Error(), c.Pass, "****", 1)
+		e := strings.Replace(err.Error(), c.Pass, hide, 1)
 		return nil, fmt.Errorf("mysql open error: %s: %w", e, ErrConnect)
 	}
 	if err = db.Ping(); err != nil {
@@ -156,7 +149,7 @@ func ConnectInfo() string {
 		db.Close()
 	}()
 	if err != nil {
-		return strings.Replace(err.Error(), c.Pass, "****", 1)
+		return strings.Replace(err.Error(), c.Pass, hide, 1)
 	}
 	if err = db.Ping(); err != nil {
 		if err, ok := err.(*mysql.MySQLError); ok {
@@ -329,11 +322,11 @@ func LookupFile(s string) (name string, err error) {
 // NewApprove reports if a new file record is set to unapproved.
 func NewApprove(b []sql.RawBytes) bool {
 	// SQL column names can be found in the newFilesSQL statement in approve.go
-	deletedat, createdat := b[2], b[3]
-	if deletedat == nil {
+	const deletedat, createdat = 2, 3
+	if b[deletedat] == nil {
 		return false
 	}
-	n, err := valid(deletedat, createdat)
+	n, err := valid(b[deletedat], b[createdat])
 	if err != nil {
 		logs.Log(err)
 	}
@@ -343,11 +336,11 @@ func NewApprove(b []sql.RawBytes) bool {
 // NewDemozoo reports if a fetched demozoo file record is set to unapproved.
 func NewDemozoo(b []sql.RawBytes) bool {
 	// SQL column names can be found in the selectSQL statement in database.go
-	deletedat, updatedat := b[2], b[8]
-	if deletedat == nil {
+	const deletedat, updatedat = 2, 8
+	if b[deletedat] == nil {
 		return false
 	}
-	n, err := valid(deletedat, updatedat)
+	n, err := valid(b[deletedat], b[updatedat])
 	if err != nil {
 		logs.Log(err)
 	}
@@ -357,11 +350,11 @@ func NewDemozoo(b []sql.RawBytes) bool {
 // NewProof reports if a fetched proof file record is set to unapproved.
 func NewProof(b []sql.RawBytes) bool {
 	// SQL column names can be found in the sqlSelect() func in proof.go
-	deletedat, updatedat := b[2], b[6]
-	if deletedat == nil {
+	const deletedat, updatedat = 2, 6
+	if b[deletedat] == nil {
 		return false
 	}
-	n, err := valid(deletedat, updatedat)
+	n, err := valid(b[deletedat], b[updatedat])
 	if err != nil {
 		logs.Log(err)
 	}
@@ -398,9 +391,9 @@ func ObfuscateParam(param string) string {
 		b += s
 	}
 	// base 64 conversion
-	a ^= 461
-	b += 154
-	const hex = 16
+	const hex, xor, sum = 16, 461, 154
+	a ^= xor
+	b += sum
 	return strconv.FormatInt(int64(b), hex) + strconv.FormatInt(int64(a), hex)
 }
 
