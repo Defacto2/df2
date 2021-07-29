@@ -12,6 +12,8 @@ import (
 	gap "github.com/muesli/go-app-paths"
 )
 
+const p, hi = "print", "hello"
+
 var (
 	ErrEmpty = errors.New("")
 	ErrATest = errors.New("test error: this is a test")
@@ -84,7 +86,7 @@ func capture(test, text string, quiet bool) (output string) {
 		Quiet = true
 	}
 	switch test {
-	case "print":
+	case p:
 		Print(text)
 	case "printcr":
 		Printcr(text)
@@ -112,21 +114,21 @@ func TestPrints(t *testing.T) {
 		args       args
 		wantOutput string
 	}{
-		{"print", args{"print", "", false}, ""},
-		{"print hello", args{"print", "hello", false}, "hello"},
-		{"print !hello", args{"print", "hello", true}, ""},
+		{p, args{p, "", false}, ""},
+		{"print hello", args{p, hi, false}, hi},
+		{"print !hello", args{p, hi, true}, ""},
 		{"cr", args{"printcr", "", false}, ""},
-		{"cr hello", args{"printcr", "hello", false}, "hello"},
-		{"cr !hello", args{"printcr", "hello", true}, ""},
+		{"cr hello", args{"printcr", hi, false}, hi},
+		{"cr !hello", args{"printcr", hi, true}, ""},
 		{"f", args{"printf", "", false}, ""},
-		{"f hello", args{"printf", "hello", false}, "hello"},
-		{"f !hello", args{"printf", "hello", true}, ""},
+		{"f hello", args{"printf", hi, false}, hi},
+		{"f !hello", args{"printf", hi, true}, ""},
 		{"ln", args{"println", "", false}, ""},
-		{"ln hello", args{"println", "hello", false}, "hello"},
-		{"ln !hello", args{"println", "hello", true}, ""},
+		{"ln hello", args{"println", hi, false}, hi},
+		{"ln !hello", args{"println", hi, true}, ""},
 		{"fcr", args{"printfcr", "", false}, ""},
-		{"fcr hello", args{"printfcr", "hello", false}, "hello"},
-		{"fcr !hello", args{"printfcr", "hello", true}, ""},
+		{"fcr hello", args{"printfcr", hi, false}, hi},
+		{"fcr !hello", args{"printfcr", hi, true}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

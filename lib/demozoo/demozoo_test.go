@@ -62,6 +62,7 @@ func Test_mutateURL(t *testing.T) {
 	}
 }
 
+// nolint: revive
 func Test_parsePouetProduction(t *testing.T) {
 	type args struct {
 		rawurl string
@@ -94,6 +95,7 @@ func Test_parsePouetProduction(t *testing.T) {
 	}
 }
 
+// nolint: revive
 func Test_production(t *testing.T) {
 	type args struct {
 		id int64
@@ -177,6 +179,7 @@ func Test_saveName(t *testing.T) {
 	}
 }
 
+// nolint: revive
 func TestFetch(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -235,6 +238,7 @@ func values() []sql.RawBytes {
 	return v
 }
 
+// nolint: revive
 func Test_newRecord(t *testing.T) {
 	type args struct {
 		c      int
@@ -284,6 +288,7 @@ func Test_newRecord(t *testing.T) {
 	}
 }
 
+// nolint: revive
 func TestRecord_download(t *testing.T) {
 	type fields struct {
 		UUID string

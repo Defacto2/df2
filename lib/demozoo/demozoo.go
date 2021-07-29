@@ -409,12 +409,12 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 	}
 	code, status, api := f.Code, f.Status, f.API
 	if ok, err := r.confirm(code, status); err != nil {
-		return true, fmt.Errorf("parse api: %w", err)
+		return true, parseAPIErr(err)
 	} else if !ok {
 		return true, nil
 	}
 	if err := r.pingPouet(&api); err != nil {
-		return true, fmt.Errorf("parse api: %w", err)
+		return true, parseAPIErr(err)
 	}
 	r.FilePath = filepath.Join(storage, r.UUID)
 	if skip := r.download(overwrite, &api, st); skip {
@@ -427,6 +427,10 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 		r.platform(&api)
 	}
 	return r.parse(&api)
+}
+
+func parseAPIErr(err error) error {
+	return fmt.Errorf("%s%w", "parse api: ", err)
 }
 
 func (r *Record) parse(api *ProductionsAPIv1) (bool, error) {
@@ -447,16 +451,16 @@ func (r *Record) parse(api *ProductionsAPIv1) (bool, error) {
 		r.SumMD5 == "",
 		r.Sum384 == "":
 		if err := r.fileMeta(); err != nil {
-			return true, fmt.Errorf("parse api: %w", err)
+			return true, parseAPIErr(err)
 		}
 		r.save()
 		fallthrough
 	case r.FileZipContent == "":
 		if zip, err := r.fileZipContent(); err != nil {
-			return true, fmt.Errorf("parse api: %w", err)
+			return true, parseAPIErr(err)
 		} else if zip {
 			if err := r.doseeMeta(); err != nil {
-				return true, fmt.Errorf("parse api: %w", err)
+				return true, parseAPIErr(err)
 			}
 		}
 		r.save()
@@ -465,9 +469,10 @@ func (r *Record) parse(api *ProductionsAPIv1) (bool, error) {
 }
 
 func (r *Record) pingPouet(api *ProductionsAPIv1) error {
+	const success = 299
 	if id, code, err := api.PouetID(true); err != nil {
 		return fmt.Errorf("ping pouet: %w", err)
-	} else if id > 0 && code < 300 {
+	} else if id > 0 && code <= success {
 		r.WebIDPouet = uint(id)
 	}
 	return nil
@@ -514,40 +519,48 @@ func (r *Record) variations() (names []string, err error) {
 	return names, nil
 }
 
+// "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`," +
+// 	"`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`," +
+// 	"`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
+
 // newRecord initialises a new file record.
 func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
-	const want = 21
+	const sep, want = ",", 21
 	if l := len(values); l < want {
 		return r, fmt.Errorf("new records %q: %w", l, err)
 	}
+	const id, uuid, createdat, filename, filesize, webiddemozoo = 0, 1, 3, 4, 5, 6
+	const filezipcontent, updatedat, platform, fileintegritystrong, fileintegrityweak = 7, 8, 9, 10, 11
+	const webidpouet, groupbrandfor, groupbrandby, recordtitle, section = 12, 13, 14, 15, 16
+	const creditillustration, creditaudio, creditprogram, credittext = 17, 18, 19, 20
 	r = Record{
 		count: c,
-		ID:    string(values[0]), // id
-		UUID:  string(values[1]), // uuid
-		// deletedat
-		CreatedAt: database.DateTime(values[3]), // createdat
-		Filename:  string(values[4]),            // filename
-		Filesize:  string(values[5]),            // filesize
-		// web_id_demozoo
-		FileZipContent: string(values[7]),            // file_zip_content
-		UpdatedAt:      database.DateTime(values[8]), // updatedat
-		Platform:       string(values[9]),            // platform
-		Sum384:         string(values[10]),           // file_integrity_strong
-		SumMD5:         string(values[11]),           // file_integrity_weak
-		// web_id_pouet
-		GroupFor:    string(values[13]),
-		GroupBy:     string(values[14]),
-		Title:       string(values[15]),
-		Section:     string(values[16]),
-		CreditArt:   strings.Split(string(values[17]), ","),
-		CreditAudio: strings.Split(string(values[18]), ","),
-		CreditCode:  strings.Split(string(values[19]), ","),
-		CreditText:  strings.Split(string(values[20]), ","),
+		ID:    string(values[id]),
+		UUID:  string(values[uuid]),
+		// deletedat placeholder
+		CreatedAt: database.DateTime(values[createdat]),
+		Filename:  string(values[filename]),
+		Filesize:  string(values[filesize]),
+		// web_id_demozoo placeholder
+		FileZipContent: string(values[filezipcontent]),
+		UpdatedAt:      database.DateTime(values[updatedat]),
+		Platform:       string(values[platform]),
+		Sum384:         string(values[fileintegritystrong]),
+		SumMD5:         string(values[fileintegrityweak]),
+		// web_id_pouet placeholder
+		GroupFor:    string(values[groupbrandfor]),
+		GroupBy:     string(values[groupbrandby]),
+		Title:       string(values[recordtitle]),
+		Section:     string(values[section]),
+		CreditArt:   strings.Split(string(values[creditillustration]), sep),
+		CreditAudio: strings.Split(string(values[creditaudio]), sep),
+		CreditCode:  strings.Split(string(values[creditprogram]), sep),
+		CreditText:  strings.Split(string(values[credittext]), sep),
 	}
-	if i, err := strconv.Atoi(string(values[6])); err == nil {
+	if i, err := strconv.Atoi(string(values[webiddemozoo])); err == nil {
 		r.WebIDDemozoo = uint(i)
 	}
-	if i, err := strconv.Atoi(string(values[12])); err == nil {
+	if i, err := strconv.Atoi(string(values[webidpouet])); err == nil {
 		r.WebIDPouet = uint(i)
 	}
 	return r, nil

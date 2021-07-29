@@ -14,6 +14,8 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 )
 
+const empty = "empty"
+
 func TestClean(t *testing.T) {
 	type args struct {
 		t      string
@@ -26,7 +28,7 @@ func TestClean(t *testing.T) {
 		wantErr bool
 	}{
 		{"bad", args{"invalid", false, false}, true},
-		{"empty", args{}, true},
+		{empty, args{}, true},
 		{"good", args{"DOWNLOAD", false, false}, false},
 	}
 	color.Enable = false
@@ -94,7 +96,7 @@ func Test_backup(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"empty", args{}, true},
+		{empty, args{}, true},
 		{"ok", args{&s, list}, false},
 	}
 	d := directories.Init(false)
@@ -125,7 +127,7 @@ func Test_clean(t *testing.T) {
 		wantErr bool
 	}{
 		{"bad", args{-1, false, false}, true},
-		{"empty", args{}, false},
+		{empty, args{}, false},
 		{"good", args{Download, false, false}, false},
 	}
 	color.Enable = false
@@ -185,12 +187,13 @@ func Test_ignoreList(t *testing.T) {
 }
 
 func Test_targets(t *testing.T) {
+	const allTargets = 5
 	tests := []struct {
 		name   string
 		target Target
 		want   int
 	}{
-		{"", All, 5},
+		{"", All, allTargets},
 		{"", Image, 2},
 		{"error", -1, 0},
 	}
@@ -222,7 +225,7 @@ func Test_walkName(t *testing.T) {
 		wantName string
 		wantErr  bool
 	}{
-		{"empty", args{}, "", true},
+		{empty, args{}, "", true},
 		{"empty path", args{dir, ""}, "", true},
 		{"empty dir", args{"", file}, file, false},
 		{"dir", args{dir, file}, "", true},

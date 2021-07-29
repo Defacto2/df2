@@ -13,6 +13,8 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 )
 
+const sep = ","
+
 // Record of a file item.
 type Record struct {
 	count          int
@@ -43,8 +45,9 @@ type Record struct {
 }
 
 func (r *Record) String(total int) string {
+	const leadingZeros = 4
 	// calculate the number of prefixed zero characters
-	d := 4
+	d := leadingZeros
 	if total > 0 {
 		d = len(strconv.Itoa(total))
 	}
@@ -97,7 +100,7 @@ func (r *Record) sql() (query string, args []interface{}) {
 	args = append(args, []interface{}{time.Now()}...)
 	set = append(set, "updatedby=?")
 	args = append(args, []interface{}{database.UpdateID}...)
-	query = "UPDATE files SET " + strings.Join(set, ",") + " WHERE id=?"
+	query = "UPDATE files SET " + strings.Join(set, sep) + " WHERE id=?"
 	args = append(args, []interface{}{r.ID}...)
 	return query, args
 }
@@ -206,19 +209,19 @@ func (r *Record) sqlArgs(set []string) (args []interface{}) {
 
 func (r *Record) sqlCreditsArgs() (args []interface{}) {
 	if len(r.CreditText) > 0 {
-		j := strings.Join(r.CreditText, ",")
+		j := strings.Join(r.CreditText, sep)
 		args = append(args, []interface{}{j}...)
 	}
 	if len(r.CreditCode) > 0 {
-		j := strings.Join(r.CreditCode, ",")
+		j := strings.Join(r.CreditCode, sep)
 		args = append(args, []interface{}{j}...)
 	}
 	if len(r.CreditArt) > 0 {
-		j := strings.Join(r.CreditArt, ",")
+		j := strings.Join(r.CreditArt, sep)
 		args = append(args, []interface{}{j}...)
 	}
 	if len(r.CreditAudio) > 0 {
-		j := strings.Join(r.CreditAudio, ",")
+		j := strings.Join(r.CreditAudio, sep)
 		args = append(args, []interface{}{j}...)
 	}
 	return args

@@ -16,6 +16,7 @@ import (
 )
 
 const modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
+const channel1, channel2, channel3 = 1, 2, 3
 
 var example1, example2, example3 ProductionsAPIv1 //nolint:gochecknoglobals
 
@@ -28,20 +29,20 @@ func init() { //nolint:gochecknoinits
 	c1 := make(chan ProductionsAPIv1)
 	c2 := make(chan ProductionsAPIv1)
 	c3 := make(chan ProductionsAPIv1)
-	go load(1, c1)
-	go load(2, c2)
-	go load(3, c3)
+	go load(channel1, c1)
+	go load(channel2, c2)
+	go load(channel3, c3)
 	example1, example2, example3 = <-c1, <-c2, <-c3
 }
 
 func load(r int, c chan ProductionsAPIv1) {
 	var name string
 	switch r {
-	case 1:
+	case channel1:
 		name = "1"
-	case 2:
+	case channel2:
 		name = "188796"
-	case 3:
+	case channel3:
 		name = "267300"
 	default:
 		log.Fatal(fmt.Errorf("load r %d: %w", r, ErrVal))
@@ -61,6 +62,7 @@ func load(r int, c chan ProductionsAPIv1) {
 	c <- dz
 }
 
+// nolint: revive
 func Test_filename(t *testing.T) {
 	type args struct {
 		h http.Header
@@ -99,6 +101,7 @@ func check(t *testing.T, err error) {
 	}
 }
 
+// nolint: revive
 func mockHeader(add string) (header http.Header, err error) {
 	// source: https://blog.questionable.services/article/testing-http-handlers-go/
 	ctx := context.Background()
@@ -220,6 +223,7 @@ func TestProductionsAPIv1_Download(t *testing.T) {
 	}
 }
 
+// nolint: revive
 func TestProductionsAPIv1_PouetID(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -251,6 +255,7 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 	}
 }
 
+// nolint: revive
 func TestProductionsAPIv1_Print(t *testing.T) {
 	tests := []struct {
 		name    string

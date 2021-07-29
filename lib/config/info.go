@@ -17,6 +17,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const colon = ":"
+
 // Info prints the content of a configuration file.
 func Info(sizes bool) error {
 	logs.Print("\nDefault configurations in use when no flags are given.\n\n")
@@ -24,23 +26,23 @@ func Info(sizes bool) error {
 	if err != nil {
 		return fmt.Errorf("info config yaml marshal: %w", err)
 	}
-	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(":"), Filepath())
+	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(colon), Filepath())
 	Check()
-	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath(logs.Filename))
+	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(colon), logs.Filepath(logs.Filename))
 	db := database.ConnectInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {
-		s := strings.Split(scanner.Text(), ":")
+		s := strings.Split(scanner.Text(), colon)
 		if s[0] == "directory" {
 			s[0] = "directories"
 		}
 		color.Cyan.Print(s[0])
-		color.Red.Print(":")
+		color.Red.Print(colon)
 		if len(s) <= 1 {
 			logs.Println()
 			continue
 		}
-		val := strings.TrimSpace(strings.Join(s[1:], ":"))
+		val := strings.TrimSpace(strings.Join(s[1:], colon))
 		switch strings.TrimSpace(s[0]) {
 		case "server":
 			if db != "" {

@@ -13,21 +13,23 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
+const imgs, g, j, p, w = "images", "gif", "jpg", "png", "webp"
+
 func testDir(name string) string {
 	dir, _ := os.Getwd()
 	return filepath.Join(dir, "..", "..", "tests", name)
 }
 
 func testImg(ext string) string {
-	return filepath.Join(testDir("images"), "test."+ext)
+	return filepath.Join(testDir(imgs), "test."+ext)
 }
 
 func testDest(ext string) string {
-	return filepath.Join(testDir("images"), "test-clone."+ext)
+	return filepath.Join(testDir(imgs), "test-clone."+ext)
 }
 
 func testSqr() string {
-	return filepath.Join(testDir("images"), "test-thumb.png")
+	return filepath.Join(testDir(imgs), "test-thumb.png")
 }
 
 func testTxt() string {
@@ -63,8 +65,8 @@ func TestDuplicate(t *testing.T) {
 		filename string
 		prefix   string
 	}
-	path := testImg("png")
-	want := filepath.Join(testDir("images"), "test-duplicate.png")
+	path := testImg(p)
+	want := filepath.Join(testDir(imgs), "test-duplicate.png")
 	tests := []struct {
 		name     string
 		args     args
@@ -89,6 +91,7 @@ func TestDuplicate(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestInfo(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -99,7 +102,7 @@ func TestInfo(t *testing.T) {
 	}{
 		{"", 0, 0, "", true},
 		{testTxt(), 0, 0, "", true},
-		{testImg("png"), 32, 1280, "png", false},
+		{testImg(p), 32, 1280, p, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -122,12 +125,14 @@ func TestInfo(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
-	dir := testDir("images")
+	dir := testDir(imgs)
 	const (
 		gif = ".gif"
 		jpg = ".jpg"
 		png = ".png"
 		wbm = ".wbm"
+		ts  = "test"
+		tg  = "testgen"
 	)
 	type args struct {
 		src    string
@@ -140,10 +145,10 @@ func TestGenerate(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", args{}, true},
-		{"gif", args{filepath.Join(dir, "test"+gif), "testgen", false}, false},
-		{"jpg", args{filepath.Join(dir, "test"+jpg), "testgen", false}, false},
-		{"png", args{filepath.Join(dir, "test"+png), "testgen", false}, false},
-		{"wbm", args{filepath.Join(dir, "test"+wbm), "testgen", false}, false},
+		{g, args{filepath.Join(dir, ts+gif), tg, false}, false},
+		{j, args{filepath.Join(dir, ts+jpg), tg, false}, false},
+		{p, args{filepath.Join(dir, ts+png), tg, false}, false},
+		{"wbm", args{filepath.Join(dir, ts+wbm), tg, false}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -167,7 +172,7 @@ func TestWidth(t *testing.T) {
 	}{
 		{"", 0, true},
 		{testTxt(), 0, true},
-		{testImg("png"), 1280, false},
+		{testImg(p), 1280, false}, //nolint: revive
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -195,12 +200,12 @@ func TestToPng(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", args{"", "", 0}, true},
-		{"noDest", args{testImg("png"), "", 0}, true},
+		{"noDest", args{testImg(p), "", 0}, true},
 		{"noSrc", args{"", testDir("text"), 0}, true},
-		{"self", args{testImg("png"), testDest("png"), 0}, false},
-		{"jpg", args{testImg("jpg"), testDest("png"), 0}, false},
-		{"gif", args{testImg("gif"), testDest("png"), 0}, false},
-		{"unsupported format", args{testImg("wbm"), testDest("png"), 0}, true},
+		{"self", args{testImg(p), testDest(p), 0}, false},
+		{j, args{testImg(j), testDest(p), 0}, false},
+		{g, args{testImg(g), testDest(p), 0}, false},
+		{"unsupported format", args{testImg("wbm"), testDest(p), 0}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -213,6 +218,7 @@ func TestToPng(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestToThumb(t *testing.T) {
 	type args struct {
 		src         string
@@ -225,9 +231,9 @@ func TestToThumb(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", args{"", "", 0}, true},
-		{"zero size", args{testImg("png"), testSqr(), 0}, true},
-		{"png", args{testImg("png"), testSqr(), 100}, false},
-		{"gif", args{testImg("gif"), testSqr(), 100}, false},
+		{"zero size", args{testImg(p), testSqr(), 0}, true},
+		{p, args{testImg(p), testSqr(), 100}, false},
+		{g, args{testImg(g), testSqr(), 100}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -257,8 +263,8 @@ func TestToWebxp(t *testing.T) {
 	}{
 		{"empty", args{"", ""}, true},
 		{"invalid src", args{"blahblahblah", ""}, true},
-		{"gif", args{testImg("gif"), testDest("webp")}, true},
-		{"jpg", args{testImg("jpg"), testDest("webp")}, false},
+		{g, args{testImg(g), testDest(w)}, true},
+		{j, args{testImg(j), testDest(w)}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -268,7 +274,7 @@ func TestToWebxp(t *testing.T) {
 				return
 			} else if str != "" {
 				// cleanup
-				if err := os.Remove(testDest("webp")); err != nil {
+				if err := os.Remove(testDest(w)); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -289,8 +295,8 @@ func TestToWebp(t *testing.T) {
 	}{
 		{"empty", args{"", ""}, "", true},
 		{"invalid src", args{"blahblahblah", ""}, "", true},
-		{"gif", args{testImg("gif"), testDest("webp")}, "", true},
-		{"jpg", args{testImg("jpg"), testDest("webp")}, "»webp", false},
+		{g, args{testImg(g), testDest(w)}, "", true},
+		{j, args{testImg(j), testDest(w)}, "»webp", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -304,7 +310,7 @@ func TestToWebp(t *testing.T) {
 			}
 			if gotPrint != "" {
 				// cleanup
-				if err := os.Remove(testDest("webp")); err != nil {
+				if err := os.Remove(testDest(w)); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -312,7 +318,9 @@ func TestToWebp(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestWebPCalc(t *testing.T) {
+	const long = 15000
 	type args struct {
 		width  int
 		height int
@@ -325,9 +333,9 @@ func TestWebPCalc(t *testing.T) {
 	}{
 		{"zero", args{0, 0}, 0, 0},
 		{"ignore", args{600, 500}, 600, 500},
-		{"15000 long", args{5000, 15000}, 11383, 5000},
+		{"15000 long", args{5000, long}, 11383, 5000},
 		{"super long", args{640, 869356}, 15743, 640},
-		{"square", args{15000, 15000}, 8191, 8191},
+		{"square", args{long, long}, 8191, 8191},
 		{"sm square", args{500, 500}, 500, 500},
 	}
 	for _, tt := range tests {
