@@ -61,6 +61,9 @@ func reduce(src, uuid string) (string, error) {
 
 // generate a collection of site images.
 func generate(name, uuid string, amiga bool) error {
+	prnt := func(s string) {
+		fmt.Printf("  %s", s)
+	}
 	const note = `
 this command requires the installation of AnsiLove/C
 installation instructions: https://github.com/ansilove/ansilove
@@ -82,7 +85,7 @@ installation instructions: https://github.com/ansilove/ansilove
 	if err != nil {
 		return fmt.Errorf("generate: %w", err)
 	}
-	fmt.Printf("  %s", s)
+	prnt(s)
 	const thumbMedium = 400
 	var w, h int
 	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
@@ -94,18 +97,18 @@ installation instructions: https://github.com/ansilove/ansilove
 		if err != nil {
 			return fmt.Errorf("generate calc: %w", err)
 		}
-		fmt.Printf("  %s", s)
+		prnt(s)
 	}
 	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
 	if err != nil {
 		return fmt.Errorf("generate webp: %w", err)
 	}
-	fmt.Printf("  %s", s)
+	prnt(s)
 	s, err = images.ToThumb(o, f.Img400, thumbMedium)
 	if err != nil {
 		return fmt.Errorf("generate thumb %dpx: %w", thumbMedium, err)
 	}
-	fmt.Printf("  %s", s)
+	prnt(s)
 	return nil
 }
 

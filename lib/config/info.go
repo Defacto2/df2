@@ -49,7 +49,7 @@ func Info(sizes bool) error {
 				logs.Printf(" %s %s", str.X(), db)
 				break
 			}
-			logs.Printf(" %s %s", color.Success.Sprint("up"), str.Y())
+			logFmt(color.Success.Sprint("up"), str.Y())
 		case `"000"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
 			if err := parse(sizes, val); err != nil {
 				return err
@@ -68,12 +68,12 @@ func parse(sizes bool, val string) error {
 	_, err := os.Stat(val)
 	switch {
 	case os.IsNotExist(err):
-		logs.Printf(" %s %s", val, str.X())
+		logFmt(val, str.X())
 	case err != nil:
 		return fmt.Errorf("info stat %q: %w", val, err)
 	default:
 		if !sizes {
-			logs.Printf(" %s %s", val, str.Y())
+			logFmt(val, str.Y())
 			break
 		}
 		count, size, err := directories.Size(val)
@@ -87,4 +87,8 @@ func parse(sizes bool, val string) error {
 		logs.Printf(" %s (%d files, %s) %s", val, count, humanize.Bytes(size), str.Y())
 	}
 	return nil
+}
+
+func logFmt(s, mark string) {
+	logs.Printf(" %s %s", s, mark)
 }
