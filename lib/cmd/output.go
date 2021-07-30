@@ -75,28 +75,44 @@ func init() { // nolint:gochecknoinits
 		"data backup for the cron time-based job scheduler\nall other flags are ignored")
 	dataCmd.Flags().BoolVarP(&dbf.Compress, "compress", "c", false,
 		fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
-	dataCmd.Flags().UintVarP(&dbf.Limit, "limit", "l", 1, "limit the number of rows returned (no limit 0)")
-	dataCmd.Flags().BoolVarP(&dbf.Parallel, "parallel", "p", true, "run --table=all queries in parallel")
-	dataCmd.Flags().BoolVarP(&dbf.Save, "save", "s", false, fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
-	dataCmd.Flags().StringVarP(&dbf.Tables, "table", "t", "files", fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls()))
-	dataCmd.Flags().StringVarP(&dbf.Type, "type", "y", "update", "database export type\noptions: create or update")
+	dataCmd.Flags().UintVarP(&dbf.Limit, "limit", "l", 1,
+		"limit the number of rows returned (no limit 0)")
+	dataCmd.Flags().BoolVarP(&dbf.Parallel, "parallel", "p", true,
+		"run --table=all queries in parallel")
+	dataCmd.Flags().BoolVarP(&dbf.Save, "save", "s", false,
+		fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
+	dataCmd.Flags().StringVarP(&dbf.Tables, "table", "t", "files",
+		fmt.Sprintf("database table to use\noptions: all,%s", database.Tbls()))
+	dataCmd.Flags().StringVarP(&dbf.Type, "type", "y", "update",
+		"database export type\noptions: create or update")
 	if err := dataCmd.Flags().MarkHidden("parallel"); err != nil {
 		logs.Fatal(err)
 	}
 	outputCmd.AddCommand(groupCmd)
-	groupCmd.Flags().StringVarP(&gpf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+strings.Join(groups.Wheres(), ","))
-	groupCmd.Flags().BoolVarP(&gpf.counts, "count", "c", false, "display the file totals for each group (SLOW)")
-	groupCmd.Flags().BoolVarP(&gpf.progress, "progress", "p", true, "show a progress indicator while fetching a large number of records")
-	groupCmd.Flags().BoolVarP(&gpf.cronjob, "cronjob", "j", false, "run in cronjob automated mode, ignores all other arguments")
-	groupCmd.Flags().BoolVar(&gpf.forcejob, "forcejob", false, "force the running of the cronjob automated mode")
-	groupCmd.Flags().StringVarP(&gpf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
-	groupCmd.Flags().BoolVarP(&gpf.init, "initialism", "i", false, "display the acronyms and initialisms for groups (SLOW)")
+	groupCmd.Flags().StringVarP(&gpf.filter, "filter", "f", "",
+		"filter groups (default all)\noptions: "+strings.Join(groups.Wheres(), ","))
+	groupCmd.Flags().BoolVarP(&gpf.counts, "count", "c", false,
+		"display the file totals for each group (SLOW)")
+	groupCmd.Flags().BoolVarP(&gpf.progress, "progress", "p", true,
+		"show a progress indicator while fetching a large number of records")
+	groupCmd.Flags().BoolVarP(&gpf.cronjob, "cronjob", "j", false,
+		"run in cronjob automated mode, ignores all other arguments")
+	groupCmd.Flags().BoolVar(&gpf.forcejob, "forcejob", false,
+		"force the running of the cronjob automated mode")
+	groupCmd.Flags().StringVarP(&gpf.format, "format", "t", "",
+		"output format (default html)\noptions: datalist,html,text")
+	groupCmd.Flags().BoolVarP(&gpf.init, "initialism", "i", false,
+		"display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
-	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "", "filter groups (default all)\noptions: "+people.Roles())
-	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "", "output format (default html)\noptions: datalist,html,text")
+	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "",
+		"filter groups (default all)\noptions: "+people.Roles())
+	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "",
+		"output format (default html)\noptions: datalist,html,text")
 	outputCmd.AddCommand(recentCmd)
-	recentCmd.Flags().BoolVarP(&rcf.compress, "compress", "c", false, "remove insignificant whitespace characters")
-	recentCmd.Flags().UintVarP(&rcf.limit, "limit", "l", fifteen, "limit the number of rows returned")
+	recentCmd.Flags().BoolVarP(&rcf.compress, "compress", "c", false,
+		"remove insignificant whitespace characters")
+	recentCmd.Flags().UintVarP(&rcf.limit, "limit", "l", fifteen,
+		"limit the number of rows returned")
 	outputCmd.AddCommand(sitemapCmd)
 }
 

@@ -21,7 +21,10 @@ var logCmd = &cobra.Command{
 	Aliases: []string{},
 	Hidden:  true,
 	Run: func(cmd *cobra.Command, args []string) {
-		logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(":"), logs.Filepath(logs.Filename))
+		logs.Printf("%v%v %v\n",
+			color.Cyan.Sprint("log file"),
+			color.Red.Sprint(":"),
+			logs.Filepath(logs.Filename))
 		f, err := os.Open(logs.Filepath(logs.Filename))
 		if err != nil {
 			logs.Fatal(err)
@@ -39,7 +42,10 @@ var logCmd = &cobra.Command{
 				continue
 			}
 			duration := durafmt.Parse(time.Since(t)).LimitFirstN(1)
-			fmt.Printf("%v %v ago  %v %s\n", color.Secondary.Sprintf("%d.", c), duration, color.Info.Sprint(s[2]), strings.Join(s[3:], " "))
+			fmt.Printf("%v %v ago  %v %s\n",
+				color.Secondary.Sprintf("%d.", c),
+				duration, color.Info.Sprint(s[2]),
+				strings.Join(s[3:], " "))
 		}
 		if err := scanner.Err(); err != nil {
 			logs.Fatal(err)

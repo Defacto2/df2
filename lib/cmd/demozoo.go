@@ -103,16 +103,26 @@ var demozooCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(demozooCmd)
-	demozooCmd.Flags().BoolVarP(&dzf.new, "new", "n", false, "scan for new demozoo submissions (recommended)")
-	demozooCmd.Flags().BoolVar(&dzf.all, "all", false, "scan all files with demozoo links (SLOW)")
-	demozooCmd.Flags().StringVarP(&dzf.id, "id", "i", "", "file id or uuid with a demozoo link to scan\n")
-	demozooCmd.Flags().BoolVarP(&dzf.simulate, "dry-run", "d", false, "simulate the fixes and display the expected changes")
-	demozooCmd.Flags().BoolVar(&dzf.overwrite, "overwrite", false, "rescan archives and overwrite all existing assets\n")
-	demozooCmd.Flags().BoolVarP(&dzf.refresh, "refresh", "r", false, "replace missing files metadata with demozoo data (SLOW)")
-	demozooCmd.Flags().BoolVarP(&dzf.sync, "sync", "s", false, "scan the demozoo api for missing bbstros and cracktros (SLOW)")
-	demozooCmd.Flags().UintVarP(&dzf.ping, "ping", "p", 0, "fetch and display a production record from the Demozoo.org API")
-	demozooCmd.Flags().UintVarP(&dzf.download, "download", "g", 0, "fetch and download a production's link file via the Demozoo.org API\n")
-	demozooCmd.Flags().StringArrayVar(&dzf.extract, "extract", make([]string, 0), `extracts and parses an archived file
+	demozooCmd.Flags().BoolVarP(&dzf.new, "new", "n", false,
+		"scan for new demozoo submissions (recommended)")
+	demozooCmd.Flags().BoolVar(&dzf.all, "all", false,
+		"scan all files with demozoo links (SLOW)")
+	demozooCmd.Flags().StringVarP(&dzf.id, "id", "i", "",
+		"file id or uuid with a demozoo link to scan\n")
+	demozooCmd.Flags().BoolVarP(&dzf.simulate, "dry-run", "d", false,
+		"simulate the fixes and display the expected changes")
+	demozooCmd.Flags().BoolVar(&dzf.overwrite, "overwrite", false,
+		"rescan archives and overwrite all existing assets\n")
+	demozooCmd.Flags().BoolVarP(&dzf.refresh, "refresh", "r", false,
+		"replace missing files metadata with demozoo data (SLOW)")
+	demozooCmd.Flags().BoolVarP(&dzf.sync, "sync", "s", false,
+		"scan the demozoo api for missing bbstros and cracktros (SLOW)")
+	demozooCmd.Flags().UintVarP(&dzf.ping, "ping", "p", 0,
+		"fetch and display a production record from the Demozoo.org API")
+	demozooCmd.Flags().UintVarP(&dzf.download, "download", "g", 0,
+		"fetch and download a production's link file via the Demozoo.org API\n")
+	demozooCmd.Flags().StringArrayVar(&dzf.extract, "extract", make([]string, 0),
+		`extracts and parses an archived file
 requires two flags: --extract [filename] --extract [uuid]`)
 	if err := demozooCmd.MarkFlagFilename("extract"); err != nil {
 		logs.Fatal(err)

@@ -105,13 +105,16 @@ func init() { // nolint:gochecknoinits
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configCreateCmd)
-	configCreateCmd.Flags().BoolVarP(&cfgf.overwrite, "overwrite", "y", false, "overwrite any existing config file")
+	configCreateCmd.Flags().BoolVarP(&cfgf.overwrite, "overwrite", "y", false,
+		"overwrite any existing config file")
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configEditCmd)
 	configCmd.AddCommand(configInfoCmd)
-	configInfoCmd.Flags().BoolVarP(&infoSize, "size", "s", false, "display directory sizes and file counts (SLOW)")
+	configInfoCmd.Flags().BoolVarP(&infoSize, "size", "s", false,
+		"display directory sizes and file counts (SLOW)")
 	configCmd.AddCommand(configSetCmd)
-	configSetCmd.Flags().StringVarP(&cfgf.name, "name", "n", "", `the configuration path to edit in dot syntax (see examples)
+	configSetCmd.Flags().StringVarP(&cfgf.name, "name", "n", "",
+		`the configuration path to edit in dot syntax (see examples)
 	to see a list of names run: df2 config info`)
 	if err := configSetCmd.MarkFlagRequired("name"); err != nil {
 		log.Fatal(err)

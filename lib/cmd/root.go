@@ -19,19 +19,13 @@ import (
 	"github.com/Defacto2/df2/lib/str"
 )
 
-var simulate bool
-
 var (
-	// ErrCmd invalid command.
-	ErrCmd = errors.New("invalid command, please use one of the available commands")
-	// ErrNoID no id.
+	ErrCmd  = errors.New("invalid command, please use one of the available commands")
 	ErrNoID = errors.New("requires an id or uuid argument")
-	// ErrID bad id.
-	ErrID = errors.New("invalid id or uuid specified")
-)
+	ErrID   = errors.New("invalid id or uuid specified")
 
-var (
 	configName = ""
+	simulate   bool
 	panics     = false // debug log
 	quiet      = false // quiet disables most printing or output to terminal
 )
@@ -52,9 +46,9 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(color.Warn.Sprintf("%s", err))
-		e := err.Error()
-		if strings.Contains(e, "required flag(s) \"name\"") {
-			logs.Println("see Examples for usage or run to list setting choices:", color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
+		if e := err.Error(); strings.Contains(e, "required flag(s) \"name\"") {
+			logs.Println("see Examples for usage or run to list setting choices:",
+				color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
 		}
 		os.Exit(1)
 	}
@@ -64,9 +58,12 @@ func Execute() {
 func init() { // nolint:gochecknoinits
 	cobra.OnInitialize()
 	initConfig()
-	rootCmd.PersistentFlags().StringVar(&configName, "config", "", fmt.Sprintf("config file (default is %s)", config.Filepath()))
-	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "suspend feedback to the terminal")
-	rootCmd.PersistentFlags().BoolVar(&panics, "panic", false, "panic in the disco")
+	rootCmd.PersistentFlags().StringVar(&configName, "config", "",
+		fmt.Sprintf("config file (default is %s)", config.Filepath()))
+	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false,
+		"suspend feedback to the terminal")
+	rootCmd.PersistentFlags().BoolVar(&panics, "panic", false,
+		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
 		logs.Fatal(err)
 	}
@@ -109,24 +106,23 @@ func filterFlag(t interface{}, flag, val string) {
 func initConfig() {
 	logs.Panic = panics
 	logs.Quiet = quiet
-	cf := config.Filepath()
-	if cf != "" {
-		viper.SetConfigFile(cf)
-	} else {
+	if cf := config.Filepath(); cf == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
 			logs.Fatal(err)
 		}
 		viper.AddConfigPath(home)
 		viper.SetConfigName(config.Config.Name)
+	} else {
+		viper.SetConfigFile(cf)
 	}
 	viper.AutomaticEnv() // read in environment variables that match
 	// if a config file is found, read it in
 	if err := viper.ReadInConfig(); err != nil {
 		config.Config.Errors = true
-	} else if !quiet {
-		if !str.Piped() {
-			logs.Println(str.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
-		}
+		return
+	}
+	if !quiet && !str.Piped() {
+		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
 	}
 }

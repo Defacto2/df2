@@ -34,7 +34,8 @@ var lookupCmd = &cobra.Command{
 			if err != nil {
 				fmt.Printf("%s\n", err)
 			} else {
-				fmt.Printf("https://defacto2.net/f/%v\n", database.ObfuscateParam(fmt.Sprint(id)))
+				fmt.Printf("https://defacto2.net/f/%v\n",
+					database.ObfuscateParam(fmt.Sprint(id)))
 			}
 		}
 	},

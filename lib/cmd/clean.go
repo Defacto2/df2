@@ -39,10 +39,14 @@ var cleanCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(cleanCmd)
-	cleanCmd.Flags().StringVarP(&clf.target, "target", "t", "all", "what file section to clean"+options(targets...))
-	cleanCmd.Flags().BoolVarP(&clf.delete, "delete", "x", false, "erase all discovered files to free up drive space")
-	cleanCmd.Flags().BoolVar(&clf.humanise, "humanise", true, "humanise file sizes and date times")
-	cleanCmd.Flags().BoolVar(&clf.makeDirs, "makedirs", false, "generate uuid directories and placeholder files")
+	cleanCmd.Flags().StringVarP(&clf.target, "target", "t", "all",
+		"what file section to clean"+options(targets...))
+	cleanCmd.Flags().BoolVarP(&clf.delete, "delete", "x", false,
+		"erase all discovered files to free up drive space")
+	cleanCmd.Flags().BoolVar(&clf.humanise, "humanise", true,
+		"humanise file sizes and date times")
+	cleanCmd.Flags().BoolVar(&clf.makeDirs, "makedirs", false,
+		"generate uuid directories and placeholder files")
 	cleanCmd.Flags().SortFlags = false
 	if err := cleanCmd.Flags().MarkHidden("makedirs"); err != nil {
 		log.Fatal(err)
