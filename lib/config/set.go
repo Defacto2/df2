@@ -46,6 +46,7 @@ func Set(name string) error {
 }
 
 func sets(name string) error {
+	const suffix = 10
 	rec := func(value string) string {
 		return color.Info.Sprintf("(recommend: %v)", value)
 	}
@@ -66,7 +67,7 @@ func sets(name string) error {
 	case name == "connection.server.port":
 		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", prompt.PortMin, prompt.PortMax, rec("3306"))
 		return configSave(prompt.Port())
-	case name[:10] == "directory.":
+	case name[:suffix] == "directory.":
 		fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")
 		return configSave(prompt.Dir())
 	case name == "connection.password":

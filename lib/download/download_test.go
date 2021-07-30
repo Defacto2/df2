@@ -16,6 +16,7 @@ func testTemp() string {
 }
 
 func TestRequest_Body(t *testing.T) {
+	const timeout = 3
 	type fields struct {
 		Link       string
 		Timeout    time.Duration
@@ -31,7 +32,7 @@ func TestRequest_Body(t *testing.T) {
 		{"empty", fields{}, true},
 		{"example", fields{
 			Link:    "https://example.com",
-			Timeout: 3 * time.Second,
+			Timeout: timeout * time.Second,
 		}, false},
 	}
 	for _, tt := range tests {
@@ -50,6 +51,7 @@ func TestRequest_Body(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_checkTime(t *testing.T) {
 	td := func(v int) time.Duration {
 		sec, _ := time.ParseDuration(fmt.Sprintf("%ds", v))
@@ -77,6 +79,7 @@ func Test_checkTime(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestWriteCounter_Write(t *testing.T) {
 	type fields struct {
 		Name    string
@@ -116,6 +119,7 @@ func TestWriteCounter_Write(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_percent(t *testing.T) {
 	type args struct {
 		count uint64
@@ -184,6 +188,7 @@ func TestLinkDownload_Ping(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestLinkDownloadQ(t *testing.T) {
 	type args struct {
 		name string
@@ -216,6 +221,7 @@ func TestLinkDownloadQ(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestStatusColor(t *testing.T) {
 	type args struct {
 		code   int

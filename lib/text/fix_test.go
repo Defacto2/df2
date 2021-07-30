@@ -81,6 +81,7 @@ func TestImage_archive(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestImage_String(t *testing.T) {
 	type fields struct {
 		ID       uint

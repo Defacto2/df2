@@ -16,6 +16,7 @@ func testDir(name string) string {
 	return filepath.Join(dir, "..", "..", "tests", name)
 }
 
+//nolint: revive
 func TestFileCopy(t *testing.T) {
 	type args struct {
 		name string
@@ -52,6 +53,7 @@ func TestFileCopy(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_content_filemime(t *testing.T) {
 	type fields struct {
 		name       string
@@ -88,6 +90,7 @@ func Test_content_filemime(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func TestFileMove(t *testing.T) {
 	type args struct {
 		name string
@@ -145,6 +148,7 @@ func TestRead(t *testing.T) { //nolint:dupl
 	}
 }
 
+//nolint: revive
 func TestRestore(t *testing.T) {
 	tmp := os.TempDir()
 	type args struct {

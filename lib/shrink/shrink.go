@@ -8,7 +8,8 @@ import (
 )
 
 func month(s string) Month {
-	switch strings.ToLower(s)[:3] {
+	const monthPrefix = 3
+	switch strings.ToLower(s)[:monthPrefix] {
 	case "jan":
 		return jan
 	case "feb":

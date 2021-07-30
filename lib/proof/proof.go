@@ -157,12 +157,13 @@ func (r Record) iterate(s *stat) error {
 }
 
 func newRec(values []sql.RawBytes, path string) Record {
-	var r Record
-	r.ID = string(values[0])
-	r.UUID = string(values[1])
-	r.Name = string(values[4])
-	r.File = filepath.Join(path, r.UUID)
-	return r
+	const id, uuid, filename = 0, 1, 4
+	return Record{
+		ID:   string(values[id]),
+		UUID: string(values[uuid]),
+		Name: string(values[filename]),
+		File: filepath.Join(path, string(values[uuid])),
+	}
 }
 
 func (r Record) printID(s *stat) {

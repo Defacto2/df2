@@ -96,13 +96,14 @@ func Fix() error {
 }
 
 func record(values []sql.RawBytes, path string) Record {
-	var r Record
-	r.ID = string(values[0])
-	r.UUID = string(values[1])
-	r.Name = string(values[4])
-	r.NFO = string(values[6])
-	r.File = filepath.Join(path, r.UUID)
-	return r
+	const id, uuid, filename, readme = 0, 1, 4, 6
+	return Record{
+		ID:   string(values[id]),
+		UUID: string(values[uuid]),
+		Name: string(values[filename]),
+		NFO:  string(values[readme]),
+		File: filepath.Join(path, string(values[uuid])),
+	}
 }
 
 func where() string {

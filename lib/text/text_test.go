@@ -41,6 +41,7 @@ func Test_makePng(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_generate(t *testing.T) {
 	gif, err := filepath.Abs("../../tests/images/test.gif")
 	if err != nil {

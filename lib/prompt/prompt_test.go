@@ -29,6 +29,7 @@ func TestYN(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_read(t *testing.T) {
 	color.Enable = false
 	var stdin bytes.Buffer
@@ -80,6 +81,7 @@ func Test_parseyn(t *testing.T) {
 	}
 }
 
+//nolint: revive
 func Test_port(t *testing.T) {
 	tests := []struct {
 		name string

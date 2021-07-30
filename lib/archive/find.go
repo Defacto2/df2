@@ -19,19 +19,19 @@ func FindNFO(name string, files ...string) string {
 		}
 		switch {
 		case fn == base+".nfo": // [archive name].nfo
-			f[file] = 1
+			f[file] = lvl1
 		case fn == base+".txt": // [archive name].txt
-			f[file] = 2
+			f[file] = lvl2
 		case ext == ".nfo": // [random].nfo
-			f[file] = 3
+			f[file] = lvl3
 		case fn == "file_id.diz": // BBS file description
-			f[file] = 4
+			f[file] = lvl4
 		case fn == base+".diz": // [archive name].diz
-			f[file] = 5
+			f[file] = lvl5
 		case fn == ".txt": // [random].txt
-			f[file] = 6
+			f[file] = lvl6
 		case fn == ".diz": // [random].diz
-			f[file] = 7
+			f[file] = lvl7
 		default: // currently lacking is [group name].nfo and [group name].txt priorities
 		}
 	}

@@ -25,6 +25,7 @@ type Demozoo struct {
 }
 
 const fileDiz = "file_id.diz"
+const lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, lvl7, lvl8, lvl9 = 1, 2, 3, 4, 5, 6, 7, 8, 9
 
 func (d Demozoo) String() string {
 	return fmt.Sprintf("using %q for DOSee and %q as the NFO or text", d.DOSee, d.NFO)
@@ -137,19 +138,19 @@ func findDOS(name string, files contents, varNames *[]string) string {
 		fmt.Printf(" > %q, %q, chk1 %s", ext, fn, base+exe)
 		switch {
 		case ext == bat: // [random].bat
-			f[file.name] = 1
+			f[file.name] = lvl1
 		case fn == base+exe: // [archive name].exe
-			f[file.name] = 2
+			f[file.name] = lvl2
 		case fn == base+com: // [archive name].com
-			f[file.name] = 3
+			f[file.name] = lvl3
 		case e != "":
-			f[file.name] = 4
+			f[file.name] = lvl4
 		case c != "":
-			f[file.name] = 5
+			f[file.name] = lvl5
 		case ext == exe: // [random].exe
-			f[file.name] = 6
+			f[file.name] = lvl6
 		case ext == com: // [random].com
-			f[file.name] = 7
+			f[file.name] = lvl7
 		}
 	}
 	return f.top()
@@ -169,23 +170,23 @@ func findNFO(name string, files contents, varNames *[]string) string {
 		t := findVariant(fn, txt, varNames)
 		switch {
 		case fn == base+nfo: // [archive name].nfo
-			f[file.name] = 1
+			f[file.name] = lvl1
 		case n != "":
-			f[file.name] = 2
+			f[file.name] = lvl2
 		case fn == base+txt: // [archive name].txt
-			f[file.name] = 3
+			f[file.name] = lvl3
 		case t != "":
-			f[file.name] = 4
+			f[file.name] = lvl4
 		case ext == nfo: // [random].nfo
-			f[file.name] = 5
+			f[file.name] = lvl5
 		case fn == fileDiz: // BBS file description
-			f[file.name] = 6
+			f[file.name] = lvl6
 		case fn == base+diz: // [archive name].diz
-			f[file.name] = 7
+			f[file.name] = lvl7
 		case fn == txt: // [random].txt
-			f[file.name] = 8
+			f[file.name] = lvl8
 		case fn == diz: // [random].diz
-			f[file.name] = 9
+			f[file.name] = lvl9
 		default: // currently lacking is [group name].nfo and [group name].txt priorities
 		}
 	}

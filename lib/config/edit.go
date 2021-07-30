@@ -16,13 +16,13 @@ please set one by creating a $EDITOR environment variable in your shell configur
 
 // Edit a configuration file.
 func Edit() {
-	editors := [3]string{"micro", "nano", "vim"}
+	editors := []string{"micro", "nano", "vim"}
 	cfg, editor := viper.ConfigFileUsed(), ""
 	if cfg == "" {
 		configMissing("edit")
 	}
 	if err := viper.BindEnv("editor", "EDITOR"); err != nil {
-		editor = fallback(editors)
+		editor = fallback(editors...)
 	} else {
 		editor = saved()
 	}
@@ -35,7 +35,7 @@ func Edit() {
 	}
 }
 
-func fallback(editors [3]string) (edit string) {
+func fallback(editors ...string) (edit string) {
 	for _, app := range editors {
 		if path, err := exec.LookPath(app); err == nil && path != "" {
 			return app
