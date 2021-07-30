@@ -20,10 +20,10 @@ const (
 	static   = "https://defacto2.net/"
 	index    = "index.cfm"
 	cfm      = ".cfm"
+	urlCount = 28
+	// limit the number of urls as permitted by Bing and Google search engines.
+	limit = 50000
 )
-
-// limit the number of urls as permitted by Bing and Google search engines.
-const limit = 50000
 
 // url composes the <url> tag in the sitemap.
 type url struct {
@@ -61,7 +61,7 @@ func Create() error {
 	}
 	defer rows.Close()
 	// handle static urls
-	v.Urls = make([]url, len(urls())+count)
+	v.Urls = make([]url, len(paths())+count)
 	c, i := v.staticURLs()
 	// handle query results.
 	for rows.Next() {
@@ -144,28 +144,33 @@ func lastmodValue(createdat, updatedat sql.NullString) (s string) {
 	return s
 }
 
-func (v *URLset) staticURLs() (c, i int) {
-	c, i, d := 0, 0, viper.GetString("directory.views")
-	for i, u := range urls() {
-		file := filepath.Join(d, u, index)
+func (set *URLset) staticURLs() (c, i int) {
+	// sitemap priorities
+	const top, veryHigh, high, standard = "1", "0.9", "0.8", "0.7"
+	uri := func(path string) string {
+		return static + path
+	}
+	c, i, view := 0, 0, viper.GetString("directory.views")
+	for i, path := range paths() {
+		file := filepath.Join(view, path, index)
 		if s, err := os.Stat(file); !os.IsNotExist(err) {
-			v.Urls[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.9"}
+			set.Urls[i] = url{uri(path), lastmod(s), "", veryHigh}
 			c++
 			continue
 		}
-		j := filepath.Join(d, u) + cfm
+		j := filepath.Join(view, path) + cfm
 		if s, err := os.Stat(j); !os.IsNotExist(err) {
-			v.Urls[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.8"}
+			set.Urls[i] = url{uri(path), lastmod(s), "", high}
 			c++
 			continue
 		}
-		k := filepath.Join(d, strings.ReplaceAll(u, "-", "")+cfm)
+		k := filepath.Join(view, strings.ReplaceAll(path, "-", "")+cfm)
 		if s, err := os.Stat(k); !os.IsNotExist(err) {
-			v.Urls[i] = url{fmt.Sprintf("%v", static+u), lastmod(s), "", "0.7"}
+			set.Urls[i] = url{uri(path), lastmod(s), "", standard}
 			c++
 			continue
 		}
-		v.Urls[i] = url{fmt.Sprintf("%v", static+u), "", "", "1"}
+		set.Urls[i] = url{uri(path), "", "", top}
 	}
 	return c, i
 }
@@ -174,8 +179,8 @@ func lastmod(s os.FileInfo) string {
 	return s.ModTime().UTC().Format("2006-01-02")
 }
 
-func urls() [28]string {
-	return [28]string{
+func paths() [urlCount]string {
+	return [urlCount]string{
 		"welcome",
 		"file",
 		"file/list/new",
