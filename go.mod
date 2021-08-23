@@ -3,9 +3,8 @@ module github.com/Defacto2/df2
 go 1.16
 
 require (
-	github.com/alecthomas/chroma v0.9.2 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
-	github.com/bengarrett/retrotxtgo v0.0.31
+	github.com/bengarrett/retrotxtgo v0.0.32
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.0
@@ -32,8 +31,7 @@ require (
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
-	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
-	golang.org/x/text v0.3.6
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
+	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0
 )

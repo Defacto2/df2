@@ -10,6 +10,7 @@ import (
 
 	"github.com/bengarrett/retrotxtgo/lib/logs"
 	"github.com/bengarrett/retrotxtgo/lib/str"
+	"github.com/bengarrett/retrotxtgo/meta"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/htmlindex"
@@ -30,7 +31,8 @@ const latin = "isolatin"
 
 // Encodings returns all the supported legacy text encodings.
 func Encodings() (e []encoding.Encoding) {
-	a := append(charmap.All, japanese.All...)
+	a := charmap.All
+	a = append(a, japanese.All...)
 	a = append(a, unicode.All...)
 	a = append(a, utf32.All...)
 	for _, m := range a {
@@ -51,7 +53,8 @@ func List() *bytes.Buffer {
 		" Supported legacy code pages and character encodings "
 	var buf bytes.Buffer
 	flags := tabwriter.Debug // tabwriter.AlignRight | tabwriter.Debug
-	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', flags)
+	const padding = 2
+	w := tabwriter.NewWriter(&buf, 0, 0, padding, ' ', flags)
 	fmt.Fprintln(w, "\n"+str.Cp(title))
 	fmt.Fprintln(w, strings.Repeat("-", len(title)))
 	fmt.Fprintln(w, header)
@@ -76,14 +79,22 @@ func List() *bytes.Buffer {
 	fmt.Fprintln(w, "\n"+str.Cinf("*")+" EBCDIC data encoding is used on IBM Mainframe OS and is not ASCII compatible.")
 	fmt.Fprintln(w, "\nEither argument, numeric or alias values are valid codepage arguments.")
 	fmt.Fprintln(w, "  These example codepage arguments all match ISO 8859-1.")
-	fmt.Fprintln(w, "  "+str.Example("retrotxt list table ")+str.Cc("iso-8859-1")+str.Cf("  # argument"))
-	fmt.Fprintln(w, "  "+str.Example("retrotxt list table ")+str.Cc("1")+str.Cf("           # numeric"))
-	fmt.Fprintln(w, "  "+str.Example("retrotxt list table ")+str.Cc("latin1")+str.Cf("      # alias"))
-	fmt.Fprintln(w, "\n  IBM Code Page 437 ("+str.Cc("cp437")+") is commonly used on MS-DOS and ANSI art.")
-	fmt.Fprintln(w, "  ISO 8859-1 ("+str.Cc("latin1")+") is found on legacy Unix, Amiga and the early Internet.")
-	fmt.Fprintln(w, "  Windows 1252 ("+str.Cc("cp1252")+") is found on legacy Windows 9x and earlier systems.")
-	fmt.Fprintln(w, "  Macintosh ("+str.Cc("macintosh")+") is found on Mac OS 9 and earlier systems.")
-	fmt.Fprintln(w, "\nRetroTxt, PCs and the web today use Unicode UTF-8. It is a subset of ISO 8895-1,")
+	cmds := fmt.Sprintf("%s list table ", meta.Bin)
+	fmt.Fprintf(w, "  %s%s  %s\n",
+		str.Example(cmds), str.Cc("iso-8859-1"), str.Cf("# argument"))
+	fmt.Fprintf(w, "  %s%s           %s\n",
+		str.Example(cmds), str.Cc("1"), str.Cf("# numeric"))
+	fmt.Fprintf(w, "  %s%s      %s\n",
+		str.Example(cmds), str.Cc("latin1"), str.Cf("# alias"))
+	fmt.Fprintf(w, "\n  IBM Code Page 437 (%s) is commonly used on MS-DOS and ANSI art.\n",
+		str.Cc("cp437"))
+	fmt.Fprintf(w, "  ISO 8859-1 (%s) is found on legacy Unix, Amiga and the early Internet.\n",
+		str.Cc("latin1"))
+	fmt.Fprintf(w, "  Windows 1252 (%s) is found on legacy Windows 9x and earlier systems.\n",
+		str.Cc("cp1252"))
+	fmt.Fprintf(w, "  Macintosh (%s) is found on Mac OS 9 and earlier systems.\n",
+		str.Cc("macintosh"))
+	fmt.Fprintf(w, "\n%s, PCs and the web today use Unicode UTF-8. It is a subset of ISO 8895-1,\n", meta.Name)
 	fmt.Fprintln(w, "which allows UTF-8 to be backwards compatible both with it and US-ASCII.")
 	if err := w.Flush(); err != nil {
 		logs.ProblemFatal(logs.ErrTabFlush, err)
