@@ -146,7 +146,7 @@ github.com/nickalie/go-binwrapper
 # github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e
 ## explicit
 github.com/nickalie/go-webpbin
-# github.com/nwaples/rardecode v1.1.1
+# github.com/nwaples/rardecode v1.1.2
 ## explicit
 github.com/nwaples/rardecode
 # github.com/pelletier/go-toml v1.9.3
