@@ -41,8 +41,9 @@ func Extractor(source, filename, extract, destination string) error {
 
 // Readr returns a list of files within an rar, tar or zip archive.
 // It has offers compatibility with compression formats.
-func Readr(archive, filename string) (files []string, err error) {
-	err = walkr(archive, filename, func(f archiver.File) error {
+func Readr(archive, filename string) ([]string, error) {
+	files := []string{}
+	err := walkr(archive, filename, func(f archiver.File) error {
 		if f.IsDir() {
 			return nil
 		}
@@ -58,18 +59,17 @@ func Readr(archive, filename string) (files []string, err error) {
 			fn = f.Name()
 		}
 		b := []byte(fn)
-		if !utf8.Valid(b) {
-			// handle cheecky DOS era filenames with CP437 extended characters.
-			r := transform.NewReader(bytes.NewReader(b), charmap.CodePage437.NewDecoder())
-			var result []byte
-			result, err = ioutil.ReadAll(r)
-			if err != nil {
-				return err
-			}
-			files = append(files, string(result))
-		} else {
+		if utf8.Valid(b) {
 			files = append(files, fn)
+			return nil
 		}
+		// handle cheecky DOS era filenames with CP437 extended characters.
+		r := transform.NewReader(bytes.NewReader(b), charmap.CodePage437.NewDecoder())
+		result, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		files = append(files, string(result))
 		return nil
 	})
 	if err != nil {

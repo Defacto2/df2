@@ -24,16 +24,17 @@ type Demozoo struct {
 	NFO   string // retrotxt_readme column
 }
 
-const fileDiz = "file_id.diz"
-const lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, lvl7, lvl8, lvl9 = 1, 2, 3, 4, 5, 6, 7, 8, 9
-
 func (d Demozoo) String() string {
 	return fmt.Sprintf("using %q for DOSee and %q as the NFO or text", d.DOSee, d.NFO)
 }
 
+const fileDiz = "file_id.diz"
+const lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, lvl7, lvl8, lvl9 = 1, 2, 3, 4, 5, 6, 7, 8, 9
+
 // ExtractDemozoo decompresses and parses archives fetched from Demozoo.org.
-func ExtractDemozoo(name, uuid string, varNames *[]string) (dz Demozoo, err error) {
-	if err = database.CheckUUID(uuid); err != nil {
+func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {
+	dz := Demozoo{}
+	if err := database.CheckUUID(uuid); err != nil {
 		return Demozoo{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
 	}
 	// create temp dir
