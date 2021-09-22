@@ -1,5 +1,6 @@
 module github.com/Defacto2/df2
 
+// do not forget to update .github/workflows/release.yml
 go 1.17
 
 require (
