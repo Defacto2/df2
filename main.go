@@ -91,6 +91,7 @@ func info() string {
 		Date     string
 		Path     string
 		GoVer    string
+		GoOS     string
 	}
 	const exeTmp = ` ┌── requirements ─────────────┐
  │  database:     {{.Database}}  │
@@ -101,7 +102,7 @@ func info() string {
      path: {{.Path}}
    commit: {{.Commit}}
      date: {{.Date}}
-   golang: {{.GoVer}}
+       go: v{{.GoVer}} {{.GoOS}}
 `
 	const (
 		disconnect = "disconnect"
@@ -149,6 +150,7 @@ func info() string {
 		Date:     localBuild(date),
 		Path:     bin,
 		GoVer:    strings.Replace(runtime.Version(), "go", "", 1),
+		GoOS:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
 	tmpl, err := template.New("checks").Parse(exeTmp)
 	if err != nil {
