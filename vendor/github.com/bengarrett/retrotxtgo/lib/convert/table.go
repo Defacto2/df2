@@ -17,53 +17,48 @@ import (
 	"golang.org/x/text/encoding/unicode/utf32"
 )
 
-const width = 67
+const (
+	width   = 67
+	ascii63 = "ascii-63"
+	ascii65 = "ascii-65"
+	ascii67 = "ascii-67"
+)
 
 // Table prints out all the characters in the named 8-bit character set.
 func Table(name string) (*bytes.Buffer, error) {
-	cp, err := Encoding(name)
+	cp, err := codepager(name)
 	if err != nil {
-		return nil, fmt.Errorf("table encoding error: %w", err)
-	}
-	switch cp {
-	case uni.UTF16(uni.BigEndian, uni.UseBOM),
-		uni.UTF16(uni.BigEndian, uni.IgnoreBOM),
-		uni.UTF16(uni.LittleEndian, uni.IgnoreBOM):
-		return nil, ErrUTF16
-	case utf32.UTF32(utf32.BigEndian, utf32.UseBOM),
-		utf32.UTF32(utf32.BigEndian, utf32.IgnoreBOM),
-		utf32.UTF32(utf32.LittleEndian, utf32.IgnoreBOM):
-		return nil, ErrUTF32
+		return nil, err
 	}
 	h := fmt.Sprintf("%s", cp)
-	if a := encodingAlias(shorten(name)); a == "iso-8859-11" {
+	if a := encodeAlias(shorten(name)); a == "iso-8859-11" {
 		h = "ISO 8859-11"
 		cp = charmap.XUserDefined
 	}
 	h += charmapAlias(cp)
 	h += charmapStandard(cp)
 	var buf bytes.Buffer
-	w := new(tabwriter.Writer).Init(&buf, 0, 8, 0, '\t', 0)
-	fmt.Fprintln(w, " "+color.OpFuzzy.Sprint(strings.Repeat("\u2015", width)))
-	fmt.Fprintln(w, color.Primary.Sprint(str.Center(width, h)))
+	const tabWidth = 8
+	w := new(tabwriter.Writer).Init(&buf, 0, tabWidth, 0, '\t', 0)
+	fmt.Fprint(w, " "+str.HeadDark(width, h))
 	const start, end, max = 0, 15, 255
 	for i := 0; i < 16; i++ {
-		switch {
-		case i == start:
+		switch i {
+		case start:
 			fmt.Fprintf(w, "%s", color.OpFuzzy.Sprintf("     %X  ", i))
-		case i == end:
+		case end:
 			fmt.Fprintf(w, "%s", color.OpFuzzy.Sprintf(" %X  \n", i))
 		default:
 			fmt.Fprintf(w, "%s", color.OpFuzzy.Sprintf(" %X  ", i))
 		}
 	}
-	var conv = Convert{}
-	conv.Source.E = cp
-	var b, row = MakeBytes(), 0
-	runes, err := conv.Chars(&b)
+	b, conv, row := MakeBytes(), encoder(name, cp), 0
+	runes, err := conv.Chars(b...)
 	if err != nil {
 		return nil, fmt.Errorf("table convert bytes error: %w", err)
 	}
+	cp = revert(name)
+	const hex = 16
 	for i, r := range runes {
 		char := character(i, r, cp)
 		switch {
@@ -75,7 +70,7 @@ func Table(name string) (*bytes.Buffer, error) {
 		case i == max:
 			fmt.Fprintf(w, " %s %s\n", char,
 				color.OpFuzzy.Sprint("|"))
-		case math.Mod(float64(i+1), 16) == 0:
+		case math.Mod(float64(i+1), hex) == 0:
 			// every 16th loop
 			row++
 			fmt.Fprintf(w, " %s %s\n %s %s", char,
@@ -94,15 +89,170 @@ func Table(name string) (*bytes.Buffer, error) {
 	return &buf, nil
 }
 
-// Character converts rune to an encoded string.
-func character(i int, r rune, cp encoding.Encoding) string {
-	// ISO-8859-11 is not included in Go so a user defined charmap is used.
-	var iso8859_11 = charmap.XUserDefined
-	if cp == iso8859_11 {
-		const PAD, NBSP = 128, 160
-		if i >= PAD && i < NBSP {
-			return " "
+func codepager(name string) (encoding.Encoding, error) {
+	switch strings.ToLower(name) {
+	case ascii63:
+		return AsaX34_1963, nil
+	case ascii65:
+		return AsaX34_1965, nil
+	case ascii67:
+		return x34_1967, nil
+	default:
+		cp, err := defaultCP(name)
+		if err != nil {
+			return nil, err
 		}
+		return cp, nil
+	}
+}
+
+func defaultCP(name string) (encoding.Encoding, error) {
+	cp, err := Encoder(name)
+	if err != nil {
+		return nil, fmt.Errorf("table encoding error: %w", err)
+	}
+	switch cp {
+	case uni.UTF16(uni.BigEndian, uni.UseBOM),
+		uni.UTF16(uni.BigEndian, uni.IgnoreBOM),
+		uni.UTF16(uni.LittleEndian, uni.IgnoreBOM):
+		return nil, ErrUTF16
+	case utf32.UTF32(utf32.BigEndian, utf32.UseBOM),
+		utf32.UTF32(utf32.BigEndian, utf32.IgnoreBOM),
+		utf32.UTF32(utf32.LittleEndian, utf32.IgnoreBOM):
+		return nil, ErrUTF32
+	}
+	return cp, nil
+}
+
+func encoder(name string, cp encoding.Encoding) Convert {
+	conv := Convert{}
+	switch strings.ToLower(name) {
+	case ascii63, ascii65, ascii67:
+		cp = charmap.Windows1252
+	}
+	conv.Input.Encoding = cp
+	return conv
+}
+
+func revert(name string) encoding.Encoding {
+	switch strings.ToLower(name) {
+	case ascii63:
+		return AsaX34_1963
+	case ascii65:
+		return AsaX34_1965
+	case ascii67:
+		return AnsiX34_1967
+	}
+	return nil
+}
+
+func chrX3493(pos int, cp encoding.Encoding) string {
+	if cp != AsaX34_1963 {
+		return ""
+	}
+	const us, end = 31, 128
+	if pos >= end || pos == 125 {
+		return " "
+	}
+	if x := mapX3493(pos); x != "" {
+		return x
+	}
+	if pos <= us {
+		return " "
+	}
+	if pos >= 96 && pos <= 123 {
+		return " "
+	}
+	return ""
+}
+
+func mapX3493(i int) string {
+	m := map[int]string{
+		0:   "␀",
+		4:   "␄",
+		7:   "␇",
+		9:   "␉",
+		10:  "␊",
+		11:  "␋",
+		12:  "␌",
+		13:  "␍",
+		14:  "␎",
+		15:  "␏",
+		17:  "␑",
+		18:  "␒",
+		19:  "␓",
+		20:  "␔",
+		94:  "↑",
+		95:  "←",
+		124: "␆",
+		126: "␛",
+		127: "␡",
+	}
+	return m[i]
+}
+
+func chrX3495(pos int, cp encoding.Encoding) string {
+	if cp != AsaX34_1965 {
+		return ""
+	}
+	const sub, grave, tilde, at, not, bar, end = 26, 64, 92, 96, 124, 126, 128
+	if pos >= end {
+		return " "
+	}
+	switch pos {
+	case sub:
+		return " "
+	case grave:
+		return "`"
+	case tilde:
+		return "~"
+	case at:
+		return "@"
+	case not:
+		return "¬"
+	case bar:
+		return "|"
+	}
+	return ""
+}
+
+func chrX3497(pos int, cp encoding.Encoding) string {
+	if cp != AnsiX34_1967 {
+		return ""
+	}
+	const end = 128
+	if pos >= end {
+		return " "
+	}
+	return ""
+}
+
+func chrISO11(pos int, cp encoding.Encoding) string {
+	// ISO-8859-11 is not included in Go so a user defined charmap is used.
+	iso8859_11 := charmap.XUserDefined
+	if cp != iso8859_11 {
+		return ""
+	}
+	const pad, nbsp = 128, 160
+	if pos >= pad && pos < nbsp {
+		return " "
+	}
+	return ""
+}
+
+// character converts rune to an encoded string.
+func character(pos int, r rune, cp encoding.Encoding) string {
+	if s := chrX3493(pos, cp); s != "" {
+		return s
+	}
+	if s := chrX3495(pos, cp); s != "" {
+		return s
+	}
+	if s := chrX3497(pos, cp); s != "" {
+		return s
+	}
+	if s := chrISO11(pos, cp); s != "" {
+		return s
 	}
 	// non-spacing mark characters
 	if unicode.In(r, unicode.Mn) {
@@ -111,28 +261,27 @@ func character(i int, r rune, cp encoding.Encoding) string {
 	}
 	// format, other
 	if unicode.In(r, unicode.Cf) {
-		const ZWNJ, ZWJ, LRM, RLM = 8204, 8205, 8206, 8207
+		const zwnj, zwj, lrm, rlm = 8204, 8205, 8206, 8207
 		switch r {
-		case ZWNJ, ZWJ, LRM, RLM:
-			// no suitable control character symbols exist
+		case zwnj, zwj, lrm, rlm:
 			return " "
 		}
 	}
 	// unicode latin-1 supplement
 	if cp == uni.UTF8 || cp == uni.UTF8BOM {
-		const PAD, NBSP = 128, 160
+		const pad, nbsp = 128, 160
 		switch {
-		case i >= PAD && i < NBSP:
+		case pos >= pad && pos < nbsp:
 			return " "
-		case i >= NBSP:
-			return string(rune(i))
+		case pos >= nbsp:
+			return string(rune(pos))
 		}
 	}
 	// rune to string
 	return string(r)
 }
 
-// CharmapAlias humanizes ISO encodings.
+// charmapAlias humanizes encodings.
 func charmapAlias(cp encoding.Encoding) string { // nolint:gocyclo
 	if c := charmapDOS(cp); c != "" {
 		return c
@@ -179,7 +328,7 @@ func charmapAlias(cp encoding.Encoding) string { // nolint:gocyclo
 	return ""
 }
 
-// CharmapDOS humanizes DOS encodings.
+// charmapDOS humanizes DOS encodings.
 func charmapDOS(cp encoding.Encoding) string {
 	switch cp {
 	case charmap.CodePage037:
@@ -208,7 +357,7 @@ func charmapDOS(cp encoding.Encoding) string {
 	return ""
 }
 
-// CharmapDOS humanizes encodings.
+// charmapMisc humanizes miscellaneous encodings.
 func charmapMisc(cp encoding.Encoding) string {
 	switch cp {
 	case charmap.KOI8R:
@@ -225,7 +374,7 @@ func charmapMisc(cp encoding.Encoding) string {
 	return ""
 }
 
-// CharmapDOS humanizes common encodings.
+// charmapStandard humanizes common encodings.
 func charmapStandard(cp encoding.Encoding) string {
 	switch cp {
 	case charmap.CodePage037, charmap.CodePage1047, charmap.CodePage1140:

@@ -6,7 +6,7 @@ go 1.17
 require (
 	github.com/alecthomas/chroma v0.9.2 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
-	github.com/bengarrett/retrotxtgo v0.0.31
+	github.com/bengarrett/retrotxtgo v0.0.35
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.0

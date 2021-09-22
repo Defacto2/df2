@@ -37,13 +37,14 @@ github.com/alecthomas/chroma/styles
 # github.com/andybalholm/brotli v1.0.3
 ## explicit; go 1.12
 github.com/andybalholm/brotli
-# github.com/bengarrett/retrotxtgo v0.0.31
-## explicit; go 1.16
+# github.com/bengarrett/retrotxtgo v0.0.35
+## explicit; go 1.17
 github.com/bengarrett/retrotxtgo/lib/convert
 github.com/bengarrett/retrotxtgo/lib/filesystem
 github.com/bengarrett/retrotxtgo/lib/humanize
 github.com/bengarrett/retrotxtgo/lib/logs
 github.com/bengarrett/retrotxtgo/lib/str
+github.com/bengarrett/retrotxtgo/meta
 # github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 ## explicit
 github.com/campoy/unique
