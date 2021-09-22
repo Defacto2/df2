@@ -55,13 +55,15 @@ func Check() {
 		fmt.Printf("%s %s\n",
 			color.Warn.Sprint("config: no config file in use, please run"),
 			color.Bold.Sprintf("df2 config create"))
-	} else if Config.Errors {
+		return
+	}
+	if Config.Errors {
 		os.Exit(1)
 	}
 }
 
 // Filepath is the absolute path and filename of the configuration file.
-func Filepath() (dir string) {
+func Filepath() string {
 	dir, err := gap.NewScope(gap.User, logs.GapUser).ConfigPath(filename)
 	if err != nil {
 		h, err := os.UserHomeDir()

@@ -20,7 +20,7 @@ import (
 // The archive format is selected implicitly.
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
-func Extractor(source, filename, extract, destination string) error {
+func Extractor(src, filename, target, dest string) error {
 	filename = strings.ToLower(filename)
 	f, err := archiver.ByExtension(filename)
 	if err != nil {
@@ -33,7 +33,7 @@ func Extractor(source, filename, extract, destination string) error {
 	if !ok {
 		return fmt.Errorf("extractor %s (%T): %w", filename, f, ErrNotArc)
 	}
-	if err := e.Extract(source, extract, destination); err != nil {
+	if err := e.Extract(src, target, dest); err != nil {
 		return fmt.Errorf("extractor: %w", err)
 	}
 	return nil
@@ -41,9 +41,9 @@ func Extractor(source, filename, extract, destination string) error {
 
 // Readr returns a list of files within an rar, tar or zip archive.
 // It has offers compatibility with compression formats.
-func Readr(archive, filename string) ([]string, error) {
+func Readr(src, filename string) ([]string, error) {
 	files := []string{}
-	err := walkr(archive, filename, func(f archiver.File) error {
+	err := walkr(src, filename, func(f archiver.File) error {
 		if f.IsDir() {
 			return nil
 		}
@@ -82,7 +82,7 @@ func Readr(archive, filename string) ([]string, error) {
 // The archive format is selected implicitly.
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
-func Unarchiver(source, filename, destination string) error {
+func Unarchiver(src, filename, dest string) error {
 	f, err := archiver.ByExtension(filename)
 	if err != nil {
 		return fmt.Errorf("unarchiver byextension %q: %w", filename, err)
@@ -94,13 +94,13 @@ func Unarchiver(source, filename, destination string) error {
 	if !ok {
 		return fmt.Errorf("unarchiver %s (%T): %w", filename, f, ErrNotArc)
 	}
-	if err := un.Unarchive(source, destination); err != nil {
+	if err := un.Unarchive(src, dest); err != nil {
 		return fmt.Errorf("unarchiver: %w", err)
 	}
 	return nil
 }
 
-func configure(f interface{}) (err error) {
+func configure(f interface{}) error {
 	cfg := &archiver.Tar{
 		OverwriteExisting:      true,
 		MkdirAll:               true,
@@ -144,8 +144,7 @@ func configure(f interface{}) (err error) {
 		*archiver.Xz:
 		// nothing to customise
 	default:
-		err = fmt.Errorf("configure %v: %w", f, ErrNoCustom)
-		return err
+		return fmt.Errorf("configure %v: %w", f, ErrNoCustom)
 	}
 	return nil
 }
@@ -154,10 +153,10 @@ func configure(f interface{}) (err error) {
 // The archive format is chosen implicitly.
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
-func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
+func walkr(src, filename string, walkFn archiver.WalkFunc) error {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("walkr paniced with %s in archive %s: %v\n", filename, filepath.Base(archive), r)
+			fmt.Printf("walkr paniced with %s in archive %s: %v\n", filename, filepath.Base(src), r)
 		}
 	}()
 
@@ -170,8 +169,8 @@ func walkr(archive, filename string, walkFn archiver.WalkFunc) error {
 	if !ok {
 		return fmt.Errorf("walkr %s (%T): %w", filename, a, ErrWalkrFmt)
 	}
-	if err := w.Walk(archive, walkFn); err != nil {
-		return fmt.Errorf("walkr %q: %w", filepath.Base(archive), err)
+	if err := w.Walk(src, walkFn); err != nil {
+		return fmt.Errorf("walkr %q: %w", filepath.Base(src), err)
 	}
 	return nil
 }

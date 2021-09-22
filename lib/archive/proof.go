@@ -15,7 +15,7 @@ import (
 
 // Proof decompresses and parses an archive.
 // uuid is used to rename the extracted assets such as image previews.
-func Proof(archive, filename, uuid string) error {
+func Proof(src, filename, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
 		return fmt.Errorf("archive uuid %q: %w", uuid, err)
 	}
@@ -25,7 +25,7 @@ func Proof(archive, filename, uuid string) error {
 		return fmt.Errorf("archive tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
-	if err = Unarchiver(archive, filename, tempDir); err != nil {
+	if err = Unarchiver(src, filename, tempDir); err != nil {
 		return fmt.Errorf("unarchiver: %w", err)
 	}
 	th, tx, err := tasks(tempDir)

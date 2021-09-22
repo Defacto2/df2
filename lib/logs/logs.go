@@ -112,51 +112,56 @@ func Path(name string) string {
 
 // Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
 func Print(a ...interface{}) {
-	if !Quiet {
-		if _, err := fmt.Print(a...); err != nil {
-			fatalLog(err)
-		}
+	if Quiet {
+		return
+	}
+	if _, err := fmt.Print(a...); err != nil {
+		fatalLog(err)
 	}
 }
 
 // Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
 func Printcr(a ...interface{}) {
-	if !Quiet {
-		if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(termSize()))); err != nil {
-			fatalLog(err)
-		}
-		if _, err := fmt.Print(a...); err != nil {
-			fatalLog(err)
-		}
+	if Quiet {
+		return
+	}
+	if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(termSize()))); err != nil {
+		fatalLog(err)
+	}
+	if _, err := fmt.Print(a...); err != nil {
+		fatalLog(err)
 	}
 }
 
 // Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
 func Printf(format string, a ...interface{}) {
-	if !Quiet {
-		if _, err := fmt.Printf(format, a...); err != nil {
-			fatalLog(err)
-		}
+	if Quiet {
+		return
+	}
+	if _, err := fmt.Printf(format, a...); err != nil {
+		fatalLog(err)
 	}
 }
 
 // Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
 func Println(a ...interface{}) {
-	if !Quiet {
-		if _, err := fmt.Println(a...); err != nil {
-			fatalLog(err)
-		}
+	if Quiet {
+		return
+	}
+	if _, err := fmt.Println(a...); err != nil {
+		fatalLog(err)
 	}
 }
 
 // Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
 func Printcrf(format string, a ...interface{}) {
-	if !Quiet {
-		if _, err := fmt.Printf("\r%s\r%s",
-			strings.Repeat(" ", int(termSize())),
-			fmt.Sprintf(format, a...)); err != nil {
-			fatalLog(err)
-		}
+	if Quiet {
+		return
+	}
+	if _, err := fmt.Printf("\r%s\r%s",
+		strings.Repeat(" ", int(termSize())),
+		fmt.Sprintf(format, a...)); err != nil {
+		fatalLog(err)
 	}
 }
 

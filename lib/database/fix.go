@@ -38,7 +38,7 @@ type Update struct {
 }
 
 // Execute Query and Args to update the database and returns the total number of changes.
-func (u Update) Execute() (count int64, err error) {
+func (u Update) Execute() (int64, error) {
 	db := Connect()
 	defer db.Close()
 	update, err := db.Prepare(u.Query)
@@ -50,14 +50,14 @@ func (u Update) Execute() (count int64, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("update execute db exec: %w", err)
 	}
-	count, err = res.RowsAffected()
+	count, err := res.RowsAffected()
 	if err != nil {
 		return 0, fmt.Errorf("update execute rows affected: %w", err)
 	}
 	return count, db.Close()
 }
 
-func distinct(column string) (values []string, err error) {
+func distinct(column string) ([]string, error) {
 	var result string
 	db := Connect()
 	defer db.Close()
@@ -66,6 +66,7 @@ func distinct(column string) (values []string, err error) {
 		return nil, fmt.Errorf("distinct query %q: %w", column, err)
 	}
 	defer rows.Close()
+	values := []string{}
 	for rows.Next() {
 		if err := rows.Scan(&result); err != nil {
 			return nil, fmt.Errorf("distinct rows scan: %w", err)

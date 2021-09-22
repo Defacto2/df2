@@ -43,7 +43,7 @@ var (
 )
 
 // Duplicate an image file and appends suffix to its name.
-func Duplicate(filename, suffix string) (name string, err error) {
+func Duplicate(filename, suffix string) (string, error) {
 	src, err := os.Open(filename)
 	if err != nil {
 		return "", fmt.Errorf("duplicate %q: %w", filename, err)
@@ -59,8 +59,7 @@ func Duplicate(filename, suffix string) (name string, err error) {
 	if _, err = io.Copy(dest, src); err != nil {
 		return "", fmt.Errorf("duplicate io copy: %w", err)
 	}
-	name = fmt.Sprintf("%s%s%s", fn, suffix, ext)
-	return name, nil
+	return fmt.Sprintf("%s%s%s", fn, suffix, ext), nil
 }
 
 func valid(name string, err error) bool {
@@ -189,7 +188,7 @@ func NewExt(name, ext string) string {
 
 // ToPng converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
-func ToPng(src, dest string, width, height int) (s string, err error) {
+func ToPng(src, dest string, width, height int) (string, error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return "", fmt.Errorf("to png open %s: %w", src, err)
@@ -231,7 +230,7 @@ func ToPng(src, dest string, width, height int) (s string, err error) {
 }
 
 // ToThumb creates a thumb from an image that is pixel squared in size.
-func ToThumb(src, dest string, sizeSquared int) (s string, err error) {
+func ToThumb(src, dest string, sizeSquared int) (string, error) {
 	pfx := "_" + fmt.Sprintf("%v", sizeSquared) + "x"
 	cp, err := Duplicate(src, pfx)
 	if err != nil {
@@ -273,7 +272,7 @@ func ToThumb(src, dest string, sizeSquared int) (s string, err error) {
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
 // Input format can be either PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
-func ToWebp(src, dest string, vendorTempDir bool) (s string, err error) {
+func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 	valid := func(a []string, x string) bool {
 		for _, n := range a {
 			if x == n {
@@ -376,8 +375,8 @@ func WebPCalc(width, height int) (w, h int) {
 }
 
 // Width returns the image width in pixels.
-func Width(name string) (width int, err error) {
-	width, _, _, err = Info(name)
+func Width(name string) (int, error) {
+	width, _, _, err := Info(name)
 	if err != nil {
 		return 0, fmt.Errorf("width: %w", err)
 	}

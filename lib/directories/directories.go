@@ -10,7 +10,6 @@ import (
 	"log"
 	m "math/rand"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -24,7 +23,7 @@ const (
 	dirMode  fs.FileMode = 0755
 	fileMode fs.FileMode = 0644
 
-	random string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
+	random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
 
 	// Archives.
 	z7  = ".7z"
@@ -99,12 +98,12 @@ func ArchiveExt(name string) bool {
 }
 
 // Files initialises the full path filenames for a UUID.
-func Files(name string) (dirs Dir) {
-	dirs = Init(false)
-	dirs.UUID = path.Join(dirs.UUID, name)
-	dirs.Emu = path.Join(dirs.Emu, name)
-	dirs.Img000 = path.Join(dirs.Img000, name)
-	dirs.Img400 = path.Join(dirs.Img400, name)
+func Files(name string) Dir {
+	dirs := Init(false)
+	dirs.UUID = filepath.Join(dirs.UUID, name)
+	dirs.Emu = filepath.Join(dirs.Emu, name)
+	dirs.Img000 = filepath.Join(dirs.Img000, name)
+	dirs.Img400 = filepath.Join(dirs.Img400, name)
 	return dirs
 }
 
@@ -122,47 +121,47 @@ func createDirectories(dir *Dir) error {
 	return nil
 }
 
-// createDirectory creates a UUID subdirectory provided to dir.
-func createDirectory(dir string) error {
-	src, err := os.Stat(dir)
+// createDirectory creates a UUID subdirectory in the directory path.
+func createDirectory(path string) error {
+	src, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		if err = os.MkdirAll(dir, dirMode); err != nil {
-			return fmt.Errorf("create directory mkdir %q: %w", dir, err)
+		if err = os.MkdirAll(path, dirMode); err != nil {
+			return fmt.Errorf("create directory mkdir %q: %w", path, err)
 		}
 		return nil
 	} else if err != nil {
-		return fmt.Errorf("create directory stat %q: %w", dir, err)
+		return fmt.Errorf("create directory stat %q: %w", path, err)
 	}
 	if src.Mode().IsRegular() {
-		return fmt.Errorf("create directory %q: %w", dir, ErrPathIsFile)
+		return fmt.Errorf("create directory %q: %w", path, ErrPathIsFile)
 	}
 	return nil
 }
 
-// createHolderFiles generates a number of placeholder files in the given directory.
-func createHolderFiles(dir string, size int, number uint) error {
+// createHolderFiles generates a number of placeholder files in the given directory path.
+func createHolderFiles(path string, size int, count uint) error {
 	const max = 9
-	if number > max {
-		return fmt.Errorf("create holder files number=%d: %w", number, ErrPrefix)
+	if count > max {
+		return fmt.Errorf("create holder files number=%d: %w", count, ErrPrefix)
 	}
-	for i := uint(0); i <= number; i++ {
-		if err := createHolderFile(dir, size, i); err != nil {
+	for i := uint(0); i <= count; i++ {
+		if err := createHolderFile(path, size, i); err != nil {
 			return fmt.Errorf("create holder files: %w", err)
 		}
 	}
 	return nil
 }
 
-// createHolderFile generates a placeholder file filled with random text in the given directory,
+// createHolderFile generates a placeholder file filled with random text in the given directory path,
 // the size of the file determines the number of random characters and the prefix is a digit between
 // 0 and 9 is appended to the filename.
-func createHolderFile(dir string, size int, prefix uint) error {
+func createHolderFile(path string, size int, prefix uint) error {
 	const max = 9
 	if prefix > max {
 		return fmt.Errorf("create holder file prefix=%d: %w", prefix, ErrPrefix)
 	}
 	name := fmt.Sprintf("00000000-0000-0000-0000-00000000000%v", prefix)
-	fn := path.Join(dir, name)
+	fn := filepath.Join(path, name)
 	if _, err := os.Stat(fn); err == nil {
 		return nil // don't overwrite existing files
 	}
@@ -210,8 +209,8 @@ func randString(n int) (string, error) {
 	return string(s), nil
 }
 
-func Size(dir string) (count int64, bytes uint64, err error) {
-	err = filepath.Walk(dir, func(_ string, info os.FileInfo, err error) error {
+func Size(root string) (count int64, bytes uint64, err error) {
+	err = filepath.Walk(root, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

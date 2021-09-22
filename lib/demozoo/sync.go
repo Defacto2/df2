@@ -28,9 +28,9 @@ https://demozoo.org/productions/?platform=4&production_type=41
 var ErrSync = errors.New("placeholder")
 
 // Sync is a placeholder.
-func Sync() (err error) {
+func Sync() error {
 	if ph := 1 + 1; ph == 1 {
 		return ErrSync
 	}
-	return err
+	return nil
 }

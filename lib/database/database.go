@@ -51,7 +51,8 @@ type Connection struct {
 }
 
 func (c *Connection) String() string {
-	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true", c.User, c.Pass, c.Server, c.Name)
+	return fmt.Sprintf("%v:%v@%v/%v?timeout=5s&parseTime=true",
+		c.User, c.Pass, c.Server, c.Name)
 }
 
 var (
@@ -128,9 +129,9 @@ func Connect() *sql.DB {
 }
 
 // ConnectErr will connect to the database or return any errors.
-func ConnectErr() (db *sql.DB, err error) {
+func ConnectErr() (*sql.DB, error) {
 	c := Init()
-	db, err = sql.Open("mysql", c.String())
+	db, err := sql.Open("mysql", c.String())
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, hide, 1)
 		return nil, fmt.Errorf("mysql open error: %s: %w", e, ErrConnect)
@@ -215,8 +216,8 @@ func ColumnTypes(table string) error {
 }
 
 // DateTime colours and formats a date and time string.
-func DateTime(b sql.RawBytes) string {
-	v := string(b)
+func DateTime(raw sql.RawBytes) string {
+	v := string(raw)
 	if v == "" {
 		return ""
 	}
@@ -265,10 +266,11 @@ func IsUUID(s string) bool {
 }
 
 // LastUpdate reports the time when the files database was last modified.
-func LastUpdate() (t time.Time, err error) {
+func LastUpdate() (time.Time, error) {
 	db := Connect()
 	defer db.Close()
 	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat` ORDER BY `updatedat` DESC LIMIT 1")
+	t := time.Time{}
 	if err := row.Scan(&t); err != nil {
 		return t, fmt.Errorf("last update: %w", err)
 	}
@@ -299,22 +301,21 @@ func LookupID(s string) (id uint, err error) {
 }
 
 // LookupFile returns the filename from a supplied UUID or database ID value.
-func LookupFile(s string) (name string, err error) {
+func LookupFile(s string) (string, error) {
 	db := Connect()
 	defer db.Close()
 	var n sql.NullString
-	var v int
-	if v, err = strconv.Atoi(s); err == nil {
+	if v, err := strconv.Atoi(s); err == nil {
 		err = db.QueryRow("SELECT filename FROM files WHERE id=?", v).Scan(&n)
 		if err != nil {
 			return "", fmt.Errorf("lookup file by id queryrow %q: %w", s, err)
 		}
-	} else {
-		s = strings.ToLower(s)
-		err = db.QueryRow("SELECT filename FROM files WHERE uuid=?", s).Scan(&n)
-		if err != nil {
-			return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", s, err)
-		}
+		return n.String, nil
+	}
+	s = strings.ToLower(s)
+	err := db.QueryRow("SELECT filename FROM files WHERE uuid=?", s).Scan(&n)
+	if err != nil {
+		return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", s, err)
 	}
 	return n.String, nil
 }
@@ -398,7 +399,7 @@ func ObfuscateParam(param string) string {
 }
 
 // Total reports the number of records fetched by the supplied SQL query.
-func Total(s *string) (sum int, err error) {
+func Total(s *string) (int, error) {
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query(*s)
@@ -411,6 +412,7 @@ func Total(s *string) (sum int, err error) {
 		return -1, fmt.Errorf("total query rows: %w", rows.Err())
 	}
 	defer rows.Close()
+	sum := 0
 	for rows.Next() {
 		sum++
 	}
@@ -458,12 +460,13 @@ func nullable(s *sql.ColumnType) string {
 }
 
 // reverseInt swaps the direction of the value, 12345 would return 54321.
-func reverseInt(value uint) (reversed uint, err error) {
+func reverseInt(value uint) (uint, error) {
 	v, s, n := strconv.Itoa(int(value)), "", 0
 	for x := len(v); x > 0; x-- {
 		s += string(v[x-1])
 	}
-	if n, err = strconv.Atoi(s); err != nil {
+	n, err := strconv.Atoi(s)
+	if err != nil {
 		return value, fmt.Errorf("reverse int %q: %w", s, err)
 	}
 	return uint(n), nil

@@ -270,10 +270,10 @@ func (dl *DownloadsAPIv1) parse() (ok bool) {
 	return true
 }
 
-func filename(h http.Header) (filename string) {
+func filename(h http.Header) string {
 	gh := h.Get(cd)
 	if gh == "" {
-		return filename
+		return ""
 	}
 	rh := strings.Split(gh, ";")
 	const want = 2
@@ -288,7 +288,7 @@ func filename(h http.Header) (filename string) {
 			return r[1]
 		}
 	}
-	return filename
+	return ""
 }
 
 // mutateURL applies fixes to known problematic URLs.
@@ -336,7 +336,7 @@ func parsePouetProduction(rawurl string) (id int, err error) {
 }
 
 // randomName generates a random temporary filename.
-func randomName() (name string, err error) {
+func randomName() (string, error) {
 	tmp, err := ioutil.TempFile("", "df2-download")
 	if err != nil {
 		return "", fmt.Errorf("random name tempfile: %w", err)
@@ -349,12 +349,12 @@ func randomName() (name string, err error) {
 }
 
 // saveName gets a filename from the URL or generates a random filename.
-func saveName(rawurl string) (name string, err error) {
+func saveName(rawurl string) (string, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return "", fmt.Errorf("save name %q: %w", rawurl, err)
 	}
-	name = filepath.Base(u.Path)
+	name := filepath.Base(u.Path)
 	if name == "." {
 		name, err = randomName()
 		if err != nil {

@@ -143,9 +143,9 @@ func parseyn(input string, yes bool) bool {
 	return false
 }
 
-func read(stdin io.Reader) (input string, err error) {
+func read(stdin io.Reader) (string, error) {
 	reader := bufio.NewReader(stdin)
-	input, err = reader.ReadString('\n')
+	input, err := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
 	if err != nil && err != io.EOF {
 		return input, err

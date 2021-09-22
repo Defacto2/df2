@@ -64,8 +64,8 @@ func cleanPeople(credit string, r Role, sim bool) (ok bool) {
 	return ok
 }
 
-func cleanPerson(rep string) string {
-	ppl := strings.Split(rep, ",")
+func cleanPerson(s string) string {
+	ppl := strings.Split(s, ",")
 	for i, person := range ppl {
 		ss := database.StripStart(person)
 		if ss != person {

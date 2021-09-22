@@ -84,8 +84,7 @@ func Create() error {
 		}
 	}
 	// trim empty urls so they're not included in the xml.
-	var empty url
-	var trimmed []url
+	empty, trimmed := url{}, []url{}
 	for i, x := range v.Urls {
 		if x == empty {
 			trimmed = v.Urls[0:i]
@@ -127,7 +126,7 @@ func nullsDeleteAt() (count int, err error) {
 }
 
 // lastmodValue parse createdat and updatedat to use in the <lastmod> tag.
-func lastmodValue(createdat, updatedat sql.NullString) (s string) {
+func lastmodValue(createdat, updatedat sql.NullString) string {
 	var lm string
 	if ok := updatedat.Valid; ok {
 		lm = updatedat.String
@@ -137,6 +136,7 @@ func lastmodValue(createdat, updatedat sql.NullString) (s string) {
 	f := strings.Fields(lm)
 	// NOTE: most search engines do not bother with the lastmod value so it could be removed to improve size.
 	// blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given.
+	s := ""
 	if len(f) > 0 {
 		t := strings.Split(f[0], "T") // example value: 2020-04-06T20:51:36Z
 		s = t[0]

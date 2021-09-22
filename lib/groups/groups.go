@@ -105,19 +105,19 @@ type Result struct {
 	Hr bool
 }
 
-// Count returns the number of file entries associated with a group.
-func Count(name string) (count int, err error) {
+// Count returns the number of file entries associated with a named group.
+func Count(name string) (int, error) {
 	if name == "" {
 		return 0, nil
 	}
 	db := database.Connect()
 	defer db.Close()
-	n := name
+	n, count := name, 0
 	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
 		"group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR "+
 		"group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by "+
 		"LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n)
-	if err = row.Scan(&count); err != nil {
+	if err := row.Scan(&count); err != nil {
 		return 0, fmt.Errorf("group count row scan: %w", err)
 	}
 	return count, db.Close()
@@ -199,9 +199,9 @@ func (r Request) files(group string) (total int, err error) {
 	return 0, nil
 }
 
-func (r Request) initialism(group string) (name string, err error) {
+func (r Request) initialism(group string) (string, error) {
 	if r.Initialisms {
-		name, err = initialism(group)
+		name, err := initialism(group)
 		if err != nil {
 			return "", fmt.Errorf("request initialism for %q: %w", group, err)
 		}
@@ -210,7 +210,7 @@ func (r Request) initialism(group string) (name string, err error) {
 	return "", nil
 }
 
-func (r Request) iterate(groups ...string) (g *[]Result, err error) {
+func (r Request) iterate(groups ...string) (*[]Result, error) {
 	piped := str.Piped()
 	total := len(groups)
 	data := make([]Result, total)
@@ -239,7 +239,7 @@ func (r Request) iterate(groups ...string) (g *[]Result, err error) {
 	return &data, nil
 }
 
-func (r Request) parse(filename, templ string) (err error) {
+func (r Request) parse(filename, tmpl string) error {
 	groups, total, err := list(r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse group: %w", err)
@@ -256,7 +256,7 @@ func (r Request) parse(filename, templ string) (err error) {
 	if err != nil {
 		return fmt.Errorf("parse iterate: %w", err)
 	}
-	t, err := template.New("h2").Parse(templ)
+	t, err := template.New("h2").Parse(tmpl)
 	if err != nil {
 		return fmt.Errorf("parse template: %w", err)
 	}
@@ -332,9 +332,9 @@ func list(f string) (groups []string, total int, err error) {
 	return groups, total, nil
 }
 
-// MakeSlug takes a name and makes it into a URL friendly slug.
-func MakeSlug(name string) string {
-	n := database.TrimSP(name)
+// MakeSlug takes a string and makes it into a URL friendly slug.
+func MakeSlug(s string) string {
+	n := database.TrimSP(s)
 	n = remInitialism(n)
 	n = strings.ReplaceAll(n, "-", "_")
 	n = strings.ReplaceAll(n, ", ", "*")
@@ -391,12 +391,12 @@ func Print(r Request) (total int, err error) {
 }
 
 // Variations creates format variations for a named group.
-func Variations(name string) (vars []string, err error) {
+func Variations(name string) ([]string, error) {
 	if name == "" {
-		return vars, nil
+		return []string{}, nil
 	}
 	name = strings.ToLower(name)
-	vars = append(vars, name)
+	vars := []string{name}
 	s := strings.Split(name, " ")
 	a := strings.Join(s, "")
 	if name != a {
@@ -429,16 +429,16 @@ func Wheres() []string {
 
 // initialism returns a group's initialism or acronym.
 // For example "Defacto2" would return "df2".
-func initialism(name string) (string, error) {
+func initialism(s string) (string, error) {
 	db := database.Connect()
 	defer db.Close()
 	var i string
-	row := db.QueryRow("SELECT `initialisms` FROM groups WHERE `pubname` = ?", name)
+	row := db.QueryRow("SELECT `initialisms` FROM groups WHERE `pubname` = ?", s)
 	if err := row.Scan(&i); err != nil &&
 		strings.Contains(err.Error(), "no rows in result set") {
 		return "", nil
 	} else if err != nil {
-		return "", fmt.Errorf("initialism %q: %w", name, err)
+		return "", fmt.Errorf("initialism %q: %w", s, err)
 	}
 	return i, db.Close()
 }
@@ -456,7 +456,7 @@ func remInitialism(s string) string {
 }
 
 // groupsStmt returns a complete SQL WHERE statement where the groups are filtered.
-func groupsStmt(f Filter, includeSoftDeletes bool) (stmt string, err error) {
+func groupsStmt(f Filter, includeSoftDeletes bool) (string, error) {
 	var inc, skip = includeSoftDeletes, false
 	if f > -1 {
 		skip = true
@@ -465,59 +465,61 @@ func groupsStmt(f Filter, includeSoftDeletes bool) (stmt string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("group statement %q: %w", f.String(), err)
 	}
+	s := ""
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
-		stmt = "SELECT DISTINCT group_brand_for AS pubCombined " +
+		s = "SELECT DISTINCT group_brand_for AS pubCombined " +
 			"FROM files WHERE Length(group_brand_for) <> 0 " + where
 	default:
-		stmt = "(SELECT DISTINCT group_brand_for AS pubCombined " +
+		s = "(SELECT DISTINCT group_brand_for AS pubCombined " +
 			"FROM files WHERE Length(group_brand_for) <> 0 " + where + ")" +
 			" UNION " +
 			"(SELECT DISTINCT group_brand_by AS pubCombined " +
 			"FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
 	}
-	return stmt + " ORDER BY pubCombined", nil
+	return s + " ORDER BY pubCombined", nil
 }
 
 // groupsFilter returns a partial SQL WHERE statement to filter groups.
-func groupsFilter(f Filter) (stmt string, err error) {
+func groupsFilter(f Filter) (string, error) {
+	s := ""
 	switch f {
 	case None:
-		stmt = ""
+		return "", nil
 	case Magazine:
-		stmt = "section = 'magazine' AND"
+		s = "section = 'magazine' AND"
 	case BBS:
-		stmt = "RIGHT(group_brand_for,4) = ' BBS' AND"
+		s = "RIGHT(group_brand_for,4) = ' BBS' AND"
 	case FTP:
-		stmt = "RIGHT(group_brand_for,4) = ' FTP' AND"
+		s = "RIGHT(group_brand_for,4) = ' FTP' AND"
 	case Group: // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
-		stmt = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
+		s = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
 	default:
 		return "", fmt.Errorf("group filter %q: %w", f.String(), ErrFilter)
 	}
-	return stmt, nil
+	return s, nil
 }
 
 // groupsWhere returns a partial SQL WHERE statement where groups are filtered.
-func groupsWhere(f Filter, softDel bool) (stmt string, err error) {
-	stmt, err = groupsFilter(f)
+func groupsWhere(f Filter, softDel bool) (string, error) {
+	s, err := groupsFilter(f)
 	if err != nil {
 		return "", fmt.Errorf("groups where: %w", err)
 	}
 	switch {
-	case stmt != "" && softDel:
-		stmt = "AND " + stmt
-	case stmt == "" && softDel: // do nothing
-	case stmt != "" && !softDel:
-		stmt = "AND " + stmt + " `deletedat` IS NULL"
+	case s != "" && softDel:
+		s = "AND " + s
+	case s == "" && softDel: // do nothing
+	case s != "" && !softDel:
+		s = "AND " + s + " `deletedat` IS NULL"
 	default:
-		stmt = "AND `deletedat` IS NULL"
+		s = "AND `deletedat` IS NULL"
 	}
 	const andLen = 4
-	l := len(stmt)
-	if l > andLen && stmt[l-andLen:] == " AND" {
-		logs.Printf("%q|", stmt[l-andLen:])
-		return stmt[:l-andLen], nil
+	l := len(s)
+	if l > andLen && s[l-andLen:] == " AND" {
+		logs.Printf("%q|", s[l-andLen:])
+		return s[:l-andLen], nil
 	}
-	return stmt, nil
+	return s, nil
 }

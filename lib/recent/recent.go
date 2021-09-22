@@ -129,13 +129,13 @@ func List(limit uint, compress bool) error {
 	return nil
 }
 
-func sqlRecent(limit uint, includeSoftDeletes bool) (stmt string) {
+func sqlRecent(limit uint, includeSoftDeletes bool) string {
 	const (
 		sel   = "SELECT id,uuid,record_title,group_brand_for,group_brand_by,filename,date_issued_year,createdat,updatedat FROM files"
 		where = " WHERE deletedat IS NULL"
 		order = " ORDER BY createdat DESC"
 	)
-	stmt = sel
+	stmt := sel
 	if includeSoftDeletes {
 		stmt += where
 	}

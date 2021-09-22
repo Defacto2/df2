@@ -261,7 +261,7 @@ func (data persons) template(filename, tpl string, r Request) error {
 }
 
 // peopleStmt returns a complete SQL WHERE statement where the people are filtered by a role.
-func peopleStmt(role Role, softDel bool) (stmt string) {
+func peopleStmt(role Role, softDel bool) string {
 	del := func() string {
 		if softDel {
 			return ""
@@ -272,27 +272,28 @@ func peopleStmt(role Role, softDel bool) (stmt string) {
 		return fmt.Sprintf(" UNION (SELECT DISTINCT %s AS pubCombined FROM files WHERE Length(%s) <> 0 %s)",
 			s, s, del())
 	}
+	s := ""
 	switch role {
 	case Writers:
-		stmt += d("credit_text")
+		s += d("credit_text")
 	case Musicians:
-		stmt += d("credit_audio")
+		s += d("credit_audio")
 	case Coders:
-		stmt += d("credit_program")
+		s += d("credit_program")
 	case Artists:
-		stmt += d("credit_illustration")
+		s += d("credit_illustration")
 	case Everyone:
-		stmt += d("credit_text")
-		stmt += d("credit_audio")
-		stmt += d("credit_program")
-		stmt += d("credit_illustration")
+		s += d("credit_text")
+		s += d("credit_audio")
+		s += d("credit_program")
+		s += d("credit_illustration")
 	}
-	if stmt == "" {
-		return stmt
+	if s == "" {
+		return s
 	}
-	stmt += " ORDER BY pubCombined"
-	stmt = strings.Replace(stmt, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
-	return stmt
+	s += " ORDER BY pubCombined"
+	s = strings.Replace(s, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
+	return s
 }
 
 func roles(r string) Role {

@@ -134,8 +134,9 @@ func (r *Record) iterate(s *stat) error {
 }
 
 // files reads an archive and saves its content to the database.
-func (r *Record) files(s *stat) (err error) {
+func (r *Record) files(s *stat) error {
 	const txt = ".txt"
+	var err error
 	logs.Print(" • ")
 	r.Files, err = archive.Read(r.File, r.Name)
 	if err != nil {

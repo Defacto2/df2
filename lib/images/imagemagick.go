@@ -26,7 +26,6 @@ func ToMagick(src, dest string) error {
 	// command on ubuntu: magick convert rose.jpg -resize 50% rose.png
 	const file = "convert"
 	var args = []string{src, dest}
-
 	path, err := exec.LookPath(file)
 	if err != nil {
 		return err

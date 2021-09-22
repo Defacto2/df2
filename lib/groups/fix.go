@@ -113,7 +113,7 @@ func format(s string) string {
 }
 
 // rename replaces all instances of the group name with a new group name.
-func rename(replacement, group string) (count int64, err error) {
+func rename(new, group string) (count int64, err error) {
 	db := database.Connect()
 	defer db.Close()
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?, group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
@@ -121,7 +121,7 @@ func rename(replacement, group string) (count int64, err error) {
 		return 0, fmt.Errorf("rename group statement: %w", err)
 	}
 	defer stmt.Close()
-	res, err := stmt.Exec(replacement, replacement, group, group)
+	res, err := stmt.Exec(new, new, group, group)
 	if err != nil {
 		return 0, fmt.Errorf("rename group exec: %w", err)
 	}

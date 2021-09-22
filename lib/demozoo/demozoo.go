@@ -58,8 +58,8 @@ const (
 	Magazine
 )
 
-func category(c string) Category {
-	switch strings.ToLower(c) {
+func category(s string) Category {
+	switch strings.ToLower(s) {
 	case Text.String():
 		return Text
 	case Code.String():
@@ -91,6 +91,7 @@ var (
 	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
 	ErrFilePath   = errors.New("filepath requirement cannot be empty")
 	ErrFilename   = errors.New("filename requirement cannot be empty")
+	ErrTooFew     = errors.New("too few record values")
 )
 
 // Fetched production.
@@ -120,8 +121,8 @@ type Request struct {
 }
 
 // Query parses a single Demozoo entry.
-func (req *Request) Query(id string) (err error) {
-	if err = database.CheckID(id); err != nil {
+func (req *Request) Query(id string) error {
+	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %s: %w", id, err)
 	}
 	req.byID = id
@@ -352,7 +353,7 @@ func (r *Record) doseeMeta() error {
 	return nil
 }
 
-func (r *Record) fileMeta() (err error) {
+func (r *Record) fileMeta() error {
 	stat, err := os.Stat(r.FilePath)
 	if err != nil {
 		return fmt.Errorf("record file meta stat: %w", err)
@@ -501,7 +502,8 @@ func (r *Record) save() {
 	logs.Printf(" 💾%v", str.Y())
 }
 
-func (r *Record) variations() (names []string, err error) {
+func (r *Record) variations() ([]string, error) {
+	names := []string{}
 	if r.GroupBy != "" {
 		v, err := groups.Variations(r.GroupBy)
 		if err != nil {
@@ -524,16 +526,16 @@ func (r *Record) variations() (names []string, err error) {
 // 	"`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 
 // newRecord initialises a new file record.
-func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
+func newRecord(c int, values []sql.RawBytes) (Record, error) {
 	const sep, want = ",", 21
 	if l := len(values); l < want {
-		return r, fmt.Errorf("new records %q: %w", l, err)
+		return Record{}, fmt.Errorf("new records = %d, want %d: %w", l, want, ErrTooFew)
 	}
 	const id, uuid, createdat, filename, filesize, webiddemozoo = 0, 1, 3, 4, 5, 6
 	const filezipcontent, updatedat, platform, fileintegritystrong, fileintegrityweak = 7, 8, 9, 10, 11
 	const webidpouet, groupbrandfor, groupbrandby, recordtitle, section = 12, 13, 14, 15, 16
 	const creditillustration, creditaudio, creditprogram, credittext = 17, 18, 19, 20
-	r = Record{
+	r := Record{
 		count: c,
 		ID:    string(values[id]),
 		UUID:  string(values[uuid]),
@@ -566,7 +568,7 @@ func newRecord(c int, values []sql.RawBytes) (r Record, err error) {
 	return r, nil
 }
 
-func selectByID(id string) (stmt string) {
+func selectByID(id string) string {
 	const w = " FROM `files` WHERE `web_id_demozoo` IS NOT NULL"
 	where := w
 	if id != "" {

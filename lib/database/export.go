@@ -223,21 +223,22 @@ func (f *Flags) ExportTable() error {
 }
 
 // create makes the CREATE template variable value.
-func (f *Flags) create() (value string) {
+func (f *Flags) create() string {
 	if f.Method != Create {
 		return ""
 	}
+	s := ""
 	switch f.Table {
 	case Files:
-		value += newFilesTempl
+		s += newFilesTempl
 	case Groups:
-		value += newGroupsTempl
+		s += newGroupsTempl
 	case Netresources:
-		value += newNetresourcesTempl
+		s += newNetresourcesTempl
 	case Users:
-		value += newUsersTempl
+		s += newUsersTempl
 	}
-	return value
+	return s
 }
 
 // fileName to use when writing SQL to a file.
@@ -335,8 +336,9 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 }
 
 // queryTables generates the SQL import database and tables statement.
-func (f *Flags) queryTables() (buf *bytes.Buffer, err error) {
+func (f *Flags) queryTables() (*bytes.Buffer, error) {
 	var buf1, buf2, buf3, buf4 *bytes.Buffer
+	var err error
 	switch f.Parallel {
 	case true:
 		buf1, buf2, buf3, buf4, err = f.queryTablesWG()
@@ -500,10 +502,14 @@ func (t Table) check() error {
 }
 
 // columns returns the column names of table.
-func columns(t Table) (columns []string, err error) {
-	db := Connect()
+func columns(t Table) ([]string, error) {
+	var (
+		columns []string
+		err     error
+		rows    *sql.Rows
+		db      = Connect()
+	)
 	defer db.Close()
-	var rows *sql.Rows
 	switch t {
 	case Files:
 		rows, err = db.Query("SELECT * FROM files LIMIT 0")
@@ -569,11 +575,12 @@ func format(b sql.RawBytes, colType string) (string, error) {
 }
 
 // rows returns the values of table.
-func rows(t Table, limit int) (vals []string, err error) {
+func rows(t Table, limit int) ([]string, error) {
 	db := Connect()
 	defer db.Close()
 	var rows *sql.Rows
-	if limit < 0 {
+	const listAll = 0
+	if limit < listAll {
 		switch t {
 		case Files:
 			return allFiles(db)
@@ -584,24 +591,23 @@ func rows(t Table, limit int) (vals []string, err error) {
 		case Users:
 			return allUsers(db)
 		}
-	} else {
-		switch t {
-		case Files:
-			return limitFiles(limit, db)
-		case Groups:
-			return limitGroups(limit, db)
-		case Netresources:
-			return limitNetresources(limit, db)
-		case Users:
-			return limitUsers(limit, db)
-		}
+		return values(rows)
+	}
+	switch t {
+	case Files:
+		return limitFiles(limit, db)
+	case Groups:
+		return limitGroups(limit, db)
+	case Netresources:
+		return limitNetresources(limit, db)
+	case Users:
+		return limitUsers(limit, db)
 	}
 	return values(rows)
 }
 
-func allFiles(db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM files")
+func allFiles(db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM files")
 	if err != nil {
 		return nil, fmt.Errorf("rows files query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -611,9 +617,8 @@ func allFiles(db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func allGroups(db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM groups")
+func allGroups(db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM groups")
 	if err != nil {
 		return nil, fmt.Errorf("rows groups query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -623,9 +628,8 @@ func allGroups(db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func allNetresources(db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM users")
+func allNetresources(db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM users")
 	if err != nil {
 		return nil, fmt.Errorf("rows users query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -635,9 +639,8 @@ func allNetresources(db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func allUsers(db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM users")
+func allUsers(db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM users")
 	if err != nil {
 		return nil, fmt.Errorf("rows users query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -647,9 +650,8 @@ func allUsers(db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func limitFiles(limit int, db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM files LIMIT ?", limit)
+func limitFiles(limit int, db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM files LIMIT ?", limit)
 	if err != nil {
 		return nil, fmt.Errorf("rows limit files query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -659,9 +661,8 @@ func limitFiles(limit int, db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func limitGroups(limit int, db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM groups LIMIT ?", limit)
+func limitGroups(limit int, db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM groups LIMIT ?", limit)
 	if err != nil {
 		return nil, fmt.Errorf("rows limit groups query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -671,9 +672,8 @@ func limitGroups(limit int, db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func limitNetresources(limit int, db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM netresources LIMIT ?", limit)
+func limitNetresources(limit int, db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM netresources LIMIT ?", limit)
 	if err != nil {
 		return nil, fmt.Errorf("rows limit netresources query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -683,9 +683,8 @@ func limitNetresources(limit int, db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func limitUsers(limit int, db *sql.DB) (v []string, err error) {
-	var rows *sql.Rows
-	rows, err = db.Query("SELECT * FROM users LIMIT ?", limit)
+func limitUsers(limit int, db *sql.DB) ([]string, error) {
+	rows, err := db.Query("SELECT * FROM users LIMIT ?", limit)
 	if err != nil {
 		return nil, fmt.Errorf("rows limit users query: %w", err)
 	} else if err = rows.Err(); err != nil {
@@ -695,7 +694,7 @@ func limitUsers(limit int, db *sql.DB) (v []string, err error) {
 	return values(rows)
 }
 
-func values(rows *sql.Rows) (v []string, err error) {
+func values(rows *sql.Rows) ([]string, error) {
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("rows columns: %w", err)
@@ -709,6 +708,7 @@ func values(rows *sql.Rows) (v []string, err error) {
 	for i := range vals {
 		dest[i] = &vals[i]
 	}
+	v := []string{}
 	for rows.Next() {
 		result := make([]string, len(columns))
 		if err = rows.Scan(dest...); err != nil {

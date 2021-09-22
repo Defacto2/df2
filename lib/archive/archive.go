@@ -111,8 +111,8 @@ func FileMove(name, dest string) (written int64, err error) {
 // Read returns a list of files within an rar, tar, zip or 7z archive.
 // uuid is the absolute path to the archive file named as a unique id.
 // filename is the original archive filename and file extension.
-func Read(uuid, filename string) ([]string, error) {
-	files, err := Readr(uuid, filename)
+func Read(uuid, name string) ([]string, error) {
+	files, err := Readr(uuid, name)
 	if err != nil {
 		return nil, fmt.Errorf("read uuid/filename: %w", err)
 	}
@@ -125,12 +125,12 @@ func Read(uuid, filename string) ([]string, error) {
 // supplied using filename.
 // uuid is the absolute path to the archive file named as a unique id.
 // filename is the original archive filename and file extension.
-func Restore(uuid, filename, destination string) ([]string, error) {
-	err := Unarchiver(uuid, filename, destination)
+func Restore(uuid, name, dest string) ([]string, error) {
+	err := Unarchiver(uuid, name, dest)
 	if err != nil {
 		return nil, fmt.Errorf("restore unarchiver: %w", err)
 	}
-	files, err := Readr(uuid, filename)
+	files, err := Readr(uuid, name)
 	if err != nil {
 		return nil, fmt.Errorf("restore readr: %w", err)
 	}
