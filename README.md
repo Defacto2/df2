@@ -57,7 +57,7 @@ Use "df2 [command] --help" for more information about a command.
 
 ## Install
 
-Is built on [Go v1.16](https://golang.org/doc/install) and is packaged for the Ubuntu Linux platform.
+Is built on [Go v1.x](https://golang.org/doc/install) and is packaged for the Ubuntu Linux platform.
 
 ```bash
 cd ~/downloads
