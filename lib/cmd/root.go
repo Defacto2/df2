@@ -32,9 +32,8 @@ var (
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
-	Use:     "df2",
-	Example: "  df2 new",
-	Short:   "The tool to optimise and manage defacto2.net",
+	Use:   "df2",
+	Short: "The tool to optimise and manage defacto2.net",
 	Long: fmt.Sprintf("%s\nCopyright © %v Ben Garrett\n%v",
 		color.Info.Sprint("The tool to optimise and manage defacto2.net"),
 		copyright(),
@@ -128,6 +127,7 @@ func initConfig() {
 		return
 	}
 	if !quiet && !str.Piped() {
-		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s", viper.ConfigFileUsed())))
+		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s",
+			viper.ConfigFileUsed())))
 	}
 }

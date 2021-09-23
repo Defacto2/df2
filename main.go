@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -31,6 +32,7 @@ import (
 	"github.com/Defacto2/df2/lib/cmd"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/gookit/color" //nolint:misspell
+	"github.com/spf13/pflag"
 )
 
 // goreleaser generated ldflags containers.
@@ -48,7 +50,7 @@ func main() {
 	fs.Usage = func() {
 		// disable go flag help
 	}
-	if err := fs.Parse(os.Args[1:]); err != nil {
+	if err := fs.Parse(os.Args[1:]); !errors.As(err, &pflag.ErrHelp) {
 		log.Print(err)
 	}
 	if *ver || *v {
