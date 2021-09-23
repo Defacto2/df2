@@ -17,7 +17,7 @@ import (
 
 var newCmd = &cobra.Command{
 	Use:     "new",
-	Short:   "Handler for files flagged as waiting to go live",
+	Short:   "Handler for files flagged as waiting to go live (default)",
 	Aliases: []string{"n"},
 	Long: `Runs a sequence of commands to handle files waiting to go live.
 
