@@ -98,3 +98,13 @@ df2 config edit
 Github Actions combined with GoReleaser handles the building process when new release tags are created.
 
 All changes should be tested with the `golangci-lint` [Go linters aggregator](https://golangci-lint.run/).
+
+```sh
+# Tests on Linux
+# term 1
+cd /defacto2-dev
+docker-compose up
+# term 2
+cd /df2
+go test ./...
+```
