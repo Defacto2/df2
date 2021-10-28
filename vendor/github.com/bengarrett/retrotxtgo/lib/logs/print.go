@@ -6,76 +6,102 @@ import (
 	"strings"
 
 	"github.com/bengarrett/retrotxtgo/lib/str"
+	"github.com/bengarrett/retrotxtgo/meta"
 )
 
-// Errorf formats and returns the error.
-func Errorf(err error) string {
-	return fmt.Sprintf("%s %s", str.Alert(), err)
-}
+const OSErrCode = 1
 
-// Fatal prints a formatted error and exits.
-func Fatal(err error) {
-	fmt.Println(Errorf(err))
-	os.Exit(1)
-}
-
-// Hint formats and returns the error with a usage suggestion or hint.
+// Hint returns a formatted error with a usage suggestion or hint.
 func Hint(s string, err error) string {
 	if err == nil {
 		return ""
 	}
 	if s == "" {
-		return Errorf(err)
+		return Sprint(err)
 	}
-	return fmt.Sprintf("%s\n         run %s", Errorf(err), str.Example("retrotxt "+s))
+	return fmt.Sprintf("%s\n run %s",
+		Sprint(err), str.Example(fmt.Sprintf("%s %s", meta.Bin, s)))
 }
 
-// ProblemCmd returns the command does not exist.
-func ProblemCmd(name string, err error) string {
-	alert := str.Alert()
-	return fmt.Sprintf("%s the command %s does not exist, %s", alert, name, err)
+// Fatal prints a formatted error and exits.
+func Fatal(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, Sprint(err))
+	}
+	os.Exit(OSErrCode)
 }
 
-// ProblemCmdFatal prints a problem with the flag and exits.
-func ProblemCmdFatal(name, flag string, err error) {
-	fmt.Println(ProblemFlag(name, flag, err))
-	os.Exit(1)
+// FatalFlag prints a problem with the flag and exits.
+func FatalFlag(cmd, flag string, err error) {
+	fmt.Fprintln(os.Stderr, SprintFlag(cmd, flag, err))
+	os.Exit(OSErrCode)
 }
 
-// ProblemFlag prints a problem with the flag.
-func ProblemFlag(name, flag string, err error) string {
+// FatalMark formats the errors, highlights the value and exits.
+func FatalMark(mark string, err, wrap error) {
+	fmt.Fprintln(os.Stderr, SprintMark(mark, err, wrap))
+	os.Exit(OSErrCode)
+}
+
+// FatalWrap formats the errors and exits.
+func FatalWrap(err, wrap error) {
+	fmt.Fprintln(os.Stderr, SprintWrap(err, wrap))
+	os.Exit(OSErrCode)
+}
+
+// Sprint formats and returns the error.
+func Sprint(err error) string {
+	if err == nil {
+		return ""
+	}
+	elms, seps := strings.Split(err.Error(), ";"), []string{}
+	for _, elm := range elms {
+		if elm == "" || elm == "<nil>" {
+			continue
+		}
+		seps = append(seps, elm)
+	}
+	return fmt.Sprintf("%s%s.", str.Alert(), strings.Join(seps, ".\n"))
+}
+
+// SprintCmd returns the command does not exist.
+func SprintCmd(cmd string, err error) string {
+	if cmd == "" || err == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s the command %s does not exist, %s",
+		str.Alert(), cmd, err)
+}
+
+// SprintFlag returns a problem with the flag.
+func SprintFlag(cmd, flag string, err error) string {
+	if cmd == "" || err == nil {
+		return ""
+	}
 	alert, toggle := str.Alert(), "--"
 	if strings.Contains(flag, "-") {
 		toggle = ""
 	} else if len(flag) == 1 {
 		toggle = "-"
 	}
-	return fmt.Sprintf("%s with the %s %s%s flag, %s", alert, name, toggle, flag, err)
+	return fmt.Sprintf("%s with the %s %s%s flag, %s",
+		alert, cmd, toggle, flag, err)
 }
 
-// ProblemMark formats the errors and highlights the value.
-func ProblemMark(value string, err, errs error) string {
-	v := value
-	a := str.Alert()
-	n := str.Cf(fmt.Sprintf("%v", err))
-	e := str.Cf(fmt.Sprintf("%v", errs))
-	return fmt.Sprintf("%s %s %q: %s", a, n, v, e)
+// SprintMark formats and returns the errors and highlights the marked string.
+func SprintMark(mark string, err, wrap error) string {
+	if mark == "" || err == nil || wrap == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s %s %q: %s",
+		str.Alert(), str.ColFuz(fmt.Sprintf("%v", err)), mark, str.ColFuz(fmt.Sprintf("%v", wrap)))
 }
 
-// ProblemMark formats the errors, highlights the value and exits.
-func ProblemMarkFatal(value string, err, errs error) {
-	fmt.Println(ProblemMark(value, err, errs))
-	os.Exit(1)
-}
-
-// Problemf formats the errors.
-func Problemf(err, errs error) {
-	e := fmt.Errorf("%s: %w", err, errs)
-	fmt.Printf("%s%s\n", str.Alert(), e)
-}
-
-// Problemf formats the errors and exits.
-func ProblemFatal(err, errs error) {
-	Problemf(err, errs)
-	os.Exit(1)
+// SprintWrap returns the formatted errors.
+func SprintWrap(err, wrap error) string {
+	if err == nil || wrap == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s%s",
+		str.Alert(), fmt.Errorf("%s: %w", err, wrap))
 }

@@ -3,9 +3,13 @@ package filesystem
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"reflect"
+	"runtime"
 	"sort"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -58,25 +62,31 @@ func NEL() LB {
 	return LB{NextLine}
 }
 
+var ErrLB = errors.New("linebreak runes cannot be empty")
+
 // Columns counts the number of characters used per line in the reader interface.
-func Columns(r io.Reader, lb LB) (width int, err error) {
+func Columns(r io.Reader, lb LB) (int, error) {
+	if reflect.DeepEqual(lb, LB{}) {
+		return 0, ErrLB
+	}
 	var lineBreak = []byte{byte(lb[0]), byte(lb[1])}
 	if lb[1] == 0 {
 		lineBreak = []byte{byte(lb[0])}
 	}
-	buf := make([]byte, bufio.MaxScanTokenSize)
+	buf, width := make([]byte, bufio.MaxScanTokenSize), 0
 	for {
 		size, err := r.Read(buf)
 		if err != nil && err != io.EOF {
 			return -1, fmt.Errorf("columns could not read buffer: %w", err)
 		}
-		var pos int
+		pos := 0
 		for {
 			if size == pos {
 				break
 			}
 			i := bytes.Index(buf[pos:], lineBreak)
 			if i == -1 {
+				width = size
 				break
 			}
 			pos += i + len(lineBreak)
@@ -92,15 +102,15 @@ func Columns(r io.Reader, lb LB) (width int, err error) {
 }
 
 // Controls counts the number of ANSI escape controls in the reader interface.
-func Controls(r io.Reader) (count int, err error) {
+func Controls(r io.Reader) (int, error) {
 	lineBreak := []byte(ansiEscape)
-	buf := make([]byte, bufio.MaxScanTokenSize)
+	buf, count := make([]byte, bufio.MaxScanTokenSize), 0
 	for {
 		size, err := r.Read(buf)
 		if err != nil && err != io.EOF {
 			return 0, fmt.Errorf("controls could not read buffer: %w", err)
 		}
-		var pos int
+		pos := 0
 		for {
 			i := bytes.Index(buf[pos:], lineBreak)
 			if size == pos {
@@ -120,18 +130,18 @@ func Controls(r io.Reader) (count int, err error) {
 }
 
 // Lines counts the number of lines in the interface.
-func Lines(r io.Reader, lb LB) (count int, err error) {
-	var lineBreak = []byte{byte(lb[0]), byte(lb[1])}
+func Lines(r io.Reader, lb LB) (int, error) {
+	lineBreak := []byte{byte(lb[0]), byte(lb[1])}
 	if lb[1] == 0 {
 		lineBreak = []byte{byte(lb[0])}
 	}
-	buf := make([]byte, bufio.MaxScanTokenSize)
+	buf, count := make([]byte, bufio.MaxScanTokenSize), 0
 	for {
 		size, err := r.Read(buf)
 		if err != nil && err != io.EOF {
 			return 0, fmt.Errorf("lines could not read buffer: %w", err)
 		}
-		var pos int
+		pos := 0
 		for {
 			i := bytes.Index(buf[pos:], lineBreak)
 			if size == pos {
@@ -259,7 +269,7 @@ func LineBreak(r LB, extraInfo bool) string {
 	}
 	switch r {
 	case LF():
-		return "LF (Linux, macOS, Unix)"
+		return fmt.Sprintf("LF (%s)", lfNix())
 	case CR():
 		return "CR (8-bit microcomputers)"
 	case CRLF():
@@ -274,8 +284,27 @@ func LineBreak(r LB, extraInfo bool) string {
 	return "??"
 }
 
+func lfNix() string {
+	const mac, linux, unix = "macOS", "Linux", "Unix"
+	s := strings.Join([]string{mac, linux, unix}, ", ")
+	switch runtime.GOOS {
+	case "linux":
+		s = linux
+	case "darwin":
+		s = mac
+	case "dragonfly", "illumos", "solaris":
+		s = unix
+	default:
+		if strings.HasSuffix(runtime.GOOS, "bsd") {
+			s = unix
+		}
+	}
+	return s
+}
+
 // Runes returns the number of runes in the reader interface.
-func Runes(r io.Reader) (count int, err error) {
+func Runes(r io.Reader) (int, error) {
+	count := 0
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanRunes)
 	for scanner.Scan() {
@@ -288,7 +317,8 @@ func Runes(r io.Reader) (count int, err error) {
 }
 
 // Words counts the number of spaced words in the reader interface.
-func Words(r io.Reader) (count int, err error) {
+func Words(r io.Reader) (int, error) {
+	count := 0
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
@@ -310,14 +340,14 @@ func Words(r io.Reader) (count int, err error) {
 			count++
 		}
 	}
-	if err = scanner.Err(); err != nil {
+	if err := scanner.Err(); err != nil {
 		return -1, fmt.Errorf("words could not scan reader: %w", err)
 	}
 	return count, nil
 }
 
 // WordsEBCDIC counts the number of spaced words in the EBCDIC encoded reader interface.
-func WordsEBCDIC(r io.Reader) (count int, err error) {
+func WordsEBCDIC(r io.Reader) (int, error) {
 	// for the purposes of counting words, any EBCDIC codepage is fine
 	c := transform.NewReader(r, charmap.CodePage037.NewDecoder())
 	return Words(c)

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -20,6 +21,8 @@ import (
 	"github.com/gookit/color"
 )
 
+var ErrRune = errors.New("invalid encoded rune")
+
 type terminal int
 
 const (
@@ -33,6 +36,8 @@ const (
 	Term256
 	// Term16M ANSI high-color.
 	Term16M
+	// HBar is a the Unicode horizontal bar character.
+	HBar = "\u2500"
 	none = "none"
 	term = "terminal"
 )
@@ -50,26 +55,28 @@ type JSONExample struct {
 	}
 }
 
-func (s JSONExample) String(flag string) {
-	fmt.Println()
+func (s JSONExample) String(flag string) string {
+	w := new(bytes.Buffer)
+	fmt.Fprintln(w)
 	// config is stored as YAML but printed as JSON
 	out, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		log.Fatalln(fmt.Errorf("json example marshal indent: %w", err))
 	}
 	if flag != "" {
-		fmt.Println("\n" + color.Secondary.Sprintf("%s=%q", flag, s.Style.Name))
+		fmt.Fprintln(w, "\n"+color.Secondary.Sprintf("%s=%q", flag, s.Style.Name))
 	}
-	if err := Highlight(string(out), "json", s.Style.Name, true); err != nil {
+	if err := HighlightWriter(w, string(out), "json", s.Style.Name, true); err != nil {
 		// cannot use the logs package as it causes an import cycle error
 		log.Fatalln(fmt.Errorf("json example highlight syntax error: %w", err))
 	}
+	return w.String()
 }
 
-// Border wraps text around a single line border.
-func Border(text string) *bytes.Buffer {
+// Border wraps the string around a single line border.
+func Border(s string) *bytes.Buffer {
 	const split = 2
-	maxLen, scanner := 0, bufio.NewScanner(strings.NewReader(text))
+	maxLen, scanner := 0, bufio.NewScanner(strings.NewReader(s))
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		l := utf8.RuneCountInString(scanner.Text())
@@ -78,7 +85,7 @@ func Border(text string) *bytes.Buffer {
 		}
 	}
 	maxLen += split
-	scanner = bufio.NewScanner(strings.NewReader(text))
+	scanner = bufio.NewScanner(strings.NewReader(s))
 	scanner.Split(bufio.ScanLines)
 	var b bytes.Buffer
 	fmt.Fprintln(&b, ("┌" + strings.Repeat("─", maxLen) + "┐"))
@@ -96,14 +103,14 @@ func Border(text string) *bytes.Buffer {
 	return &b
 }
 
-// Center align text to the width.
-func Center(width int, text string) string {
-	const split = 2
-	w := (width - len(text)) / split
+// Center align text to a the width of an area.
+func Center(width int, s string) string {
+	const split, space = 2, "\u0020"
+	w := (width - len(s)) / split
 	if w > 0 {
-		return strings.Repeat("\u0020", w) + text
+		return strings.Repeat(space, w) + s
 	}
-	return text
+	return s
 }
 
 // GetEnv gets and formats the value of the environment variable named in the key.
@@ -112,12 +119,12 @@ func GetEnv(key string) string {
 }
 
 // Highlight and print the syntax of the source string except when piped to stdout.
-func Highlight(source, lexer, style string, ansi bool) (err error) {
+func Highlight(source, lexer, style string, ansi bool) error {
 	return HighlightWriter(os.Stdout, source, lexer, style, ansi)
 }
 
 // HighlightWriter writes the highlight syntax of the source string except when piped to stdout.
-func HighlightWriter(w io.Writer, source, lexer, style string, ansi bool) (err error) {
+func HighlightWriter(w io.Writer, source, lexer, style string, ansi bool) error {
 	term := Term(GetEnv("COLORTERM"), GetEnv("TERM"))
 	// detect piping for text output or ansi for printing
 	// source: https://stackoverflow.com/questions/43947363/detect-if-a-command-is-piped-or-not
@@ -141,15 +148,34 @@ func HighlightWriter(w io.Writer, source, lexer, style string, ansi bool) (err e
 	return nil
 }
 
-// HR returns a horizontal ruler or line break.
-func HR(width int) string {
-	const horizontalBar = "\u2500"
-	return fmt.Sprintf(" %s", Cb(strings.Repeat(horizontalBar, width)))
+// Head returns a colored and underlined string for use as a header.
+// Provide a fixed width value for the underline border or set to zero.
+func Head(width int, s string) string {
+	const div, padding = 2, 4
+	h, r, p := ColPri(s), "", ""
+	if width == 0 {
+		r = strings.Repeat(HBar, len(s)+padding)
+		p = strings.Repeat(" ", padding/div)
+	} else {
+		r = strings.Repeat(HBar, width)
+		p = strings.Repeat(" ", (width-len(s))/div)
+	}
+	return fmt.Sprintf("\n%s%s%s\n%s", p, h, p, r)
 }
 
-func HRPadded(width int) string {
-	const horizontalBar = "\u2500"
-	return fmt.Sprintf(" \n%s\n", Cb(strings.Repeat(horizontalBar, width)))
+func HeadDark(width int, s string) string {
+	r := color.OpFuzzy.Sprint(strings.Repeat(HBar, width))
+	h := color.Primary.Sprint(Center(width, s))
+	return fmt.Sprintf("%s\n%s\n", r, h)
+}
+
+// HR returns a horizontal ruler or line break.
+func HR(width int) string {
+	return fmt.Sprintf(" %s", ColSec(strings.Repeat(HBar, width)))
+}
+
+func HRPad(width int) string {
+	return fmt.Sprintf(" \n%s\n", ColSec(strings.Repeat(HBar, width)))
 }
 
 // NumberizeKeys uses ANSI to underline and prefix a sequential number in front of each key.
@@ -157,14 +183,15 @@ func NumberizeKeys(keys ...string) string {
 	if len(keys) == 0 {
 		return ""
 	}
+	const nbsp = "\u00A0"
 	var s = make([]string, len(keys))
 	sort.Strings(keys)
 	for i, key := range keys {
 		if i == 0 {
-			s[i] = fmt.Sprintf("  Use %s for\u00a0%s", Example(strconv.Itoa(i)), key)
+			s[i] = fmt.Sprintf("  Use %s for%s%s", Example(strconv.Itoa(i)), nbsp, key)
 			continue
 		}
-		s[i] = fmt.Sprintf("      %s for\u00a0%s", Example(strconv.Itoa(i)), key)
+		s[i] = fmt.Sprintf("      %s for%s%s", Example(strconv.Itoa(i)), nbsp, key)
 	}
 	return strings.Join(s, "\n")
 }
@@ -204,21 +231,21 @@ func Term(colorEnv, env string) string {
 }
 
 // UnderlineChar uses ANSI to underline the first character of a string.
-func UnderlineChar(c string) (s string, err error) {
+func UnderlineChar(c string) (string, error) {
 	if c == "" {
 		return "", nil
 	}
 	if !utf8.ValidString(c) {
-		return s, fmt.Errorf("underlinechar %q: %w", c, ErrRune)
+		return "", fmt.Errorf("underlinechar %q: %w", c, ErrRune)
 	}
 	var buf bytes.Buffer
 	r, _ := utf8.DecodeRuneInString(c)
 	t, err := template.New("underline").Parse("{{define \"TEXT\"}}\033[0m\033[4m{{.}}\033[0m{{end}}")
 	if err != nil {
-		return s, fmt.Errorf("underlinechar new template: %w", err)
+		return "", fmt.Errorf("underlinechar new template: %w", err)
 	}
 	if err = t.ExecuteTemplate(&buf, "TEXT", string(r)); err != nil {
-		return s, fmt.Errorf("underlinechar execute template: %w", err)
+		return "", fmt.Errorf("underlinechar execute template: %w", err)
 	}
 	return buf.String(), nil
 }
@@ -260,16 +287,18 @@ func UnderlineKeys(keys ...string) string {
 }
 
 // JSONStyles prints out a list of available YAML color styles.
-func JSONStyles(cmd string) {
+func JSONStyles(cmd string) string {
+	w := new(bytes.Buffer)
 	for i, s := range styles.Names() {
 		var example JSONExample
 		example.Style.Name, example.Style.Count = s, i
 		if s == "dracula" {
 			example.Style.Default = true
 		}
-		example.String(cmd)
+		fmt.Fprint(w, example.String(cmd))
 	}
-	fmt.Println()
+	fmt.Fprintln(w)
+	return w.String()
 }
 
 // Valid checks style name validity.

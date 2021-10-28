@@ -10,6 +10,7 @@ import (
 
 	"github.com/bengarrett/retrotxtgo/lib/logs"
 	"github.com/bengarrett/retrotxtgo/lib/str"
+	"github.com/bengarrett/retrotxtgo/meta"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/htmlindex"
@@ -29,8 +30,9 @@ type cell struct {
 const latin = "isolatin"
 
 // Encodings returns all the supported legacy text encodings.
-func Encodings() (e []encoding.Encoding) {
-	a := append(charmap.All, japanese.All...)
+func Encodings() []encoding.Encoding {
+	a, e := charmap.All, []encoding.Encoding{}
+	a = append(a, japanese.All...)
 	a = append(a, unicode.All...)
 	a = append(a, utf32.All...)
 	for _, m := range a {
@@ -47,16 +49,17 @@ func Encodings() (e []encoding.Encoding) {
 
 // List returns a tabled list of supported IANA character set encodings.
 func List() *bytes.Buffer {
-	const header, title = "Formal name\tArgument value\tNumeric value\tAlias value\t",
+	const header, title = " Formal name\t Named value\t Numeric value\t Alias value\t",
 		" Supported legacy code pages and character encodings "
 	var buf bytes.Buffer
 	flags := tabwriter.Debug // tabwriter.AlignRight | tabwriter.Debug
-	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', flags)
-	fmt.Fprintln(w, "\n"+str.Cp(title))
-	fmt.Fprintln(w, strings.Repeat("-", len(title)))
-	fmt.Fprintln(w, header)
-	fmt.Println(Encodings())
-	for _, e := range Encodings() {
+	const padding, tblWidth = 2, 73
+	w := tabwriter.NewWriter(&buf, 0, 0, padding, ' ', flags)
+	fmt.Fprint(w, str.Head(tblWidth, title))
+	fmt.Fprintf(w, "\n%s\n", header)
+	enc := Encodings()
+	enc = append(enc, AsaX34_1963, AsaX34_1965, AnsiX34_1967)
+	for _, e := range enc {
 		if e == charmap.XUserDefined {
 			continue
 		}
@@ -67,36 +70,55 @@ func List() *bytes.Buffer {
 			fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n", "ISO 8895-11", "iso-8895-11", "11", "iso889511")
 			continue
 		case charmap.CodePage037, charmap.CodePage1047, charmap.CodePage1140:
-			fmt.Fprintf(w, " %s*\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
+			fmt.Fprintf(w, " *%s\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
+			continue
+		case AsaX34_1963, AsaX34_1965, AnsiX34_1967:
+			fmt.Fprintf(w, " **%s\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
 			continue
 		}
 		// do not use ANSI colors in cells as it will break the table layout
 		fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
 	}
-	fmt.Fprintln(w, "\n"+str.Cinf("*")+" EBCDIC data encoding is used on IBM Mainframe OS and is not ASCII compatible.")
-	fmt.Fprintln(w, "\nEither argument, numeric or alias values are valid codepage arguments.")
-	fmt.Fprintln(w, "  These example codepage arguments all match ISO 8859-1.")
-	fmt.Fprintln(w, "  "+str.Example("retrotxt list table ")+str.Cc("iso-8859-1")+str.Cf("  # argument"))
-	fmt.Fprintln(w, "  "+str.Example("retrotxt list table ")+str.Cc("1")+str.Cf("           # numeric"))
-	fmt.Fprintln(w, "  "+str.Example("retrotxt list table ")+str.Cc("latin1")+str.Cf("      # alias"))
-	fmt.Fprintln(w, "\n  IBM Code Page 437 ("+str.Cc("cp437")+") is commonly used on MS-DOS and ANSI art.")
-	fmt.Fprintln(w, "  ISO 8859-1 ("+str.Cc("latin1")+") is found on legacy Unix, Amiga and the early Internet.")
-	fmt.Fprintln(w, "  Windows 1252 ("+str.Cc("cp1252")+") is found on legacy Windows 9x and earlier systems.")
-	fmt.Fprintln(w, "  Macintosh ("+str.Cc("macintosh")+") is found on Mac OS 9 and earlier systems.")
-	fmt.Fprintln(w, "\nRetroTxt, PCs and the web today use Unicode UTF-8. It is a subset of ISO 8895-1,")
-	fmt.Fprintln(w, "which allows UTF-8 to be backwards compatible both with it and US-ASCII.")
+	fmt.Fprintln(w, "\n "+str.ColInf("*")+" EBCDIC encoding, is in use on IBM mainframes and not ASCII compatible.")
+	fmt.Fprintln(w, str.ColInf("**")+" ANSI X3.2 encodings are only usable with the "+str.Example("list table")+" command.")
+	fmt.Fprintln(w, "\nEither named, numeric or alias values are valid codepage arguments.")
+	fmt.Fprintln(w, "  These values all match ISO 8859-1.")
+	cmds := fmt.Sprintf("%s list table ", meta.Bin)
+	fmt.Fprintf(w, "  %s%s  %s\n",
+		str.Example(cmds), str.ColCmt("iso-8859-1"), str.ColFuz("# named"))
+	fmt.Fprintf(w, "  %s%s           %s\n",
+		str.Example(cmds), str.ColCmt("1"), str.ColFuz("# numeric"))
+	fmt.Fprintf(w, "  %s%s      %s\n",
+		str.Example(cmds), str.ColCmt("latin1"), str.ColFuz("# alias"))
+	fmt.Fprintf(w, "\n  IBM Code Page 437 (%s) is commonly used on MS-DOS and ANSI art.\n",
+		str.ColCmt("cp437"))
+	fmt.Fprintf(w, "  ISO 8859-1 (%s) is found on legacy Unix, Amiga and the early Internet.\n",
+		str.ColCmt("latin1"))
+	fmt.Fprintf(w, "  Windows 1252 (%s) is found on legacy Windows 9x and earlier systems.\n",
+		str.ColCmt("cp1252"))
+	fmt.Fprintf(w, "  Macintosh (%s) is found on Mac OS 9 and earlier systems.\n",
+		str.ColCmt("macintosh"))
+	fmt.Fprintf(w, "\n%s, PCs and the web today use Unicode UTF-8. As a subset of ISO 8895-1,\n", meta.Name)
+	fmt.Fprintln(w, "UTF-8 is backwards compatible with it and US-ASCII.")
 	if err := w.Flush(); err != nil {
-		logs.ProblemFatal(logs.ErrTabFlush, err)
+		logs.FatalWrap(logs.ErrTabFlush, err)
 	}
 	return &buf
 }
 
-// Cells return character encoding details for use in a text table.
-func cells(e encoding.Encoding) (c cell) {
+// cells return character encoding details for use in a text table.
+func cells(e encoding.Encoding) cell {
 	if e == nil {
 		return cell{}
 	}
-	c.name = fmt.Sprint(e)
+	c := cell{
+		name: fmt.Sprint(e),
+	}
+	switch e {
+	case AsaX34_1963, AsaX34_1965, AnsiX34_1967:
+		c.value = x34(e)
+		return c
+	}
 	var err error
 	if c.value, err = htmlindex.Name(e); err == nil {
 		c.alias, err = ianaindex.MIME.Name(e)
@@ -120,10 +142,10 @@ func cells(e encoding.Encoding) (c cell) {
 	return c
 }
 
-// Alias return character encoding aliases.
+// alias return character encoding aliases.
 func alias(s, val string, e encoding.Encoding) string {
 	a := strings.ToLower(s)
-	if val == a {
+	if a == val {
 		a = ""
 	}
 	if a == "" {
@@ -159,12 +181,13 @@ func alias(s, val string, e encoding.Encoding) string {
 	return a
 }
 
-// Uniform formats MIME values.
-func uniform(mime string) (s string) {
-	s = mime
-	s = strings.Replace(s, "IBM00", "CP", 1)
-	s = strings.Replace(s, "IBM01", "CP1", 1)
-	s = strings.Replace(s, "IBM", "CP", 1)
-	s = strings.Replace(s, "windows-", "CP", 1)
+// uniform formats MIME values.
+func uniform(mime string) string {
+	const limit = 1
+	s := mime
+	s = strings.Replace(s, "IBM00", "CP", limit)
+	s = strings.Replace(s, "IBM01", "CP1", limit)
+	s = strings.Replace(s, "IBM", "CP", limit)
+	s = strings.Replace(s, "windows-", "CP", limit)
 	return s
 }
