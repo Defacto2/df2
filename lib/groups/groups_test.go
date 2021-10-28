@@ -324,7 +324,7 @@ func TestVariations(t *testing.T) {
 		wantVars []string
 		wantErr  bool
 	}{
-		{"0", args{""}, []string(nil), false},
+		{"0", args{""}, []string{}, false},
 		{"1", args{"hello"}, []string{"hello"}, false},
 		{"2", args{"hello world"}, []string{"hello world", "helloworld", "hello-world", "hello_world", "hello.world"}, false},
 	}
