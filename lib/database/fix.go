@@ -79,9 +79,9 @@ func distinct(column string) ([]string, error) {
 func printcr(i int64, s *string) {
 	if i == 0 {
 		logs.Printcr(*s)
-	} else {
-		logs.Println("\n" + *s)
+		return
 	}
+	logs.Println("\n" + *s)
 }
 
 func updateSections(sections *[]string) {

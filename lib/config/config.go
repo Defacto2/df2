@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -22,8 +23,8 @@ import (
 const (
 	cmdPath              = "df2 config"
 	filename             = "config.yaml"
-	dir      os.FileMode = 0700
-	file     os.FileMode = 0600
+	dir      fs.FileMode = 0700
+	file     fs.FileMode = 0600
 )
 
 // ErrSaveType bad value type.
@@ -51,14 +52,13 @@ func Check() {
 	if Config.ignore {
 		return
 	}
-	if Config.Errors && !logs.Quiet {
+	if Config.Errors {
+		if logs.Quiet {
+			os.Exit(1)
+		}
 		fmt.Printf("%s %s\n",
 			color.Warn.Sprint("config: no config file in use, please run"),
 			color.Bold.Sprintf("df2 config create"))
-		return
-	}
-	if Config.Errors {
-		os.Exit(1)
 	}
 }
 

@@ -9,10 +9,10 @@ import (
 )
 
 type proofArg struct {
+	id          string // auto-generated id or a uuid
 	all         bool   // scan for all proofs, not just new uploads
 	hideMissing bool   // hide proofs that are missing their file download
 	overwrite   bool   // overwrite all existing images
-	id          string // auto-generated id or a uuid
 }
 
 var prf proofArg

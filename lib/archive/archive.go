@@ -46,13 +46,9 @@ func (c content) String() string {
 }
 
 var (
-	// ErrNoCustom no customization.
 	ErrNoCustom = errors.New("does not support customization")
-	// ErrNotArc not an archive.
-	ErrNotArc = errors.New("format specified by source filename is not an archive format")
-	// ErrSameArgs same same.
+	ErrNotArc   = errors.New("format specified by source filename is not an archive format")
 	ErrSameArgs = errors.New("name and dest cannot be the same")
-	// ErrWalkrFmt cannot walk archive.
 	ErrWalkrFmt = errors.New("format specified by archive filename is not a walker format")
 )
 

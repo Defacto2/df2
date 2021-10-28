@@ -195,7 +195,8 @@ func ColumnTypes(table string) error {
 	rows, err := db.Query("SELECT * FROM ? LIMIT 0", table)
 	if err != nil {
 		return fmt.Errorf("column types query: %w", err)
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return fmt.Errorf("column types rows: %w", rows.Err())
 	}
 	defer rows.Close()
@@ -287,7 +288,8 @@ func LookupID(s string) (id uint, err error) {
 		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
 		if err = db.QueryRow("SELECT EXISTS(SELECT * FROM files WHERE id=?)", v).Scan(&id); err != nil {
 			return 0, fmt.Errorf("lookupid query row: %w", err)
-		} else if id == 0 {
+		}
+		if id == 0 {
 			return 0, fmt.Errorf("lookupid %q: %w", v, ErrNoID)
 		}
 		return uint(v), nil

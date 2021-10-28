@@ -106,7 +106,8 @@ func queries(v bool) error {
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {
 		return fmt.Errorf("queries query: %w", err)
-	} else if rows.Err() != nil {
+	}
+	if rows.Err() != nil {
 		return fmt.Errorf("queries query rows: %w", rows.Err())
 	}
 	defer rows.Close()

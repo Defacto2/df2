@@ -82,25 +82,24 @@ func (i *item) erase(r results) {
 }
 
 func (i *item) mod(f os.FileInfo) {
+	s := fmt.Sprint(f.ModTime())
 	if i.human {
+		// show date and time
+		s = f.ModTime().Format("02 Jan 15:04")
 		if time.Now().Year() != f.ModTime().Year() {
-			i.mt = f.ModTime().Format("02 Jan 2006")
-		} else {
-			i.mt = f.ModTime().Format("02 Jan 15:04")
+			// otherwise, hide the time and show the year
+			s = f.ModTime().Format("02 Jan 2006")
 		}
-	} else {
-		i.mt = fmt.Sprint(f.ModTime())
 	}
-	i.mt = color.Primary.Sprint(i.mt)
+	i.mt = color.Primary.Sprint(s)
 }
 
 func (i *item) size(f os.FileInfo) {
+	s := fmt.Sprint(f.Size())
 	if i.human {
-		i.fs = humanize.Bytes(uint64(f.Size()))
-	} else {
-		i.fs = fmt.Sprint(f.Size())
+		s = humanize.Bytes(uint64(f.Size()))
 	}
-	i.fs = color.Comment.Sprint(i.fs)
+	i.fs = color.Comment.Sprint(s)
 }
 
 func (sum *results) totals(f os.FileInfo) {

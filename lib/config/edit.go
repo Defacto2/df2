@@ -43,11 +43,11 @@ func fallback(editors ...string) (edit string) {
 	}
 	if edit != "" {
 		log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
-		return ""
+		return
 	}
 	log.Print(ErrNoEditor)
 	os.Exit(1)
-	return ""
+	return
 }
 
 func saved() string {

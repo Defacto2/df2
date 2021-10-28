@@ -322,7 +322,12 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("query table rows: %w", err)
 	}
 	var values colValues = vals
-	dat := TableData{VER: f.ver(), CREATE: f.create(), TABLE: f.Table.String(), INSERT: fmt.Sprint(names), SQL: fmt.Sprint(values)}
+	dat := TableData{
+		VER:    f.ver(),
+		CREATE: f.create(),
+		TABLE:  f.Table.String(),
+		INSERT: fmt.Sprint(names),
+		SQL:    fmt.Sprint(values)}
 	if f.Method == Insert {
 		var dupes dupeKeys = col
 		dat.UPDATE = dupes.String()

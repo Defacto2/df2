@@ -94,7 +94,8 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 func backup(s *scan, d *directories.Dir, ignore files, list []os.FileInfo) error {
 	if s == nil {
 		return fmt.Errorf("backup s (scan): %w", ErrStructNil)
-	} else if s.path == "" {
+	}
+	if s.path == "" {
 		return fmt.Errorf("backup: %w", ErrPathEmpty)
 	}
 	var test bool
@@ -193,11 +194,9 @@ func clean(t Target, d *directories.Dir, remove, human bool) error {
 		logs.Print(fmt.Sprintf("assets clean: due to errors %v files could not be deleted\n", sum.fails))
 	}
 	if len(paths) > 1 && sum.bytes > 0 {
-		var pts string
+		pts := fmt.Sprintf("%v B", sum.bytes)
 		if human {
 			pts = humanize.Bytes(uint64(sum.bytes))
-		} else {
-			pts = fmt.Sprintf("%v B", sum.bytes)
 		}
 		logs.Print(fmt.Sprintf("%v drive space consumed\n", pts))
 	}
@@ -356,11 +355,10 @@ func (s scan) scanPath(d *directories.Dir) (results, error) {
 	list, err := ioutil.ReadDir(s.path)
 	if err != nil {
 		var e *os.PathError
-		if errors.As(err, &e) {
-			logs.Println(color.Warn.Sprint("assets scanpath: no such directory"))
-		} else {
+		if !errors.As(err, &e) {
 			return results{}, fmt.Errorf("scan path readdir %q: %w", s.path, err)
 		}
+		logs.Println(color.Warn.Sprint("assets scanpath: no such directory"))
 	}
 	// files to ignore
 	ignore := ignoreList(s.path, d)
@@ -375,11 +373,9 @@ func (s scan) scanPath(d *directories.Dir) (results, error) {
 	if err != nil {
 		return stat, fmt.Errorf("scan path parse: %w", err)
 	}
-	var dsc string
+	dsc := fmt.Sprintf("%v B", stat.bytes)
 	if s.human {
 		dsc = humanize.Bytes(uint64(stat.bytes))
-	} else {
-		dsc = fmt.Sprintf("%v B", stat.bytes)
 	}
 	logs.Print(fmt.Sprintf("\n%v orphaned files\n%v drive space consumed\n", stat.count, dsc))
 	// number of orphaned files discovered, deletion failures, their cumulative size in bytes

@@ -25,9 +25,9 @@ var (
 	ErrID   = errors.New("invalid id or uuid specified")
 
 	configName = ""
-	simulate   bool
 	panics     = false // debug log
 	quiet      = false // quiet disables most printing or output to terminal
+	simulate   bool
 )
 
 // rootCmd represents the base command when called without any subcommands.
