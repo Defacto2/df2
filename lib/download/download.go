@@ -78,9 +78,9 @@ func (r *Request) Body() error {
 func checkTime(t time.Duration) time.Duration {
 	const timeout = 5
 	if t < 1 {
-		t = timeout
+		return time.Duration(time.Duration(timeout).Seconds())
 	}
-	return time.Second * t
+	return time.Duration(t.Seconds())
 }
 
 // WriteCounter totals the number of bytes written.

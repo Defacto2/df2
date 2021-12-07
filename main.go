@@ -83,6 +83,41 @@ func app() string {
 	return b.String()
 }
 
+func exeTmp() string {
+	const tmp = ` ┌── requirements ─────────────┐
+ │  database:     {{.Database}}  │
+ │  ansilove:     {{.Ansilove}}  │
+ │  webp lib:     {{.Webp}}  │
+ │  imagemagick:  {{.Magick}}  │
+ └─────────────────────────────┘
+     path: {{.Path}}
+   commit: {{.Commit}}
+     date: {{.Date}}
+       go: v{{.GoVer}} {{.GoOS}}
+`
+	return tmp
+}
+
+func checks(s string) string {
+	const (
+		disconnect = "disconnect"
+		ok         = "ok"
+		miss       = "missing"
+	)
+	switch s {
+	case ok:
+		const padding = 9
+		return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
+	case miss:
+		const padding = 11
+		return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
+	case disconnect:
+		const padding = 11
+		return color.Error.Sprint("disconnect") + strings.Repeat(" ", padding-len(s))
+	}
+	return ""
+}
+
 func info() string {
 	type Data struct {
 		Database string
@@ -95,36 +130,11 @@ func info() string {
 		GoVer    string
 		GoOS     string
 	}
-	const exeTmp = ` ┌── requirements ─────────────┐
- │  database:     {{.Database}}  │
- │  ansilove:     {{.Ansilove}}  │
- │  webp lib:     {{.Webp}}  │
- │  imagemagick:  {{.Magick}}  │
- └─────────────────────────────┘
-     path: {{.Path}}
-   commit: {{.Commit}}
-     date: {{.Date}}
-       go: v{{.GoVer}} {{.GoOS}}
-`
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
 		miss       = "missing"
 	)
-	p := func(s string) string {
-		switch s {
-		case ok:
-			const padding = 9
-			return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
-		case miss:
-			const padding = 11
-			return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
-		case disconnect:
-			const padding = 11
-			return color.Error.Sprint("disconnect") + strings.Repeat(" ", padding-len(s))
-		}
-		return ""
-	}
 	var bin string
 	a, w, m, d := miss, miss, miss, disconnect
 	if err := database.ConnectInfo(); err == "" {
@@ -145,17 +155,17 @@ func info() string {
 	}
 
 	data := Data{
-		Database: p(d),
-		Ansilove: p(a),
-		Webp:     p(w),
-		Magick:   p(m),
+		Database: checks(d),
+		Ansilove: checks(a),
+		Webp:     checks(w),
+		Magick:   checks(m),
 		Commit:   commit,
 		Date:     localBuild(date),
 		Path:     bin,
 		GoVer:    strings.Replace(runtime.Version(), "go", "", 1),
 		GoOS:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
-	tmpl, err := template.New("checks").Parse(exeTmp)
+	tmpl, err := template.New("checks").Parse(exeTmp())
 	if err != nil {
 		log.Fatal(err)
 	}

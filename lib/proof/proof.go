@@ -66,7 +66,7 @@ func statInit() stat {
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
-func (request Request) Queries() error {
+func (request Request) Queries() error { //nolint:funlen
 	s := statInit()
 	db := database.Connect()
 	defer db.Close()

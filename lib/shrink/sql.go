@@ -93,18 +93,23 @@ func sql() error {
 			freed += int(f.Size())
 		}
 	}
+
 	fmt.Printf("SQL found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
 	if len(files) == 0 {
 		fmt.Println(", but there is nothing to do.")
 		return nil
 	}
 	fmt.Println(".")
-
 	fmt.Printf("SQL will move %d items totaling %s, leaving %s used.\n",
 		len(files), humanize.Bytes(uint64(freed)), humanize.Bytes(uint64(inUse-freed)))
 
+	return sqlProcess(files)
+}
+
+func sqlProcess(files []string) error {
 	n := time.Now()
-	name := filepath.Join(saveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz", n.Year(), n.Month(), n.Day()))
+	name := filepath.Join(saveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz",
+		n.Year(), n.Month(), n.Day()))
 	if err := compress(name, files); err != nil {
 		return err
 	}

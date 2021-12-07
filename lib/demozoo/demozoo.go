@@ -137,7 +137,7 @@ func (req *Request) Query(id string) error {
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
-func (req Request) Queries() error { //nolint: funlen,gocyclo
+func (req Request) Queries() error { //nolint: funlen
 	var st stat
 	stmt, start := selectByID(req.byID), time.Now()
 	db := database.Connect()
@@ -162,11 +162,7 @@ func (req Request) Queries() error { //nolint: funlen,gocyclo
 	if err = st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
 		return fmt.Errorf("req queries sum total: %w", err)
 	}
-	if st.total == 0 {
-		logs.Println("nothing to do")
-	} else {
-		logs.Println("Total records", st.total)
-	}
+	queriesTotal(st.total)
 	rows, err = db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("request queries query 2: %w", err)
@@ -218,6 +214,14 @@ func (req Request) Queries() error { //nolint: funlen,gocyclo
 	}
 	st.summary(time.Since(start))
 	return nil
+}
+
+func queriesTotal(total int) {
+	if total == 0 {
+		logs.Println("nothing to do")
+		return
+	}
+	logs.Println("Total records", total)
 }
 
 func (req Request) flags() (skip bool) {

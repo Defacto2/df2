@@ -107,11 +107,13 @@ func Connect() *sql.DB {
 		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors fmt.Printf("%T", err)
-		switch t := err.(type) {
-		case *mysql.MySQLError:
+		me := &mysql.MySQLError{}
+		nop := &net.OpError{}
+		switch {
+		case errors.As(err, &me):
 			log.Fatal(fmt.Errorf("connect mysql error: %w", err))
-		case *net.OpError:
-			switch t.Op {
+		case errors.As(err, &nop):
+			switch nop.Op {
 			case "dial":
 				log.Fatal(fmt.Errorf("database server %v is either down or the %v %v port is blocked: %w",
 					c.Address, c.Protocol, c.Port, ErrConnect))
@@ -153,11 +155,13 @@ func ConnectInfo() string {
 		return strings.Replace(err.Error(), c.Pass, hide, 1)
 	}
 	if err = db.Ping(); err != nil {
-		if err, ok := err.(*mysql.MySQLError); ok {
+		me := &mysql.MySQLError{}
+		if ok := errors.As(err, &me); ok {
 			e := strings.Replace(err.Error(), c.User, color.Primary.Sprint(c.User), 1)
 			return fmt.Sprintf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e))
 		}
-		if err, ok := err.(*net.OpError); ok {
+		nop := &net.OpError{}
+		if ok := errors.As(err, &nop); ok {
 			if strings.Contains(err.Error(), "connect: connection refused") {
 				return fmt.Sprintf("%s '%v' %s",
 					color.Danger.Sprint("database server"),

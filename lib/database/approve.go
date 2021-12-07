@@ -98,9 +98,6 @@ func verbose(v bool, i interface{}) {
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
 func queries(v bool) error {
-	x := func() string {
-		return fmt.Sprintf(" %s", str.X())
-	}
 	db := Connect()
 	defer db.Close()
 	rows, err := db.Query(newFilesSQL)
@@ -115,6 +112,13 @@ func queries(v bool) error {
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
+	return query(v, rows, columns)
+}
+
+func query(v bool, rows *sql.Rows, columns []string) error {
+	x := func() string {
+		return fmt.Sprintf(" %s", str.X())
+	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
 	for i := range values {
@@ -128,7 +132,7 @@ func queries(v bool) error {
 	rowCnt := 0
 	for rows.Next() {
 		rowCnt++
-		if err = rows.Scan(scanArgs...); err != nil {
+		if err := rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
 		verbose(v, fmt.Sprintf("\nitem %04d (%v) %s %s ",

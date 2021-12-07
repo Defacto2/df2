@@ -38,7 +38,7 @@ type fields struct {
 	CreditAudio    []string
 }
 
-func TestRecord_sql(t *testing.T) {
+func TestRecord_sql(t *testing.T) { //nolint:funlen
 	const where string = " WHERE id=?"
 	now := time.Now()
 	tests := []struct {

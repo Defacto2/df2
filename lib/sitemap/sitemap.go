@@ -82,7 +82,13 @@ func Create() error {
 			break
 		}
 	}
-	// trim empty urls so they're not included in the xml.
+	if err := createOutput(v); err != nil {
+		return err
+	}
+	return db.Close()
+}
+
+func createOutput(v *URLset) error {
 	empty, trimmed := url{}, []url{}
 	for i, x := range v.Urls {
 		if x == empty {
@@ -102,7 +108,7 @@ func Create() error {
 	if _, err := os.Stdout.Write(output); err != nil {
 		return fmt.Errorf("create stdout: %w", err)
 	}
-	return db.Close()
+	return nil
 }
 
 func nullsDeleteAt() (count int, err error) {
