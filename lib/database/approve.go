@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	fm       os.FileMode = 0666
+	fm       os.FileMode = 0o666
 	changeme             = "changeme"
 	z7                   = ".7z"
 	arj                  = ".arj"
@@ -38,9 +38,9 @@ const (
 	section        = 15
 )
 
-const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`," +
-	"`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`" +
-	",`group_brand_for`,`group_brand_by`,`section`\n" +
+const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`," +
+	"`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`," +
+	"`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`\n" +
 	"FROM `files`\n" +
 	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 
@@ -131,7 +131,8 @@ func queries(v bool) error {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
-		verbose(v, fmt.Sprintf("\nitem %04d (%v) %s %s ", rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
+		verbose(v, fmt.Sprintf("\nitem %04d (%v) %s %s ",
+			rowCnt, string(values[0]), color.Primary.Sprint(r.uuid), color.Info.Sprint(r.filename)))
 		if na, dz := NewApprove(values), NewDemozoo(values); !na && !dz {
 			verbose(v, x())
 			continue

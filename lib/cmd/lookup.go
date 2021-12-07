@@ -4,9 +4,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/spf13/cobra"
 )
 
 var lookupCmd = &cobra.Command{

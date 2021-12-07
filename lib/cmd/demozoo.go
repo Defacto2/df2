@@ -2,13 +2,12 @@
 package cmd
 
 import (
-	"github.com/google/uuid"
-	"github.com/spf13/cobra"
-
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/google/uuid"
+	"github.com/spf13/cobra"
 )
 
 type demozooFlags struct {

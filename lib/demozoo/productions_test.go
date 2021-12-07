@@ -15,8 +15,10 @@ import (
 	"time"
 )
 
-const modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
-const channel1, channel2, channel3 = 1, 2, 3
+const (
+	modDate                      = "Wed, 30 Apr 2012 16:29:51 -0500"
+	channel1, channel2, channel3 = 1, 2, 3
+)
 
 var example1, example2, example3 ProductionsAPIv1 //nolint:gochecknoglobals
 
@@ -63,17 +65,22 @@ func load(r int, c chan ProductionsAPIv1) {
 }
 
 func Test_filename(t *testing.T) {
+	check := func(err error) {
+		if err != nil {
+			t.Error(err)
+		}
+	}
 	type args struct {
 		h http.Header
 	}
 	cd, err := mockHeader("cd")
-	check(t, err)
+	check(err)
 	fn, err := mockHeader("fn")
-	check(t, err)
+	check(err)
 	fn1, err := mockHeader("fn1")
-	check(t, err)
+	check(err)
 	il, err := mockHeader("il")
-	check(t, err)
+	check(err)
 	tests := []struct {
 		name         string
 		args         args
@@ -91,12 +98,6 @@ func Test_filename(t *testing.T) {
 				t.Errorf("filename() = %v, want %v", gotFilename, tt.wantFilename)
 			}
 		})
-	}
-}
-
-func check(t *testing.T, err error) {
-	if err != nil {
-		t.Error(err)
 	}
 }
 
@@ -180,9 +181,18 @@ func TestProductionsAPIv1_DownloadLink(t *testing.T) {
 		wantLink string
 	}{
 		{"empty", ProductionsAPIv1{}, "", ""},
-		{"record 1", example1, "feestje.zip", "https://files.scene.org/get:nl-http/parties/2000/ambience00/demo/feestje.zip"},
-		{"record 2", example2, "the_untouchables_bbs7.zip", "http://www.sensenstahl.com/untergrund_mirror/bbs/the_untouchables_bbs7.zip"},
-		{"record 3", example3, "x-wing_cracktro.zip", "http://www.sensenstahl.com/untergrund_mirror/cracktro/x-wing_cracktro.zip"},
+		{
+			"record 1", example1, "feestje.zip",
+			"https://files.scene.org/get:nl-http/parties/2000/ambience00/demo/feestje.zip",
+		},
+		{
+			"record 2", example2, "the_untouchables_bbs7.zip",
+			"http://www.sensenstahl.com/untergrund_mirror/bbs/the_untouchables_bbs7.zip",
+		},
+		{
+			"record 3", example3, "x-wing_cracktro.zip",
+			"http://www.sensenstahl.com/untergrund_mirror/cracktro/x-wing_cracktro.zip",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -246,7 +256,8 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 				t.Errorf("ProductionsAPIv1.PouetID() gotID = %v, want %v", gotID, tt.wantID)
 			}
 			if gotStatusCode != tt.wantStatusCode {
-				t.Errorf("ProductionsAPIv1.PouetID() gotStatusCode = %v, want %v", gotStatusCode, tt.wantStatusCode)
+				t.Errorf("ProductionsAPIv1.PouetID() gotStatusCode = %v, want %v",
+					gotStatusCode, tt.wantStatusCode)
 			}
 		})
 	}

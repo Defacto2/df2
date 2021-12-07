@@ -90,27 +90,29 @@ func (z *zipfile) save(path string) {
 	}
 	defer r.Close()
 	// Parse and save zip comment
-	if cmmt := r.Comment; cmmt != "" {
-		if strings.TrimSpace(cmmt) == "" {
-			return
-		}
-		if strings.Contains(cmmt, sceneOrg) {
-			return
-		}
-		z.print(&cmmt)
-		f, err := os.Create(name)
-		if err != nil {
-			log.Panicln(err)
-			return
-		}
-		defer f.Close()
-		if i, err := f.Write([]byte(cmmt)); err != nil {
-			log.Panicln(err)
-			return
-		} else if i == 0 {
-			os.Remove(name)
-			return
-		}
+	cmmt := r.Comment
+	if cmmt == "" {
+		return
+	}
+	if strings.TrimSpace(cmmt) == "" {
+		return
+	}
+	if strings.Contains(cmmt, sceneOrg) {
+		return
+	}
+	z.print(&cmmt)
+	f, err := os.Create(name)
+	if err != nil {
+		log.Panicln(err)
+		return
+	}
+	defer f.Close()
+	if i, err := f.Write([]byte(cmmt)); err != nil {
+		log.Panicln(err)
+		return
+	} else if i == 0 {
+		os.Remove(name)
+		return
 	}
 }
 

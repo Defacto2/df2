@@ -5,11 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/gookit/color"
 )
 
 const (
@@ -116,7 +115,8 @@ func format(s string) string {
 func rename(newName, group string) (count int64, err error) {
 	db := database.Connect()
 	defer db.Close()
-	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?, group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
+	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?," +
+		" group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
 	if err != nil {
 		return 0, fmt.Errorf("rename group statement: %w", err)
 	}
@@ -138,8 +138,7 @@ func trimDot(s string) string {
 	if len(s) < short {
 		return s
 	}
-	l := s[len(s)-1:]
-	if l == "." {
+	if l := s[len(s)-1:]; l == "." {
 		return s[:len(s)-1]
 	}
 	return s

@@ -16,7 +16,7 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/gookit/color" // nolint: misspell
+	"github.com/gookit/color"
 )
 
 // Record of a file item.
@@ -108,7 +108,8 @@ func record(values []sql.RawBytes, path string) Record {
 
 func where() string {
 	const s = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`updatedat`,`retrotxt_readme`"
-	const w = " WHERE file_zip_content IS NULL AND (`filename` LIKE '%.zip' OR `filename` LIKE '%.rar' OR `filename` LIKE '%.7z')"
+	const w = " WHERE file_zip_content IS NULL AND (`filename` LIKE '%.zip' OR `filename`" +
+		" LIKE '%.rar' OR `filename` LIKE '%.7z')"
 	return fmt.Sprintf("%s FROM `files` %s", s, w)
 }
 
@@ -135,7 +136,6 @@ func (r *Record) iterate(s *stat) error {
 
 // files reads an archive and saves its content to the database.
 func (r *Record) files(s *stat) error {
-	const txt = ".txt"
 	var err error
 	logs.Print(" • ")
 	r.Files, err = archive.Read(r.File, r.Name)
@@ -144,29 +144,37 @@ func (r *Record) files(s *stat) error {
 		return fmt.Errorf("file zip content archive read: %w", err)
 	}
 	logs.Printf("%d items", len(r.Files))
-	if r.NFO == "" {
-		if r.NFO = archive.FindNFO(r.Name, r.Files...); r.NFO != "" {
-			logs.Printf(", text file: %s", r.NFO)
-			if _, err := os.Stat(r.File + txt); os.IsNotExist(err) {
-				tmp, err1 := os.MkdirTemp(os.TempDir(), "zipcontent")
-				if err1 != nil {
-					return err1
-				}
-				defer os.RemoveAll(tmp)
-				if err2 := archive.Extractor(r.File, r.Name, r.NFO, tmp); err2 != nil {
-					return err2
-				}
-				src := filepath.Join(tmp, r.NFO)
-				if _, err3 := archive.FileMove(src, filepath.Join(s.basePath, r.UUID+txt)); err3 != nil {
-					return err3
-				}
-				logs.Print(", extracted")
-			}
-		}
+	if err := r.nfo(s); err != nil {
+		return err
 	}
 	if err := r.save(); err != nil {
 		logs.Printf(" %s", str.X())
 		return fmt.Errorf("file zip content update: %w", err)
+	}
+	return nil
+}
+
+func (r *Record) nfo(s *stat) error {
+	const txt = ".txt"
+	r.NFO = archive.FindNFO(r.Name, r.Files...)
+	if r.NFO == "" {
+		return nil
+	}
+	logs.Printf(", text file: %s", r.NFO)
+	if _, err := os.Stat(r.File + txt); os.IsNotExist(err) {
+		tmp, err1 := os.MkdirTemp(os.TempDir(), "zipcontent")
+		if err1 != nil {
+			return err1
+		}
+		defer os.RemoveAll(tmp)
+		if err2 := archive.Extractor(r.File, r.Name, r.NFO, tmp); err2 != nil {
+			return err2
+		}
+		src := filepath.Join(tmp, r.NFO)
+		if _, err3 := archive.FileMove(src, filepath.Join(s.basePath, r.UUID+txt)); err3 != nil {
+			return err3
+		}
+		logs.Print(", extracted")
 	}
 	return nil
 }
@@ -182,7 +190,8 @@ func (r *Record) id(s *stat) {
 func (r *Record) save() error {
 	const (
 		files = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=? WHERE id=?"
-		nfo   = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,retrotxt_readme=?,retrotxt_no_readme=? WHERE id=?"
+		nfo   = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?," +
+			"retrotxt_readme=?,retrotxt_no_readme=? WHERE id=?"
 	)
 	var err error
 	var update *sql.Stmt

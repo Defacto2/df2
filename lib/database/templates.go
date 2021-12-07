@@ -71,7 +71,8 @@ const newFilesTempl = "\nDROP TABLE IF EXISTS `files`;\n" +
 	"  `web_id_pouet` int(6) DEFAULT NULL COMMENT 'Id for a Pouët record',\n" +
 	"  `web_id_demozoo` int(6) DEFAULT NULL COMMENT 'Id for a Demozoo record',\n" +
 	"  `group_brand_for` varchar(100) DEFAULT NULL COMMENT 'Group or brand used to credit the file',\n" +
-	"  `group_brand_by` varchar(100) DEFAULT NULL COMMENT 'Optional alternative Group or brand used to credit the file',\n" +
+	"  `group_brand_by` varchar(100) DEFAULT NULL COMMENT" +
+	" 'Optional alternative Group or brand used to credit the file',\n" +
 	"  `record_title` varchar(100) DEFAULT NULL COMMENT 'Display title or magazine edition',\n" +
 	"  `date_issued_year` smallint(4) DEFAULT NULL COMMENT 'Published date year',\n" +
 	"  `date_issued_month` tinyint(2) DEFAULT NULL COMMENT 'Published date month',\n" +
@@ -111,9 +112,12 @@ const newFilesTempl = "\nDROP TABLE IF EXISTS `files`;\n" +
 	"  `dosee_no_umb` tinyint(2) DEFAULT NULL COMMENT 'DOSee turn off upper memory block access (UMB)',\n" +
 	"  `dosee_load_utilities` tinyint(2) DEFAULT NULL COMMENT 'DOSee load utilities',\n" +
 	"  PRIMARY KEY (`id`),\n" +
-	"  KEY `Browsing` (`date_issued_year`,`date_issued_month`,`date_issued_day`,`section`,`platform`,`filename`(191),`createdat`),\n" +
-	"  FULLTEXT KEY `pubfor_pubby_pubedition_filename_comment` (`group_brand_for`,`group_brand_by`,`record_title`,`filename`,`comment`)\n" +
-	") ENGINE=InnoDB AUTO_INCREMENT=31945 DEFAULT CHARSET=utf8 COMMENT='This database is the complete collection of files for download';\n" +
+	"  KEY `Browsing` (`date_issued_year`,`date_issued_month`,`date_issued_day`,`section`," +
+	"`platform`,`filename`(191),`createdat`),\n" +
+	"  FULLTEXT KEY `pubfor_pubby_pubedition_filename_comment` (`group_brand_for`,`group_brand_by`" +
+	",`record_title`,`filename`,`comment`)\n" +
+	") ENGINE=InnoDB AUTO_INCREMENT=31945 DEFAULT CHARSET=utf8 COMMENT='This database is the" +
+	" complete collection of files for download';\n" +
 	"\nTRUNCATE `files`;"
 
 const newGroupsTempl = "\nDROP TABLE IF EXISTS `groups`;\n" +

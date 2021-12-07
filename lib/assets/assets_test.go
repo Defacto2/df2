@@ -7,11 +7,10 @@ import (
 	"reflect"
 	"testing"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/gookit/color"
-
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/directories"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gookit/color"
 )
 
 const empty = "empty"

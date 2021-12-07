@@ -88,8 +88,5 @@ func runNew() error {
 	if err := database.Fix(); err != nil {
 		return err
 	}
-	if err := groups.Fix(false); err != nil {
-		return err
-	}
-	return nil
+	return groups.Fix(false)
 }

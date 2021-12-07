@@ -20,8 +20,8 @@ import (
 
 // random characters used by randString().
 const (
-	dirMode  fs.FileMode = 0755
-	fileMode fs.FileMode = 0644
+	dirMode  fs.FileMode = 0o755
+	fileMode fs.FileMode = 0o644
 
 	random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
 

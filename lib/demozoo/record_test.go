@@ -48,20 +48,41 @@ func TestRecord_sql(t *testing.T) {
 		want1  int
 	}{
 		{name: "empty", fields: fields{}, want: "", want1: 0},
-		{"filename", fields{ID: "1", Filename: "hi.txt"},
-			"UPDATE files SET filename=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"filesize", fields{ID: "1", Filesize: "54321"},
-			"UPDATE files SET filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"zip content", fields{ID: "1", FileZipContent: "HI.TXT\nHI.EXE"},
-			"UPDATE files SET file_zip_content=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"md5", fields{ID: "1", SumMD5: "md5placeholder"},
-			"UPDATE files SET file_integrity_weak=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"sha386", fields{ID: "1", Sum384: "shaplaceholder"},
-			"UPDATE files SET file_integrity_strong=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"lastmod", fields{ID: "1", LastMod: now},
-			"UPDATE files SET file_last_modified=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5},
-		{"a file", fields{ID: "1", Filename: "some.gif", Filesize: "5012352"},
-			"UPDATE files SET filename=?,filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 6},
+		{
+			"filename",
+			fields{ID: "1", Filename: "hi.txt"},
+			"UPDATE files SET filename=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5,
+		},
+		{
+			"filesize",
+			fields{ID: "1", Filesize: "54321"},
+			"UPDATE files SET filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5,
+		},
+		{
+			"zip content",
+			fields{ID: "1", FileZipContent: "HI.TXT\nHI.EXE"},
+			"UPDATE files SET file_zip_content=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5,
+		},
+		{
+			"md5",
+			fields{ID: "1", SumMD5: "md5placeholder"},
+			"UPDATE files SET file_integrity_weak=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5,
+		},
+		{
+			"sha386",
+			fields{ID: "1", Sum384: "shaplaceholder"},
+			"UPDATE files SET file_integrity_strong=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5,
+		},
+		{
+			"lastmod",
+			fields{ID: "1", LastMod: now},
+			"UPDATE files SET file_last_modified=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 5,
+		},
+		{
+			"a file",
+			fields{ID: "1", Filename: "some.gif", Filesize: "5012352"},
+			"UPDATE files SET filename=?,filesize=?,web_id_demozoo=?,updatedat=?,updatedby=?" + where, 6,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	CreateMode = 0666
+	CreateMode = 0o666
 	bat        = ".bat"
 	bmp        = ".bmp"
 	com        = ".com"

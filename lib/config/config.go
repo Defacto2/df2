@@ -13,7 +13,6 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
-
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
@@ -23,8 +22,8 @@ import (
 const (
 	cmdPath              = "df2 config"
 	filename             = "config.yaml"
-	dir      fs.FileMode = 0700
-	file     fs.FileMode = 0600
+	dir      fs.FileMode = 0o700
+	file     fs.FileMode = 0o600
 )
 
 // ErrSaveType bad value type.
@@ -38,14 +37,12 @@ type settings struct {
 	nameFlag string // viper configuration path
 }
 
-var (
-	// Config settings.
-	Config = settings{ //nolint:gochecknoglobals
-		Name:   filename,
-		Errors: false,
-		ignore: false,
-	}
-)
+// Config settings.
+var Config = settings{ //nolint:gochecknoglobals
+	Name:   filename,
+	Errors: false,
+	ignore: false,
+}
 
 // Check prints a missing configuration file notice.
 func Check() {

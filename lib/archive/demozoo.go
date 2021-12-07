@@ -9,11 +9,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/dustin/go-humanize"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/dustin/go-humanize"
 )
 
 type finds map[string]int
@@ -28,8 +27,10 @@ func (d Demozoo) String() string {
 	return fmt.Sprintf("using %q for DOSee and %q as the NFO or text", d.DOSee, d.NFO)
 }
 
-const fileDiz = "file_id.diz"
-const lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, lvl7, lvl8, lvl9 = 1, 2, 3, 4, 5, 6, 7, 8, 9
+const (
+	fileDiz                                              = "file_id.diz"
+	lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, lvl7, lvl8, lvl9 = 1, 2, 3, 4, 5, 6, 7, 8, 9
+)
 
 // ExtractDemozoo decompresses and parses archives fetched from Demozoo.org.
 func ExtractDemozoo(name, uuid string, varNames *[]string) (Demozoo, error) {

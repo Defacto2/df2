@@ -2,7 +2,9 @@
 package demozoo
 
 import (
-	"crypto/md5" // nolint: gosec
+
+	// nolint: gosec
+	"crypto/md5"
 	"crypto/sha512"
 	"database/sql"
 	"errors"
@@ -15,8 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
-
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
@@ -24,6 +24,7 @@ import (
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/gookit/color"
 )
 
 // Category are tags for production imports.
@@ -83,9 +84,10 @@ const (
 	win = "windows"
 )
 
-const selectSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`," +
-	"`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`," +
-	"`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
+const selectSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`," +
+	"`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`," +
+	"`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`record_title`" +
+	",`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 
 var (
 	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
@@ -248,16 +250,15 @@ func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
 
 func (st stat) print() {
 	if st.count == 0 {
-		var t string
 		if st.fetched == 0 {
-			t = fmt.Sprintf("id %q is not a Demozoo sourced file record", st.byID)
-		} else {
-			t = fmt.Sprintf("id %q is not a new Demozoo record, use --id=%v --overwrite to refetch the download and data", st.byID, st.byID)
+			fmt.Printf("id %q is not a Demozoo sourced file record\n", st.byID)
+			return
 		}
-		logs.Println(t)
-	} else {
-		logs.Println()
+		fmt.Printf("id %q is not a new Demozoo record, "+
+			"use --id=%v --overwrite to refetch the download and data\n", st.byID, st.byID)
+		return
 	}
+	logs.Println()
 }
 
 func (st stat) summary(elapsed time.Duration) {

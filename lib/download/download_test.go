@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gookit/color" // nolint:misspell
+	"github.com/gookit/color"
 )
 
 func testTemp() string {

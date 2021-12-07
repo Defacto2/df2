@@ -99,11 +99,13 @@ func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records in
 	// missing images + source is an archive
 	if !ok && t.archive() {
 		c++
-		if err1 := t.extract(dir); errors.Is(err1, ErrMeUnk) {
+		err1 := t.extract(dir)
+		switch {
+		case errors.Is(err1, ErrMeUnk):
 			return i, c, nil
-		} else if errors.Is(err1, ErrMeNo) {
+		case errors.Is(err1, ErrMeNo):
 			return i, c, nil
-		} else if err1 != nil {
+		case err1 != nil:
 			fmt.Println(t.String(), err1)
 			return i, c, nil
 		}

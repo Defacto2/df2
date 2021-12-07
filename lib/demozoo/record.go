@@ -7,10 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color"
-
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/gookit/color"
 )
 
 const sep = ","
@@ -122,7 +121,7 @@ func (r *Record) sqlSets() []string {
 	if r.Sum384 != "" {
 		set = append(set, "file_integrity_strong=?")
 	}
-	const errYear = 0001
+	const errYear = 0o001
 	if r.LastMod.Year() != errYear {
 		set = append(set, "file_last_modified=?")
 	}
@@ -181,7 +180,7 @@ func (r *Record) sqlArgs(set []string) (args []interface{}) {
 	if r.Sum384 != "" {
 		args = append(args, []interface{}{r.Sum384}...)
 	}
-	const errYear = 0001
+	const errYear = 0o001
 	if r.LastMod.Year() != errYear {
 		args = append(args, []interface{}{r.LastMod}...)
 	}

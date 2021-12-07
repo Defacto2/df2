@@ -26,7 +26,8 @@ func Test_groupsWhere(t *testing.T) {
 		{"mag+", args{Magazine, true}, "AND section = 'magazine'"},
 		{"bbs+", args{BBS, true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
 		{"ftp+", args{FTP, true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
-		{"grp+", args{Group, true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine'"},
+		{"grp+", args{Group, true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
+			"RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine'"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -322,7 +323,10 @@ func TestVariations(t *testing.T) {
 	}{
 		{"0", args{""}, []string{}, false},
 		{"1", args{"hello"}, []string{"hello"}, false},
-		{"2", args{"hello world"}, []string{"hello world", "helloworld", "hello-world", "hello_world", "hello.world"}, false},
+		{"2", args{"hello world"}, []string{
+			"hello world",
+			"helloworld", "hello-world", "hello_world", "hello.world",
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

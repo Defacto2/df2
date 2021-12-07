@@ -6,8 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	_ "image/gif"  // register GIF decoding
-	_ "image/jpeg" // register Jpeg decoding
+
+	// register GIF decoding.
+	_ "image/gif"
+
+	// register Jpeg decoding.
+	_ "image/jpeg"
 	"image/png"
 	"io"
 	"log"
@@ -24,16 +28,22 @@ import (
 	"github.com/nickalie/go-webpbin"
 	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
-	_ "golang.org/x/image/bmp"  // register BMP decoding
-	_ "golang.org/x/image/tiff" // register TIFF decoding
-	_ "golang.org/x/image/webp" // register WebP decoding
+
+	// register BMP decoding.
+	_ "golang.org/x/image/bmp"
+
+	// register TIFF decoding.
+	_ "golang.org/x/image/tiff"
+
+	// register WebP decoding.
+	_ "golang.org/x/image/webp"
 )
 
 const (
 	WebpMaxSize = 16383
 	thumbWidth  = 400
 
-	fperm os.FileMode = 0666
+	fperm os.FileMode = 0o666
 	fmode             = os.O_RDWR | os.O_CREATE
 )
 
@@ -187,7 +197,8 @@ func NewExt(name, ext string) string {
 }
 
 // ToPng converts any supported format to a compressed PNG image.
-// helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
+// helpful: https://www.programming-books.io/essential/
+// go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49.
 func ToPng(src, dest string, width, height int) (string, error) {
 	in, err := os.Open(src)
 	if err != nil {
@@ -360,7 +371,8 @@ func WebPCalc(width, height int) (w, h int) {
 		return width, height
 	}
 	if width == height {
-		r := WebpMaxSize / 2
+		const split = 2
+		r := WebpMaxSize / split
 		return r, r
 	}
 	big, small := height, width

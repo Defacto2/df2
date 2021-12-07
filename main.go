@@ -125,7 +125,8 @@ func info() string {
 		}
 		return ""
 	}
-	a, w, m, d, bin := miss, miss, miss, disconnect, ""
+	var bin string
+	a, w, m, d := miss, miss, miss, disconnect
 	if err := database.ConnectInfo(); err == "" {
 		d = ok
 	}

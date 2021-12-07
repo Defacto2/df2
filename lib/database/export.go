@@ -12,11 +12,10 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/viper"
-
-	"github.com/Defacto2/df2/lib/logs"
 )
 
 // Table of the database.
@@ -79,7 +78,7 @@ func (m Method) String() string {
 
 const (
 	timestamp string      = "2006-01-02 15:04:05"
-	fsql      os.FileMode = 0664
+	fsql      os.FileMode = 0o664
 	fo                    = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 )
 
@@ -327,7 +326,8 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 		CREATE: f.create(),
 		TABLE:  f.Table.String(),
 		INSERT: fmt.Sprint(names),
-		SQL:    fmt.Sprint(values)}
+		SQL:    fmt.Sprint(values),
+	}
 	if f.Method == Insert {
 		var dupes dupeKeys = col
 		dat.UPDATE = dupes.String()

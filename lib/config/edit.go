@@ -16,8 +16,9 @@ please set one by creating a $EDITOR environment variable in your shell configur
 
 // Edit a configuration file.
 func Edit() {
+	var editor string
 	editors := []string{"micro", "nano", "vim"}
-	cfg, editor := viper.ConfigFileUsed(), ""
+	cfg := viper.ConfigFileUsed()
 	if cfg == "" {
 		configMissing("edit")
 	}

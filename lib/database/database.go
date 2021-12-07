@@ -270,7 +270,8 @@ func IsUUID(s string) bool {
 func LastUpdate() (time.Time, error) {
 	db := Connect()
 	defer db.Close()
-	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat` ORDER BY `updatedat` DESC LIMIT 1")
+	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat`" +
+		" ORDER BY `updatedat` DESC LIMIT 1")
 	t := time.Time{}
 	if err := row.Scan(&t); err != nil {
 		return t, fmt.Errorf("last update: %w", err)
@@ -463,7 +464,11 @@ func nullable(s *sql.ColumnType) string {
 
 // reverseInt swaps the direction of the value, 12345 would return 54321.
 func reverseInt(value uint) (uint, error) {
-	v, s, n := strconv.Itoa(int(value)), "", 0
+	var (
+		n int
+		s string
+	)
+	v := strconv.Itoa(int(value))
 	for x := len(v); x > 0; x-- {
 		s += string(v[x-1])
 	}

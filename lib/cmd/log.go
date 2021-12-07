@@ -8,11 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
-
-	"github.com/Defacto2/df2/lib/logs"
 )
 
 var logCmd = &cobra.Command{

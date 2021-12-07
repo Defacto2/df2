@@ -20,8 +20,8 @@ const (
 	// Filename is the default error log filename.
 	Filename string = "errors.log"
 
-	dmode   os.FileMode = 0700
-	fmode   os.FileMode = 0600
+	dmode   os.FileMode = 0o700
+	fmode   os.FileMode = 0o600
 	flags   int         = log.Ldate | log.Ltime | log.LUTC
 	newmode int         = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 )

@@ -220,7 +220,8 @@ func values() []sql.RawBytes {
 		[]byte("some.jpg\nsome.nfo\nfile_id.diz"), // file_zip_content
 		[]byte(""),    // updatedat
 		[]byte("dos"), // platform
-		[]byte("6b447ced6d6f919a4b18a8b850442862908cd3eb35cfe1fc01c01b5aea6b25c53414fcbba989460b5423b6a29a429078"), // hash strong
+		[]byte("6b447ced6d6f919a4b18a8b850442862908cd3eb35cfe1fc01c01b5" +
+			"aea6b25c53414fcbba989460b5423b6a29a429078"), // hash strong
 		[]byte("3327792e5825386498ac00cd960a6b17"), // hash weak
 		[]byte(""),                  // pouet id
 		[]byte("Test Group"),        // group for

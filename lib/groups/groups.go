@@ -13,11 +13,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/spf13/viper"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/spf13/viper"
 )
 
 const htm = ".htm"
@@ -214,7 +213,10 @@ func (r Request) iterate(groups ...string) (*[]Result, error) {
 	piped := str.Piped()
 	total := len(groups)
 	data := make([]Result, total)
-	lastLetter, hr := "", false
+	var (
+		hr         bool
+		lastLetter string
+	)
 	for i, grp := range groups {
 		if !piped && !logs.Quiet && r.Progress {
 			str.Progress(r.Filter, i+1, total)
@@ -398,20 +400,16 @@ func Variations(name string) ([]string, error) {
 	name = strings.ToLower(name)
 	vars := []string{name}
 	s := strings.Split(name, " ")
-	a := strings.Join(s, "")
-	if name != a {
+	if a := strings.Join(s, ""); name != a {
 		vars = append(vars, a)
 	}
-	b := strings.Join(s, "-")
-	if name != b {
+	if b := strings.Join(s, "-"); name != b {
 		vars = append(vars, b)
 	}
-	c := strings.Join(s, "_")
-	if name != c {
+	if c := strings.Join(s, "_"); name != c {
 		vars = append(vars, c)
 	}
-	d := strings.Join(s, ".")
-	if name != d {
+	if d := strings.Join(s, "."); name != d {
 		vars = append(vars, d)
 	}
 	if init, err := Initialism(name); err == nil && init != "" {
@@ -457,7 +455,7 @@ func remInitialism(s string) string {
 
 // groupsStmt returns a complete SQL WHERE statement where the groups are filtered.
 func groupsStmt(f Filter, includeSoftDeletes bool) (string, error) {
-	var inc, skip = includeSoftDeletes, false
+	inc, skip := includeSoftDeletes, false
 	if f > -1 {
 		skip = true
 	}
@@ -465,7 +463,7 @@ func groupsStmt(f Filter, includeSoftDeletes bool) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("group statement %q: %w", f.String(), err)
 	}
-	s := ""
+	var s string
 	switch skip {
 	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
 		s = "SELECT DISTINCT group_brand_for AS pubCombined " +
@@ -482,7 +480,7 @@ func groupsStmt(f Filter, includeSoftDeletes bool) (string, error) {
 
 // groupsFilter returns a partial SQL WHERE statement to filter groups.
 func groupsFilter(f Filter) (string, error) {
-	s := ""
+	var s string
 	switch f {
 	case None:
 		return "", nil

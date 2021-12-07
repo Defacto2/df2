@@ -113,7 +113,8 @@ installation instructions: https://github.com/ansilove/ansilove
 }
 
 // ToPng converts any supported format to a compressed PNG image.
-// helpful: https://www.programming-books.io/essential/go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49
+// helpful: https://www.programming-books.io/essential/go
+// /images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49.
 func makePng(src, dest string, amiga bool) (string, error) {
 	if src == "" {
 		return "", fmt.Errorf("make png: %w", ErrNoSrc)

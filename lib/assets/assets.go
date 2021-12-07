@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
-	_ "github.com/go-sql-driver/mysql" // MySQL database driver
-	"github.com/gookit/color"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/dustin/go-humanize"
+
+	// MySQL database driver.
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gookit/color"
 )
 
 // Target filters the file assets.
@@ -205,7 +206,7 @@ func clean(t Target, d *directories.Dir, remove, human bool) error {
 
 // ignoreList is used by scanPath to filter files that should not be erased.
 func ignoreList(path string, d *directories.Dir) files {
-	var empty = database.Empty{}
+	empty := database.Empty{}
 	ignore := make(files)
 	ignore["00000000-0000-0000-0000-000000000000"] = empty
 	ignore["blank.png"] = empty

@@ -7,15 +7,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/people"
 	"github.com/Defacto2/df2/lib/recent"
 	"github.com/Defacto2/df2/lib/sitemap"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type groupFlags struct {

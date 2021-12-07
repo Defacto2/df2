@@ -13,13 +13,12 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/campoy/unique"
-	"github.com/spf13/viper"
-
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
+	"github.com/campoy/unique"
+	"github.com/spf13/viper"
 )
 
 // Request flags for people functions.
@@ -156,14 +155,14 @@ func Print(r Request) error {
 		return fmt.Errorf("print request: %w", err)
 	}
 	logs.Println(total, "matching", r.Filter, "records found")
-	a := make([]string, total)
+	var a []string
+	//	a := make([]string, total)
 	for i, p := range ppl {
 		if r.Progress {
 			str.Progress(r.Filter, i+1, total)
 		}
 		// role
-		x := strings.Split(p, ",")
-		a = append(a, x...)
+		a = append(a, strings.Split(p, ",")...)
 	}
 	// title and sort names
 	for i := range a {
