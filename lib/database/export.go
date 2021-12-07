@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
 	"github.com/spf13/viper"
 

@@ -11,7 +11,7 @@ import (
 	"github.com/Defacto2/df2/lib/proof"
 	"github.com/Defacto2/df2/lib/text"
 	"github.com/Defacto2/df2/lib/zipcontent"
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 

@@ -14,8 +14,8 @@ import (
 	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/dustin/go-humanize" //nolint:misspell
-	"github.com/gookit/color"       //nolint:misspell
+	"github.com/dustin/go-humanize"
+	"github.com/gookit/color"
 )
 
 const (

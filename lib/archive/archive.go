@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/dustin/go-humanize" //nolint:misspell
+	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
 )
 

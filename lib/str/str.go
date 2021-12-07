@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 )
 
 // Piped detects whether the program text is being piped to another operating

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 
 	"github.com/spf13/viper"

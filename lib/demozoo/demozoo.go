@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
@@ -135,8 +135,7 @@ func (req *Request) Query(id string) error {
 // Queries parses all new proofs.
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
-// nolint: funlen,gocyclo
-func (req Request) Queries() error {
+func (req Request) Queries() error { //nolint: funlen,gocyclo
 	var st stat
 	stmt, start := selectByID(req.byID), time.Now()
 	db := database.Connect()

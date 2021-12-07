@@ -31,7 +31,7 @@ import (
 
 	"github.com/Defacto2/df2/lib/cmd"
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 	"github.com/spf13/pflag"
 )
 

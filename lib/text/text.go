@@ -12,8 +12,8 @@ import (
 
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images"
-	"github.com/dustin/go-humanize" //nolint:misspell
-	"github.com/gookit/color"       //nolint:misspell
+	"github.com/dustin/go-humanize"
+	"github.com/gookit/color"
 )
 
 var (

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"

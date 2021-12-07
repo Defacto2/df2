@@ -3,7 +3,7 @@ package str
 import (
 	"testing"
 
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 )
 
 func capString(test, text string) (output string) {

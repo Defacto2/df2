@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"    //nolint:misspell
+	"github.com/dustin/go-humanize"
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver
-	"github.com/gookit/color"          //nolint:misspell
+	"github.com/gookit/color"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"

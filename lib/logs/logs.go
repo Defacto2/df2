@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 )
 

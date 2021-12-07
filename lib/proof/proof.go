@@ -15,7 +15,7 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/gookit/color" //nolint:misspell
+	"github.com/gookit/color"
 )
 
 // Record of a file item.
