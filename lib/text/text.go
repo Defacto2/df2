@@ -2,170 +2,86 @@
 package text
 
 import (
-	"bufio"
-	"context"
+	"database/sql"
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"time"
 
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
-	"github.com/Defacto2/df2/lib/images"
-	"github.com/dustin/go-humanize"
-	"github.com/gookit/color"
+	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/text/internal/tf"
 )
 
-var (
-	ErrNoSrc    = errors.New("requires a source path to a directory")
-	ErrAnsiLove = errors.New("cannot access shared libraries: libansilove.so.1")
-	ErrDest     = errors.New("dest argument requires a destination filename path")
-	ErrZero     = errors.New("source file is 0 bytes")
-	ErrMeNo     = errors.New("no readme chosen")
-	ErrMeUnk    = errors.New("unknown readme")
-	ErrMeNF     = errors.New("readme not found in archive")
+const (
+	fixStmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme, platform " +
+		"FROM files WHERE platform=\"text\" OR platform=\"textamiga\" OR platform=\"ansi\" ORDER BY id DESC"
 )
 
-// reduce the length of the textfile so it can be parsed by AnsiLove.
-func reduce(src, uuid string) (string, error) {
-	fmt.Print(" will attempt to reduce the length of file")
-
-	f, err := os.Open(src)
+// Fix generates any missing assets from downloads that are text based.
+func Fix(simulate bool) error {
+	dir, db := directories.Init(false), database.Connect()
+	defer db.Close()
+	rows, err := db.Query(fixStmt)
 	if err != nil {
-		return "", err
+		return fmt.Errorf("fix db query: %w", err)
+	} else if rows.Err() != nil {
+		return fmt.Errorf("fix rows: %w", rows.Err())
 	}
-	defer f.Close()
-
-	save, err := os.CreateTemp(os.TempDir(), uuid+"_reduce")
-	if err != nil {
-		return "", err
-	}
-	defer save.Close()
-
-	const maxLines = 500
-	scanner, writer := bufio.NewScanner(f), bufio.NewWriter(save)
-	scanner.Split(bufio.ScanLines)
-	line := 0
-	for scanner.Scan() {
-		line++
-		if _, err := writer.WriteString(scanner.Text() + "\n"); err != nil {
-			os.Remove(save.Name())
-			return "", err
-		}
-		if line > maxLines {
-			break
+	defer rows.Close()
+	i, c := 0, 0
+	for rows.Next() {
+		if i, c, err = fixRow(i, c, &dir, rows); err != nil {
+			return err
 		}
 	}
-	return save.Name(), nil
-}
-
-// generate a collection of site images.
-func generate(name, uuid string, amiga bool) error {
-	prnt := func(s string) {
-		fmt.Printf("  %s", s)
+	fmt.Println("scanned", c, "fixes from", i, "text file records")
+	if simulate && c > 0 {
+		logs.Simulate()
+	} else if c == 0 {
+		logs.Println("everything is okay, there is nothing to do")
 	}
-	const note = `
-this command requires the installation of AnsiLove/C
-installation instructions: https://github.com/ansilove/ansilove
-`
-	n, f := name, directories.Files(uuid)
-	o := f.Img000 + png
-	s, err := makePng(n, f.Img000, amiga)
-	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
-		fmt.Println(note)
-		return fmt.Errorf("generate ansilove not found: %w", err)
-	} else if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
-		tmp, err1 := reduce(f.UUID, uuid)
-		if err1 != nil {
-			return fmt.Errorf("ansilove reduce: %w", err1)
-		}
-		s, err = makePng(tmp, f.Img000, amiga)
-		defer os.Remove(tmp)
-	}
-	if err != nil {
-		return fmt.Errorf("generate: %w", err)
-	}
-	prnt(s)
-	const thumbMedium = 400
-	var w, h int
-	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
-		if err != nil {
-			return fmt.Errorf("generate info: %w", err)
-		}
-		cw, ch := images.WebPCalc(w, h)
-		s, err = images.ToPng(o, images.NewExt(o, png), ch, cw)
-		if err != nil {
-			return fmt.Errorf("generate calc: %w", err)
-		}
-		prnt(s)
-	}
-	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
-	if err != nil {
-		return fmt.Errorf("generate webp: %w", err)
-	}
-	prnt(s)
-	s, err = images.ToThumb(o, f.Img400, thumbMedium)
-	if err != nil {
-		return fmt.Errorf("generate thumb %dpx: %w", thumbMedium, err)
-	}
-	prnt(s)
 	return nil
 }
 
-// ToPng converts any supported format to a compressed PNG image.
-// helpful: https://www.programming-books.io/essential/go
-// /images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49.
-func makePng(src, dest string, amiga bool) (string, error) {
-	if src == "" {
-		return "", fmt.Errorf("make png: %w", ErrNoSrc)
+func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records int, err error) {
+	var t tf.TextFile
+	i++
+	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
+		return i, c, fmt.Errorf("fix rows scan: %w", err1)
 	}
-	if dest == "" {
-		return "", fmt.Errorf("make png: %w", ErrDest)
-	}
-	_, err := os.Stat(src)
-	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("make png missing %q: %w", src, err)
-	} else if err != nil {
-		return "", fmt.Errorf("make png stat: %w", err)
-	}
-	const ten = 10 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), ten)
-	defer cancel()
-	// ansilove -q # suppress output messages
-	// ansilove -r # create Retina @2x output file
-	// ansilove -o # specify output filename/path
-	// ansilove -f # select font for supported formats: 80x25 (default), topaz+, 80x50, ...
-	img := dest + png
-	args := []string{"-q", "-r", "-o", img}
-	if amiga {
-		args = append(args, "-f", "topaz+")
-	}
-	args = append(args, src)
-	cmd := exec.CommandContext(ctx, "ansilove", args...)
-	out, err := cmd.Output()
-	if err != nil && err.Error() == "exit status 127" {
-		return "", fmt.Errorf("make ansilove: %w", ErrAnsiLove)
-	} else if err != nil {
-		return "", fmt.Errorf("make ansilove %q: %w", out, err)
-	}
-
-	_, err = os.Getwd()
+	ok, err := t.Exist(dir)
 	if err != nil {
-		return "", fmt.Errorf("make png working directory: %w", err)
+		return i, c, fmt.Errorf("fix exist: %w", err)
 	}
-
-	_, err = os.Executable()
+	// missing images + source is an archive
+	if !ok && t.Archive() {
+		c++
+		err1 := t.Extract(dir)
+		switch {
+		case errors.Is(err1, tf.ErrMeUnk):
+			return i, c, nil
+		case errors.Is(err1, tf.ErrMeNo):
+			return i, c, nil
+		case err1 != nil:
+			fmt.Println(t.String(), err1)
+			return i, c, nil
+		}
+		if err1 := t.ExtractedImgs(dir.UUID); err1 != nil {
+			fmt.Println(t.String(), err1)
+		}
+		return i, c, nil
+	}
+	// missing images + source is a textfile
+	if !ok {
+		c++
+		if !t.TextPng(c, dir.UUID) {
+			return i, c, nil
+		}
+	}
+	// missing webp specific images that rely on PNG sources
+	c, err = t.WebP(c, dir.Img000)
 	if err != nil {
-		return "", fmt.Errorf("make png failed to obtain exe: %w", err)
+		logs.Println(err)
 	}
-
-	stat, err := os.Stat(img)
-	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("make png stat %q: %w", img, err)
-	} else if err != nil {
-		return "", fmt.Errorf("make png stat: %w", err)
-	}
-
-	return fmt.Sprintf("✓ text » png %v\n%s",
-		humanize.Bytes(uint64(stat.Size())), color.Secondary.Sprintf("%s", out)), nil
+	return i, c, nil
 }

@@ -1,77 +1,26 @@
-package text
+package text_test
 
 import (
-	"path/filepath"
 	"testing"
+
+	"github.com/Defacto2/df2/lib/text"
 )
 
-func Test_makePng(t *testing.T) {
-	dst, err := filepath.Abs("../../tests/text/test")
-	if err != nil {
-		t.Error(err)
-	}
-	src, err := filepath.Abs("../../tests/text/test.txt")
-	if err != nil {
-		t.Error(err)
-	}
+func TestFix(t *testing.T) {
 	type args struct {
-		src   string
-		dest  string
-		amiga bool
+		simulate bool
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"empty", args{"", "", false}, true},
-		{"missing src", args{"", dst, false}, true},
-		{"missing dst", args{src, "", false}, true},
-		{"invalid src", args{src + "invalidate", dst, false}, true},
-		{"text", args{src, dst, false}, false},
+		{"simulate", args{true}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := makePng(tt.args.src, tt.args.dest, tt.args.amiga)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("makePng() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-		})
-	}
-}
-
-func Test_generate(t *testing.T) {
-	gif, err := filepath.Abs("../../tests/images/test.gif")
-	if err != nil {
-		t.Error(err)
-	}
-	txt, err := filepath.Abs("../../tests/text/test.txt")
-	if err != nil {
-		t.Error(err)
-	}
-	type args struct {
-		name  string
-		id    string
-		amiga bool
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"test", args{"", "", false}, true},
-		{"missing", args{"abce", "1", false}, true},
-		{"gif", args{gif, "1", false}, true},
-		{"txt", args{txt, "1", false}, true},
-		{"amiga", args{txt, "1", true}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := generate(tt.args.name, tt.args.id, tt.args.amiga)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("generate() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if err := text.Fix(tt.args.simulate); (err != nil) != tt.wantErr {
+				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-package text
+package tf_test
 
 import (
 	"os"
@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/text/internal/tf"
 	"github.com/gookit/color"
 )
 
-func TestImage_exists(t *testing.T) {
+func TestExist(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return
 	}
@@ -39,21 +40,20 @@ func TestImage_exists(t *testing.T) {
 			if tt.name == "missingdir" {
 				dir.Img400 = ""
 			}
-			x := textfile{
-				UUID: tt.fields.UUID,
-			}
-			got, err := x.exist(&dir)
+			var x tf.TextFile
+			x.UUID = tt.fields.UUID
+			got, err := x.Exist(&dir)
 			if got != tt.want {
-				t.Errorf("image.exist(%s) = %v, want %v", &dir, got, tt.want)
+				t.Errorf("Exist(%s) = %v, want %v", &dir, got, tt.want)
 			}
 			if err != nil {
-				t.Errorf("image.exists(%s) err = %v", &dir, err)
+				t.Errorf("Exist(%s) err = %v", &dir, err)
 			}
 		})
 	}
 }
 
-func TestImage_archive(t *testing.T) {
+func TestArchive(t *testing.T) {
 	type fields struct {
 		Filename string
 	}
@@ -71,17 +71,16 @@ func TestImage_archive(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			x := textfile{
-				Name: tt.fields.Filename,
-			}
-			if got := x.archive(); got != tt.want {
-				t.Errorf("image.valid() = %v, want %v", got, tt.want)
+			var x tf.TextFile
+			x.Name = tt.fields.Filename
+			if got := x.Archive(); got != tt.want {
+				t.Errorf("Archive() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestImage_String(t *testing.T) {
+func TestString(t *testing.T) {
 	type fields struct {
 		ID       uint
 		UUID     string
@@ -100,35 +99,14 @@ func TestImage_String(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			img := textfile{
-				ID:   tt.fields.ID,
-				UUID: tt.fields.UUID,
-				Name: tt.fields.Filename,
-				Ext:  tt.fields.FileExt,
-				Size: tt.fields.Filesize,
-			}
+			var img tf.TextFile
+			img.ID = tt.fields.ID
+			img.UUID = tt.fields.UUID
+			img.Name = tt.fields.Filename
+			img.Ext = tt.fields.FileExt
+			img.Size = tt.fields.Filesize
 			if got := img.String(); got != tt.want {
-				t.Errorf("image.String() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFix(t *testing.T) {
-	type args struct {
-		simulate bool
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"simulate", args{true}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := Fix(tt.args.simulate); (err != nil) != tt.wantErr {
-				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("img.String() = %q, want %q", got, tt.want)
 			}
 		})
 	}
