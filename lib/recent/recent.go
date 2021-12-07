@@ -10,69 +10,12 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/hako/durafmt"
+	"github.com/Defacto2/df2/lib/recent/internal/file"
 )
 
-// File data for new thumbnails.
-type File struct {
-	UUID    string `json:"uuid"`
-	URLID   string `json:"urlid"`
-	Title   string `json:"title"`
-	timeAgo string
-	title   string
-	group   string
-	year    int
-}
-
-type data [3]string
-
-type files struct {
-	Cols [3]string `json:"COLUMNS"`
-	Data []data    `json:"DATA"`
-}
-
-const id, uuid, recordtitle, groupbrandfor, groupbrandby, filename, dateissuedyear, createdat = 0, 1, 2, 3, 4, 5, 6, 7
-
 var ErrJSON = errors.New("data fails json validation")
-
-func (f *File) parse(values []sql.RawBytes) {
-	if id := string(values[id]); id != "" {
-		f.URLID = database.ObfuscateParam(id)
-	}
-	f.UUID = strings.ToLower(string(values[uuid]))
-	if t, err := time.Parse(time.RFC3339, string(values[createdat])); err != nil {
-		f.timeAgo = "Sometime"
-	} else {
-		f.timeAgo = fmt.Sprint(durafmt.Parse(time.Since(t)).LimitFirstN(1))
-	}
-	if rt := string(values[recordtitle]); rt != "" {
-		f.title = fmt.Sprintf("%s (%s)", values[recordtitle], values[filename])
-	} else {
-		f.title = string(values[filename])
-	}
-	if g := string(values[groupbrandfor]); g != "" {
-		f.group = g
-	} else if g := string(values[groupbrandby]); g != "" {
-		f.group = g
-	} else {
-		f.group = "an unknown group"
-	}
-	if y := string(values[dateissuedyear]); y != "" {
-		i, err := strconv.Atoi(y)
-		if err == nil {
-			f.year = i
-		}
-	}
-	f.Title = fmt.Sprintf("%s ago, %s for %s", f.timeAgo, f.title, f.group)
-	const min = 1980
-	if f.year >= min {
-		f.Title += fmt.Sprintf(" in %d", f.year)
-	}
-}
 
 // List recent files as a JSON document.
 func List(limit uint, compress bool) error {
@@ -95,15 +38,15 @@ func List(limit uint, compress bool) error {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	f := files{Cols: [...]string{"uuid", "urlid", "title"}}
+	f := file.Files{Cols: [...]string{"uuid", "urlid", "title"}}
 	for rows.Next() {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("list rows next: %w", err)
 		} else if values == nil {
 			continue
 		}
-		var v File
-		v.parse(values)
+		var v file.Thumb
+		v.Parse(values)
 		f.Data = append(f.Data, [...]string{v.UUID, v.URLID, v.Title})
 	}
 	jsonData, err := json.Marshal(f)

@@ -1,53 +1,43 @@
 package shrink
 
 import (
-	"log"
-	"os"
-	"os/user"
-	"strings"
+	"fmt"
+
+	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/shrink/internal/sql"
+	"github.com/gookit/color"
+	"github.com/spf13/viper"
 )
 
-func month(s string) Month {
-	const monthPrefix = 3
-	switch strings.ToLower(s)[:monthPrefix] {
-	case "jan":
-		return jan
-	case "feb":
-		return feb
-	case "mar":
-		return mar
-	case "apr":
-		return apr
-	case "may":
-		return may
-	case "jun":
-		return jun
-	case "jul":
-		return jul
-	case "aug":
-		return aug
-	case "sep":
-		return sep
-	case "oct":
-		return oct
-	case "nov":
-		return nov
-	case "dec":
-		return dec
-	default:
-		return non
+func Files() {
+	s := viper.GetString("directory.incoming.files")
+	color.Primary.Printf("Incoming files directory: %s\n", s)
+	if err := sql.Approve("incoming"); err != nil {
+		logs.Danger(err)
+		return
 	}
+	if err := sql.Store(s, "Incoming", "incoming-files"); err != nil {
+		logs.Danger(err)
+		return
+	}
+	fmt.Println("Incoming storage is complete.")
 }
 
-func saveDir() string {
-	usr, err := user.Current()
-	if err == nil {
-		return usr.HomeDir
+func Previews() {
+	s := viper.GetString("directory.incoming.previews")
+	color.Primary.Printf("Previews incoming directory: %s\n", s)
+	if err := sql.Approve("previews"); err != nil {
+		return
 	}
-	var dir string
-	dir, err = os.Getwd()
-	if err != nil {
-		log.Fatalln("shrink saveDir failed to get the user home or the working directory:", err)
+	if err := sql.Store(s, "Previews", "incoming-preview"); err != nil {
+		logs.Danger(err)
+		return
 	}
-	return dir
+	fmt.Println("Previews storage is complete.")
+}
+
+func SQL() {
+	if err := sql.Init(); err != nil {
+		logs.Danger(err)
+	}
 }
