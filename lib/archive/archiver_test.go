@@ -10,7 +10,7 @@ import (
 	"github.com/mholt/archiver"
 )
 
-func TestReadr(t *testing.T) { //nolint:dupl
+func TestReadr(t *testing.T) {
 	type args struct {
 		archive  string
 		filename string

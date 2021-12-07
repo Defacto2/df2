@@ -75,7 +75,6 @@ func TestFilters(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func TestList(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -150,7 +149,6 @@ func Test_DataList_HTML(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func TestRole_String(t *testing.T) {
 	tests := []struct {
 		name string

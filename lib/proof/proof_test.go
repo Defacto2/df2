@@ -38,7 +38,6 @@ func TestRequest_Query(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func Test_sqlSelect(t *testing.T) {
 	tests := []struct {
 		name string
@@ -58,7 +57,6 @@ func Test_sqlSelect(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func Test_stat_summary(t *testing.T) {
 	type fields struct {
 		base      string

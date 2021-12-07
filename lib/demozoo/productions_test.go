@@ -62,7 +62,6 @@ func load(r int, c chan ProductionsAPIv1) {
 	c <- dz
 }
 
-// nolint: revive
 func Test_filename(t *testing.T) {
 	type args struct {
 		h http.Header
@@ -101,7 +100,6 @@ func check(t *testing.T, err error) {
 	}
 }
 
-// nolint: revive
 func mockHeader(add string) (header http.Header, err error) {
 	// source: https://blog.questionable.services/article/testing-http-handlers-go/
 	ctx := context.Background()
@@ -223,7 +221,6 @@ func TestProductionsAPIv1_Download(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func TestProductionsAPIv1_PouetID(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -255,7 +252,6 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func TestProductionsAPIv1_Print(t *testing.T) {
 	tests := []struct {
 		name    string

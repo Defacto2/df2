@@ -103,7 +103,6 @@ func capture(test, text string, quiet bool) (output string) {
 	return strings.TrimSpace(string(bytes))
 }
 
-//nolint: revive
 func TestPrints(t *testing.T) {
 	type args struct {
 		test  string

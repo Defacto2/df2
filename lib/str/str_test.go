@@ -21,7 +21,6 @@ func capString(test, text string) (output string) {
 	return output
 }
 
-// nolint: revive
 func Test_capString(t *testing.T) {
 	type args struct {
 		test string
@@ -48,7 +47,6 @@ func Test_capString(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func Test_Progress(t *testing.T) {
 	type args struct {
 		name  string
@@ -75,7 +73,6 @@ func Test_Progress(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func TestTruncate(t *testing.T) {
 	type args struct {
 		text string

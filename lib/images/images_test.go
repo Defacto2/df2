@@ -91,7 +91,6 @@ func TestDuplicate(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func TestInfo(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -172,7 +171,7 @@ func TestWidth(t *testing.T) {
 	}{
 		{"", 0, true},
 		{testTxt(), 0, true},
-		{testImg(p), 1280, false}, //nolint: revive
+		{testImg(p), 1280, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -218,7 +217,6 @@ func TestToPng(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func TestToThumb(t *testing.T) {
 	type args struct {
 		src         string
@@ -318,7 +316,6 @@ func TestToWebp(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func TestWebPCalc(t *testing.T) {
 	const long = 15000
 	type args struct {

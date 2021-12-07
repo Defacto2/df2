@@ -32,7 +32,6 @@ func TestDemozoo_String(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func Test_findDOS(t *testing.T) {
 	type args struct {
 		name  string
@@ -135,7 +134,6 @@ func Test_findNFO(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func Test_finds_top(t *testing.T) {
 	tests := []struct {
 		name string

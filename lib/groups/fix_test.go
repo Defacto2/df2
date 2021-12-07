@@ -53,7 +53,7 @@ func Test_cleanString(t *testing.T) {
 	}
 }
 
-func Test_trimThe(t *testing.T) { //nolint:dupl
+func Test_trimThe(t *testing.T) {
 	type args struct {
 		g string
 	}
@@ -101,7 +101,6 @@ func Test_trimDot(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func Test_format(t *testing.T) {
 	tests := []struct {
 		s    string

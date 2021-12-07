@@ -89,7 +89,6 @@ func TestDateTime(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func Test_valid(t *testing.T) {
 	type args struct {
 		deleted sql.RawBytes
@@ -120,7 +119,6 @@ func Test_valid(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func Test_reverseInt(t *testing.T) {
 	tests := []struct {
 		name         string

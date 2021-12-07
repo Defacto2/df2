@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-//nolint: revive
 func Test_randString(t *testing.T) {
 	type args struct {
 		n int
@@ -63,7 +62,6 @@ func Test_createDirectory(t *testing.T) {
 	}
 }
 
-//nolint: revive
 func Test_createHolderFiles(t *testing.T) {
 	tempDir, err := ioutil.TempDir(os.TempDir(), "test-create-holders")
 	if err != nil {

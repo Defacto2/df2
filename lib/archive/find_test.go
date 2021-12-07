@@ -2,7 +2,6 @@ package archive
 
 import "testing"
 
-//nolint: revive
 func TestFindNFO(t *testing.T) {
 	var empty []string
 	const (

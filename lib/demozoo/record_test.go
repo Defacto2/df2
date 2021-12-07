@@ -38,7 +38,6 @@ type fields struct {
 	CreditAudio    []string
 }
 
-// nolint: revive
 func TestRecord_sql(t *testing.T) {
 	const where string = " WHERE id=?"
 	now := time.Now()
@@ -133,7 +132,6 @@ func TestRecord_fileZipContent(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func Test_stat_fileExist(t *testing.T) {
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -172,7 +170,6 @@ func Test_stat_fileExist(t *testing.T) {
 	}
 }
 
-// nolint: revive
 func TestRecord_String(t *testing.T) {
 	color.Enable = false
 	type fields struct {
