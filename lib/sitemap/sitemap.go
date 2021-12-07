@@ -7,43 +7,23 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
-	"github.com/spf13/viper"
+	"github.com/Defacto2/df2/lib/sitemap/internal/url"
 )
 
 const (
-	resource = "https://defacto2.net/f/"
-	static   = "https://defacto2.net/"
-	index    = "index.cfm"
-	cfm      = ".cfm"
-	urlCount = 28
+	// Resource of the sitemap.
+	Resource = "https://defacto2.net/f/"
 	// limit the number of urls as permitted by Bing and Google search engines.
-	limit = 50000
+	Limit = 50000
 )
-
-// url composes the <url> tag in the sitemap.
-type url struct {
-	Location string `xml:"loc,omitempty"`
-	// optional attributes
-	LastModified string `xml:"lastmod,omitempty"`
-	ChangeFreq   string `xml:"changefreq,omitempty"`
-	Priority     string `xml:"priority,omitempty"`
-}
-
-// URLset is a sitemap XML template.
-type URLset struct {
-	XMLName xml.Name `xml:"urlset,omitempty"`
-	XMLNS   string   `xml:"xmlns,attr,omitempty"`
-	Urls    []url    `xml:"url,omitempty"`
-}
 
 // Create generates and prints the sitemap.
 func Create() error {
 	// query
-	id, v := "", &URLset{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
+	id, v := "", &url.Set{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	var createdat, updatedat sql.NullString
 	count, err := nullsDeleteAt()
 	if err != nil {
@@ -60,8 +40,8 @@ func Create() error {
 	}
 	defer rows.Close()
 	// handle static urls
-	v.Urls = make([]url, len(paths())+count)
-	c, i := v.staticURLs()
+	v.Urls = make([]url.Tag, len(url.Paths())+count)
+	c, i := v.StaticURLs()
 	// handle query results.
 	for rows.Next() {
 		i++
@@ -75,10 +55,14 @@ func Create() error {
 		if _, err = createdat.Value(); err != nil {
 			continue
 		}
-		lmv := lastmodValue(createdat, updatedat)
-		v.Urls[i] = url{fmt.Sprintf("%v%v", resource, database.ObfuscateParam(id)), lmv, "", ""}
+		v.Urls[i] = url.Tag{
+			Location:     Resource,
+			LastModified: database.ObfuscateParam(id),
+			ChangeFreq:   lastmodValue(createdat, updatedat),
+			Priority:     "",
+		}
 		c++
-		if c >= limit {
+		if c >= Limit {
 			break
 		}
 	}
@@ -88,8 +72,8 @@ func Create() error {
 	return db.Close()
 }
 
-func createOutput(v *URLset) error {
-	empty, trimmed := url{}, []url{}
+func createOutput(v *url.Set) error {
+	empty, trimmed := url.Tag{}, []url.Tag{}
 	for i, x := range v.Urls {
 		if x == empty {
 			trimmed = v.Urls[0:i]
@@ -147,72 +131,4 @@ func lastmodValue(createdat, updatedat sql.NullString) string {
 		s = t[0]
 	}
 	return s
-}
-
-func (set *URLset) staticURLs() (c, i int) {
-	// sitemap priorities
-	const top, veryHigh, high, standard = "1", "0.9", "0.8", "0.7"
-	uri := func(path string) string {
-		return static + path
-	}
-	c, i, view := 0, 0, viper.GetString("directory.views")
-	for i, path := range paths() {
-		file := filepath.Join(view, path, index)
-		if s, err := os.Stat(file); !os.IsNotExist(err) {
-			set.Urls[i] = url{uri(path), lastmod(s), "", veryHigh}
-			c++
-			continue
-		}
-		j := filepath.Join(view, path) + cfm
-		if s, err := os.Stat(j); !os.IsNotExist(err) {
-			set.Urls[i] = url{uri(path), lastmod(s), "", high}
-			c++
-			continue
-		}
-		k := filepath.Join(view, strings.ReplaceAll(path, "-", "")+cfm)
-		if s, err := os.Stat(k); !os.IsNotExist(err) {
-			set.Urls[i] = url{uri(path), lastmod(s), "", standard}
-			c++
-			continue
-		}
-		set.Urls[i] = url{uri(path), "", "", top}
-	}
-	return c, i
-}
-
-func lastmod(s os.FileInfo) string {
-	return s.ModTime().UTC().Format("2006-01-02")
-}
-
-func paths() [urlCount]string {
-	return [urlCount]string{
-		"welcome",
-		"file",
-		"file/list/new",
-		"organisation/list/group",
-		"organisation/list/bbs",
-		"organisation/list/ftp",
-		"organisation/list/magazine",
-		"person/list/artists",
-		"person/list/coders",
-		"person/list/musicians",
-		"person/list/writers",
-		"search/result",
-		"defacto2",
-		"defacto2/donate",
-		"defacto2/history",
-		"defacto2/subculture",
-		"contact",
-		"commercial",
-		"code",
-		"help",
-		"help/creative-commons",
-		"help/privacy",
-		"help/browser-support",
-		"help/keyboard",
-		"help/viruses",
-		"help/allowed-uploads",
-		"help/categories",
-		"link/list",
-	}
 }

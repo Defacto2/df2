@@ -1,8 +1,9 @@
-package str
+package str_test
 
 import (
 	"testing"
 
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
 )
 
@@ -10,13 +11,13 @@ func capString(test, text string) (output string) {
 	color.Enable = false
 	switch test {
 	case "sec":
-		output = Sec(text)
+		output = str.Sec(text)
 	case "warn":
-		output = Warn(text)
+		output = str.Warn(text)
 	case "x":
-		output = X()
+		output = str.X()
 	case "y":
-		output = Y()
+		output = str.Y()
 	}
 	return output
 }
@@ -47,7 +48,7 @@ func Test_capString(t *testing.T) {
 	}
 }
 
-func Test_Progress(t *testing.T) {
+func TestProgress(t *testing.T) {
 	type args struct {
 		name  string
 		count int
@@ -66,7 +67,7 @@ func Test_Progress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Progress(tt.args.name, tt.args.count, tt.args.total); got != tt.want {
+			if got := str.Progress(tt.args.name, tt.args.count, tt.args.total); got != tt.want {
 				t.Errorf("Progress() = %v, want %v", got, tt.want)
 			}
 		})
@@ -91,7 +92,7 @@ func TestTruncate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Truncate(tt.args.text, tt.args.len); got != tt.want {
+			if got := str.Truncate(tt.args.text, tt.args.len); got != tt.want {
 				t.Errorf("Truncate() = %v, want %v", got, tt.want)
 			}
 		})
