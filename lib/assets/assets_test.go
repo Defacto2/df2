@@ -156,7 +156,7 @@ func createTempDir() (sum int64, dir string, err error) {
 	done, sum := make(chan error), int64(0)
 	for _, f := range imgs {
 		go func(f string) {
-			sum, err = archive.FileCopy(filepath.Join(src, f), filepath.Join(dir, f))
+			sum, err = archive.Copy(filepath.Join(src, f), filepath.Join(dir, f))
 			if err != nil {
 				done <- err
 			}

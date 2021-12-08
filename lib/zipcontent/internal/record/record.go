@@ -98,7 +98,7 @@ func (r *Record) nfo(s *scan.Stats) error {
 		return ErrStatNil
 	}
 	const txt = ".txt"
-	r.NFO = archive.FindNFO(r.Name, r.Files...)
+	r.NFO = archive.NFO(r.Name, r.Files...)
 	if r.NFO == "" {
 		return nil
 	}
@@ -113,7 +113,7 @@ func (r *Record) nfo(s *scan.Stats) error {
 			return err2
 		}
 		src := filepath.Join(tmp, r.NFO)
-		if _, err3 := archive.FileMove(src, filepath.Join(s.BasePath, r.UUID+txt)); err3 != nil {
+		if _, err3 := archive.Move(src, filepath.Join(s.BasePath, r.UUID+txt)); err3 != nil {
 			return err3
 		}
 		logs.Print(", extracted")

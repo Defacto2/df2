@@ -1,14 +1,16 @@
-package archive
+package archive_test
 
 import (
-	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
+	"github.com/Defacto2/df2/lib/archive"
+	"github.com/Defacto2/df2/lib/archive/internal/content"
+	"github.com/Defacto2/df2/lib/archive/internal/demozoo"
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/spf13/viper"
 )
 
 func testDir(name string) string {
@@ -16,43 +18,7 @@ func testDir(name string) string {
 	return filepath.Join(dir, "..", "..", "tests", name)
 }
 
-func TestFileCopy(t *testing.T) {
-	type args struct {
-		name string
-		dest string
-	}
-	tests := []struct {
-		name        string
-		args        args
-		wantWritten int64
-		wantErr     bool
-	}{
-		{"empty", args{"", ""}, 0, true},
-		{"empty", args{testDir("text/test.txt"), testDir("text/test.txt")}, 12, false},
-		{"empty", args{testDir("text/test.txt"), testDir("text/test.txt~")}, 12, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotWritten, err := FileCopy(tt.args.name, tt.args.dest)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FileCopy() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotWritten != tt.wantWritten {
-				t.Errorf("FileCopy() = %v, want %v", gotWritten, tt.wantWritten)
-			}
-			if err == nil && tt.args.name != tt.args.dest {
-				if _, err := os.Stat(tt.args.dest); !os.IsNotExist(err) {
-					if err = os.Remove(tt.args.dest); err != nil {
-						t.Errorf("FileCopy() failed to cleanup copy %v", tt.args.dest)
-					}
-				}
-			}
-		})
-	}
-}
-
-func Test_content_filemime(t *testing.T) {
+func TestMIME(t *testing.T) {
 	type fields struct {
 		name       string
 		ext        string
@@ -72,46 +38,17 @@ func Test_content_filemime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &content{
-				name:       tt.fields.name,
-				ext:        tt.fields.ext,
-				path:       tt.fields.path,
-				mime:       tt.fields.mime,
-				size:       tt.fields.size,
-				executable: tt.fields.executable,
-				textfile:   tt.fields.textfile,
+			c := &content.File{
+				Name:       tt.fields.name,
+				Ext:        tt.fields.ext,
+				Path:       tt.fields.path,
+				Mime:       tt.fields.mime,
+				Size:       tt.fields.size,
+				Executable: tt.fields.executable,
+				Textfile:   tt.fields.textfile,
 			}
-			if err := c.filemime(); (err != nil) != tt.wantErr {
-				t.Errorf("content.filemime() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestFileMove(t *testing.T) {
-	type args struct {
-		name string
-		dest string
-	}
-	tests := []struct {
-		name        string
-		args        args
-		wantWritten int64
-		wantErr     bool
-	}{
-		{"empty", args{"", ""}, 0, true},
-		{"one way", args{testDir("text/test.txt"), testDir("text/test.txt~")}, 12, false},
-		{"restore way", args{testDir("text/test.txt~"), testDir("text/test.txt")}, 12, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotWritten, err := FileMove(tt.args.name, tt.args.dest)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FileMove() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotWritten != tt.wantWritten {
-				t.Errorf("FileMove() = %v, want %v", gotWritten, tt.wantWritten)
+			if err := c.MIME(); (err != nil) != tt.wantErr {
+				t.Errorf("MIME() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -133,7 +70,7 @@ func TestRead(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, err := Read(tt.args.archive, tt.args.filename)
+			gotFiles, err := archive.Read(tt.args.archive, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -172,7 +109,7 @@ func TestRestore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, err := Restore(tt.args.source, tt.args.filename, tt.args.destination)
+			gotFiles, err := archive.Restore(tt.args.source, tt.args.filename, tt.args.destination)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -184,26 +121,68 @@ func TestRestore(t *testing.T) {
 	}
 }
 
-func Test_dir(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "test-dir")
-	if err != nil {
-		t.Error(err)
+func TestExtract(t *testing.T) {
+	const uuid = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
+	type args struct {
+		archive  string
+		filename string
+		uuid     string
 	}
 	tests := []struct {
 		name    string
+		args    args
 		wantErr bool
 	}{
-		{"", true},
-		{tempDir, false},
+		{"empty", args{}, true},
+		{"error", args{testDir("demozoo/test.zip"), "test.zip", "xxxx"}, true},
+		{"7z", args{testDir("demozoo/test.7z"), "test.7z", uuid}, true},
+		{"tar", args{testDir("demozoo/test.tar"), "test.tar", uuid}, false},
+		{"tar.gz", args{testDir("demozoo/test.tar.gz"), "test.tar.gz", uuid}, false},
+		{"tar.bz2", args{testDir("demozoo/test.tar.bz2"), "test.tar.bz2", uuid}, false},
+		{"sz (snappy)", args{testDir("demozoo/test.tar.sz"), "test.tar.sz", uuid}, false},
+		{"xz", args{testDir("demozoo/test.tar.xz"), "test.tar.xz", uuid}, false},
+		{"zip", args{testDir("demozoo/test.zip"), "test.zip", uuid}, false},
+		{"zip.bz2", args{testDir("demozoo/test.bz2.zip"), "test.bz2.zip", uuid}, false},
 	}
 	for _, tt := range tests {
+		if viper.GetString("directory.root") == "" {
+			return
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			if err := dir(tt.name); (err != nil) != tt.wantErr {
-				t.Errorf("dir() error = %v, wantErr %v", err, tt.wantErr)
+			if err := archive.Proof(tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
+				t.Errorf("Proof(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)
 			}
 		})
 	}
-	if err := os.RemoveAll(tempDir); err != nil {
-		log.Print(err)
+}
+
+func TestNFO(t *testing.T) {
+	const fileDiz = demozoo.FileDiz
+	var empty []string
+	const (
+		ff2 = "hi.nfo"
+		ff3 = "random.txt"
+	)
+	type args struct {
+		name  string
+		files []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"empty", args{"", empty}, ""},
+		{"empty zip", args{"hi.zip", empty}, ""},
+		{"1 file", args{"hi.zip", []string{fileDiz}}, fileDiz},
+		{"2 files", args{"hi.zip", []string{fileDiz, ff2}}, "hi.nfo"},
+		{"3 files", args{"hi.zip", []string{fileDiz, ff2, ff3}}, "hi.nfo"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := archive.NFO(tt.args.name, tt.args.files...); got != tt.want {
+				t.Errorf("NFO() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

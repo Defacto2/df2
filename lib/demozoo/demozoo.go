@@ -344,7 +344,7 @@ func (r *Record) doseeMeta() error {
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	d, err := archive.ExtractDemozoo(r.FilePath, r.UUID, &names)
+	d, err := archive.Demozoo(r.FilePath, r.UUID, &names)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}

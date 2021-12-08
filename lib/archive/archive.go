@@ -4,104 +4,165 @@ package archive
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/Defacto2/df2/lib/archive/internal/content"
+	"github.com/Defacto2/df2/lib/archive/internal/demozoo"
+	"github.com/Defacto2/df2/lib/archive/internal/file"
+	"github.com/Defacto2/df2/lib/archive/internal/task"
+	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/images"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/dustin/go-humanize"
-	"github.com/gabriel-vasile/mimetype"
 )
 
 const (
-	CreateMode = 0o666
-	bat        = ".bat"
-	bmp        = ".bmp"
-	com        = ".com"
-	diz        = ".diz"
-	exe        = ".exe"
-	gif        = ".gif"
-	jpg        = ".jpg"
-	nfo        = ".nfo"
-	png        = ".png"
-	tiff       = ".tiff"
-	txt        = ".txt"
-	webp       = ".webp"
+	bat  = ".bat"
+	bmp  = ".bmp"
+	com  = ".com"
+	diz  = ".diz"
+	exe  = ".exe"
+	gif  = ".gif"
+	jpg  = ".jpg"
+	nfo  = ".nfo"
+	png  = ".png"
+	tiff = ".tiff"
+	txt  = ".txt"
+	webp = ".webp"
 )
-
-type content struct {
-	name       string
-	ext        string
-	path       string
-	mime       *mimetype.MIME
-	size       int64
-	executable bool
-	textfile   bool
-}
-
-type contents map[int]content
-
-func (c content) String() string {
-	return fmt.Sprintf("%v (%v extension)", &c.name, c.ext)
-}
 
 var (
-	ErrNoCustom = errors.New("does not support customization")
-	ErrNotArc   = errors.New("format specified by source filename is not an archive format")
 	ErrSameArgs = errors.New("name and dest cannot be the same")
-	ErrWalkrFmt = errors.New("format specified by archive filename is not a walker format")
+	ErrNotArc   = errors.New("format specified by source filename is not an archive format")
 )
 
-// filemime saves the file MIME information and name extension.
-func (c *content) filemime() error {
-	m, err := mimetype.DetectFile(c.path)
-	if err != nil {
-		return fmt.Errorf("filemime failure on %q: %w", c.path, err)
+func Copy(name, dest string) (written int64, err error) {
+	return file.Copy(name, dest)
+}
+
+func Move(name, dest string) (written int64, err error) {
+	return file.Move(name, dest)
+}
+
+// Demozoo decompresses and parses archives fetched from Demozoo.org.
+func Demozoo(name, uuid string, varNames *[]string) (demozoo.Data, error) {
+	dz := demozoo.Data{}
+	if err := database.CheckUUID(uuid); err != nil {
+		return demozoo.Data{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
 	}
-	c.mime = m
-	// flag useful files
-	switch c.ext {
-	case bat, com, exe:
-		c.executable = true
-	case diz, nfo, txt:
-		c.textfile = true
+	// create temp dir
+	tempDir, err := ioutil.TempDir("", "extarc-")
+	if err != nil {
+		return demozoo.Data{}, fmt.Errorf("extract demozoo tempdir %q: %w", tempDir, err)
+	}
+	defer os.RemoveAll(tempDir)
+	filename, err := database.LookupFile(uuid)
+	if err != nil {
+		return demozoo.Data{}, fmt.Errorf("extract demozoo lookup id %q: %w", uuid, err)
+	}
+	if _, err = Restore(name, filename, tempDir); err != nil {
+		return demozoo.Data{}, fmt.Errorf("extract demozoo restore %q: %w", filename, err)
+	}
+	files, err := ioutil.ReadDir(tempDir)
+	if err != nil {
+		return demozoo.Data{}, fmt.Errorf("extract demozoo readdir %q: %w", tempDir, err)
+	}
+	zips := make(content.Contents)
+	for i, f := range files {
+		var zip content.File
+		zip.Path = tempDir // filename gets appended by z.scan()
+		zip.Scan(f)
+		if err = zip.MIME(); err != nil {
+			return demozoo.Data{}, fmt.Errorf("extract demozoo filemime %q: %w", f, err)
+		}
+		zips[i] = zip
+	}
+	if nfo := demozoo.NFO(name, zips, varNames); nfo != "" {
+		if ok, err := demozoo.MoveText(filepath.Join(tempDir, nfo), uuid); err != nil {
+			return demozoo.Data{}, fmt.Errorf("extract demozo move nfo: %w", err)
+		} else if !ok {
+			dz.NFO = nfo
+		}
+	}
+	if dos := demozoo.DOS(name, zips, varNames); dos != "" {
+		dz.DOSee = dos
+	}
+	return dz, nil
+}
+
+func NFO(name string, files ...string) string {
+	f := make(demozoo.Finds)
+	for _, file := range files {
+		base := strings.TrimSuffix(name, filepath.Ext(name))
+		fn := strings.ToLower(file)
+		ext := filepath.Ext(fn)
+		switch ext {
+		case diz, nfo, txt:
+			// okay
+		default:
+			continue
+		}
+		switch {
+		case fn == base+".nfo": // [archive name].nfo
+			f[file] = demozoo.Lvl1
+		case fn == base+".txt": // [archive name].txt
+			f[file] = demozoo.Lvl2
+		case ext == ".nfo": // [random].nfo
+			f[file] = demozoo.Lvl3
+		case fn == "file_id.diz": // BBS file description
+			f[file] = demozoo.Lvl4
+		case fn == base+".diz": // [archive name].diz
+			f[file] = demozoo.Lvl5
+		case fn == ".txt": // [random].txt
+			f[file] = demozoo.Lvl6
+		case fn == ".diz": // [random].diz
+			f[file] = demozoo.Lvl7
+		default: // currently lacking is [group name].nfo and [group name].txt priorities
+		}
+	}
+	return f.Top()
+}
+
+// Proof decompresses and parses an archive.
+// uuid is used to rename the extracted assets such as image previews.
+func Proof(src, filename, uuid string) error {
+	if err := database.CheckUUID(uuid); err != nil {
+		return fmt.Errorf("archive uuid %q: %w", uuid, err)
+	}
+	// create temp dir
+	tempDir, err := ioutil.TempDir("", "proofextract-")
+	if err != nil {
+		return fmt.Errorf("archive tempdir %q: %w", tempDir, err)
+	}
+	defer os.RemoveAll(tempDir)
+	if err = Unarchiver(src, filename, tempDir); err != nil {
+		return fmt.Errorf("unarchiver: %w", err)
+	}
+	th, tx, err := task.Run(tempDir)
+	if err != nil {
+		return err
+	}
+	if n := th.Name; n != "" {
+		if err := images.Generate(n, uuid, true); err != nil {
+			return fmt.Errorf("archive generate img: %w", err)
+		}
+	}
+	if n := tx.Name; n != "" {
+		f := directories.Files(uuid)
+		if _, err := file.Move(n, f.UUID+txt); err != nil {
+			return fmt.Errorf("archive filemove %q: %w", n, err)
+		}
+		logs.Print("  »txt")
+	}
+	if x := true; !x {
+		if err := file.Dir(tempDir); err != nil {
+			return fmt.Errorf("archive dir %q: %w", tempDir, err)
+		}
 	}
 	return nil
-}
-
-// FileCopy copies a file to the destination.
-func FileCopy(name, dest string) (written int64, err error) {
-	src, err := os.Open(name)
-	if err != nil {
-		return 0, fmt.Errorf("filecopy open %q: %w", name, err)
-	}
-	defer src.Close()
-	dst, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, CreateMode)
-	if err != nil {
-		return 0, fmt.Errorf("filecopy dest %q: %w", dest, err)
-	}
-	defer dst.Close()
-	if written, err = io.Copy(dst, src); err != nil {
-		return 0, fmt.Errorf("filecopy io.copy: %w", err)
-	}
-	return written, dst.Close()
-}
-
-// FileMove copies a file to the destination and then deletes the source.
-func FileMove(name, dest string) (written int64, err error) {
-	if name == dest {
-		return 0, fmt.Errorf("filemove: %w", ErrSameArgs)
-	}
-	if written, err = FileCopy(name, dest); err != nil {
-		return 0, fmt.Errorf("filemove: %w", err)
-	}
-	if _, err = os.Stat(dest); os.IsNotExist(err) {
-		return 0, fmt.Errorf("filemove dest: %w", err)
-	}
-	if err = os.Remove(name); err != nil {
-		return 0, fmt.Errorf("filemove remove name %q: %w", name, err)
-	}
-	return written, nil
 }
 
 // Read returns a list of files within an rar, tar, zip or 7z archive.
@@ -131,20 +192,4 @@ func Restore(uuid, name, dest string) ([]string, error) {
 		return nil, fmt.Errorf("restore readr: %w", err)
 	}
 	return files, nil
-}
-
-// dir lists the content of a directory.
-func dir(name string) error {
-	files, err := ioutil.ReadDir(name)
-	if err != nil {
-		return fmt.Errorf("dir read name %q: %w", name, err)
-	}
-	for _, f := range files {
-		mime, err := mimetype.DetectFile(name + "/" + f.Name())
-		if err != nil {
-			return fmt.Errorf("dir mime failure on %q: %w", f, err)
-		}
-		logs.Println(f.Name(), humanize.Bytes(uint64(f.Size())), mime)
-	}
-	return nil
 }

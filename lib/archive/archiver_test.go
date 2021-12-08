@@ -1,4 +1,4 @@
-package archive
+package archive_test
 
 import (
 	"io/ioutil"
@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mholt/archiver"
+	"github.com/Defacto2/df2/lib/archive"
 )
 
 func TestReadr(t *testing.T) {
@@ -26,7 +26,7 @@ func TestReadr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, err := Readr(tt.args.archive, tt.args.filename)
+			gotFiles, err := archive.Readr(tt.args.archive, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -68,40 +68,12 @@ func TestUnarchiver(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Unarchiver(tt.args.source, tt.args.filename, tt.args.destination); (err != nil) != tt.wantErr {
+			if err := archive.Unarchiver(tt.args.source, tt.args.filename, tt.args.destination); (err != nil) != tt.wantErr {
 				t.Errorf("Unarchiver() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 	if err := os.RemoveAll(tempDir); err != nil {
 		log.Print(err)
-	}
-}
-
-func Test_configure(t *testing.T) {
-	rar, err := archiver.ByExtension(".tar")
-	if err != nil {
-		t.Error(err)
-	}
-	zip, err := archiver.ByExtension(".zip")
-	if err != nil {
-		t.Error(err)
-	}
-	tests := []struct {
-		name    string
-		f       interface{}
-		wantErr bool
-	}{
-		{"empty", nil, true},
-		{"err", "", true},
-		{"rar", rar, false},
-		{"zip", zip, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := configure(tt.f); (err != nil) != tt.wantErr {
-				t.Errorf("configure() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
 	}
 }

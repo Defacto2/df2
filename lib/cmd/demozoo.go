@@ -81,13 +81,13 @@ var demozooCmd = &cobra.Command{
 			if err != nil {
 				logs.Fatal(err)
 			}
-			d, err := archive.ExtractDemozoo(dzf.extract[0], id.String(), &empty)
+			d, err := archive.Demozoo(dzf.extract[0], id.String(), &empty)
 			if err != nil {
 				logs.Fatal(err)
 			}
 			logs.Println(d.String())
 		case len(dzf.extract) > 1: // limit to the first 2 flags
-			d, err := archive.ExtractDemozoo(dzf.extract[0], dzf.extract[1], &empty)
+			d, err := archive.Demozoo(dzf.extract[0], dzf.extract[1], &empty)
 			if err != nil {
 				logs.Fatal(err)
 			}
