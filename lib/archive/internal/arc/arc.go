@@ -14,6 +14,8 @@ var (
 	ErrWalkrFmt = errors.New("format specified by archive filename is not a walker format")
 )
 
+// Configure interface for the archiver,
+// a cross-platform, multi-format archive utility and Go library.
 func Configure(f interface{}) error {
 	cfg := &archiver.Tar{
 		OverwriteExisting:      true,

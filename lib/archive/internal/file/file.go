@@ -1,6 +1,7 @@
 package file
 
 import (
+	"archive/tar"
 	"errors"
 	"fmt"
 	"io"
@@ -19,6 +20,37 @@ var (
 const (
 	CreateMode = 0o666
 )
+
+// Add a file to the tar writer.
+func Add(tw *tar.Writer, src string) error {
+	file, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("open: %w", err)
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("stat: %w", err)
+	}
+
+	header, err := tar.FileInfoHeader(info, info.Name())
+	if err != nil {
+		return fmt.Errorf("info: %w", err)
+	}
+	// https://golang.org/src/archive/tar/common.go?#L626
+	header.Name = src
+
+	if err = tw.WriteHeader(header); err != nil {
+		return fmt.Errorf("header: %w", err)
+	}
+
+	if _, err = io.Copy(tw, file); err != nil {
+		return fmt.Errorf("copy: %w", err)
+	}
+
+	return nil
+}
 
 // Copy copies a file to the destination.
 func Copy(name, dest string) (written int64, err error) {

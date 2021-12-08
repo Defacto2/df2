@@ -1,6 +1,8 @@
 package file_test
 
 import (
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +13,30 @@ import (
 func testDir(name string) string {
 	dir, _ := os.Getwd()
 	return filepath.Join(dir, "..", "..", "tests", name)
+}
+
+func TestDir(t *testing.T) {
+	tempDir, err := ioutil.TempDir(os.TempDir(), "test-dir")
+	if err != nil {
+		t.Error(err)
+	}
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{"", true},
+		{tempDir, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := file.Dir(tt.name); (err != nil) != tt.wantErr {
+				t.Errorf("Dir() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+	if err := os.RemoveAll(tempDir); err != nil {
+		log.Print(err)
+	}
 }
 
 func TestMove(t *testing.T) {

@@ -9,26 +9,23 @@ import (
 )
 
 const (
-	bat  = ".bat"
 	bmp  = ".bmp"
-	com  = ".com"
-	diz  = ".diz"
-	exe  = ".exe"
 	gif  = ".gif"
 	jpg  = ".jpg"
-	nfo  = ".nfo"
 	png  = ".png"
 	tiff = ".tiff"
 	txt  = ".txt"
 	webp = ".webp"
 )
 
+// Task for fetching both text and image proofs.
 type Task struct {
-	Name string // filename
-	Size int64  // file size
-	Cont bool   // continue, don't scan anymore images
+	Name string // Name of file.
+	Size int64  // Size of the file in bytes.
+	Cont bool   // Continue, stops the scan for anymore similar file types.
 }
 
+// Init initializes the task.
 func Init() Task {
 	return Task{
 		Name: "",
@@ -36,6 +33,7 @@ func Init() Task {
 		Cont: false}
 }
 
+// Run a scan for proofs in the provided temp directory.
 func Run(tempDir string) (th, tx Task, err error) {
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {

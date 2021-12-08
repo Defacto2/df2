@@ -11,28 +11,23 @@ import (
 )
 
 const (
-	bat  = ".bat"
-	bmp  = ".bmp"
-	com  = ".com"
-	diz  = ".diz"
-	exe  = ".exe"
-	gif  = ".gif"
-	jpg  = ".jpg"
-	nfo  = ".nfo"
-	png  = ".png"
-	tiff = ".tiff"
-	txt  = ".txt"
-	webp = ".webp"
+	bat = ".bat"
+	com = ".com"
+	diz = ".diz"
+	exe = ".exe"
+	nfo = ".nfo"
+	txt = ".txt"
 )
 
+// File details and metadata.
 type File struct {
-	Name       string
-	Ext        string
-	Path       string
-	Mime       *mimetype.MIME
-	Size       int64
-	Executable bool
-	Textfile   bool
+	Name       string         // Name of the file.
+	Ext        string         // Extension of the file.
+	Path       string         // Path to the file.
+	Mime       *mimetype.MIME // File MIME type.
+	Size       int64          // Size of file in bytes.
+	Executable bool           // Executable program file.
+	Textfile   bool           // Human readable text file.
 }
 
 type Contents map[int]File
