@@ -8,12 +8,50 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/lib/archive"
+	"github.com/Defacto2/df2/lib/assets/internal/scan"
 	"github.com/Defacto2/df2/lib/directories"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gookit/color"
 )
 
 const empty = "empty"
+
+// createTempDir creates a temporary directory and copies some test images into it.
+// dir is the absolute directory path while sum is the sum total of bytes copied.
+func createTempDir() (sum int64, dir string, err error) {
+	// make dir
+	dir, err = ioutil.TempDir(os.TempDir(), "test-addtardir")
+	if err != nil {
+		return 0, "", err
+	}
+	// copy files
+	src, err := filepath.Abs("../../tests/images")
+	if err != nil {
+		return 0, dir, err
+	}
+	imgs := []string{"test.gif", "test.png", "test.jpg"}
+	done, sum := make(chan error), int64(0)
+	for _, f := range imgs {
+		go func(f string) {
+			sum, err = archive.Copy(filepath.Join(src, f), filepath.Join(dir, f))
+			if err != nil {
+				done <- err
+			}
+			done <- nil
+		}(f)
+	}
+	done1, done2, done3 := <-done, <-done, <-done
+	if done1 != nil {
+		return 0, dir, done1
+	}
+	if done2 != nil {
+		return 0, dir, done2
+	}
+	if done3 != nil {
+		return 0, dir, done3
+	}
+	return sum, dir, nil
+}
 
 func TestClean(t *testing.T) {
 	type args struct {
@@ -67,7 +105,7 @@ func TestCreateUUIDMap(t *testing.T) {
 	}
 }
 
-func Test_backup(t *testing.T) {
+func TestBackup(t *testing.T) {
 	_, dir, err := createTempDir()
 	if err != nil {
 		t.Error(err)
@@ -80,14 +118,14 @@ func Test_backup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	s := scan{
-		dir,
-		false,
-		true,
-		uuids,
+	s := scan.Scan{
+		Path:   dir,
+		Delete: false,
+		Human:  true,
+		M:      uuids,
 	}
 	type args struct {
-		s    *scan
+		s    *scan.Scan
 		list []os.FileInfo
 	}
 	tests := []struct {
@@ -103,7 +141,7 @@ func Test_backup(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := backup(tt.args.s, &d, nil, tt.args.list); (err != nil) != tt.wantErr {
+			if err := scan.Backup(tt.args.s, &d, nil, tt.args.list); (err != nil) != tt.wantErr {
 				t.Errorf("backup() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -139,49 +177,12 @@ func Test_clean(t *testing.T) {
 	}
 }
 
-// createTempDir creates a temporary directory and copies some test images into it.
-// dir is the absolute directory path while sum is the sum total of bytes copied.
-func createTempDir() (sum int64, dir string, err error) {
-	// make dir
-	dir, err = ioutil.TempDir(os.TempDir(), "test-addtardir")
-	if err != nil {
-		return 0, "", err
-	}
-	// copy files
-	src, err := filepath.Abs("../../tests/images")
-	if err != nil {
-		return 0, dir, err
-	}
-	imgs := []string{"test.gif", "test.png", "test.jpg"}
-	done, sum := make(chan error), int64(0)
-	for _, f := range imgs {
-		go func(f string) {
-			sum, err = archive.Copy(filepath.Join(src, f), filepath.Join(dir, f))
-			if err != nil {
-				done <- err
-			}
-			done <- nil
-		}(f)
-	}
-	done1, done2, done3 := <-done, <-done, <-done
-	if done1 != nil {
-		return 0, dir, done1
-	}
-	if done2 != nil {
-		return 0, dir, done2
-	}
-	if done3 != nil {
-		return 0, dir, done3
-	}
-	return sum, dir, nil
-}
-
-func Test_ignoreList(t *testing.T) {
+func TestIgnoreList(t *testing.T) {
 	var want struct{}
 	d := directories.Init(false)
 	color.Enable = false
-	if got := ignoreList("", &d)["blank.png"]; !reflect.DeepEqual(got, want) {
-		t.Errorf("ignoreList() = %v, want %v", got, want)
+	if got := scan.IgnoreList("", &d)["blank.png"]; !reflect.DeepEqual(got, want) {
+		t.Errorf("IgnoreList() = %v, want %v", got, want)
 	}
 }
 
@@ -202,44 +203,6 @@ func Test_targets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := targets(tt.target, &d); len(got) != tt.want {
 				t.Errorf("targets() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_walkName(t *testing.T) {
-	const file = "file.temp"
-	dir := os.TempDir()
-	valid, err := walkName(dir, filepath.Join(dir, file))
-	if err != nil {
-		t.Error(err)
-	}
-	type args struct {
-		basepath string
-		path     string
-	}
-	tests := []struct {
-		name     string
-		args     args
-		wantName string
-		wantErr  bool
-	}{
-		{empty, args{}, "", true},
-		{"empty path", args{dir, ""}, "", true},
-		{"empty dir", args{"", file}, file, false},
-		{"dir", args{dir, file}, "", true},
-		{"dir", args{dir, filepath.Join(dir, file)}, valid, false},
-	}
-	color.Enable = false
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotName, err := walkName(tt.args.basepath, tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("walkName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotName != tt.wantName {
-				t.Errorf("walkName() = %v, want %v", gotName, tt.wantName)
 			}
 		})
 	}
