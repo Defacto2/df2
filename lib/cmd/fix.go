@@ -42,7 +42,7 @@ var fixArchivesCmd = &cobra.Command{
 	Short:   "Repair archives listing empty content",
 	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcontent.Fix(); err != nil {
+		if err := zipcontent.Fix(true); err != nil {
 			log.Fatal(fmt.Errorf("archives fix: %w", err))
 		}
 	},

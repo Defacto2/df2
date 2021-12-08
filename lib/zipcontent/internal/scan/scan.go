@@ -1,4 +1,4 @@
-package stat
+package scan
 
 import (
 	"database/sql"
@@ -11,20 +11,22 @@ import (
 )
 
 type Stats struct {
-	start    time.Time       // processing time
 	BasePath string          // path to file downloads with UUID as filenames
 	Count    int             // row index
 	Missing  int             // missing UUID files count
 	Total    int             // total rows
 	Columns  []string        // column names
 	Values   *[]sql.RawBytes // row values
+	start    time.Time       // processing time
 }
 
+// Init initializes the archive scan statistics.
 func Init() Stats {
 	dir := directories.Init(false)
 	return Stats{BasePath: dir.UUID, start: time.Now()}
 }
 
+// Summary prints the number of archive scanned.
 func (s *Stats) Summary() {
 	total := s.Count - s.Missing
 	if total == 0 {

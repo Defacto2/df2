@@ -65,7 +65,7 @@ func runNew() error {
 	}
 	i++
 	color.Info.Printf("%d. scan for empty archives\n", i)
-	if err := zipcontent.Fix(); err != nil {
+	if err := zipcontent.Fix(true); err != nil {
 		return err
 	}
 	i++

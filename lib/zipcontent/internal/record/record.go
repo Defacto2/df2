@@ -2,6 +2,7 @@ package record
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,8 +13,13 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
-	"github.com/Defacto2/df2/lib/zipcontent/internal/stat"
+	"github.com/Defacto2/df2/lib/zipcontent/internal/scan"
 	"github.com/gookit/color"
+)
+
+var (
+	ErrRawBytes = errors.New("sql rawbytes is missing expected table columns")
+	ErrStatNil  = errors.New("stats pointer is nil")
 )
 
 // Record of a file item.
@@ -26,8 +32,25 @@ type Record struct {
 	NFO   string   // NFO or textfile to display
 }
 
+func New(values []sql.RawBytes, path string) (Record, error) {
+	const id, uuid, filename, readme = 0, 1, 4, 6
+	if len(values) < readme+1 {
+		return Record{}, ErrRawBytes
+	}
+	return Record{
+		ID:   string(values[id]),
+		UUID: string(values[uuid]),
+		Name: string(values[filename]),
+		NFO:  string(values[readme]),
+		File: filepath.Join(path, string(values[uuid])),
+	}, nil
+}
+
 // Iterate through each value.
-func (r *Record) Iterate(s *stat.Stats) error {
+func (r *Record) Iterate(s *scan.Stats) error {
+	if s == nil {
+		return ErrStatNil
+	}
 	var value string
 	for i, raw := range *s.Values {
 		value = database.Val(raw)
@@ -48,7 +71,10 @@ func (r *Record) Iterate(s *stat.Stats) error {
 }
 
 // files reads an archive and saves its content to the database.
-func (r *Record) files(s *stat.Stats) error {
+func (r *Record) files(s *scan.Stats) error {
+	if s == nil {
+		return ErrStatNil
+	}
 	var err error
 	logs.Print(" • ")
 	r.Files, err = archive.Read(r.File, r.Name)
@@ -67,7 +93,10 @@ func (r *Record) files(s *stat.Stats) error {
 	return nil
 }
 
-func (r *Record) nfo(s *stat.Stats) error {
+func (r *Record) nfo(s *scan.Stats) error {
+	if s == nil {
+		return ErrStatNil
+	}
 	const txt = ".txt"
 	r.NFO = archive.FindNFO(r.Name, r.Files...)
 	if r.NFO == "" {
@@ -92,12 +121,16 @@ func (r *Record) nfo(s *stat.Stats) error {
 	return nil
 }
 
-func (r *Record) id(s *stat.Stats) {
+func (r *Record) id(s *scan.Stats) error {
+	if s == nil {
+		return ErrStatNil
+	}
 	logs.Printcrf("%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.Total)),
 		s.Count,
 		color.Primary.Sprint(r.ID))
+	return nil
 }
 
 func (r *Record) save() error {

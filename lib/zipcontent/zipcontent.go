@@ -5,16 +5,17 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"path/filepath"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
+
 	"github.com/Defacto2/df2/lib/zipcontent/internal/record"
-	"github.com/Defacto2/df2/lib/zipcontent/internal/stat"
+	"github.com/Defacto2/df2/lib/zipcontent/internal/scan"
 )
 
-func Fix() error {
-	s := stat.Init()
+// Fix the content of zip archives within in the database.
+func Fix(summary bool) error {
+	s := scan.Init()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(where())
@@ -50,7 +51,10 @@ func Fix() error {
 			return err
 		}
 		s.Count++
-		r := newRec(values, s.BasePath)
+		r, err := record.New(values, s.BasePath)
+		if err != nil {
+			return err
+		}
 		s.Columns = columns
 		s.Values = &values
 		if err := r.Iterate(&s); err != nil {
@@ -60,19 +64,10 @@ func Fix() error {
 		}
 		logs.Println()
 	}
-	s.Summary()
-	return nil
-}
-
-func newRec(values []sql.RawBytes, path string) record.Record {
-	const id, uuid, filename, readme = 0, 1, 4, 6
-	return record.Record{
-		ID:   string(values[id]),
-		UUID: string(values[uuid]),
-		Name: string(values[filename]),
-		NFO:  string(values[readme]),
-		File: filepath.Join(path, string(values[uuid])),
+	if summary {
+		s.Summary()
 	}
+	return nil
 }
 
 func where() string {
