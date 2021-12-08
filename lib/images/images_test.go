@@ -1,4 +1,4 @@
-package images
+package images_test
 
 import (
 	_ "image/gif"
@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Defacto2/df2/lib/images"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
@@ -53,7 +54,7 @@ func TestNewExt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewExt(tt.args.name, tt.args.extension); got != tt.want {
+			if got := images.NewExt(tt.args.name, tt.args.extension); got != tt.want {
 				t.Errorf("NewExt() = %v, want %v", got, tt.want)
 			}
 		})
@@ -79,7 +80,7 @@ func TestDuplicate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotName, err := Duplicate(tt.args.filename, tt.args.prefix)
+			gotName, err := images.Duplicate(tt.args.filename, tt.args.prefix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Duplicate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -105,7 +106,7 @@ func TestInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotWidth, gotHeight, gotFormat, err := Info(tt.name)
+			gotWidth, gotHeight, gotFormat, err := images.Info(tt.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Info() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -151,7 +152,7 @@ func TestGenerate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Generate(tt.args.src, tt.args.id, tt.args.remove); (err != nil) != tt.wantErr {
+			if err := images.Generate(tt.args.src, tt.args.id, tt.args.remove); (err != nil) != tt.wantErr {
 				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -175,7 +176,7 @@ func TestWidth(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotWidth, err := Width(tt.name)
+			gotWidth, err := images.Width(tt.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Width() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -208,7 +209,7 @@ func TestToPng(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ToPng(tt.args.src, tt.args.dest, tt.args.height, 0)
+			_, err := images.ToPng(tt.args.src, tt.args.dest, tt.args.height, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToPng() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -235,7 +236,7 @@ func TestToThumb(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			str, err := ToThumb(tt.args.src, tt.args.dest, tt.args.sizeSquared)
+			str, err := images.ToThumb(tt.args.src, tt.args.dest, tt.args.sizeSquared)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToThumb() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -266,7 +267,7 @@ func TestToWebxp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			str, err := ToWebp(tt.args.src, tt.args.dest, false)
+			str, err := images.ToWebp(tt.args.src, tt.args.dest, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -298,7 +299,7 @@ func TestToWebp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotPrint, err := ToWebp(tt.args.src, tt.args.dest, true)
+			gotPrint, err := images.ToWebp(tt.args.src, tt.args.dest, true)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -337,12 +338,30 @@ func TestWebPCalc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotW, gotH := WebPCalc(tt.args.width, tt.args.height)
+			gotW, gotH := images.WebPCalc(tt.args.width, tt.args.height)
 			if gotW != tt.wantW {
 				t.Errorf("WebPCalc() gotW = %v, want %v", gotW, tt.wantW)
 			}
 			if gotH != tt.wantH {
 				t.Errorf("WebPCalc() gotH = %v, want %v", gotH, tt.wantH)
+			}
+		})
+	}
+}
+
+func TestFix(t *testing.T) {
+	tests := []struct {
+		name     string
+		simulate bool
+		wantErr  bool
+	}{
+		{"name", true, false},
+		{"name", false, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := images.Fix(tt.simulate); (err != nil) != tt.wantErr {
+				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

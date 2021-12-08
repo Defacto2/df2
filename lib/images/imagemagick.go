@@ -41,7 +41,7 @@ func ToMagick(src, dest string) error {
 		return err
 	}
 	if len(out) > 0 {
-		fmt.Println("magick:", out)
+		fmt.Println("magick:", string(out))
 	}
 
 	return nil

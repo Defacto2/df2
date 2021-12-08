@@ -20,10 +20,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
+	"github.com/Defacto2/df2/lib/images/internal/file"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/str"
 	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 	"github.com/nickalie/go-webpbin"
 	"github.com/spf13/viper"
@@ -47,10 +51,68 @@ const (
 	fmode             = os.O_RDWR | os.O_CREATE
 )
 
+const (
+	gif  = ".gif"
+	jpg  = ".jpg"
+	jpeg = ".jpeg"
+	_png = ".png"
+	tif  = ".tif"
+	tiff = ".tiff"
+	webp = ".webp"
+)
+
 var (
 	ErrFormat = errors.New("unsupported image format")
 	ErrViper  = errors.New("viper directory locations cannot be read")
 )
+
+// Fix generates any missing assets from downloads that are images.
+func Fix(simulate bool) error {
+	dir := directories.Init(false)
+	db := database.Connect()
+	defer db.Close()
+	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image" ORDER BY id ASC`)
+	if err != nil {
+		return fmt.Errorf("images fix query: %w", err)
+	} else if rows.Err() != nil {
+		return fmt.Errorf("images fix rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	c := 0
+	for rows.Next() {
+		var img file.Image
+		if err = rows.Scan(&img.ID, &img.UUID, &img.Name, &img.Size); err != nil {
+			return fmt.Errorf("images fix rows scan: %w", err)
+		}
+		if directories.ArchiveExt(img.Name) {
+			continue
+		}
+		if !img.IsDir(&dir) {
+			c++
+			logs.Printf("%d. %v", c, img)
+			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
+				logs.Printf("%s\n", str.X())
+				continue
+			} else if err != nil {
+				return fmt.Errorf("images fix stat: %w", err)
+			}
+			if simulate {
+				logs.Printf("%s\n", color.Question.Sprint("?"))
+				continue
+			}
+			if err := Generate(filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
+				return fmt.Errorf("images fix generate: %w", err)
+			}
+			logs.Print("\n")
+		}
+	}
+	if simulate && c > 0 {
+		logs.Simulate()
+	} else if c == 0 {
+		logs.Println("everything is okay, there is nothing to do")
+	}
+	return nil
+}
 
 // Duplicate an image file and appends suffix to its name.
 func Duplicate(filename, suffix string) (string, error) {
@@ -70,20 +132,6 @@ func Duplicate(filename, suffix string) (string, error) {
 		return "", fmt.Errorf("duplicate io copy: %w", err)
 	}
 	return fmt.Sprintf("%s%s%s", fn, suffix, ext), nil
-}
-
-func valid(name string, err error) bool {
-	if err != nil {
-		return false
-	}
-	s, err := os.Stat(name)
-	if err != nil {
-		return false
-	}
-	if s.IsDir() || s.Size() < 1 {
-		return false
-	}
-	return true
 }
 
 // Generate a collection of site images.
@@ -147,6 +195,20 @@ func cleanup(remove bool, src string) error {
 		}
 	}
 	return nil
+}
+
+func valid(name string, err error) bool {
+	if err != nil {
+		return false
+	}
+	s, err := os.Stat(name)
+	if err != nil {
+		return false
+	}
+	if s.IsDir() || s.Size() < 1 {
+		return false
+	}
+	return true
 }
 
 // Move a file from the source location to the destination.
