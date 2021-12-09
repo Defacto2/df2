@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Defacto2/df2/lib/download/internal/cnter"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
@@ -18,30 +19,21 @@ import (
 
 // Request a HTTP download.
 type Request struct {
-	Link       string        // URL to request
-	Timeout    time.Duration // Timeout in seconds
-	Read       []byte        // received HTTP body data
-	StatusCode int           // received HTTP statuscode
-	Status     string        // received HTTP status
+	Link       string        // URL to request.
+	Timeout    time.Duration // Timeout in seconds.
+	Read       []byte        // HTTP body data received.
+	StatusCode int           // HTTP statuscode received.
+	Status     string        // HTTP status received.
 }
 
 const (
-	// UserAgent is the value of User-Agent request HEADER that that lets servers identify this application.
+	// UserAgent is the value of User-Agent request HEADER
+	// that that lets servers identify this application.
 	UserAgent = "defacto2 cli"
 	// RFC5322 is a HTTP-date value.
 	RFC5322 = "Mon, 2 Jan 2006 15:04:05 MST"
 
-	ua             = "User-Agent"
-	infoRespCont   = 100
-	infoRespEnd    = 199
-	successOK      = 200
-	successEnd     = 299
-	redirectMulti  = 300
-	redirectEnd    = 399
-	clientBad      = 400
-	clientEnd      = 499
-	serverInternal = 500
-	serverEnd      = 599
+	ua = "User-Agent"
 )
 
 // Body fetches a HTTP link and returns its data and the status code.
@@ -83,46 +75,13 @@ func checkTime(t time.Duration) time.Duration {
 	return time.Duration(t.Seconds())
 }
 
-// WriteCounter totals the number of bytes written.
-type WriteCounter struct {
-	Name    string // Filename
-	Total   uint64 // Expected filesize
-	Written uint64 // Bytes written
-}
-
-// Write progress counter.
-func (wc *WriteCounter) Write(p []byte) (int, error) {
-	n := len(p)
-	wc.Written += uint64(n)
-	wc.printProgress()
-	return n, nil
-}
-
-// printProgress prints the current download progress.
-func (wc WriteCounter) printProgress() {
-	pct := percent(wc.Written, wc.Total)
-	if pct > 0 {
-		logs.Printcrf("downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
-	} else {
-		logs.Printcrf("downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
-	}
-}
-
-func percent(count, total uint64) uint64 {
-	if total == 0 {
-		return 0
-	}
-	const max = 100
-	return uint64(float64(count) / float64(total) * max)
-}
-
 // printProgress prints that the download progress is complete.
 func progressDone(name string, written int64) {
 	logs.Printcrf("%v download saved to: %v", humanize.Bytes(uint64(written)), name)
 }
 
-// LinkDownload downloads the link and saves it as the named file.
-func LinkDownload(name, link string) (http.Header, error) {
+// Get downloads the url and saves it as the named file.
+func Get(name, url string) (http.Header, error) {
 	// open local target file
 	out, err := os.Create(name)
 	if err != nil {
@@ -131,7 +90,7 @@ func LinkDownload(name, link string) (http.Header, error) {
 	defer out.Close()
 	// request remote file
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", link, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +102,7 @@ func LinkDownload(name, link string) (http.Header, error) {
 	}
 	defer resp.Body.Close()
 	// download and write remote file to local target
-	counter := &WriteCounter{Name: out.Name(), Total: uint64(resp.ContentLength)}
+	counter := &cnter.Writer{Name: out.Name(), Total: uint64(resp.ContentLength)}
 	i, err := io.Copy(out, io.TeeReader(resp.Body, counter))
 	if err != nil {
 		return nil, err
@@ -152,16 +111,16 @@ func LinkDownload(name, link string) (http.Header, error) {
 	return resp.Header, nil
 }
 
-// LinkDownloadQ quietly downloads the URL and saves it to the named file.
-// Not used.
-func LinkDownloadQ(name, link string) (http.Header, error) {
+// Silent quietly downloads the URL and saves it to the named file.
+// Not in use.
+func Silent(name, url string) (http.Header, error) {
 	out, err := os.Create(name)
 	if err != nil {
 		return nil, err
 	}
 	defer out.Close()
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", link, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -179,12 +138,12 @@ func LinkDownloadQ(name, link string) (http.Header, error) {
 	return resp.Header, nil
 }
 
-// LinkPing connects to a URL and returns its HTTP status code and status text.
-func LinkPing(link string) (*http.Response, error) {
+// Ping connects to a URL and returns its HTTP status code and status text.
+func Ping(url string) (*http.Response, error) {
 	const seconds = 5 * time.Second
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, seconds)
-	req, err := http.NewRequestWithContext(ctx, "HEAD", link, nil)
+	req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
 	defer cancel()
 	if err != nil {
 		return nil, err
@@ -204,17 +163,29 @@ func StatusColor(code int, status string) string {
 		return ""
 	}
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+	const (
+		infoRespCont   = 100 // Informational responses
+		infoRespEnd    = 199
+		successOK      = 200 // Successful responses
+		successEnd     = 299
+		redirectMulti  = 300 // Redirects
+		redirectEnd    = 399
+		clientBad      = 400 // Client errors
+		clientEnd      = 499
+		serverInternal = 500 // Server errors
+		serverEnd      = 599
+	)
 	c := code
 	switch {
-	case c >= infoRespCont && c <= infoRespEnd: // Informational responses
+	case c >= infoRespCont && c <= infoRespEnd:
 		return color.Info.Sprint(status)
-	case c >= successOK && c <= successEnd: // Successful responses
+	case c >= successOK && c <= successEnd:
 		return color.Success.Sprint(status)
-	case c >= redirectMulti && c <= redirectEnd: // Redirects
+	case c >= redirectMulti && c <= redirectEnd:
 		return color.Notice.Sprint(status)
-	case c >= clientBad && c <= clientEnd: // Client errors
+	case c >= clientBad && c <= clientEnd:
 		return color.Warn.Sprint(status)
-	case c >= serverInternal && c <= serverEnd: // Server errors
+	case c >= serverInternal && c <= serverEnd:
 		return color.Danger.Sprint(status)
 	}
 	return color.Question.Sprint(status) // unexpected

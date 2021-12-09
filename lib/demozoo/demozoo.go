@@ -318,7 +318,7 @@ func (r *Record) download(overwrite bool, api *ProductionsAPIv1, st stat) (skip 
 		}
 		const OK = 200
 		logs.Printcrf("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
-		head, err := download.LinkDownload(r.FilePath, link)
+		head, err := download.Get(r.FilePath, link)
 		if err != nil {
 			logs.Log(err)
 			return true

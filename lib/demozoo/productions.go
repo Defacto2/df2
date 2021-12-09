@@ -137,13 +137,13 @@ func (p *ProductionsAPIv1) DownloadLink() (name, link string) {
 			}
 			continue
 		}
-		ping, err := download.LinkPing(l.URL)
+		ping, err := download.Ping(l.URL)
 		if err != nil || ping.StatusCode != found {
 			if flag.Lookup("test.v") != nil {
 				if err != nil {
-					log.Printf("download.LinkPing(%s) error = %q\n", l.URL, err)
+					log.Printf("download.Ping(%s) error = %q\n", l.URL, err)
 				} else {
-					log.Printf("download.LinkPing(%s) %v != %v\n", l.URL, ping.StatusCode, found)
+					log.Printf("download.Ping(%s) %v != %v\n", l.URL, ping.StatusCode, found)
 				}
 			}
 			continue
@@ -168,7 +168,7 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 		logs.Print(" not usable\n")
 		return nil
 	}
-	ping, err := download.LinkPing(l.URL)
+	ping, err := download.Ping(l.URL)
 	if err != nil {
 		return fmt.Errorf("download off demozoo ping: %w", err)
 	}
@@ -189,7 +189,7 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 	if err != nil {
 		return fmt.Errorf("download off demozoo abs filepath: %w", err)
 	}
-	_, err = download.LinkDownload(dest, l.URL)
+	_, err = download.Get(dest, l.URL)
 	if err != nil {
 		return fmt.Errorf("download off demozoo download: %w", err)
 	}
@@ -230,7 +230,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
 			return 0, 0, fmt.Errorf("pouet id parse: %w", err)
 		}
 		if ping {
-			resp, err := download.LinkPing(l.URL)
+			resp, err := download.Ping(l.URL)
 			if err != nil {
 				return 0, 0, fmt.Errorf("pouet id ping: %w", err)
 			}

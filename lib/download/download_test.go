@@ -78,70 +78,7 @@ func Test_checkTime(t *testing.T) {
 	}
 }
 
-func TestWriteCounter_Write(t *testing.T) {
-	type fields struct {
-		Name    string
-		Total   uint64
-		Written uint64
-	}
-	type args struct {
-		p []byte
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    int
-		wantErr bool
-	}{
-		{"empty", fields{"", 0, 0}, args{[]byte("")}, 0, false},
-		{"hi", fields{"hi", 2, 2}, args{[]byte("hi")}, 2, false},
-		{"some filler text", fields{"x", 2, 6}, args{[]byte("some filler text")}, 16, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			wc := &WriteCounter{
-				Name:    tt.fields.Name,
-				Total:   tt.fields.Total,
-				Written: tt.fields.Written,
-			}
-			got, err := wc.Write(tt.args.p)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("WriteCounter.Write() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("WriteCounter.Write() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_percent(t *testing.T) {
-	type args struct {
-		count uint64
-		total uint64
-	}
-	tests := []struct {
-		name string
-		args args
-		want uint64
-	}{
-		{"0", args{0, 0}, 0},
-		{"1", args{1, 100}, 1},
-		{"80", args{33, 41}, 80},
-		{"100", args{100, 100}, 100},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := percent(tt.args.count, tt.args.total); got != tt.want {
-				t.Errorf("percent() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestLinkDownload_Ping(t *testing.T) {
+func TestPing(t *testing.T) {
 	type args struct {
 		name string
 		url  string
@@ -161,8 +98,8 @@ func TestLinkDownload_Ping(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := LinkDownload(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
-				t.Errorf("LinkDownload() error = %v, wantErr %v", err, tt.wantErr)
+			if _, err := Get(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
+				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			// cleanup
@@ -173,9 +110,9 @@ func TestLinkDownload_Ping(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := LinkPing(tt.args.url)
+			p, err := Ping(tt.args.url)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("LinkPing() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ping() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if err == nil {
@@ -185,7 +122,7 @@ func TestLinkDownload_Ping(t *testing.T) {
 	}
 }
 
-func TestLinkDownloadQ(t *testing.T) {
+func TestSilent(t *testing.T) {
 	type args struct {
 		name string
 		url  string
@@ -205,8 +142,8 @@ func TestLinkDownloadQ(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := LinkDownloadQ(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
-				t.Errorf("LinkDownloadQ() error = %v, wantErr %v", err, tt.wantErr)
+			if _, err := Silent(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
+				t.Errorf("Silent() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			// cleanup
