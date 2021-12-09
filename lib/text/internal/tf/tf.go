@@ -85,7 +85,7 @@ func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 		if os.IsNotExist(err) {
 			return false, nil
 		} else if err != nil {
-			return false, fmt.Errorf("image stat: %w", err)
+			return false, fmt.Errorf("textfile exist: %w", err)
 		}
 		if s.Size() == 0 {
 			return false, nil
@@ -124,14 +124,18 @@ func (t *TextFile) Extract(dir *directories.Dir) error {
 	}
 	if err = os.Rename(dest, src+txt); err != nil {
 		defer os.Remove(dest)
-		return fmt.Errorf("extract+move: %w", err)
+		return fmt.Errorf("textfile extract: %w", err)
 	}
 	return nil
 }
 
 // ExtractedImgs generates PNG and Webp image assets from a textfile extracted from an archive.
 func (t *TextFile) ExtractedImgs(dir string) error {
-	n := filepath.Join(dir, t.UUID) + txt
+	j := filepath.Join(dir, t.UUID) + txt
+	n, err := filepath.Abs(j)
+	if err != nil {
+		return fmt.Errorf("extractedimgs: %w", err)
+	}
 	fmt.Println("n", n)
 	if _, err := os.Stat(n); os.IsNotExist(err) {
 		return fmt.Errorf("extractedimgs: %w", os.ErrNotExist)
@@ -146,23 +150,21 @@ func (t *TextFile) ExtractedImgs(dir string) error {
 }
 
 // TextPng generates PNG format image assets from a textfile.
-func (t *TextFile) TextPng(c int, dir string) bool {
+func (t *TextFile) TextPng(c int, dir string) error {
 	logs.Printf("%d. %v", c, t)
 	name := filepath.Join(dir, t.UUID)
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		logs.Printf("%s\n", str.X())
-		return false
+		return nil
 	} else if err != nil {
-		logs.Log(fmt.Errorf("txtpng stat: %w", err))
-		return false
+		return fmt.Errorf("txtpng: %w", err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
 	if err := img.Generate(name, t.UUID, amiga); err != nil {
-		logs.Log(fmt.Errorf("fix txtpng: %w", err))
-		return false
+		return fmt.Errorf("txtpng: %w", err)
 	}
 	logs.Print("\n")
-	return true
+	return nil
 }
 
 // WebP finds and generates missing WebP format images.
@@ -174,7 +176,7 @@ func (t *TextFile) WebP(c int, imgDir string) (int, error) {
 		return c, nil
 	} else if !os.IsNotExist(err) && err != nil {
 		logs.Printf("%s\n", str.X())
-		return c, fmt.Errorf("webp stat: %w", err)
+		return c, fmt.Errorf("txtwebp stat: %w", err)
 	}
 	logs.Printf("%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
@@ -185,7 +187,7 @@ func (t *TextFile) WebP(c int, imgDir string) (int, error) {
 	s, err := images.ToWebp(src, name, true)
 	if err != nil {
 		logs.Printf("%s\n", str.X())
-		return c, fmt.Errorf("fix webp: %w", err)
+		return c, fmt.Errorf("txtwebp: %w", err)
 	}
 	logs.Printf("%s %s\n", s, str.Y())
 	return c, nil

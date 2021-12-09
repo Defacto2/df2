@@ -17,6 +17,10 @@ import (
 	"github.com/gookit/color"
 )
 
+const (
+	errPrefix = "zipcontent record error,"
+)
+
 var (
 	ErrCols     = errors.New("the number of values is not the same as the number of columns")
 	ErrID       = errors.New("record does not contain a valid value for the id column")
@@ -91,7 +95,7 @@ func (r *Record) Read(s *scan.Stats) error {
 	r.Files, err = archive.Read(r.File, r.Name)
 	if err != nil {
 		s.Missing++
-		return fmt.Errorf("file zip content archive read: %w", err)
+		return fmt.Errorf("%s archive read: %w", errPrefix, err)
 	}
 	logs.Printf("%d items", len(r.Files))
 	if err := r.Nfo(s); err != nil {
@@ -100,7 +104,7 @@ func (r *Record) Read(s *scan.Stats) error {
 	updates, err := r.Save()
 	if err != nil {
 		logs.Printf(" %s", str.X())
-		return fmt.Errorf("file zip content update: %w", err)
+		return err
 	}
 	if updates == 0 {
 		logs.Printf(" %s", str.X())
@@ -172,20 +176,20 @@ func (r *Record) Save() (int64, error) {
 		update, err = db.Prepare(nfo)
 	}
 	if err != nil {
-		return 0, fmt.Errorf("update zip content db prepare: %w", err)
+		return 0, fmt.Errorf("%s db prepare: %w", errPrefix, err)
 	}
 	defer update.Close()
 	content := strings.Join(r.Files, "\n")
 	if r.NFO == "" {
 		a, err := update.Exec(content, database.UpdateID, r.ID)
 		if err != nil {
-			return 0, fmt.Errorf("update zip content update exec: %w", err)
+			return 0, fmt.Errorf("%s db exec: %w", errPrefix, err)
 		}
 		return a.RowsAffected()
 	}
 	a, err := update.Exec(content, database.UpdateID, r.NFO, 0, r.ID)
 	if err != nil {
-		return 0, fmt.Errorf("update zip content update exec: %w", err)
+		return 0, fmt.Errorf("%s db exec: %w", errPrefix, err)
 	}
 	return a.RowsAffected()
 }

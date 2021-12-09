@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	fixStmt = `SELECT id, uuid, filename, filesize, file_magic_type FROM files WHERE filename LIKE "%.zip"`
+	errPrefix = "zipcmmt"
+	fixStmt   = `SELECT id, uuid, filename, filesize, file_magic_type FROM files WHERE filename LIKE "%.zip"`
 )
 
 func Fix(ascii, unicode, overwrite, summary bool) error {
@@ -21,9 +22,9 @@ func Fix(ascii, unicode, overwrite, summary bool) error {
 	defer db.Close()
 	rows, err := db.Query(fixStmt)
 	if err != nil {
-		return fmt.Errorf("fix db query: %w", err)
+		return fmt.Errorf("%s, db query: %w", errPrefix, err)
 	} else if rows.Err() != nil {
-		return fmt.Errorf("fix rows: %w", rows.Err())
+		return fmt.Errorf("%s, db rows: %w", errPrefix, rows.Err())
 	}
 	defer rows.Close()
 	i := 0
@@ -34,7 +35,7 @@ func Fix(ascii, unicode, overwrite, summary bool) error {
 			Overwrite: overwrite,
 		}
 		if err := rows.Scan(&z.ID, &z.UUID, &z.Name, &z.Size, &z.Magic); err != nil {
-			return fmt.Errorf("fix rows scan: %w", err)
+			return fmt.Errorf("%s rows scan: %w", errPrefix, err)
 		}
 		i++
 		if ok := z.CheckDownload(dir.UUID); !ok {

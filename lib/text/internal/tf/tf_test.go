@@ -11,15 +11,28 @@ import (
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/text/internal/tf"
 	"github.com/gookit/color"
+	"github.com/spf13/viper"
 )
 
 const (
 	textDir       = "../../../../tests/demozoo/"
+	uuidDir       = "../../../../tests/uuid/"
 	uuid          = "21cb94d3-ffc1-4055-8398-b7b4ed1e67e8"
 	storedName    = "test.zip"
 	fileToExtract = "test.txt"
 	txt           = ".txt"
 )
+
+// config the directories expected by ansilove.
+func config(t *testing.T) string {
+	d, err := filepath.Abs(uuidDir)
+	if err != nil {
+		t.Error(err)
+	}
+	viper.Set("directory.000", d)
+	viper.Set("directory.400", d)
+	return d
+}
 
 func TestExist(t *testing.T) {
 	if runtime.GOOS == "windows" {
@@ -172,6 +185,7 @@ func TestTextFile_Extract(t *testing.T) {
 }
 
 func TestTextFile_ExtractedImgs(t *testing.T) {
+	d := config(t)
 	dir := filepath.Join(textDir, "extracted")
 	type fields struct {
 		ID       uint
@@ -194,11 +208,6 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 		{"okay", fields{
 			UUID: uuid,
 		}, dir, false},
-		// {"okay", fields{
-		// 	UUID:   uuid,
-		// 	Name:   "test.zip",
-		// 	Ext:    ".zip",
-		// 	Readme: sql.NullString{String: fileToExtract, Valid: true}}, &dirInput, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -215,6 +224,57 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 			if err := tr.ExtractedImgs(tt.dir); (err != nil) != tt.wantErr {
 				t.Errorf("TextFile.ExtractedImgs() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			defer os.Remove(filepath.Join(d, uuid+".png"))
+			defer os.Remove(filepath.Join(d, uuid+".webp"))
+		})
+	}
+}
+
+func TestImages(t *testing.T) {
+	d := config(t)
+	type fields struct {
+		ID       uint
+		UUID     string
+		Name     string
+		Ext      string
+		Platform string
+		Size     int
+		NoReadme sql.NullBool
+		Readme   sql.NullString
+	}
+	type args struct {
+		c   int
+		dir string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{"empty", fields{}, args{}, false},
+		{"okay", fields{UUID: uuid}, args{c: 1, dir: textDir}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tr := &tf.TextFile{
+				ID:       tt.fields.ID,
+				UUID:     tt.fields.UUID,
+				Name:     tt.fields.Name,
+				Ext:      tt.fields.Ext,
+				Platform: tt.fields.Platform,
+				Size:     tt.fields.Size,
+				NoReadme: tt.fields.NoReadme,
+				Readme:   tt.fields.Readme,
+			}
+			if err := tr.TextPng(tt.args.c, tt.args.dir); (err != nil) != tt.wantErr {
+				t.Errorf("TextFile.TextPng() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if _, err := tr.WebP(tt.args.c, tt.args.dir); (err != nil) != tt.wantErr {
+				t.Errorf("TextFile.WebP() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			defer os.Remove(filepath.Join(d, uuid+".png"))
+			defer os.Remove(filepath.Join(d, uuid+".webp"))
 		})
 	}
 }

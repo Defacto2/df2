@@ -74,8 +74,8 @@ func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records in
 	// missing images + source is a textfile
 	if !ok {
 		c++
-		if !t.TextPng(c, dir.UUID) {
-			return i, c, nil
+		if err := t.TextPng(c, dir.UUID); err != nil {
+			return i, c, err
 		}
 	}
 	// missing webp specific images that rely on PNG sources

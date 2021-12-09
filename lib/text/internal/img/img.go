@@ -144,9 +144,9 @@ func MakePng(src, dest string, amiga bool) (string, error) {
 	cmd := exec.CommandContext(ctx, "ansilove", args...)
 	out, err := cmd.Output()
 	if err != nil && err.Error() == "exit status 127" {
-		return "", fmt.Errorf("make ansilove: %w", ErrAnsiLove)
+		return "", fmt.Errorf("make ansilove %q: %w", args, ErrAnsiLove)
 	} else if err != nil {
-		return "", fmt.Errorf("make ansilove %q: %w", out, err)
+		return "", fmt.Errorf("make ansilove %q: %q %w", args, out, err)
 	}
 
 	_, err = os.Getwd()
