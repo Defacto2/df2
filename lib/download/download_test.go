@@ -1,4 +1,4 @@
-package download
+package download_test
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Defacto2/df2/lib/download"
 	"github.com/gookit/color"
 )
 
@@ -37,7 +38,7 @@ func TestRequest_Body(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Request{
+			r := &download.Request{
 				Link:       tt.fields.Link,
 				Timeout:    tt.fields.Timeout,
 				Read:       tt.fields.Read,
@@ -51,7 +52,7 @@ func TestRequest_Body(t *testing.T) {
 	}
 }
 
-func Test_checkTime(t *testing.T) {
+func TestCheckTime(t *testing.T) {
 	td := func(v int) time.Duration {
 		sec, _ := time.ParseDuration(fmt.Sprintf("%ds", v))
 		return sec
@@ -71,14 +72,14 @@ func Test_checkTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := checkTime(tt.args.t); got != tt.want {
-				t.Errorf("checkTime() = %v, want %v", got, tt.want)
+			if got := download.CheckTime(tt.args.t); got != tt.want {
+				t.Errorf("CheckTime() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestPing(t *testing.T) {
+func TestGetPing(t *testing.T) {
 	type args struct {
 		name string
 		url  string
@@ -98,7 +99,7 @@ func TestPing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := Get(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
+			if _, err := download.Get(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -110,7 +111,7 @@ func TestPing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := Ping(tt.args.url)
+			p, err := download.Ping(tt.args.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ping() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -142,7 +143,7 @@ func TestSilent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := Silent(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
+			if _, err := download.Silent(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("Silent() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -170,7 +171,7 @@ func TestStatusColor(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := StatusColor(tt.args.code, tt.args.status); got != tt.want {
+			if got := download.StatusColor(tt.args.code, tt.args.status); got != tt.want {
 				t.Errorf("StatusColor() = %v, want %v", got, tt.want)
 			}
 		})

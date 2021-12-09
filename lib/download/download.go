@@ -20,7 +20,7 @@ import (
 // Request a HTTP download.
 type Request struct {
 	Link       string        // URL to request.
-	Timeout    time.Duration // Timeout in seconds.
+	Timeout    time.Duration // Timeout duration (5 * time.Second).
 	Read       []byte        // HTTP body data received.
 	StatusCode int           // HTTP statuscode received.
 	Status     string        // HTTP status received.
@@ -42,7 +42,7 @@ func (r *Request) Body() error {
 	if err != nil {
 		return err
 	}
-	timeout := checkTime(r.Timeout)
+	timeout := CheckTime(r.Timeout)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Link, nil)
@@ -66,13 +66,14 @@ func (r *Request) Body() error {
 	return nil
 }
 
-// checkTime creates a valid second duration for use with http.Client.Timeout.
-func checkTime(t time.Duration) time.Duration {
-	const timeout = 5
-	if t < 1 {
-		return time.Duration(time.Duration(timeout).Seconds())
+// CheckTime creates a valid time duration for use with http.Client.Timeout.
+// t can be 0 or a number of seconds.
+func CheckTime(t time.Duration) time.Duration {
+	const timeout = 5 * time.Second
+	if t*time.Second < time.Second {
+		return timeout
 	}
-	return time.Duration(t.Seconds())
+	return t * time.Second
 }
 
 // printProgress prints that the download progress is complete.
