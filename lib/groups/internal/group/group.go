@@ -1,6 +1,8 @@
 package group
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -8,6 +10,10 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
+)
+
+var (
+	ErrFilter = errors.New("invalid filter used")
 )
 
 const (
@@ -60,6 +66,108 @@ func Get(s string) Filter {
 		return None
 	}
 	return -1
+}
+
+// List all organisations or groups filtered by f.
+func List(f string) (groups []string, total int, err error) {
+	db := database.Connect()
+	defer db.Close()
+	s, err := SQLSelect(Get(f), false)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list groups statement: %w", err)
+	}
+	total, err = database.Total(&s)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list groups total: %w", err)
+	}
+	// interate through records
+	rows, err := db.Query(s)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list groups query: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("list groups rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	var grp sql.NullString
+	for rows.Next() {
+		if err = rows.Scan(&grp); err != nil {
+			return nil, 0, fmt.Errorf("list groups rows scan: %w", err)
+		}
+		if _, err = grp.Value(); err != nil {
+			continue
+		}
+		groups = append(groups, fmt.Sprintf("%v", grp.String))
+	}
+	return groups, total, nil
+}
+
+// groupsStmt returns a complete SQL WHERE statement where the groups are filtered.
+func SQLSelect(f Filter, includeSoftDeletes bool) (string, error) {
+	inc, skip := includeSoftDeletes, false
+	if f > -1 {
+		skip = true
+	}
+	where, err := SQLWhere(f, inc)
+	if err != nil {
+		return "", fmt.Errorf("group statement %q: %w", f.String(), err)
+	}
+	var s string
+	switch skip {
+	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
+		s = "SELECT DISTINCT group_brand_for AS pubCombined " +
+			"FROM files WHERE Length(group_brand_for) <> 0 " + where
+	default:
+		s = "(SELECT DISTINCT group_brand_for AS pubCombined " +
+			"FROM files WHERE Length(group_brand_for) <> 0 " + where + ")" +
+			" UNION " +
+			"(SELECT DISTINCT group_brand_by AS pubCombined " +
+			"FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
+	}
+	return s + " ORDER BY pubCombined", nil
+}
+
+// groupsWhere returns a partial SQL WHERE statement where groups are filtered.
+func SQLWhere(f Filter, softDel bool) (string, error) {
+	s, err := SQLFilter(f)
+	if err != nil {
+		return "", fmt.Errorf("groups where: %w", err)
+	}
+	switch {
+	case s != "" && softDel:
+		s = "AND " + s
+	case s == "" && softDel: // do nothing
+	case s != "" && !softDel:
+		s = "AND " + s + " `deletedat` IS NULL"
+	default:
+		s = "AND `deletedat` IS NULL"
+	}
+	const andLen = 4
+	l := len(s)
+	if l > andLen && s[l-andLen:] == " AND" {
+		logs.Printf("%q|", s[l-andLen:])
+		return s[:l-andLen], nil
+	}
+	return s, nil
+}
+
+// groupsFilter returns a partial SQL WHERE statement to filter groups.
+func SQLFilter(f Filter) (string, error) {
+	var s string
+	switch f {
+	case None:
+		return "", nil
+	case Magazine:
+		s = "section = 'magazine' AND"
+	case BBS:
+		s = "RIGHT(group_brand_for,4) = ' BBS' AND"
+	case FTP:
+		s = "RIGHT(group_brand_for,4) = ' FTP' AND"
+	case Group: // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
+		s = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
+	default:
+		return "", fmt.Errorf("group filter %q: %w", f.String(), ErrFilter)
+	}
+	return s, nil
 }
 
 // Request flags for group functions.
@@ -181,4 +289,18 @@ func TrimThe(s string) string {
 		return strings.Join(a[1:], space) // drop "the" prefix
 	}
 	return s
+}
+
+// Use a HR element to mark out the groups alphabetically.
+func UseHr(prevLetter, group string) (string, bool) {
+	if group == "" {
+		return "", false
+	}
+	switch g := group[:1]; {
+	case prevLetter == "":
+		return g, false
+	case prevLetter != g:
+		return g, true
+	}
+	return prevLetter, false
 }
