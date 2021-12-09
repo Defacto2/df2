@@ -109,7 +109,7 @@ var fixZipCmmtCmd = &cobra.Command{
 	Short:   "Extract missing comments from zip archives",
 	Aliases: []string{"z"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcmmt.Fix(fixZipCmmt.ascii, fixZipCmmt.unicode, fixZipCmmt.ow); err != nil {
+		if err := zipcmmt.Fix(fixZipCmmt.ascii, fixZipCmmt.unicode, fixZipCmmt.ow, true); err != nil {
 			log.Fatal(err)
 		}
 	},

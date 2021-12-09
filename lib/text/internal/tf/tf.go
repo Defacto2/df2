@@ -73,18 +73,19 @@ func (t *TextFile) Archive() bool {
 	return false
 }
 
-// Exist checks that [UUID].png exists in all three image subdirectories.
+// Exist checks that [UUID].png exists in both thumbnail subdirectories.
 func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
 		if path == "" {
 			return false, nil
 		}
+		fmt.Println(filepath.Join(path, t.UUID+png))
 		s, err := os.Stat(filepath.Join(path, t.UUID+png))
 		if os.IsNotExist(err) {
 			return false, nil
 		} else if err != nil {
-			return false, fmt.Errorf("image exist: %w", err)
+			return false, fmt.Errorf("image stat: %w", err)
 		}
 		if s.Size() == 0 {
 			return false, nil
@@ -131,14 +132,15 @@ func (t *TextFile) Extract(dir *directories.Dir) error {
 // ExtractedImgs generates PNG and Webp image assets from a textfile extracted from an archive.
 func (t *TextFile) ExtractedImgs(dir string) error {
 	n := filepath.Join(dir, t.UUID) + txt
+	fmt.Println("n", n)
 	if _, err := os.Stat(n); os.IsNotExist(err) {
-		return fmt.Errorf("t.extImgs: %w", os.ErrNotExist)
+		return fmt.Errorf("extractedimgs: %w", os.ErrNotExist)
 	} else if err != nil {
-		return fmt.Errorf("fix extImg: %s: %w", t.UUID, err)
+		return fmt.Errorf("extractedimgs: %s: %w", t.UUID, err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
 	if err := img.Generate(n, t.UUID, amiga); err != nil {
-		return fmt.Errorf("fix extImg: %w", err)
+		return fmt.Errorf("extractedimgs: %w", err)
 	}
 	return nil
 }

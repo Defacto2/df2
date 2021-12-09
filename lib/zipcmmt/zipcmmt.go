@@ -2,6 +2,7 @@ package zipcmmt
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Defacto2/df2/lib/database"
@@ -14,7 +15,7 @@ const (
 	fixStmt = `SELECT id, uuid, filename, filesize, file_magic_type FROM files WHERE filename LIKE "%.zip"`
 )
 
-func Fix(ascii, unicode, overwrite bool) error {
+func Fix(ascii, unicode, overwrite, summary bool) error {
 	start := time.Now()
 	dir, db := directories.Init(false), database.Connect()
 	defer db.Close()
@@ -42,17 +43,17 @@ func Fix(ascii, unicode, overwrite bool) error {
 		if ok := z.CheckCmmtFile(dir.UUID); !ok {
 			continue
 		}
-		if ascii || unicode {
-			z.Save(dir.UUID)
-			continue
+		if err := z.Save(dir.UUID); err != nil {
+			log.Println(err)
 		}
-		z.Save(dir.UUID)
 	}
 	elapsed := time.Since(start).Seconds()
 	if ascii || unicode {
 		logs.Println()
 	}
-	logs.Print(fmt.Sprintf("%d zip archives scanned for comments", i))
-	logs.Print(fmt.Sprintf(", time taken %.3f seconds\n", elapsed))
+	if summary {
+		logs.Print(fmt.Sprintf("%d zip archives scanned for comments", i))
+		logs.Print(fmt.Sprintf(", time taken %.3f seconds\n", elapsed))
+	}
 	return nil
 }

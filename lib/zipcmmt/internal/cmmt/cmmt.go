@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,65 +49,67 @@ func (z *Zipfile) CheckCmmtFile(path string) (ok bool) {
 	return true
 }
 
-func (z *Zipfile) Save(path string) {
+func (z *Zipfile) Save(path string) error {
 	file := filepath.Join(fmt.Sprint(path), z.UUID)
 	name := file + Filename
 	// Open a zip archive for reading.
 	r, err := zip.OpenReader(file)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	defer r.Close()
 	// Parse and save zip comment
 	cmmt := r.Comment
 	if cmmt == "" {
-		return
+		return nil
 	}
 	if strings.TrimSpace(cmmt) == "" {
-		return
+		return nil
 	}
 	if strings.Contains(cmmt, SceneOrg) {
-		return
+		return nil
 	}
-	z.print(&cmmt)
+	fmt.Print(z.Print(&cmmt))
 	f, err := os.Create(name)
 	if err != nil {
-		log.Panicln(err)
-		return
+		return err
 	}
 	defer f.Close()
 	if i, err := f.Write([]byte(cmmt)); err != nil {
-		log.Panicln(err)
-		return
+		return err
 	} else if i == 0 {
-		os.Remove(name)
-		return
+		return os.Remove(name)
 	}
+	return nil
 }
 
-func (z *Zipfile) print(cmmt *string) {
-	fmt.Printf("\n%v. - %s", z.ID, z.Name)
-	if z.Magic.Valid {
-		fmt.Printf(" [%s]", z.Magic.String)
+func (z *Zipfile) Print(cmmt *string) string {
+	if z.ID == 0 {
+		return ""
 	}
-	fmt.Println("")
+	var b strings.Builder
+	fmt.Fprintf(&b, "\n%v. - %s", z.ID, z.Name)
+	if z.Magic.Valid {
+		fmt.Fprintf(&b, " [%s]", z.Magic.String)
+	}
+	fmt.Fprintln(&b)
 	if z.ASCII {
-		z.printASCII(cmmt)
+		fmt.Fprint(&b, z.printASCII(cmmt))
 	}
 	if z.Unicode {
-		z.printUnicode(cmmt)
+		fmt.Fprint(&b, z.printUnicode(cmmt))
 	}
+	return b.String()
 }
 
-func (z *Zipfile) printASCII(cmmt *string) {
-	fmt.Printf("%s%s\n", *cmmt, resetCmd)
+func (z *Zipfile) printASCII(cmmt *string) string {
+	return fmt.Sprintf("%s%s\n", *cmmt, resetCmd)
 }
 
-func (z *Zipfile) printUnicode(cmmt *string) {
+func (z *Zipfile) printUnicode(cmmt *string) string {
 	b, err := convert.D437(*cmmt)
 	if err != nil {
-		fmt.Printf("Could not convert to Unicode:\n%s%s\n", *cmmt, resetCmd)
+		return fmt.Sprintf("Could not convert to Unicode:\n%s%s\n", *cmmt, resetCmd)
 	}
-	fmt.Printf("%s%s\n", b, resetCmd)
+	return fmt.Sprintf("%s%s\n", b, resetCmd)
 }
