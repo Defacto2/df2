@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/lib/logs/internal/terminal"
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 )
@@ -125,7 +126,7 @@ func Printcr(a ...interface{}) {
 	if Quiet {
 		return
 	}
-	if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(termSize()))); err != nil {
+	if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(terminal.Size()))); err != nil {
 		fatalLog(err)
 	}
 	if _, err := fmt.Print(a...); err != nil {
@@ -159,7 +160,7 @@ func Printcrf(format string, a ...interface{}) {
 		return
 	}
 	if _, err := fmt.Printf("\r%s\r%s",
-		strings.Repeat(" ", int(termSize())),
+		strings.Repeat(" ", int(terminal.Size())),
 		fmt.Sprintf(format, a...)); err != nil {
 		fatalLog(err)
 	}

@@ -1,6 +1,6 @@
 //go:build !windows
 
-package logs
+package terminal
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func termSize() (columns uint16) {
+func Size() (columns uint16) {
 	const falback = 80
 	columns = uint16(falback)
 	ws, err := unix.IoctlGetWinsize(int(os.Stdout.Fd()), unix.TIOCGWINSZ)

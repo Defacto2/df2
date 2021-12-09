@@ -1,9 +1,9 @@
 //go:build windows
 // +build windows
 
-package logs
+package terminal
 
-func termSize() (columns uint16) {
+func Size() (columns uint16) {
 	const falback = 80
 	return uint16(falback)
 }
