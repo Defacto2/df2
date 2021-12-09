@@ -1,9 +1,8 @@
-package groups
+package group
 
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
@@ -17,37 +16,17 @@ const (
 	space = " "
 )
 
-// Fix any malformed group names found in the database.
-func Fix(simulate bool) error {
-	names, _, err := list("")
-	if err != nil {
-		return err
-	}
-	c, start := 0, time.Now()
-	for _, name := range names {
-		if r := cleanGroup(name, simulate); r {
-			c++
-		}
-	}
-	switch {
-	case c > 0 && simulate:
-		logs.Printcrf("%d fixes required", c)
-		logs.Simulate()
-	case c == 1:
-		logs.Printcr("1 fix applied")
-	case c > 0:
-		logs.Printcrf("%d fixes applied", c)
-	default:
-		logs.Printcr("no group fixes needed")
-	}
-	elapsed := time.Since(start).Seconds()
-	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
-	return nil
+// Request flags for group functions.
+type Request struct {
+	Filter      string // Filter groups by category.
+	Counts      bool   // Counts the group's total files.
+	Initialisms bool   // Initialisms and acronyms for groups.
+	Progress    bool   // Progress counter when requesting database data.
 }
 
 // cleanGroup fixes and saves a malformed group name.
-func cleanGroup(g string, sim bool) (ok bool) {
-	f := cleanString(g)
+func Clean(g string, sim bool) (ok bool) {
+	f := CleanS(g)
 	if f == g {
 		return false
 	}
@@ -67,18 +46,18 @@ func cleanGroup(g string, sim bool) (ok bool) {
 }
 
 // cleanString fixes any malformed strings.
-func cleanString(s string) string {
+func CleanS(s string) string {
 	f := database.TrimSP(s)
 	f = database.StripChars(f)
 	f = database.StripStart(f)
 	f = strings.TrimSpace(f)
-	f = trimThe(f)
-	f = format(f)
+	f = TrimThe(f)
+	f = Format(f)
 	return f
 }
 
-// format returns a copy of the string with custom formatting.
-func format(s string) string {
+// Format returns a copy of s with custom formatting.
+func Format(s string) string {
 	const acronym = 3
 	if len(s) <= acronym {
 		return strings.ToUpper(s)
@@ -89,7 +68,7 @@ func format(s string) string {
 		last := len(words) - 1
 		for i, w := range words {
 			w = strings.ToLower(w)
-			w = trimDot(w)
+			w = TrimDot(w)
 			if i > 0 && i < last {
 				switch w {
 				case "a", "and", "by", "of", "for", "from", "in", "is", "or", "the", "to":
@@ -132,8 +111,8 @@ func rename(newName, group string) (count int64, err error) {
 	return count, db.Close()
 }
 
-// trimDot removes any trailing dots from a string.
-func trimDot(s string) string {
+// TrimDot removes any trailing dots from s.
+func TrimDot(s string) string {
 	const short = 2
 	if len(s) < short {
 		return s
@@ -144,8 +123,8 @@ func trimDot(s string) string {
 	return s
 }
 
-// trimThe removes a 'the' prefix from a string.
-func trimThe(s string) string {
+// TrimThe removes 'the' prefix from s.
+func TrimThe(s string) string {
 	const short = 2
 	a := strings.Split(s, space)
 	if len(a) < short {

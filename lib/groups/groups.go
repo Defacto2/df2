@@ -12,9 +12,11 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups/internal/acronym"
+	"github.com/Defacto2/df2/lib/groups/internal/group"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
 	"github.com/spf13/viper"
@@ -530,4 +532,32 @@ func Initialism(name string) (string, error) {
 		return "", fmt.Errorf("initialism get %q: %w", name, err)
 	}
 	return g.Initialism, nil
+}
+
+// Fix any malformed group names found in the database.
+func Fix(simulate bool) error {
+	names, _, err := list("")
+	if err != nil {
+		return err
+	}
+	c, start := 0, time.Now()
+	for _, name := range names {
+		if r := group.Clean(name, simulate); r {
+			c++
+		}
+	}
+	switch {
+	case c > 0 && simulate:
+		logs.Printcrf("%d fixes required", c)
+		logs.Simulate()
+	case c == 1:
+		logs.Printcr("1 fix applied")
+	case c > 0:
+		logs.Printcrf("%d fixes applied", c)
+	default:
+		logs.Printcr("no group fixes needed")
+	}
+	elapsed := time.Since(start).Seconds()
+	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+	return nil
 }

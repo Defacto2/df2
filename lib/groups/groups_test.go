@@ -365,3 +365,20 @@ func Test_initialism(t *testing.T) {
 		})
 	}
 }
+
+func TestFix(t *testing.T) {
+	tests := []struct {
+		name     string
+		simulate bool
+		wantErr  bool
+	}{
+		{"sim", true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Fix(tt.simulate); (err != nil) != tt.wantErr {
+				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

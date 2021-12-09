@@ -1,10 +1,12 @@
-package groups
+package group_test
 
 import (
 	"testing"
+
+	"github.com/Defacto2/df2/lib/groups/internal/group"
 )
 
-func Test_cleanGroup(t *testing.T) {
+func TestClean(t *testing.T) {
 	tests := []struct {
 		name   string
 		wantOk bool
@@ -18,14 +20,14 @@ func Test_cleanGroup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := cleanGroup(tt.name, false); gotOk != tt.wantOk {
-				t.Errorf("cleanGroup() = %v, want %v", gotOk, tt.wantOk)
+			if gotOk := group.Clean(tt.name, false); gotOk != tt.wantOk {
+				t.Errorf("Clean() = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}
 }
 
-func Test_cleanString(t *testing.T) {
+func TestCleanS(t *testing.T) {
 	type args struct {
 		s string
 	}
@@ -46,14 +48,14 @@ func Test_cleanString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := cleanString(tt.args.s); got != tt.want {
-				t.Errorf("cleanString() = %v, want %v", got, tt.want)
+			if got := group.CleanS(tt.args.s); got != tt.want {
+				t.Errorf("CleanS() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_trimThe(t *testing.T) {
+func TestTrimThe(t *testing.T) {
 	type args struct {
 		g string
 	}
@@ -72,14 +74,14 @@ func Test_trimThe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := trimThe(tt.args.g); got != tt.want {
-				t.Errorf("trimThe() = %v, want %v", got, tt.want)
+			if got := group.TrimThe(tt.args.g); got != tt.want {
+				t.Errorf("TrimThe() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_trimDot(t *testing.T) {
+func TestTrimDot(t *testing.T) {
 	type args struct {
 		s string
 	}
@@ -94,14 +96,14 @@ func Test_trimDot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := trimDot(tt.args.s); got != tt.want {
-				t.Errorf("trimDot() = %v, want %v", got, tt.want)
+			if got := group.TrimDot(tt.args.s); got != tt.want {
+				t.Errorf("TrimDot() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_format(t *testing.T) {
+func TestFormat(t *testing.T) {
 	tests := []struct {
 		s    string
 		want string
@@ -114,25 +116,8 @@ func Test_format(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
-			if got := format(tt.s); got != tt.want {
-				t.Errorf("format() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFix(t *testing.T) {
-	tests := []struct {
-		name     string
-		simulate bool
-		wantErr  bool
-	}{
-		{"sim", true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := Fix(tt.simulate); (err != nil) != tt.wantErr {
-				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
+			if got := group.Format(tt.s); got != tt.want {
+				t.Errorf("Format() = %v, want %v", got, tt.want)
 			}
 		})
 	}
