@@ -2,92 +2,25 @@
 package people
 
 import (
-	"bufio"
-	"bytes"
-	"database/sql"
-	"errors"
 	"fmt"
-	"os"
-	"path"
 	"sort"
 	"strings"
-	"text/template"
+	"time"
 
-	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
+	"github.com/Defacto2/df2/lib/people/internal/person"
+	"github.com/Defacto2/df2/lib/people/internal/role"
 	"github.com/Defacto2/df2/lib/str"
 	"github.com/campoy/unique"
-	"github.com/spf13/viper"
 )
 
 // Request flags for people functions.
 type Request struct {
-	// Filter people by category.
-	Filter string
-	// Counts the person's total files.
-	Counts bool
-	// Progress counter when requesting database data.
-	Progress bool
+	Filter   string // Filter people by category.
+	Counts   bool   // Counts the person's total files.
+	Progress bool   // Progress counter when requesting database data.
 }
-
-// Person data.
-type Person struct {
-	// ID used in URLs to link to the person.
-	ID string
-	// Nick of the person.
-	Nick string
-	// Inject a HR element to separate a collection of groups.
-	Hr bool
-}
-
-type persons []Person
-
-// Role or jobs to categories and filter people.
-type Role int
-
-const (
-	// Everyone displays all people.
-	Everyone Role = iota
-	// Artists are graphic or video.
-	Artists
-	// Coders are programmers.
-	Coders
-	// Musicians create music or audio.
-	Musicians
-	// Writers for the documents.
-	Writers
-)
-
-const (
-	all       = "all"
-	artists   = "artists"
-	coders    = "coders"
-	musicians = "musicians"
-	writers   = "writers"
-)
-
-func (r Role) String() string {
-	switch r {
-	case Everyone:
-		return all
-	case Artists:
-		return artists
-	case Coders:
-		return coders
-	case Musicians:
-		return musicians
-	case Writers:
-		return writers
-	default:
-		return ""
-	}
-}
-
-var (
-	ErrFilter = errors.New("invalid filter used")
-	ErrRole   = errors.New("unknown role")
-)
 
 // DataList prints an auto-complete list for HTML input elements.
 func DataList(filename string, r Request) error {
@@ -101,7 +34,11 @@ func DataList(filename string, r Request) error {
 
 // Filters is a Role slice for use with the Cobra filterFlag.
 func Filters() []string {
-	return []string{Artists.String(), Coders.String(), Musicians.String(), Writers.String()}
+	return []string{
+		role.Artists.String(),
+		role.Coders.String(),
+		role.Musicians.String(),
+		role.Writers.String()}
 }
 
 // HTML prints a snippet listing links to each person.
@@ -114,43 +51,9 @@ func HTML(filename string, r Request) error {
 	return nil
 }
 
-// List people filtered by a role.
-func List(role Role) (people []string, total int, err error) {
-	db := database.Connect()
-	defer db.Close()
-	s := peopleStmt(role, false)
-	if s == "" {
-		return nil, 0, fmt.Errorf("list statement %v: %w", role, ErrRole)
-	}
-	if total, err = database.Total(&s); err != nil {
-		return nil, 0, fmt.Errorf("list totals: %w", err)
-	}
-	// interate through records
-	rows, err := db.Query(s)
-	if err != nil {
-		return nil, 0, fmt.Errorf("list query: %w", err)
-	} else if rows.Err() != nil {
-		return nil, 0, fmt.Errorf("list rows: %w", rows.Err())
-	}
-	defer rows.Close()
-	var p sql.NullString
-	i := 0
-	for rows.Next() {
-		if err = rows.Scan(&p); err != nil {
-			return nil, 0, fmt.Errorf("list row scan: %w", err)
-		}
-		if _, err = p.Value(); err != nil {
-			continue
-		}
-		i++
-		people = append(people, fmt.Sprintf("%v", p.String))
-	}
-	return people, total, nil
-}
-
 // Print lists people filtered by a role and summaries the results.
 func Print(r Request) error {
-	ppl, total, err := List(roles(r.Filter))
+	ppl, total, err := role.List(role.Roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("print request: %w", err)
 	}
@@ -189,18 +92,18 @@ func Roles() string {
 }
 
 func parse(filename, tpl string, r Request) error {
-	grp, x, err := List(roles(r.Filter))
+	grp, x, err := role.List(role.Roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
 	f := r.Filter
 	if f == "" {
-		f = all
+		f = "all"
 	}
 	if !str.Piped() {
 		logs.Println(x, "matching", f, "records found")
 	}
-	data, s, hr := make(persons, len(grp)), "", false
+	data, s, hr := make(person.Persons, len(grp)), "", false
 	total := len(grp)
 	for i := range grp {
 		if r.Progress {
@@ -217,96 +120,42 @@ func parse(filename, tpl string, r Request) error {
 		default:
 			hr = false
 		}
-		data[i] = Person{
+		data[i] = person.Person{
 			ID:   groups.MakeSlug(n),
 			Nick: n,
 			Hr:   hr,
 		}
 	}
-	return data.template(filename, tpl, r)
+	return data.Template(filename, tpl, r.Filter)
 }
 
-func (data persons) template(filename, tpl string, r Request) error {
-	t, err := template.New("h2").Parse(tpl)
-	if err != nil {
-		return fmt.Errorf("parse h2 template: %w", err)
-	}
-	if filename == "" {
-		var buf bytes.Buffer
-		wr := bufio.NewWriter(&buf)
-		if err = t.Execute(wr, data); err != nil {
-			return fmt.Errorf("parse h2 execute template: %w", err)
-		}
-		if err := wr.Flush(); err != nil {
-			return fmt.Errorf("parse writer flush: %w", err)
-		}
-		fmt.Println(buf.String())
-		return nil
-	}
-	switch roles(r.Filter) {
-	case Artists, Coders, Musicians, Writers:
-		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
+// Fix any malformed group names found in the database.
+func Fix(simulate bool) error {
+	c, start := 0, time.Now()
+	for _, r := range []role.Role{role.Artists, role.Coders, role.Musicians, role.Writers} {
+		credits, _, err := role.List(r)
 		if err != nil {
-			return fmt.Errorf("parse create: %w", err)
+			return err
 		}
-		defer f.Close()
-		if err = t.Execute(f, data); err != nil {
-			return fmt.Errorf("parse template execute: %w", err)
+		for _, credit := range credits {
+			if r := role.Clean(credit, r, simulate); r {
+				c++
+			}
 		}
-	case Everyone:
-		return fmt.Errorf("parse %v: %w", r.Filter, ErrFilter)
 	}
+	switch {
+	case c > 0 && simulate:
+		logs.Printcrf("%d fixes required", c)
+		logs.Simulate()
+	case c == 1:
+		logs.Printcr("1 fix applied")
+	case c > 0:
+		logs.Printcrf("%d fixes applied", c)
+	default:
+		logs.Printcr("no people fixes needed")
+	}
+	elapsed := time.Since(start).Seconds()
+	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+
 	return nil
-}
-
-// peopleStmt returns a complete SQL WHERE statement where the people are filtered by a role.
-func peopleStmt(role Role, softDel bool) string {
-	del := func() string {
-		if softDel {
-			return ""
-		}
-		return "AND `deletedat` IS NULL"
-	}
-	d := func(s string) string {
-		return fmt.Sprintf(" UNION (SELECT DISTINCT %s AS pubCombined FROM files WHERE Length(%s) <> 0 %s)",
-			s, s, del())
-	}
-	s := ""
-	switch role {
-	case Writers:
-		s += d("credit_text")
-	case Musicians:
-		s += d("credit_audio")
-	case Coders:
-		s += d("credit_program")
-	case Artists:
-		s += d("credit_illustration")
-	case Everyone:
-		s += d("credit_text")
-		s += d("credit_audio")
-		s += d("credit_program")
-		s += d("credit_illustration")
-	}
-	if s == "" {
-		return s
-	}
-	s += " ORDER BY pubCombined"
-	s = strings.Replace(s, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
-	return s
-}
-
-func roles(r string) Role {
-	switch r {
-	case writers, "w":
-		return Writers
-	case musicians, "m":
-		return Musicians
-	case coders, "c":
-		return Coders
-	case artists, "a":
-		return Artists
-	case "", all:
-		return Everyone
-	}
-	return -1
 }

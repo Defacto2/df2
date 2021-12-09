@@ -4,60 +4,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/Defacto2/df2/lib/people/internal/role"
 )
-
-func Test_roles(t *testing.T) {
-	type args struct {
-		r string
-	}
-	tests := []struct {
-		name string
-		args args
-		want Role
-	}{
-		{"empty", args{""}, Everyone},
-		{"artist", args{"artists"}, Artists},
-		{"a", args{"a"}, Artists},
-		{"all", args{"all"}, Everyone},
-		{"error", args{"xxx"}, -1},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := roles(tt.args.r); got != tt.want {
-				t.Errorf("roles() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_peopleStmt(t *testing.T) {
-	type args struct {
-		role               string
-		includeSoftDeletes bool
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{"error", args{"text", false}, false},
-		{"empty f", args{"", false}, true},
-		{"empty t", args{"", true}, true},
-		{"writers", args{"writers", true}, true},
-		{"writers", args{"w", true}, true},
-		{"musicians", args{"m", true}, true},
-		{"coders", args{"c", true}, true},
-		{"artists", args{"a", true}, true},
-		{"all", args{"", true}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := peopleStmt(roles(tt.args.role), tt.args.includeSoftDeletes); len(got) > 0 != tt.want {
-				t.Errorf("sqlPeople() = %v, want = %v", len(got) > 0, tt.want)
-			}
-		})
-	}
-}
 
 func TestFilters(t *testing.T) {
 	tests := []struct {
@@ -89,7 +38,7 @@ func TestList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, got, err := List(roles(tt.role))
+			_, got, err := role.List(role.Roles(tt.role))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("List() error got = %v, want %v", (err != nil), tt.wantErr)
 			}
@@ -152,7 +101,7 @@ func Test_DataList_HTML(t *testing.T) {
 func TestRole_String(t *testing.T) {
 	tests := []struct {
 		name string
-		r    Role
+		r    role.Role
 		want string
 	}{
 		{"err", -1, ""},
