@@ -6,11 +6,13 @@ import (
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/Defacto2/df2/lib/groups/internal/group"
 )
 
 func Test_groupsWhere(t *testing.T) {
 	type args struct {
-		f              Filter
+		f              group.Filter
 		incSoftDeletes bool
 	}
 	tests := []struct {
@@ -18,15 +20,15 @@ func Test_groupsWhere(t *testing.T) {
 		args args
 		want string
 	}{
-		{"mag-", args{Magazine, false}, "AND section = 'magazine' AND `deletedat` IS NULL"},
-		{"bbs-", args{BBS, false}, "AND RIGHT(group_brand_for,4) = ' BBS' AND `deletedat` IS NULL"},
-		{"ftp-", args{FTP, false}, "AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL"},
-		{"grp-", args{Group, false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
+		{"mag-", args{group.Magazine, false}, "AND section = 'magazine' AND `deletedat` IS NULL"},
+		{"bbs-", args{group.BBS, false}, "AND RIGHT(group_brand_for,4) = ' BBS' AND `deletedat` IS NULL"},
+		{"ftp-", args{group.FTP, false}, "AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL"},
+		{"grp-", args{group.Group, false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
 			"RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND `deletedat` IS NULL"},
-		{"mag+", args{Magazine, true}, "AND section = 'magazine'"},
-		{"bbs+", args{BBS, true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
-		{"ftp+", args{FTP, true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
-		{"grp+", args{Group, true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
+		{"mag+", args{group.Magazine, true}, "AND section = 'magazine'"},
+		{"bbs+", args{group.BBS, true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
+		{"ftp+", args{group.FTP, true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
+		{"grp+", args{group.Group, true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
 			"RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine'"},
 	}
 	for _, tt := range tests {
@@ -128,7 +130,7 @@ func Test_list(t *testing.T) {
 
 func Test_groupsStmt(t *testing.T) {
 	type args struct {
-		f                  Filter
+		f                  group.Filter
 		includeSoftDeletes bool
 	}
 	tests := []struct {
@@ -136,9 +138,9 @@ func Test_groupsStmt(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"valid soft", args{BBS, true}, false},
-		{"valid", args{BBS, false}, false},
-		{"invalid", args{filter("invalid filter"), false}, true},
+		{"valid soft", args{group.BBS, true}, false},
+		{"valid", args{group.BBS, false}, false},
+		{"invalid", args{group.Get("invalid filter"), false}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

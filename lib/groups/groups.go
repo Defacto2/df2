@@ -24,60 +24,12 @@ import (
 
 const htm = ".htm"
 
-// Filter group by role or function.
-type Filter int
-
-const (
-	// None returns all groups.
-	None Filter = iota
-	// BBS boards.
-	BBS
-	// FTP sites.
-	FTP
-	// Group generic roles.
-	Group
-	// Magazine publishers.
-	Magazine
-)
-
 const (
 	bb  = "bbs"
 	fp  = "ftp"
 	grp = "group"
 	mag = "magazine"
 )
-
-func (f Filter) String() string {
-	switch f {
-	case BBS:
-		return bb
-	case FTP:
-		return fp
-	case Group:
-		return grp
-	case Magazine:
-		return mag
-	case None:
-		return ""
-	}
-	return ""
-}
-
-func filter(s string) Filter {
-	switch strings.ToLower(s) {
-	case bb:
-		return BBS
-	case fp:
-		return FTP
-	case grp:
-		return Group
-	case mag:
-		return Magazine
-	case "":
-		return None
-	}
-	return -1
-}
 
 var ErrFilter = errors.New("invalid filter used")
 
@@ -277,8 +229,8 @@ func (r Request) parse(filename, tmpl string) error {
 		fmt.Println(buf.String())
 		return nil
 	}
-	switch filter(r.Filter) {
-	case BBS, FTP, Group, Magazine:
+	switch group.Get(r.Filter) {
+	case group.BBS, group.FTP, group.Group, group.Magazine:
 		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
 		if err != nil {
 			return fmt.Errorf("parse create: %w", err)
@@ -298,7 +250,7 @@ func (r Request) parse(filename, tmpl string) error {
 		if _, err := f.WriteString("</div>\n"); err != nil {
 			return fmt.Errorf("append html writestring: %w", err)
 		}
-	case None:
+	case group.None:
 		return fmt.Errorf("parse %q: %w", r.Filter, ErrFilter)
 	}
 	return nil
@@ -308,7 +260,7 @@ func (r Request) parse(filename, tmpl string) error {
 func list(f string) (groups []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
-	s, err := groupsStmt(filter(f), false)
+	s, err := groupsStmt(group.Get(f), false)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list groups statement: %w", err)
 	}
@@ -425,7 +377,11 @@ func Variations(name string) ([]string, error) {
 
 // Wheres are group categories.
 func Wheres() []string {
-	return []string{BBS.String(), FTP.String(), Group.String(), Magazine.String()}
+	return []string{
+		group.BBS.String(),
+		group.FTP.String(),
+		group.Group.String(),
+		group.Magazine.String()}
 }
 
 // initialism returns a group's initialism or acronym.
@@ -457,7 +413,7 @@ func remInitialism(s string) string {
 }
 
 // groupsStmt returns a complete SQL WHERE statement where the groups are filtered.
-func groupsStmt(f Filter, includeSoftDeletes bool) (string, error) {
+func groupsStmt(f group.Filter, includeSoftDeletes bool) (string, error) {
 	inc, skip := includeSoftDeletes, false
 	if f > -1 {
 		skip = true
@@ -482,18 +438,18 @@ func groupsStmt(f Filter, includeSoftDeletes bool) (string, error) {
 }
 
 // groupsFilter returns a partial SQL WHERE statement to filter groups.
-func groupsFilter(f Filter) (string, error) {
+func groupsFilter(f group.Filter) (string, error) {
 	var s string
 	switch f {
-	case None:
+	case group.None:
 		return "", nil
-	case Magazine:
+	case group.Magazine:
 		s = "section = 'magazine' AND"
-	case BBS:
+	case group.BBS:
 		s = "RIGHT(group_brand_for,4) = ' BBS' AND"
-	case FTP:
+	case group.FTP:
 		s = "RIGHT(group_brand_for,4) = ' FTP' AND"
-	case Group: // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
+	case group.Group: // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
 		s = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
 	default:
 		return "", fmt.Errorf("group filter %q: %w", f.String(), ErrFilter)
@@ -502,7 +458,7 @@ func groupsFilter(f Filter) (string, error) {
 }
 
 // groupsWhere returns a partial SQL WHERE statement where groups are filtered.
-func groupsWhere(f Filter, softDel bool) (string, error) {
+func groupsWhere(f group.Filter, softDel bool) (string, error) {
 	s, err := groupsFilter(f)
 	if err != nil {
 		return "", fmt.Errorf("groups where: %w", err)

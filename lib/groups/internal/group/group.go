@@ -13,8 +13,54 @@ import (
 const (
 	bbs   = "bbs"
 	ftp   = "ftp"
+	grp   = "group"
+	mag   = "magazine"
 	space = " "
 )
+
+// Filter group by role or function.
+type Filter int
+
+const (
+	None     Filter = iota // None returns all groups.
+	BBS                    // BBS boards.
+	FTP                    // FTP sites.
+	Group                  // Group generic roles.
+	Magazine               // Magazine publishers.
+)
+
+func (f Filter) String() string {
+	switch f {
+	case BBS:
+		return bbs
+	case FTP:
+		return ftp
+	case Group:
+		return grp
+	case Magazine:
+		return mag
+	case None:
+		return ""
+	}
+	return ""
+}
+
+// Get the Filter type from s.
+func Get(s string) Filter {
+	switch strings.ToLower(s) {
+	case bbs:
+		return BBS
+	case ftp:
+		return FTP
+	case grp:
+		return Group
+	case mag:
+		return Magazine
+	case "":
+		return None
+	}
+	return -1
+}
 
 // Request flags for group functions.
 type Request struct {
