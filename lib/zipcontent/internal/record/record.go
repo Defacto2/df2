@@ -18,8 +18,11 @@ import (
 )
 
 var (
+	ErrCols     = errors.New("the number of values is not the same as the number of columns")
+	ErrID       = errors.New("record does not contain a valid value for the id column")
+	ErrUUID     = errors.New("record does not contain a valid value for the uuid column")
 	ErrRawBytes = errors.New("sql rawbytes is missing expected table columns")
-	ErrStatNil  = errors.New("stats pointer is nil")
+	ErrStatNil  = errors.New("stats pointer is nil or the stats.values field is missing")
 )
 
 // Record of a file item.
@@ -32,6 +35,7 @@ type Record struct {
 	NFO   string   // NFO or textfile to display
 }
 
+// New returns a Record generated from the sql rawbyte values.
 func New(values []sql.RawBytes, path string) (Record, error) {
 	const id, uuid, filename, readme = 0, 1, 4, 6
 	if len(values) < readme+1 {
@@ -46,10 +50,14 @@ func New(values []sql.RawBytes, path string) (Record, error) {
 	}, nil
 }
 
-// Iterate through each value.
+// Iterate through each sql rawbyte value.
 func (r *Record) Iterate(s *scan.Stats) error {
-	if s == nil {
+	if s == nil || s.Values == nil {
 		return ErrStatNil
+	}
+	if len(s.Columns) != len(*s.Values) {
+		return fmt.Errorf("%w, columns: %d, values: %d",
+			ErrCols, len(s.Columns), len(*s.Values))
 	}
 	var value string
 	for i, raw := range *s.Values {
@@ -61,7 +69,7 @@ func (r *Record) Iterate(s *scan.Stats) error {
 			database.DateTime(raw)
 		case "filename":
 			logs.Printf("%v", value)
-			if err := r.files(s); err != nil {
+			if err := r.Read(s); err != nil {
 				return err
 			}
 		default:
@@ -70,10 +78,13 @@ func (r *Record) Iterate(s *scan.Stats) error {
 	return nil
 }
 
-// files reads an archive and saves its content to the database.
-func (r *Record) files(s *scan.Stats) error {
+// Read and save the archive content to the database.
+func (r *Record) Read(s *scan.Stats) error {
 	if s == nil {
 		return ErrStatNil
+	}
+	if r.UUID == "" {
+		return fmt.Errorf("%w, quoted uuid: %q", ErrUUID, r.NFO)
 	}
 	var err error
 	logs.Print(" • ")
@@ -83,17 +94,24 @@ func (r *Record) files(s *scan.Stats) error {
 		return fmt.Errorf("file zip content archive read: %w", err)
 	}
 	logs.Printf("%d items", len(r.Files))
-	if err := r.nfo(s); err != nil {
+	if err := r.Nfo(s); err != nil {
 		return err
 	}
-	if err := r.save(); err != nil {
+	updates, err := r.Save()
+	if err != nil {
 		logs.Printf(" %s", str.X())
 		return fmt.Errorf("file zip content update: %w", err)
 	}
+	if updates == 0 {
+		logs.Printf(" %s", str.X())
+		return nil
+	}
+	logs.Printf(" %s", str.Y())
 	return nil
 }
 
-func (r *Record) nfo(s *scan.Stats) error {
+// Nfo finds an appropriate textfile and saves it to the database.
+func (r *Record) Nfo(s *scan.Stats) error {
 	if s == nil {
 		return ErrStatNil
 	}
@@ -121,6 +139,7 @@ func (r *Record) nfo(s *scan.Stats) error {
 	return nil
 }
 
+// Id prints the record ID to stdout.
 func (r *Record) id(s *scan.Stats) error {
 	if s == nil {
 		return ErrStatNil
@@ -133,7 +152,11 @@ func (r *Record) id(s *scan.Stats) error {
 	return nil
 }
 
-func (r *Record) save() error {
+// Save updates the record in the database.
+func (r *Record) Save() (int64, error) {
+	if r.ID == "" {
+		return 0, ErrID
+	}
 	const (
 		files = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=? WHERE id=?"
 		nfo   = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?," +
@@ -149,17 +172,20 @@ func (r *Record) save() error {
 		update, err = db.Prepare(nfo)
 	}
 	if err != nil {
-		return fmt.Errorf("update zip content db prepare: %w", err)
+		return 0, fmt.Errorf("update zip content db prepare: %w", err)
 	}
 	defer update.Close()
 	content := strings.Join(r.Files, "\n")
 	if r.NFO == "" {
-		if _, err := update.Exec(content, database.UpdateID, r.ID); err != nil {
-			return fmt.Errorf("update zip content update exec: %w", err)
+		a, err := update.Exec(content, database.UpdateID, r.ID)
+		if err != nil {
+			return 0, fmt.Errorf("update zip content update exec: %w", err)
 		}
-	} else if _, err := update.Exec(content, database.UpdateID, r.NFO, 0, r.ID); err != nil {
-		return fmt.Errorf("update zip content update exec: %w", err)
+		return a.RowsAffected()
 	}
-	logs.Printf(" %s", str.Y())
-	return db.Close()
+	a, err := update.Exec(content, database.UpdateID, r.NFO, 0, r.ID)
+	if err != nil {
+		return 0, fmt.Errorf("update zip content update exec: %w", err)
+	}
+	return a.RowsAffected()
 }
