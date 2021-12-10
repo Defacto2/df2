@@ -42,7 +42,7 @@ installation instructions: https://github.com/ansilove/ansilove
 		fmt.Println(note)
 		return fmt.Errorf("generate ansilove not found: %w", err)
 	} else if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
-		tmp, err1 := reduce(f.UUID, uuid)
+		tmp, err1 := Reduce(f.UUID, uuid)
 		if err1 != nil {
 			return fmt.Errorf("ansilove reduce: %w", err1)
 		}
@@ -79,8 +79,8 @@ installation instructions: https://github.com/ansilove/ansilove
 	return nil
 }
 
-// reduce the length of the textfile so it can be parsed by AnsiLove.
-func reduce(src, uuid string) (string, error) {
+// Reduce the length of the textfile so it can be parsed by AnsiLove.
+func Reduce(src, uuid string) (string, error) {
 	fmt.Print(" will attempt to reduce the length of file")
 
 	f, err := os.Open(src)
