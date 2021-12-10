@@ -141,14 +141,11 @@ func TestTextFile_Extract(t *testing.T) {
 	var dirInput directories.Dir
 	dirInput.UUID = textDir
 	type fields struct {
-		ID       uint
-		UUID     string
-		Name     string
-		Ext      string
-		Platform string
-		Size     int
-		NoReadme sql.NullBool
-		Readme   sql.NullString
+		ID     uint
+		UUID   string
+		Name   string
+		Ext    string
+		Readme sql.NullString
 	}
 	tests := []struct {
 		name    string
@@ -167,14 +164,11 @@ func TestTextFile_Extract(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tr := &tf.TextFile{
-				ID:       tt.fields.ID,
-				UUID:     tt.fields.UUID,
-				Name:     tt.fields.Name,
-				Ext:      tt.fields.Ext,
-				Platform: tt.fields.Platform,
-				Size:     tt.fields.Size,
-				NoReadme: tt.fields.NoReadme,
-				Readme:   tt.fields.Readme,
+				ID:     tt.fields.ID,
+				UUID:   tt.fields.UUID,
+				Name:   tt.fields.Name,
+				Ext:    tt.fields.Ext,
+				Readme: tt.fields.Readme,
 			}
 			if err := tr.Extract(tt.dir); (err != nil) != tt.wantErr {
 				t.Errorf("TextFile.Extract() error = %v, wantErr %v", err, tt.wantErr)
@@ -188,14 +182,8 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 	d := config(t)
 	dir := filepath.Join(textDir, "extracted")
 	type fields struct {
-		ID       uint
-		UUID     string
-		Name     string
-		Ext      string
-		Platform string
-		Size     int
-		NoReadme sql.NullBool
-		Readme   sql.NullString
+		ID   uint
+		UUID string
 	}
 	tests := []struct {
 		name    string
@@ -212,14 +200,8 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tr := &tf.TextFile{
-				ID:       tt.fields.ID,
-				UUID:     tt.fields.UUID,
-				Name:     tt.fields.Name,
-				Ext:      tt.fields.Ext,
-				Platform: tt.fields.Platform,
-				Size:     tt.fields.Size,
-				NoReadme: tt.fields.NoReadme,
-				Readme:   tt.fields.Readme,
+				ID:   tt.fields.ID,
+				UUID: tt.fields.UUID,
 			}
 			if err := tr.ExtractedImgs(tt.dir); (err != nil) != tt.wantErr {
 				t.Errorf("TextFile.ExtractedImgs() error = %v, wantErr %v", err, tt.wantErr)
@@ -233,14 +215,7 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 func TestImages(t *testing.T) {
 	d := config(t)
 	type fields struct {
-		ID       uint
-		UUID     string
-		Name     string
-		Ext      string
-		Platform string
-		Size     int
-		NoReadme sql.NullBool
-		Readme   sql.NullString
+		UUID string
 	}
 	type args struct {
 		c   int
@@ -258,14 +233,7 @@ func TestImages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tr := &tf.TextFile{
-				ID:       tt.fields.ID,
-				UUID:     tt.fields.UUID,
-				Name:     tt.fields.Name,
-				Ext:      tt.fields.Ext,
-				Platform: tt.fields.Platform,
-				Size:     tt.fields.Size,
-				NoReadme: tt.fields.NoReadme,
-				Readme:   tt.fields.Readme,
+				UUID: tt.fields.UUID,
 			}
 			if err := tr.TextPng(tt.args.c, tt.args.dir); (err != nil) != tt.wantErr {
 				t.Errorf("TextFile.TextPng() error = %v, wantErr %v", err, tt.wantErr)

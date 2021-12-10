@@ -40,7 +40,7 @@ installation instructions: https://github.com/ansilove/ansilove
 	s, err := MakePng(n, f.Img000, amiga)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
 		fmt.Println(note)
-		return fmt.Errorf("generate ansilove not found: %w", err)
+		return fmt.Errorf("generate, ansilove not found: %w", err)
 	} else if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
 		tmp, err1 := Reduce(f.UUID, uuid)
 		if err1 != nil {
@@ -117,16 +117,16 @@ func Reduce(src, uuid string) (string, error) {
 // /images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49.
 func MakePng(src, dest string, amiga bool) (string, error) {
 	if src == "" {
-		return "", fmt.Errorf("make png: %w", ErrNoSrc)
+		return "", fmt.Errorf("makepng: %w", ErrNoSrc)
 	}
 	if dest == "" {
-		return "", fmt.Errorf("make png: %w", ErrDest)
+		return "", fmt.Errorf("makepng: %w", ErrDest)
 	}
 	_, err := os.Stat(src)
 	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("make png missing %q: %w", src, err)
+		return "", fmt.Errorf("makepng missing %q: %w", src, err)
 	} else if err != nil {
-		return "", fmt.Errorf("make png stat: %w", err)
+		return "", fmt.Errorf("makepng stat: %w", err)
 	}
 	const ten = 10 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), ten)
@@ -151,19 +151,19 @@ func MakePng(src, dest string, amiga bool) (string, error) {
 
 	_, err = os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("make png working directory: %w", err)
+		return "", fmt.Errorf("makepng working directory: %w", err)
 	}
 
 	_, err = os.Executable()
 	if err != nil {
-		return "", fmt.Errorf("make png failed to obtain exe: %w", err)
+		return "", fmt.Errorf("makepng failed to obtain exe: %w", err)
 	}
 
 	stat, err := os.Stat(img)
 	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("make png stat %q: %w", img, err)
+		return "", fmt.Errorf("makepng stat %q: %w", img, err)
 	} else if err != nil {
-		return "", fmt.Errorf("make png stat: %w", err)
+		return "", fmt.Errorf("makepng stat: %w", err)
 	}
 
 	return fmt.Sprintf("✓ text » png %v\n%s",

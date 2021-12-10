@@ -16,15 +16,9 @@ const (
 
 func TestZipfile_Checks(t *testing.T) {
 	type fields struct {
-		ID        uint
-		UUID      string
-		Name      string
-		Ext       string
-		Size      int
-		Magic     sql.NullString
-		ASCII     bool
-		Unicode   bool
-		Overwrite bool
+		UUID    string
+		ASCII   bool
+		Unicode bool
 	}
 	tests := []struct {
 		name   string
@@ -38,15 +32,9 @@ func TestZipfile_Checks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			z := &cmmt.Zipfile{
-				ID:        tt.fields.ID,
-				UUID:      tt.fields.UUID,
-				Name:      tt.fields.Name,
-				Ext:       tt.fields.Ext,
-				Size:      tt.fields.Size,
-				Magic:     tt.fields.Magic,
-				ASCII:     tt.fields.ASCII,
-				Unicode:   tt.fields.Unicode,
-				Overwrite: tt.fields.Overwrite,
+				UUID:    tt.fields.UUID,
+				ASCII:   tt.fields.ASCII,
+				Unicode: tt.fields.Unicode,
 			}
 			if gotOk := z.CheckDownload(tt.path); gotOk != tt.wantOk {
 				t.Errorf("Zipfile.CheckDownload() = %v, want %v", gotOk, tt.wantOk)
@@ -60,39 +48,17 @@ func TestZipfile_Checks(t *testing.T) {
 }
 
 func TestZipfile_Save(t *testing.T) {
-	type fields struct {
-		ID        uint
-		UUID      string
-		Name      string
-		Ext       string
-		Size      int
-		Magic     sql.NullString
-		ASCII     bool
-		Unicode   bool
-		Overwrite bool
-	}
 	tests := []struct {
 		name    string
-		fields  fields
 		path    string
 		wantErr bool
 	}{
-		{"empty", fields{}, "", true},
-		{"ok", fields{}, filepath.Join(path, uuid), false},
+		{"empty", "", true},
+		{"ok", filepath.Join(path, uuid), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			z := &cmmt.Zipfile{
-				ID:        tt.fields.ID,
-				UUID:      tt.fields.UUID,
-				Name:      tt.fields.Name,
-				Ext:       tt.fields.Ext,
-				Size:      tt.fields.Size,
-				Magic:     tt.fields.Magic,
-				ASCII:     tt.fields.ASCII,
-				Unicode:   tt.fields.Unicode,
-				Overwrite: tt.fields.Overwrite,
-			}
+			z := &cmmt.Zipfile{}
 			if err := z.Save(tt.path); (err != nil) != tt.wantErr {
 				t.Errorf("Zipfile.Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -102,15 +68,9 @@ func TestZipfile_Save(t *testing.T) {
 
 func TestZipfile_Print(t *testing.T) {
 	type fields struct {
-		ID        uint
-		UUID      string
-		Name      string
-		Ext       string
-		Size      int
-		Magic     sql.NullString
-		ASCII     bool
-		Unicode   bool
-		Overwrite bool
+		ID    uint
+		Name  string
+		Magic sql.NullString
 	}
 	tests := []struct {
 		name   string
@@ -128,15 +88,9 @@ func TestZipfile_Print(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			z := &cmmt.Zipfile{
-				ID:        tt.fields.ID,
-				UUID:      tt.fields.UUID,
-				Name:      tt.fields.Name,
-				Ext:       tt.fields.Ext,
-				Size:      tt.fields.Size,
-				Magic:     tt.fields.Magic,
-				ASCII:     tt.fields.ASCII,
-				Unicode:   tt.fields.Unicode,
-				Overwrite: tt.fields.Overwrite,
+				ID:    tt.fields.ID,
+				Name:  tt.fields.Name,
+				Magic: tt.fields.Magic,
 			}
 			if got := strings.TrimSpace(z.Print(tt.cmmt)); got != tt.want {
 				t.Errorf("Zipfile.Print() = %q, want %q",
