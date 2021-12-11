@@ -1,18 +1,8 @@
 package recent
 
 import (
-	"log"
 	"testing"
 )
-
-func BenchmarkCreate(b *testing.B) {
-	const limit = 10
-	for i := 0; i < b.N; i++ {
-		if err := List(limit, true); err != nil {
-			log.Print(err)
-		}
-	}
-}
 
 func TestList(t *testing.T) {
 	type args struct {

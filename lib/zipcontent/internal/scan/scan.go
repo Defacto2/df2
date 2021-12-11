@@ -10,14 +10,15 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
+// Stats contain the statistics of the archive scan.
 type Stats struct {
-	BasePath string          // path to file downloads with UUID as filenames
-	Count    int             // row index
-	Missing  int             // missing UUID files count
-	Total    int             // total rows
-	Columns  []string        // column names
-	Values   *[]sql.RawBytes // row values
-	start    time.Time       // processing time
+	BasePath string          // Path to file downloads directory with UUID as filenames.
+	Count    int             // Database table row index.
+	Missing  int             // Missing UUID as files count.
+	Total    int             // Total rows in the database table.
+	Columns  []string        // Column names of the database table.
+	Values   *[]sql.RawBytes // Values of the rows in the database.
+	start    time.Time       // Processing duration.
 }
 
 // Init initializes the archive scan statistics.

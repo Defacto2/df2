@@ -46,7 +46,7 @@ func List(limit uint, compress bool) error {
 			continue
 		}
 		var v file.Thumb
-		v.Parse(values)
+		v.Scan(values)
 		f.Data = append(f.Data, [...]string{v.UUID, v.URLID, v.Title})
 	}
 	jsonData, err := json.Marshal(f)

@@ -49,14 +49,14 @@ const (
 
 // TextFile is a text file object.
 type TextFile struct {
-	ID       uint           // database id
-	UUID     string         // database unique id
-	Name     string         // file name
-	Ext      string         // file extension
-	Platform string         // file platform classification
-	Size     int            // file size in bytes
-	NoReadme sql.NullBool   // disable the display of a readme
-	Readme   sql.NullString // filename of a readme textfile
+	ID       uint           // MySQL auto increment Id.
+	UUID     string         // Unique Id.
+	Name     string         // Filename.
+	Ext      string         // File extension.
+	Platform string         // Platform classification of the file.
+	Size     int            // Size of the file in bytes.
+	NoReadme sql.NullBool   // Disable the display of a readme on the site.
+	Readme   sql.NullString // Filename of a readme or NFO textfile to display on the site.
 }
 
 func (t *TextFile) String() string {

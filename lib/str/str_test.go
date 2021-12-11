@@ -7,19 +7,19 @@ import (
 	"github.com/gookit/color"
 )
 
-func capString(test, text string) (output string) {
+func capString(test, text string) string {
 	color.Enable = false
 	switch test {
 	case "sec":
-		output = str.Sec(text)
+		return str.Sec(text)
 	case "warn":
-		output = str.Warn(text)
+		return str.Warn(text)
 	case "x":
-		output = str.X()
+		return str.X()
 	case "y":
-		output = str.Y()
+		return str.Y()
 	}
-	return output
+	return ""
 }
 
 func Test_capString(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"github.com/hako/durafmt"
 )
 
-// Thumbnail data.
+// Thumb metadata for a JSON document.
 type Thumb struct {
 	UUID    string `json:"uuid"`
 	URLID   string `json:"urlid"`
@@ -22,6 +22,7 @@ type Thumb struct {
 	year    int
 }
 
+// Files data for a JSON document.
 type Files struct {
 	Cols [3]string `json:"COLUMNS"`
 	Data []data    `json:"DATA"`
@@ -29,9 +30,19 @@ type Files struct {
 
 type data [3]string
 
-const id, uuid, recordtitle, groupbrandfor, groupbrandby, filename, dateissuedyear, createdat = 0, 1, 2, 3, 4, 5, 6, 7
+const (
+	id = iota
+	uuid
+	recordtitle
+	groupbrandfor
+	groupbrandby
+	filename
+	dateissuedyear
+	createdat
+)
 
-func (f *Thumb) Parse(values []sql.RawBytes) {
+// Scan the thumbnail for usable JSON metadata.
+func (f *Thumb) Scan(values []sql.RawBytes) {
 	if id := string(values[id]); id != "" {
 		f.URLID = database.ObfuscateParam(id)
 	}

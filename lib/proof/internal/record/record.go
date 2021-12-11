@@ -2,9 +2,11 @@ package record
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -16,16 +18,26 @@ import (
 	"github.com/gookit/color"
 )
 
+var (
+	ErrNoRec   = errors.New("record cannot be empty")
+	ErrNoStat  = errors.New("stat cannot be empty")
+	ErrColVals = errors.New("each database value must have a matching table column")
+)
+
 // Record of a file item.
 type Record struct {
-	ID   string // mysql auto increment id
-	UUID string // record unique id
-	File string // absolute path to file
-	Name string // filename
+	ID   string // MySQL auto increment Id.
+	UUID string // Unique Id.
+	File string // Absolute path to file.
+	Name string // Filename.
 }
 
+// New returns a file record using values from the database.
 func New(values []sql.RawBytes, path string) Record {
 	const id, uuid, filename = 0, 1, 4
+	if len(values) <= filename {
+		return Record{}
+	}
 	return Record{
 		ID:   string(values[id]),
 		UUID: string(values[uuid]),
@@ -34,37 +46,58 @@ func New(values []sql.RawBytes, path string) Record {
 	}
 }
 
-// approve sets the record to be publically viewable.
-func (r Record) approve() error {
+// Approve sets the record to be publically viewable.
+func (r Record) Approve() error {
+	if reflect.DeepEqual(r, Record{}) {
+		return ErrNoRec
+	}
 	db := database.Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	if err != nil {
-		return fmt.Errorf("approve update prepare: %w", err)
+		return fmt.Errorf("approve prepare: %w", err)
 	}
 	defer update.Close()
-	_, err = update.Exec(database.UpdateID, r.ID)
+	res, err := update.Exec(database.UpdateID, r.ID)
 	if err != nil {
-		return fmt.Errorf("approve update exec: %w", err)
+		return fmt.Errorf("approve exec: %w", err)
+	}
+	if i, err := res.RowsAffected(); err != nil {
+		return fmt.Errorf("approve rows affected: %w", err)
+	} else if i == 0 {
+		logs.Printf(" %s", str.X())
+		return nil
 	}
 	logs.Printf(" %s", str.Y())
 	return nil
 }
 
-// iterate through each value.
-func (r Record) Iterate(s stat.Stat) error {
+// Iterate through each stat value.
+func (r Record) Iterate(s stat.Proof) error {
+	if reflect.DeepEqual(r, Record{}) {
+		return ErrNoRec
+	}
+	if reflect.DeepEqual(s, stat.Proof{}) {
+		return ErrNoStat
+	}
+	if s.Values == nil {
+		return nil
+	}
+	if len(*s.Values) != len(s.Columns) {
+		return ErrColVals
+	}
 	var value string
 	for i, raw := range *s.Values {
 		value = database.Val(raw)
 		switch s.Columns[i] {
 		case "id":
-			r.printID(&s)
+			r.Prefix(&s)
 		case "createdat":
 			database.DateTime(raw)
 		case "filename":
 			logs.Printf("%v", value)
 		case "file_zip_content":
-			if err := r.zip(raw, &s); err != nil {
+			if err := r.Zip(raw, &s); err != nil {
 				return err
 			}
 		default:
@@ -73,35 +106,24 @@ func (r Record) Iterate(s stat.Stat) error {
 	return nil
 }
 
-// fileZipContent reads an archive and saves its content to the database.
-func (r Record) fileZipContent() (ok bool, err error) {
-	a, err := archive.Read(r.File, r.Name)
-	if err != nil {
-		return false, fmt.Errorf("file zip content archive read: %w", err)
-	}
-	if err := updateZipContent(r.ID, len(a), strings.Join(a, "\n")); err != nil {
-		return false, fmt.Errorf("file zip content update: %w", err)
-	}
-	return true, nil
-}
-
-// updateZipContent sets the file_zip_content column to match content and platform to "image".
-func updateZipContent(id string, items int, content string) error {
+// UpdateZipContent sets the file_zip_content column to match content and platform to "image".
+func UpdateZipContent(id string, items int, content string) error {
 	db := database.Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
 	if err != nil {
-		return fmt.Errorf("update zip content db prepare: %w", err)
+		return fmt.Errorf("updatezip prepare: %w", err)
 	}
 	defer update.Close()
 	if _, err := update.Exec(content, database.UpdateID, "image", id); err != nil {
-		return fmt.Errorf("update zip content update exec: %w", err)
+		return fmt.Errorf("updatezip exec: %w", err)
 	}
 	logs.Printf("%d items", items)
 	return db.Close()
 }
 
-func (r Record) printID(s *stat.Stat) {
+// Prefix prints the stat count and record Id to stdout.
+func (r Record) Prefix(s *stat.Proof) {
 	logs.Printcrf("%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.Total)),
@@ -109,25 +131,53 @@ func (r Record) printID(s *stat.Stat) {
 		color.Primary.Sprint(r.ID))
 }
 
-func (r Record) zip(col sql.RawBytes, s *stat.Stat) error {
-	if col == nil || s.Overwrite {
-		logs.Print(" • ")
-		if u, err := r.fileZipContent(); !u {
-			return nil
-		} else if err != nil {
-			return fmt.Errorf("zip content: %w", err)
-		}
-		if err := archive.Proof(r.File, r.Name, r.UUID); err != nil {
-			return fmt.Errorf("zip proof: %w", err)
-		} else if err := r.approve(); err != nil {
-			return fmt.Errorf("zip approve: %w", err)
-		}
+// Zip reads an archive and saves the content to the database.
+func (r Record) Zip(col sql.RawBytes, s *stat.Proof) error {
+	if reflect.DeepEqual(r, Record{}) {
+		return ErrNoRec
+	}
+	if reflect.DeepEqual(s, stat.Proof{}) {
+		return ErrNoStat
+	}
+	if col != nil && !s.Overwrite {
+		return nil
+	}
+	logs.Print(" • ")
+	if u, err := r.fileZipContent(); !u {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("zip content: %w", err)
+	}
+	if err := archive.Proof(r.File, r.Name, r.UUID); err != nil {
+		return fmt.Errorf("zip proof: %w", err)
+	} else if err := r.Approve(); err != nil {
+		return fmt.Errorf("zip approve: %w", err)
 	}
 	return nil
 }
 
+func (r Record) fileZipContent() (ok bool, err error) {
+	if reflect.DeepEqual(r, Record{}) {
+		return false, ErrNoRec
+	}
+	a, err := archive.Read(r.File, r.Name)
+	if err != nil {
+		return false, err
+	}
+	if err := UpdateZipContent(r.ID, len(a), strings.Join(a, "\n")); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Skip checks if the file of the proof exists.
-func Skip(s stat.Stat, r Record, hide bool) (skip bool, err error) {
+func Skip(s stat.Proof, r Record, hide bool) (skip bool, err error) {
+	if reflect.DeepEqual(r, Record{}) {
+		return false, ErrNoRec
+	}
+	if reflect.DeepEqual(s, stat.Proof{}) {
+		return false, ErrNoStat
+	}
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
 		s.Missing++
 		if !hide {

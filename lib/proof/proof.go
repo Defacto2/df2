@@ -16,7 +16,7 @@ type Request struct {
 	Overwrite   bool   // Overwrite any existing proof assets such as images.
 	AllProofs   bool   // AllProofs parses all proofs, not just new uploads.
 	HideMissing bool   // HideMissing ignore proofs that are missing UUID download files.
-	byID        string // id used for proofs, either a uuid or id string
+	byID        string // Id used for proofs, either a uuid or id string.
 }
 
 // Query parses a single proof with the record id or uuid.
@@ -57,7 +57,7 @@ func (request Request) Queries() error { //nolint:funlen
 	for rows.Next() {
 		s.Total++
 	}
-	total(&s, request)
+	fmt.Print(Total(&s, request))
 	rows, err = db.Query(sqlSelect(request.byID))
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (request Request) Queries() error { //nolint:funlen
 		if err := rows.Scan(scanArgs...); err != nil {
 			return err
 		}
-		if request.skip(values) {
+		if request.Skip(values) {
 			continue
 		}
 		s.Count++
@@ -87,21 +87,26 @@ func (request Request) Queries() error { //nolint:funlen
 			return err
 		}
 	}
-	s.Summary(request.byID)
+	fmt.Print(s.Summary(request.byID))
 	return nil
 }
 
-func total(s *stat.Stat, request Request) {
+// Total returns the sum of the records.
+func Total(s *stat.Proof, request Request) string {
+	if s == nil {
+		return ""
+	}
 	if s.Total < 1 && request.byID != "" {
-		logs.Printf("file record id '%s' does not exist or is not a release proof\n", request.byID)
+		return fmt.Sprintf("file record id '%s' does not exist or is not a release proof\n", request.byID)
 	}
 	if s.Total > 1 {
-		logs.Println("Total records", s.Total)
+		return fmt.Sprintln("Total records", s.Total)
 	}
+	return ""
 }
 
-// skip uses argument flags to check if a record is to be ignored.
-func (request Request) skip(values []sql.RawBytes) bool {
+// Skip uses argument flags to check if a record is to be ignored.
+func (request Request) Skip(values []sql.RawBytes) bool {
 	if request.byID != "" && request.Overwrite {
 		return false
 	}

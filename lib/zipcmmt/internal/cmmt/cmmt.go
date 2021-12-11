@@ -17,17 +17,17 @@ const (
 	resetCmd = "\033[0m"
 )
 
-// Zipfile is a file file object.
+// Zipfile structure for files archived or compressed with a ZIP format.
 type Zipfile struct {
-	ID        uint           // database id
-	UUID      string         // database unique id
-	Name      string         // file name
-	Ext       string         // file extension
-	Size      int            // file size in bytes
-	Magic     sql.NullString // file magic type
-	ASCII     bool
-	Unicode   bool
-	Overwrite bool
+	ID        uint           // MySQL auto increment Id.
+	UUID      string         // Unique Id.
+	Name      string         // Filename.
+	Ext       string         // File extension.
+	Size      int            // Size of the size in bytes.
+	Magic     sql.NullString // Magic or MIME type of the file.
+	ASCII     bool           // ASCII zip comment used?
+	Unicode   bool           // Unicode zip comment used?
+	Overwrite bool           // Overwrite a preexisting zip comment?
 }
 
 func (z *Zipfile) CheckDownload(path string) (ok bool) {

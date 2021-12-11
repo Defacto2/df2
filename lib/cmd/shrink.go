@@ -4,6 +4,7 @@ package cmd
 import (
 	"sync"
 
+	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/shrink"
 	"github.com/spf13/cobra"
 )
@@ -18,15 +19,21 @@ var shrinkCmd = &cobra.Command{
 		var wg sync.WaitGroup
 		wg.Add(delta)
 		go func() {
-			shrink.SQL()
+			if err := shrink.SQL(); err != nil {
+				logs.Danger(err)
+			}
 			wg.Done()
 		}()
 		go func() {
-			shrink.Files()
+			if err := shrink.Files(); err != nil {
+				logs.Danger(err)
+			}
 			wg.Done()
 		}()
 		go func() {
-			shrink.Previews()
+			if err := shrink.Previews(); err != nil {
+				logs.Danger(err)
+			}
 			wg.Done()
 		}()
 		wg.Wait()

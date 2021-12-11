@@ -10,7 +10,8 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
-type Stat struct {
+// Proof data.
+type Proof struct {
 	Base      string          // Base is the relative path to file downloads which use UUID as filenames.
 	BasePath  string          // BasePath to file downloads which use UUID as filenames.
 	Columns   []string        // Column names.
@@ -22,20 +23,27 @@ type Stat struct {
 	start     time.Time       // processing time
 }
 
-func Init() Stat {
+func Init() Proof {
 	dir := directories.Init(false)
-	return Stat{Base: logs.Path(dir.UUID), BasePath: dir.UUID, start: time.Now()}
+	return Proof{
+		Base:     logs.Path(dir.UUID),
+		BasePath: dir.UUID,
+		start:    time.Now()}
 }
 
-func (s *Stat) Summary(id string) {
+// Summary of the proofs.
+func (s *Proof) Summary(id string) string {
+	if s == nil {
+		return ""
+	}
 	if id != "" && s.Total < 1 {
-		return
+		return ""
 	}
 	total := s.Count - s.Missing
 	if total == 0 {
-		fmt.Print("nothing to do")
+		return "nothing to do"
 	}
 	elapsed := time.Since(s.start).Seconds()
 	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, elapsed)
-	logs.Printf("\n%s\n%s\n", strings.Repeat("─", len(t)), t)
+	return fmt.Sprintf("\n%s\n%s\n", strings.Repeat("─", len(t)), t)
 }

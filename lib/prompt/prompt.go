@@ -2,108 +2,75 @@
 package prompt
 
 import (
-	"bufio"
+	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
-	"strconv"
-	"strings"
 
-	"github.com/Defacto2/df2/lib/logs"
-	"github.com/Defacto2/df2/lib/str"
+	"github.com/Defacto2/df2/lib/prompt/internal/input"
 )
 
 const (
-	// PortMin is the lowest permitted network port.
-	PortMin = 0
-	// PortMax is the largest permitted network port.
-	PortMax = 65535
+	PortMin = input.PortMin // PortMin is the lowest permitted network port.
+	PortMax = input.PortMax // PortMax is the largest permitted network port.
 )
 
 // Dir asks the user for a directory path and saves it.
 func Dir() string {
-	// allow multiple word user input
-	scanner := bufio.NewScanner(os.Stdin)
-	var save string
-	for scanner.Scan() {
-		txt := scanner.Text()
-		switch txt {
-		case "":
-			os.Exit(0)
-		case "-":
-			save = ""
-		default:
-			save = txt
-		}
-		if _, err := os.Stat(save); os.IsNotExist(err) {
-			fmt.Fprintln(os.Stderr, "will not save the change as this directory is not found:", logs.Path(save))
-			os.Exit(1)
-		} else {
-			break // exit loop if the directory is found
-		}
+	s, err := input.Dir(os.Stdin)
+	if errors.Is(err, input.ErrEmpty) {
+		os.Exit(0)
+	} else if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-	return save
+	return s
 }
 
 // Port asks the user for a port configuration value and returns the input.
 func Port() int64 {
-	cnt, input := 0, ""
-	const decimal = 10
-	for {
-		input = ""
-		cnt++
-		fmt.Scanln(&input)
-		if input == "" {
-			check(cnt)
-			continue
-		}
-		i, err := strconv.ParseInt(input, decimal, 0)
-		if err != nil && input != "" {
-			fmt.Printf("%s %v\n", str.X(), input)
-			check(cnt)
-			continue
-		}
-		// check that the input a valid port
-		if v := port(int(i)); !v {
-			fmt.Printf("%s %q is out of range\n", str.X(), input)
-			check(cnt)
-			continue
-		}
-		return i
+	i, err := input.Port(os.Stdin)
+	if err != nil {
+		os.Exit(1)
 	}
-}
-
-// port reports if the value is valid.
-func port(port int) bool {
-	if port < PortMin || port > PortMax {
-		return false
-	}
-	return true
+	return i
+	// cnt, in := 0, ""
+	// const decimal = 10
+	// for {
+	// 	in = ""
+	// 	cnt++
+	// 	fmt.Scanln(&in)
+	// 	if in == "" {
+	// 		check(cnt)
+	// 		continue
+	// 	}
+	// 	i, err := strconv.ParseInt(in, decimal, 0)
+	// 	if err != nil && in != "" {
+	// 		fmt.Printf("%s %v\n", str.X(), in)
+	// 		check(cnt)
+	// 		continue
+	// 	}
+	// 	// check that the input a valid port
+	// 	if v := input.IsPort(int(i)); !v {
+	// 		fmt.Printf("%s %q is out of range\n", str.X(), in)
+	// 		check(cnt)
+	// 		continue
+	// 	}
+	// 	return i
+	// }
 }
 
 // String asks the user for a string configuration value and saves it.
 func String(keep string) string {
 	fmt.Println(keep)
-	// allow multiple word user input
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		txt := scanner.Text()
-		switch txt {
-		case "":
-			os.Exit(0)
-		case "-":
-			return ""
-		default:
-			return txt
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading input:", err)
+	s, err := input.String(os.Stdin)
+	if errors.Is(err, input.ErrEmpty) {
+		os.Exit(0)
+	} else if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	os.Exit(0)
-	return ""
+	return s
 }
 
 // YN asks the user for a yes or no input.
@@ -113,42 +80,9 @@ func YN(query string, yes bool) bool {
 		y, n = "y", "N"
 	}
 	fmt.Printf("%s? [%s/%s] ", query, y, n)
-	input, err := read(os.Stdin)
+	in, err := input.Read(os.Stdin)
 	if err != nil {
 		log.Fatal(fmt.Errorf("prompt yn input: %w", err))
 	}
-	return parseyn(input, yes)
-}
-
-// check asks the user for a string configuration value and saves it.
-func check(cnt int) {
-	const help, max = 2, 4
-	switch {
-	case cnt == help:
-		fmt.Println("Ctrl+C to keep the existing port")
-	case cnt >= max:
-		os.Exit(1)
-	}
-}
-
-func parseyn(input string, yes bool) bool {
-	switch input {
-	case "":
-		if yes {
-			return true
-		}
-	case "yes", "y":
-		return true
-	}
-	return false
-}
-
-func read(stdin io.Reader) (string, error) {
-	reader := bufio.NewReader(stdin)
-	input, err := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-	if err != nil && err != io.EOF {
-		return input, err
-	}
-	return input, nil
+	return input.YN(in, yes)
 }

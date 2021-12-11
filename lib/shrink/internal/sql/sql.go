@@ -24,12 +24,14 @@ var (
 	ErrArcStore = errors.New("archive store error")
 	ErrSQLComp  = errors.New("sql compress errors")
 	ErrSQLDel   = errors.New("sql delete errors")
+	ErrUnknown  = errors.New("unknown command")
 )
 
-type Month uint
+// Months of the year.
+type Months uint
 
 const (
-	non Month = iota
+	non Months = iota // Unknown or non month.
 	jan
 	feb
 	mar
@@ -44,8 +46,12 @@ const (
 	dec
 )
 
-func month(s string) Month {
+// Month returns the Months value of s, which should be a three letter English abbreviation.
+func Month(s string) Months {
 	const monthPrefix = 3
+	if len(s) < monthPrefix {
+		return non
+	}
 	switch strings.ToLower(s)[:monthPrefix] {
 	case "jan":
 		return jan
@@ -76,7 +82,20 @@ func month(s string) Month {
 	}
 }
 
-func Approve(cmd string) error {
+type Approvals string
+
+const (
+	Preview  Approvals = "previews"
+	Incoming Approvals = "incoming"
+)
+
+// Approve prints the number of records waiting for approval for public display.
+func (cmd Approvals) Approve() error {
+	switch cmd {
+	case Preview, Incoming:
+	default:
+		return ErrUnknown
+	}
 	wait, err := database.Waiting()
 	if err != nil {
 		return fmt.Errorf("approve count: %w", err)
@@ -87,6 +106,7 @@ func Approve(cmd string) error {
 	return nil
 }
 
+// Init SQL directory.
 func Init() error {
 	const (
 		layout   = "2-1-2006"
@@ -115,13 +135,13 @@ func Init() error {
 			continue
 		}
 		m := dashes[len(dashes)-minDash]
-		if month(m) == non {
+		if Month(m) == non {
 			continue
 		}
 		cnt++
 		inUse += int(f.Size())
 		create, err = time.Parse(layout,
-			fmt.Sprintf("1-%d-%s", month(m), dashes[len(dashes)-1]))
+			fmt.Sprintf("1-%d-%s", Month(m), dashes[len(dashes)-1]))
 		if err != nil {
 			fmt.Printf("error parsing date from %s: %s\n", f.Name(), err)
 			continue
@@ -148,6 +168,7 @@ func Init() error {
 	return sqlProcess(files)
 }
 
+// SaveDir returns a usable path to store backups.
 func SaveDir() string {
 	usr, err := user.Current()
 	if err == nil {
@@ -161,7 +182,14 @@ func SaveDir() string {
 	return dir
 }
 
-func Store(path, cmd, partial string) error {
+// Store incoming or preview files as a tar archive.
+func (cmd Approvals) Store(path, partial string) error {
+	switch cmd {
+	case Preview, Incoming:
+	default:
+		return ErrUnknown
+	}
+
 	c, err := ioutil.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("store read: %w", err)
@@ -185,7 +213,8 @@ func Store(path, cmd, partial string) error {
 	fmt.Printf("%s found %d files using %s for backup.\n", cmd, cnt, humanize.Bytes(uint64(inUse)))
 
 	n := time.Now()
-	filename := filepath.Join(SaveDir(), fmt.Sprintf("d2-%s_%d-%02d-%02d.tar", partial, n.Year(), n.Month(), n.Day()))
+	filename := filepath.Join(SaveDir(),
+		fmt.Sprintf("d2-%s_%d-%02d-%02d.tar", partial, n.Year(), n.Month(), n.Day()))
 	store, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("store create: %w", err)
@@ -210,7 +239,8 @@ func Store(path, cmd, partial string) error {
 	return nil
 }
 
-func compress(name string, files []string) error {
+// Compress the collection of files into a named archive.
+func Compress(name string, files []string) error {
 	tgz, err := os.Create(name)
 	if err != nil {
 		return fmt.Errorf("sql create: %w", err)
@@ -230,13 +260,14 @@ func sqlProcess(files []string) error {
 	n := time.Now()
 	name := filepath.Join(SaveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz",
 		n.Year(), n.Month(), n.Day()))
-	if err := compress(name, files); err != nil {
+	if err := Compress(name, files); err != nil {
 		return err
 	}
-	return remove(files)
+	return Remove(files)
 }
 
-func remove(files []string) error {
+// Remove files from the host file system.
+func Remove(files []string) error {
 	if errs := archive.Delete(files); errs != nil {
 		for i, err := range errs {
 			fmt.Printf("error #%d: %s\n", i+1, err)

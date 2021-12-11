@@ -65,6 +65,9 @@ func Paths() [28]string {
 }
 
 func (set *Set) StaticURLs() (c, i int) {
+	if set == nil || len(set.Urls) < len(Paths()) {
+		return 0, 0
+	}
 	// sitemap priorities
 	const top, veryHigh, high, standard = "1", "0.9", "0.8", "0.7"
 	uri := func(path string) string {

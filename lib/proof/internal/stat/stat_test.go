@@ -7,36 +7,42 @@ import (
 	"github.com/Defacto2/df2/lib/proof/internal/stat"
 )
 
-func TestSummary(t *testing.T) {
+func TestProof_Summary(t *testing.T) {
 	type fields struct {
-		base      string
-		basePath  string
-		columns   []string
-		count     int
-		missing   int
-		overwrite bool
-		total     int
-		values    *[]sql.RawBytes
+		Base      string
+		BasePath  string
+		Columns   []string
+		Count     int
+		Missing   int
+		Overwrite bool
+		Total     int
+		Values    *[]sql.RawBytes
 	}
 	tests := []struct {
 		name   string
 		fields fields
+		id     string
+		wantS  bool
 	}{
-		{"", fields{total: 5}},
+		{"empty", fields{}, "", true},
+		{"none", fields{}, "1", false},
+		{"none", fields{Total: 5, Count: 4, Missing: 1}, "1", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := stat.Stat{
-				Base:      tt.fields.base,
-				BasePath:  tt.fields.basePath,
-				Columns:   tt.fields.columns,
-				Count:     tt.fields.count,
-				Missing:   tt.fields.missing,
-				Overwrite: tt.fields.overwrite,
-				Total:     tt.fields.total,
-				Values:    tt.fields.values,
+			s := &stat.Proof{
+				Base:      tt.fields.Base,
+				BasePath:  tt.fields.BasePath,
+				Columns:   tt.fields.Columns,
+				Count:     tt.fields.Count,
+				Missing:   tt.fields.Missing,
+				Overwrite: tt.fields.Overwrite,
+				Total:     tt.fields.Total,
+				Values:    tt.fields.Values,
 			}
-			s.Summary("")
+			if got := s.Summary(tt.id); len(got) > 0 != tt.wantS {
+				t.Errorf("Proof.Summary() = %v, want %v", len(got) > 0, tt.wantS)
+			}
 		})
 	}
 }

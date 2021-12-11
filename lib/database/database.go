@@ -359,6 +359,9 @@ func NewDemozoo(b []sql.RawBytes) bool {
 func NewProof(b []sql.RawBytes) bool {
 	// SQL column names can be found in the sqlSelect() func in proof.go
 	const deletedat, updatedat = 2, 6
+	if len(b) < updatedat {
+		return false
+	}
 	if b[deletedat] == nil {
 		return false
 	}

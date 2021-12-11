@@ -31,12 +31,12 @@ var (
 
 // Record of a file item.
 type Record struct {
-	ID    string   // mysql auto increment id
-	UUID  string   // record unique id
-	File  string   // absolute path to file
-	Name  string   // filename
-	Files []string // list of files contained in the archive
-	NFO   string   // NFO or textfile to display
+	ID    string   // MySQL auto increment Id.
+	UUID  string   // Unique Id.
+	File  string   // Absolute path to file.
+	Name  string   // Filename.
+	Files []string // A list of files contained in the archive.
+	NFO   string   // NFO or textfile to display on the site.
 }
 
 // New returns a Record generated from the sql rawbyte values.
