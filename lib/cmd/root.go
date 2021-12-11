@@ -108,8 +108,8 @@ func filterFlag(t interface{}, flag, val string) {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	logs.Panic = panics
-	logs.Quiet = quiet
+	logs.Panic(panics)
+	logs.Quiet(quiet)
 	if cf := config.Filepath(); cf == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {

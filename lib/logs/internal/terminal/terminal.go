@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// Size returns the character width of the terminal.
 func Size() (columns uint16) {
 	const falback = 80
 	columns = uint16(falback)

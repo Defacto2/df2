@@ -15,11 +15,13 @@ import (
 	gap "github.com/muesli/go-app-paths"
 )
 
+var (
+	ErrNoArg = errors.New("no arguments were provided")
+)
+
 const (
-	// GapUser is the configuration and logs subdirectory name.
-	GapUser string = "df2"
-	// Filename is the default error log filename.
-	Filename string = "errors.log"
+	GapUser  string = "df2"        // GapUser is the configuration and logs subdirectory name.
+	Filename string = "errors.log" // Filename is the default error log filename.
 
 	dmode   os.FileMode = 0o700
 	fmode   os.FileMode = 0o600
@@ -28,31 +30,43 @@ const (
 )
 
 var (
-	// Panic uses the panic function to handle all error logs.
-	Panic = false // nolint:gochecknoglobals
-	// Quiet stops most writing to the standard output.
-	Quiet = false // nolint:gochecknoglobals
+	panic = false
+	quiet = false
 )
 
-// ErrNoArg no args.
-var ErrNoArg = errors.New("no arguments are provided")
+// Panic enables or disables panicking when Danger is used.
+func Panic(b bool) {
+	panic = b
+}
 
-// Arg returns instructions for invalid command arguments.
-func Arg(arg string, args ...string) error {
+// Quiet stops most writing to the standard output.
+func Quiet(b bool) {
+	quiet = b
+}
+
+func IsQuiet() bool {
+	return quiet
+}
+
+// Arg returns instructions for invalid command arguments and exits with an error code.
+func Arg(arg string, exit bool, args ...string) error {
 	if args == nil {
-		return fmt.Errorf("arg requires args: %w", ErrNoArg)
+		return fmt.Errorf("arg: %w", ErrNoArg)
 	}
 	fmt.Printf("%s %s %s\n",
 		color.Warn.Sprint("invalid command"),
 		color.Bold.Sprintf("\"%s %s\"", arg, args[0]),
 		color.Warn.Sprint("\nplease use one of the Available Commands shown above"))
+	if !exit {
+		return nil
+	}
 	os.Exit(1)
 	return nil
 }
 
-// Danger prints errors but continues the program.
+// Danger logs the error to stdout, but continues the program.
 func Danger(err error) {
-	switch Panic {
+	switch panic {
 	case true:
 		log.Println(fmt.Sprintf("error type %T\t: %v", err, err))
 		log.Panic(err)
@@ -61,10 +75,10 @@ func Danger(err error) {
 	}
 }
 
-// Fatal logs any errors and exits to the operating system with error code 1.
+// Fatal logs error to stdout and exits with an error code.
 func Fatal(err error) {
 	save(Filename, err)
-	switch Panic {
+	switch panic {
 	case true:
 		log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
 		log.Panic(err)
@@ -86,13 +100,13 @@ func Filepath(filename string) string {
 	return fp
 }
 
-// Log an error but do not exit to the operating system.
+// Log the error to stdout, but continue the program.
 func Log(err error) {
 	save(Filename, err)
 	Danger(err)
 }
 
-// Path returns a file or directory path with all missing elements marked in red.
+// Path returns the named file or directory path with all missing elements marked in red.
 func Path(name string) string {
 	a := strings.Split(name, "/")
 	var p, s string
@@ -111,9 +125,10 @@ func Path(name string) string {
 	return fmt.Sprint(s)
 }
 
-// Print obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
+// Print obeys the --quiet flag
+// or formats using the default formats for its operands and writes to standard output.
 func Print(a ...interface{}) {
-	if Quiet {
+	if quiet {
 		return
 	}
 	if _, err := fmt.Print(a...); err != nil {
@@ -121,9 +136,10 @@ func Print(a ...interface{}) {
 	}
 }
 
-// Printcr obeys the --quiet flag or otherwise erases the current line and writes to standard output.
+// Printcr obeys the --quiet flag
+// or otherwise erases the current line and writes to standard output.
 func Printcr(a ...interface{}) {
-	if Quiet {
+	if quiet {
 		return
 	}
 	if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(terminal.Size()))); err != nil {
@@ -134,9 +150,10 @@ func Printcr(a ...interface{}) {
 	}
 }
 
-// Printf obeys the --quiet flag or formats according to a format specifier and writes to standard output.
+// Printf obeys the --quiet flag
+// or formats according to a format specifier and writes to standard output.
 func Printf(format string, a ...interface{}) {
-	if Quiet {
+	if quiet {
 		return
 	}
 	if _, err := fmt.Printf(format, a...); err != nil {
@@ -146,7 +163,7 @@ func Printf(format string, a ...interface{}) {
 
 // Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
 func Println(a ...interface{}) {
-	if Quiet {
+	if quiet {
 		return
 	}
 	if _, err := fmt.Println(a...); err != nil {
@@ -154,9 +171,10 @@ func Println(a ...interface{}) {
 	}
 }
 
-// Printcrf obeys the --quiet flag or otherwise erases the current line and formats according to a format specifier.
+// Printcrf obeys the --quiet flag
+// or otherwise erases the current line and formats according to a format specifier.
 func Printcrf(format string, a ...interface{}) {
-	if Quiet {
+	if quiet {
 		return
 	}
 	if _, err := fmt.Printf("\r%s\r%s",

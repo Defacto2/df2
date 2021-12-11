@@ -50,7 +50,7 @@ func Check() {
 		return
 	}
 	if Config.Errors {
-		if logs.Quiet {
+		if logs.IsQuiet() {
 			os.Exit(1)
 		}
 		fmt.Printf("%s %s\n",

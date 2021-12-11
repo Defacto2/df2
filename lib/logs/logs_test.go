@@ -30,10 +30,14 @@ func TestArg(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", args{}, true},
+		{"args", args{
+			arg:  "abc",
+			args: []string{"abc", "def"},
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Arg(tt.args.arg, tt.args.args...); (err != nil) != tt.wantErr {
+			if err := Arg(tt.args.arg, false, tt.args.args...); (err != nil) != tt.wantErr {
 				t.Errorf("Arg() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -81,9 +85,9 @@ func capture(test, text string, quiet bool) (output string) {
 	rescueStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	Quiet = false
+	Quiet(false)
 	if quiet {
-		Quiet = true
+		Quiet(true)
 	}
 	switch test {
 	case p:
