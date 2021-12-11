@@ -12,22 +12,22 @@ import (
 	"github.com/gookit/color"
 )
 
-var ErrRole = errors.New("unknown role")
+var (
+	ErrRenAll    = errors.New("cannot rename everyone, only people tied to specific roles can be renamed")
+	ErrNoName    = errors.New("a name of the person must be provided")
+	ErrNoReplace = errors.New("a replacement name must be provided")
+	ErrRole      = errors.New("unknown role")
+)
 
-// Role or jobs to categories and filter people.
+// Role are jobs that categorize persons.
 type Role int
 
 const (
-	// Everyone displays all people.
-	Everyone Role = iota
-	// Artists are graphic or video.
-	Artists
-	// Coders are programmers.
-	Coders
-	// Musicians create music or audio.
-	Musicians
-	// Writers for the documents.
-	Writers
+	Everyone  Role = iota // Everyone displays all people.
+	Artists               // Artists are graphic or video.
+	Coders                // Coders are programmers.
+	Musicians             // Musicians create music or audio.
+	Writers               // Writers for the documents.
 )
 
 const (
@@ -89,7 +89,7 @@ func List(role Role) (people []string, total int, err error) {
 	return people, total, nil
 }
 
-// PeopleStmt returns a complete SQL WHERE statement where the people are filtered by a role.
+// PeopleStmt returns a complete SQL WHERE statement for people that are filtered by roles.
 func PeopleStmt(role Role, softDel bool) string {
 	del := func() string {
 		if softDel {
@@ -141,7 +141,15 @@ func Roles(r string) Role {
 	return -1
 }
 
-func Rename(replacement, credits string, r Role) (count int64, err error) {
+// Rename replaces the persons using name with the replacement.
+// The task must be limited names associated to a Role.
+func Rename(replacement, name string, r Role) (count int64, err error) {
+	if replacement == "" {
+		return 0, ErrNoReplace
+	}
+	if name == "" {
+		return 0, ErrNoName
+	}
 	query := ""
 	switch r {
 	case Artists:
@@ -153,7 +161,7 @@ func Rename(replacement, credits string, r Role) (count int64, err error) {
 	case Writers:
 		query = "UPDATE `files` SET credit_text=? WHERE credit_text=?"
 	case Everyone:
-		query = ""
+		return 0, ErrRenAll
 	}
 	db := database.Connect()
 	defer db.Close()
@@ -162,7 +170,7 @@ func Rename(replacement, credits string, r Role) (count int64, err error) {
 		return 0, fmt.Errorf("rename people statement: %w", err)
 	}
 	defer stmt.Close()
-	res, err := stmt.Exec(replacement, credits)
+	res, err := stmt.Exec(replacement, name)
 	if err != nil {
 		return 0, fmt.Errorf("rename people exec: %w", err)
 	}
@@ -174,27 +182,29 @@ func Rename(replacement, credits string, r Role) (count int64, err error) {
 }
 
 // Clean fixes and saves a malformed name.
-func Clean(credit string, r Role, sim bool) (ok bool) {
-	rep := CleanS(Trim(credit))
-	if rep == credit {
+func Clean(name string, r Role, sim bool) (ok bool) {
+	rep := CleanS(Trim(name))
+	if rep == name {
 		return false
 	}
 	if sim {
-		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), credit,
+		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), name,
 			color.Question.Sprint("!="), color.Info.Sprint(r))
 		return true
 	}
 	s := str.Y()
 	ok = true
-	c, err := Rename(rep, credit, r)
+	c, err := Rename(rep, name, r)
 	if err != nil {
 		s = str.X()
 		ok = false
 	}
-	logs.Printf("\n%s %q %s %s (%d)", s, credit, color.Question.Sprint("⟫"), color.Info.Sprint(rep), c)
+	logs.Printf("\n%s %q %s %s (%d)", s, name,
+		color.Question.Sprint("⟫"), color.Info.Sprint(rep), c)
 	return ok
 }
 
+// CleanS seperates and fixes the substrings of s.
 func CleanS(s string) string {
 	ppl := strings.Split(s, ",")
 	for i, person := range ppl {
@@ -206,7 +216,7 @@ func CleanS(s string) string {
 	return strings.Join(ppl, ",")
 }
 
-// trim fixes any malformed strings.
+// Trim fixes any malformed strings.
 func Trim(s string) string {
 	f := database.TrimSP(s)
 	f = database.StripChars(f)

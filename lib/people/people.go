@@ -154,8 +154,9 @@ func Fix(simulate bool) error {
 	default:
 		logs.Printcr("no people fixes needed")
 	}
-	elapsed := time.Since(start).Seconds()
-	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
-
+	if !simulate {
+		elapsed := time.Since(start).Seconds()
+		logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+	}
 	return nil
 }

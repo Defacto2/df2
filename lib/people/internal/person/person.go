@@ -17,7 +17,7 @@ var (
 	ErrFilter = errors.New("invalid filter used")
 )
 
-// Person data.
+// Person represent people who are listed as authors on the website.
 type Person struct {
 	ID   string // ID used in URLs to link to the person.
 	Nick string // Nick of the person.
@@ -26,7 +26,8 @@ type Person struct {
 
 type Persons []Person
 
-func (data Persons) Template(filename, tpl string, filter string) error {
+// Tempate creates the HTML used by the website to list people.
+func (p Persons) Template(filename, tpl string, filter string) error {
 	t, err := template.New("h2").Parse(tpl)
 	if err != nil {
 		return fmt.Errorf("parse h2 template: %w", err)
@@ -34,7 +35,7 @@ func (data Persons) Template(filename, tpl string, filter string) error {
 	if filename == "" {
 		var buf bytes.Buffer
 		wr := bufio.NewWriter(&buf)
-		if err = t.Execute(wr, data); err != nil {
+		if err = t.Execute(wr, p); err != nil {
 			return fmt.Errorf("parse h2 execute template: %w", err)
 		}
 		if err := wr.Flush(); err != nil {
@@ -50,7 +51,7 @@ func (data Persons) Template(filename, tpl string, filter string) error {
 			return fmt.Errorf("parse create: %w", err)
 		}
 		defer f.Close()
-		if err = t.Execute(f, data); err != nil {
+		if err = t.Execute(f, p); err != nil {
 			return fmt.Errorf("parse template execute: %w", err)
 		}
 	case role.Everyone:

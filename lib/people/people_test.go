@@ -1,10 +1,11 @@
-package people
+package people_test
 
 import (
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/Defacto2/df2/lib/people"
 	"github.com/Defacto2/df2/lib/people/internal/role"
 )
 
@@ -13,11 +14,11 @@ func TestFilters(t *testing.T) {
 		name string
 		want []string
 	}{
-		{"", strings.Split(Roles(), ",")},
+		{"", strings.Split(people.Roles(), ",")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Filters(); !reflect.DeepEqual(got, tt.want) {
+			if got := people.Filters(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Filters() = %v, want %v", got, tt.want)
 			}
 		})
@@ -52,16 +53,16 @@ func TestList(t *testing.T) {
 func TestPrint(t *testing.T) {
 	tests := []struct {
 		name    string
-		r       Request
+		r       people.Request
 		wantErr bool
 	}{
-		{"empty", Request{}, false},
-		{"unknown", Request{"unknown", false, true}, true},
-		{"regular", Request{"writers", false, true}, false},
+		{"empty", people.Request{}, false},
+		{"unknown", people.Request{"unknown", false, true}, true},
+		{"regular", people.Request{"writers", false, true}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Print(tt.r); (err != nil) != tt.wantErr {
+			if err := people.Print(tt.r); (err != nil) != tt.wantErr {
 				t.Errorf("Print() error = %v, want %v", err, tt.wantErr)
 			}
 		})
@@ -71,27 +72,27 @@ func TestPrint(t *testing.T) {
 func Test_DataList_HTML(t *testing.T) {
 	type args struct {
 		filename string
-		r        Request
+		r        people.Request
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"error", args{"", Request{"error", false, false}}, true},
-		{"ok", args{"", Request{"", false, false}}, false},
-		{"progress", args{"", Request{"", false, true}}, false},
+		{"error", args{"", people.Request{"error", false, false}}, true},
+		{"ok", args{"", people.Request{"", false, false}}, false},
+		{"progress", args{"", people.Request{"", false, true}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := HTML(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
+			if err := people.HTML(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
 				t.Errorf("HTML() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := DataList(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
+			if err := people.DataList(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
 				t.Errorf("DataList() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

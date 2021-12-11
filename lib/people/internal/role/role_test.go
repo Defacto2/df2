@@ -106,3 +106,45 @@ func TestTrim(t *testing.T) {
 		})
 	}
 }
+
+func TestRename(t *testing.T) {
+	const (
+		org     = "Rhythm Addiction"
+		replace = "Testing 1 2 3 4 5"
+		falseN  = "abcdef01234blahblah"
+	)
+	type args struct {
+		replacement string
+		name        string
+		r           role.Role
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantCount int64
+		wantErr   bool
+	}{
+		{"empty", args{}, 0, true},
+		{"missing replacement", args{name: org, r: role.Musicians}, 0, true},
+		{"missing name", args{replacement: replace, r: role.Musicians}, 0, true},
+		{"missing role", args{replacement: replace, name: org}, 0, true},
+		{"404 name", args{replacement: replace, name: falseN, r: role.Musicians}, 0, false},
+		{"okay", args{replacement: replace, name: org, r: role.Artists}, 1, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			gotCount, err := role.Rename(tt.args.replacement, tt.args.name, tt.args.r)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Rename() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotCount != tt.wantCount {
+				t.Errorf("Rename() = %v, want %v", gotCount, tt.wantCount)
+				return
+			}
+
+			role.Rename(org, replace, role.Artists) // restore name
+		})
+	}
+}
