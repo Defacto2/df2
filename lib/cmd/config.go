@@ -32,7 +32,7 @@ var configCmd = &cobra.Command{
 			log.Fatal(fmt.Errorf("config cmd usage: %w", err))
 		}
 		if len(args) != 0 || cmd.Flags().NFlag() != 0 {
-			if err := logs.Arg("config", args...); err != nil {
+			if err := logs.Arg("config", true, args...); err != nil {
 				log.Fatal(err)
 			}
 		}

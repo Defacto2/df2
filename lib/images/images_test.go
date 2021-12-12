@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/lib/images"
+	"github.com/spf13/viper"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
@@ -126,6 +127,7 @@ func TestInfo(t *testing.T) {
 
 func TestGenerate(t *testing.T) {
 	dir := testDir(imgs)
+	viper.Set("directory.root", "../../tests/images")
 	const (
 		gif = ".gif"
 		jpg = ".jpg"
@@ -161,6 +163,8 @@ func TestGenerate(t *testing.T) {
 		if err := os.Remove(filepath.Join(dir, "test_400x"+ext)); err != nil {
 			log.Print(err)
 		}
+		os.Remove("testgen.png")
+		os.Remove("testgen.webp")
 	}
 }
 
@@ -355,8 +359,8 @@ func TestFix(t *testing.T) {
 		simulate bool
 		wantErr  bool
 	}{
-		{"name", true, false},
-		{"name", false, false},
+		{"simulate", true, false},
+		{"run", false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,4 +1,4 @@
-package images
+package imagemagick
 
 import (
 	"bytes"
@@ -17,9 +17,9 @@ import (
 
 var ErrFmt = errors.New("imagemagick does not support this image")
 
-// ToMagick uses the magick convert command to convert an image to PNG.
-func ToMagick(src, dest string) error {
-	if _, err := IDMagick(src); err != nil {
+// Convert uses the magick convert command to convert an image to PNG.
+func Convert(src, dest string) error {
+	if _, err := ID(src); err != nil {
 		return err
 	}
 
@@ -47,7 +47,7 @@ func ToMagick(src, dest string) error {
 	return nil
 }
 
-func IDMagick(src string) ([]byte, error) {
+func ID(src string) ([]byte, error) {
 	const file = "identify"
 	args := []string{src}
 

@@ -14,21 +14,19 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"io"
-	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/images/internal/file"
+	"github.com/Defacto2/df2/lib/images/internal/imagemagick"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
 	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gookit/color"
-	gap "github.com/muesli/go-app-paths"
 	"github.com/nickalie/go-webpbin"
 	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
@@ -43,15 +41,17 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-const (
-	WebpMaxSize = 16383
-	thumbWidth  = 400
-
-	fperm os.FileMode = 0o666
-	fmode             = os.O_RDWR | os.O_CREATE
+var (
+	ErrFormat = errors.New("unsupported image format")
+	ErrViper  = errors.New("viper directory locations cannot be read")
 )
 
 const (
+	WebpMaxSize int         = 16383 // WebpMaxSize is the maximum pixel dimension of an webp image.
+	thumbWidth  int         = 400
+	fperm       os.FileMode = 0o666
+	fmode                   = os.O_RDWR | os.O_CREATE
+
 	gif  = ".gif"
 	jpg  = ".jpg"
 	jpeg = ".jpeg"
@@ -59,11 +59,6 @@ const (
 	tif  = ".tif"
 	tiff = ".tiff"
 	webp = ".webp"
-)
-
-var (
-	ErrFormat = errors.New("unsupported image format")
-	ErrViper  = errors.New("viper directory locations cannot be read")
 )
 
 // Fix generates any missing assets from downloads that are images.
@@ -114,15 +109,15 @@ func Fix(simulate bool) error {
 	return nil
 }
 
-// Duplicate an image file and appends suffix to its name.
-func Duplicate(filename, suffix string) (string, error) {
-	src, err := os.Open(filename)
+// Duplicate an image file and appends the suffix to its name.
+func Duplicate(name, suffix string) (string, error) {
+	src, err := os.Open(name)
 	if err != nil {
-		return "", fmt.Errorf("duplicate %q: %w", filename, err)
+		return "", fmt.Errorf("duplicate %q: %w", name, err)
 	}
 	defer src.Close()
-	ext := filepath.Ext(filename)
-	fn := strings.TrimSuffix(filename, ext)
+	ext := filepath.Ext(name)
+	fn := strings.TrimSuffix(name, ext)
 	dest, err := os.OpenFile(fn+suffix+ext, fmode, fperm)
 	if err != nil {
 		return "", fmt.Errorf("duplicate open file %q: %w", fn, err)
@@ -135,9 +130,9 @@ func Duplicate(filename, suffix string) (string, error) {
 }
 
 // Generate a collection of site images.
-func Generate(src, id string, remove bool) error {
-	if _, err := os.Stat(src); os.IsNotExist(err) {
-		return fmt.Errorf("generate stat %q: %w", src, err)
+func Generate(name, id string, remove bool) error {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		return fmt.Errorf("generate stat %q: %w", name, err)
 	}
 	out := func(s string, e error) {
 		if s != "" {
@@ -147,68 +142,45 @@ func Generate(src, id string, remove bool) error {
 		logs.Log(e)
 	}
 	if viper.GetString("directory.root") == "" {
-		return ErrViper
+		return fmt.Errorf("%w: directory.root", ErrViper)
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe
 	// convert to png
 	pngDest, webpDest := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
 	const width = 1500
-	s, err := ToPng(src, pngDest, width, width)
+	s, err := ToPng(name, pngDest, width, width)
 	out(s, err)
 	// use imagemagick to convert unsupported image formats into PNG
-	if !valid(pngDest, err) {
-		err1 := ToMagick(src, pngDest)
+	if !file.Check(pngDest, err) {
+		err1 := imagemagick.Convert(name, pngDest)
 		if err1 != nil {
 			out(s, err1)
-			return cleanup(remove, src)
+			return file.Remove(remove, name)
 		}
-		if !valid(pngDest, err1) {
-			return cleanup(remove, src)
+		if !file.Check(pngDest, err1) {
+			return file.Remove(remove, name)
 		}
-		src = pngDest
+		name = pngDest
 	}
 	// convert to webp
-	if s, err = ToWebp(src, webpDest, true); !errors.Is(err, ErrFormat) {
+	if s, err = ToWebp(name, webpDest, true); !errors.Is(err, ErrFormat) {
 		out(s, err)
 	}
 	if err != nil {
 		s, err = ToWebp(pngDest, webpDest, true)
 		out(s, err)
 	}
-	webpOk := valid(webpDest, err)
+	webpOk := file.Check(webpDest, err)
 	// make 400x400 thumbs
-	s, err = ToThumb(src, f.Img400, thumbWidth)
+	s, err = ToThumb(name, f.Img400, thumbWidth)
 	if err != nil {
 		s, err = ToThumb(pngDest, f.Img400, thumbWidth)
 	} else if err != nil && webpOk {
 		s, err = ToThumb(webpDest, f.Img400, thumbWidth)
 	}
 	out(s, err)
-	return cleanup(remove, src)
-}
-
-func cleanup(remove bool, src string) error {
-	if remove {
-		if err := os.Remove(src); err != nil {
-			return fmt.Errorf("generate cleanup %q: %w", src, err)
-		}
-	}
-	return nil
-}
-
-func valid(name string, err error) bool {
-	if err != nil {
-		return false
-	}
-	s, err := os.Stat(name)
-	if err != nil {
-		return false
-	}
-	if s.IsDir() || s.Size() < 1 {
-		return false
-	}
-	return true
+	return file.Remove(remove, name)
 }
 
 // Move a file from the source location to the destination.
@@ -376,13 +348,13 @@ func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 		InputFile(src).
 		OutputFile(dest)
 	if vendorTempDir {
-		webp.Dest(vendorPath())
+		webp.Dest(file.Vendor())
 	}
 	if strings.HasSuffix(src, "-cropped.png") {
 		defer os.Remove(src)
 	}
 	if err = webp.Run(); err != nil {
-		if err1 := cleanupWebP(dest); err1 != nil {
+		if err1 := file.RemoveWebP(dest); err1 != nil {
 			return "", fmt.Errorf("to webp cleanup: %w", err1)
 		}
 		return "", fmt.Errorf("to webp run: %w", err)
@@ -390,41 +362,25 @@ func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 	return "»webp", nil
 }
 
-func cleanupWebP(name string) error {
-	s, err := os.Stat(name)
-	if os.IsNotExist(err) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("cleanWebP stat: %w", err)
-	}
-	if s.Size() == 0 {
-		if err := os.Remove(name); err != nil {
-			return fmt.Errorf("cleanWebP remove: %w", err)
-		}
-	}
-	return nil
-}
-
 // cropWebP crops an image to be usable size for WebP conversion.
-func cropWebP(src string) (string, error) {
-	w, h, _, err := Info(src)
+func cropWebP(name string) (string, error) {
+	w, h, _, err := Info(name)
 	if err != nil {
 		return "", fmt.Errorf("to webp size: %w", err)
 	}
 	if w+h > WebpMaxSize {
 		fmt.Printf("crop to %dx%d", w, h)
 		cropW, cropH := WebPCalc(w, h)
-		ext := filepath.Ext(src)
-		fn := strings.TrimSuffix(src, ext)
+		ext := filepath.Ext(name)
+		fn := strings.TrimSuffix(name, ext)
 		crop := fn + "-cropped" + ext
-		_, err := ToPng(src, crop, cropW, cropH)
+		_, err := ToPng(name, crop, cropW, cropH)
 		if err != nil {
 			return "", fmt.Errorf("webp crop: %w", err)
 		}
 		return crop, nil
 	}
-	return src, nil
+	return name, nil
 }
 
 // WebPCalc calculates the largest permitted sizes for a valid WebP crop.
@@ -455,17 +411,4 @@ func Width(name string) (int, error) {
 		return 0, fmt.Errorf("width: %w", err)
 	}
 	return width, nil
-}
-
-// vendorPath is the absolute path to store webpbin vendor downloads.
-func vendorPath() string {
-	fp, err := gap.NewScope(gap.User, logs.GapUser).CacheDir()
-	if err != nil {
-		h, err := os.UserHomeDir()
-		if err != nil {
-			log.Fatal(fmt.Errorf("vendorPath userhomedir: %w", err))
-		}
-		return path.Join(h, ".vendor/df2")
-	}
-	return fp
 }
