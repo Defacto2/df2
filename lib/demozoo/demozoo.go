@@ -19,6 +19,8 @@ import (
 
 	"github.com/Defacto2/df2/lib/archive"
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/demozoo/internal/prod"
+	"github.com/Defacto2/df2/lib/demozoo/internal/prods"
 	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/download"
 	"github.com/Defacto2/df2/lib/groups"
@@ -90,23 +92,22 @@ const selectSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesi
 	",`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 
 var (
-	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
-	ErrFilePath   = errors.New("filepath requirement cannot be empty")
-	ErrFilename   = errors.New("filename requirement cannot be empty")
-	ErrTooFew     = errors.New("too few record values")
+	ErrFilePath = errors.New("filepath requirement cannot be empty")
+	ErrFilename = errors.New("filename requirement cannot be empty")
+	ErrTooFew   = errors.New("too few record values")
 )
 
 // Fetched production.
 type Fetched struct {
 	Code   int
 	Status string
-	API    ProductionsAPIv1
+	API    prods.ProductionsAPIv1
 }
 
 // Fetch a Demozoo production by its ID.
 func Fetch(id uint) (Fetched, error) {
-	d := Production{ID: int64(id)}
-	api, err := d.data()
+	d := prod.Production{ID: int64(id)}
+	api, err := d.Get()
 	if err != nil {
 		return Fetched{}, fmt.Errorf("fetched %d: %w", id, err)
 	}
@@ -305,7 +306,7 @@ func (r *Record) check() (update bool) {
 	}
 }
 
-func (r *Record) download(overwrite bool, api *ProductionsAPIv1, st stat) (skip bool) {
+func (r *Record) download(overwrite bool, api *prods.ProductionsAPIv1, st stat) (skip bool) {
 	if st.fileExist(r) || overwrite {
 		if r.UUID == "" {
 			fmt.Print(color.Error.Sprint("UUID is empty, cannot continue"))
@@ -438,7 +439,7 @@ func parseAPIErr(err error) error {
 	return fmt.Errorf("%s%w", "parse api: ", err)
 }
 
-func (r *Record) parse(api *ProductionsAPIv1) (bool, error) {
+func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
@@ -473,7 +474,7 @@ func (r *Record) parse(api *ProductionsAPIv1) (bool, error) {
 	return false, nil
 }
 
-func (r *Record) pingPouet(api *ProductionsAPIv1) error {
+func (r *Record) pingPouet(api *prods.ProductionsAPIv1) error {
 	const success = 299
 	if id, code, err := api.PouetID(true); err != nil {
 		return fmt.Errorf("ping pouet: %w", err)
@@ -483,7 +484,7 @@ func (r *Record) pingPouet(api *ProductionsAPIv1) error {
 	return nil
 }
 
-func (r *Record) platform(api *ProductionsAPIv1) {
+func (r *Record) platform(api *prods.ProductionsAPIv1) {
 	const msdos, windows = 4, 1
 	for _, p := range api.Platforms {
 		switch p.ID {

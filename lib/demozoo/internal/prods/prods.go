@@ -1,4 +1,4 @@
-package demozoo
+package prods
 
 import (
 	"encoding/json"
@@ -17,12 +17,69 @@ import (
 	"github.com/Defacto2/df2/lib/logs"
 )
 
+const (
+	api = "https://demozoo.org/api/v1/productions"
+	cd  = "Content-Disposition"
+	cls = "PouetProduction"
+	df2 = "defacto2.net"
+	dos = "dos"
+	win = "windows"
+)
+
+// Category are tags for production imports.
+type Category int
+
+func (c Category) String() string {
+	switch c {
+	case Text:
+		return "text"
+	case Code:
+		return "code"
+	case Graphics:
+		return "graphics"
+	case Music:
+		return "music"
+	case Magazine:
+		return "magazine"
+	}
+	return ""
+}
+
+const (
+	// Text based files.
+	Text Category = iota
+	// Code are binary files.
+	Code
+	// Graphics are images.
+	Graphics
+	// Music is audio.
+	Music
+	// Magazine are publications.
+	Magazine
+)
+
+func category(s string) Category {
+	switch strings.ToLower(s) {
+	case Text.String():
+		return Text
+	case Code.String():
+		return Code
+	case Graphics.String():
+		return Graphics
+	case Music.String():
+		return Music
+	case Magazine.String():
+		return Magazine
+	}
+	return -1
+}
+
 // Authors contains Defacto2 people rolls.
 type Authors struct {
-	text  []string // credit_text, writer
-	code  []string // credit_program, programmer/coder
-	art   []string // credit_illustration, artist/graphics
-	audio []string // credit_audio, musician/sound
+	Text  []string // credit_text, writer
+	Code  []string // credit_program, programmer/coder
+	Art   []string // credit_illustration, artist/graphics
+	Audio []string // credit_audio, musician/sound
 }
 
 // ProductionsAPIv1 productions API v1.
@@ -104,13 +161,13 @@ func (p *ProductionsAPIv1) Authors() Authors {
 		}
 		switch category(n.Category) {
 		case Text:
-			a.text = append(a.text, n.Nick.Name)
+			a.Text = append(a.Text, n.Nick.Name)
 		case Code:
-			a.code = append(a.code, n.Nick.Name)
+			a.Code = append(a.Code, n.Nick.Name)
 		case Graphics:
-			a.art = append(a.art, n.Nick.Name)
+			a.Art = append(a.Art, n.Nick.Name)
 		case Music:
-			a.audio = append(a.audio, n.Nick.Name)
+			a.Audio = append(a.Audio, n.Nick.Name)
 		case Magazine:
 			// do nothing.
 		}
@@ -265,7 +322,7 @@ func (dl *DownloadsAPIv1) parse() (ok bool) {
 	if err != nil {
 		return false
 	}
-	u = mutateURL(u)
+	u = MutateURL(u)
 	dl.URL = u.String()
 	return true
 }
@@ -291,8 +348,8 @@ func filename(h http.Header) string {
 	return ""
 }
 
-// mutateURL applies fixes to known problematic URLs.
-func mutateURL(u *url.URL) *url.URL {
+// MutateURL applies fixes to known problematic URLs.
+func MutateURL(u *url.URL) *url.URL {
 	if u == nil {
 		s, err := url.Parse("")
 		if err != nil {

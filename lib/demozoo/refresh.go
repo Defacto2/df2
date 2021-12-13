@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/demozoo/internal/prods"
 	"github.com/Defacto2/df2/lib/download"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
@@ -96,7 +97,7 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 	return false, nil
 }
 
-func (r *Record) authors(a *Authors) {
+func (r *Record) authors(a *prods.Authors) {
 	compare := func(n, o []string, i string) bool {
 		if !reflect.DeepEqual(n, o) {
 			logs.Printf("c%s:%s ", i, color.Secondary.Sprint(n))
@@ -107,26 +108,26 @@ func (r *Record) authors(a *Authors) {
 		}
 		return true
 	}
-	if len(a.art) > 1 {
-		n, old := a.art, r.CreditArt
+	if len(a.Art) > 1 {
+		n, old := a.Art, r.CreditArt
 		if !compare(n, old, "a") {
 			r.CreditArt = n
 		}
 	}
-	if len(a.audio) > 1 {
-		n, old := a.audio, r.CreditAudio
+	if len(a.Audio) > 1 {
+		n, old := a.Audio, r.CreditAudio
 		if !compare(n, old, "m") {
 			r.CreditAudio = n
 		}
 	}
-	if len(a.code) > 1 {
-		n, old := a.code, r.CreditCode
+	if len(a.Code) > 1 {
+		n, old := a.Code, r.CreditCode
 		if !compare(n, old, "c") {
 			r.CreditCode = n
 		}
 	}
-	if len(a.text) > 1 {
-		n, old := a.text, r.CreditText
+	if len(a.Text) > 1 {
+		n, old := a.Text, r.CreditText
 		if !compare(n, old, "t") {
 			r.CreditText = n
 		}
@@ -150,7 +151,7 @@ func (r *Record) confirm(code int, status string) (ok bool, err error) {
 	return true, nil
 }
 
-func (r *Record) pouet(api *ProductionsAPIv1) error {
+func (r *Record) pouet(api *prods.ProductionsAPIv1) error {
 	pid, _, err := api.PouetID(false)
 	if err != nil {
 		return fmt.Errorf("pouet: %w", err)
@@ -162,7 +163,7 @@ func (r *Record) pouet(api *ProductionsAPIv1) error {
 	return nil
 }
 
-func (r *Record) title(api *ProductionsAPIv1) {
+func (r *Record) title(api *prods.ProductionsAPIv1) {
 	if r.Section != Magazine.String() && !strings.EqualFold(r.Title, api.Title) {
 		logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
 		r.Title = api.Title

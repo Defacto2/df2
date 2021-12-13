@@ -1,21 +1,36 @@
-package demozoo
+package prod
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
 	"strconv"
 	"time"
 
+	"github.com/Defacto2/df2/lib/demozoo/internal/prods"
 	"github.com/Defacto2/df2/lib/download"
+)
+
+var (
+	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
+)
+
+const (
+	api = "https://demozoo.org/api/v1/productions"
+	cd  = "Content-Disposition"
+	cls = "PouetProduction"
+	df2 = "defacto2.net"
+	dos = "dos"
+	win = "windows"
 )
 
 // Production API production request.
 type Production struct {
 	ID         int64         // Demozoo production ID
 	Timeout    time.Duration // HTTP request timeout in seconds (default 5)
-	link       string        // URL link to sent the request // ??
+	Link       string        // URL link to sent the request // ??
 	StatusCode int           // received HTTP statuscode
 	Status     string        // received HTTP status
 }
@@ -23,38 +38,38 @@ type Production struct {
 // URL creates a productions API v.1 request link.
 // example: https://demozoo.org/api/v1/productions/158411/?format=json
 func (p *Production) URL() error {
-	s, err := production(p.ID)
+	s, err := URL(p.ID)
 	if err != nil {
 		return fmt.Errorf("production url: %w", err)
 	}
-	p.link = s
+	p.Link = s
 	return nil
 }
 
-// data gets a production API link and normalises the results.
-func (p *Production) data() (ProductionsAPIv1, error) {
+// Get a production API link and normalises the results.
+func (p *Production) Get() (prods.ProductionsAPIv1, error) {
 	if err := p.URL(); err != nil {
-		return ProductionsAPIv1{}, fmt.Errorf("production data: %w", err)
+		return prods.ProductionsAPIv1{}, fmt.Errorf("production data: %w", err)
 	}
 	r := download.Request{
-		Link: p.link,
+		Link: p.Link,
 	}
 	if err := r.Body(); err != nil {
-		return ProductionsAPIv1{}, fmt.Errorf("production data body: %w", err)
+		return prods.ProductionsAPIv1{}, fmt.Errorf("production data body: %w", err)
 	}
 	p.Status = r.Status
 	p.StatusCode = r.StatusCode
-	var dz ProductionsAPIv1
+	var dz prods.ProductionsAPIv1
 	if len(r.Read) > 0 {
 		if err := json.Unmarshal(r.Read, &dz); err != nil {
-			return ProductionsAPIv1{}, fmt.Errorf("production data json unmarshal: %w", err)
+			return prods.ProductionsAPIv1{}, fmt.Errorf("production data json unmarshal: %w", err)
 		}
 	}
 	return dz, nil
 }
 
-// production creates a production URL from a Demozoo ID.
-func production(id int64) (string, error) {
+// URL creates a production URL from a Demozoo ID.
+func URL(id int64) (string, error) {
 	if id < 0 {
 		return "", fmt.Errorf("production id %v: %w", id, ErrNegativeID)
 	}
