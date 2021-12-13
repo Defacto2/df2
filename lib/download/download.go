@@ -48,20 +48,20 @@ func (r *Request) Body() error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Link, nil)
 	defer cancel()
 	if err != nil {
-		return fmt.Errorf("request body new with context: %w", err)
+		return fmt.Errorf("body new context: %w", err)
 	}
 	req.Header.Set(ua, UserAgent)
 	client := http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("request body client do: %w", err)
+		return fmt.Errorf("body client do: %w", err)
 	}
 	defer res.Body.Close()
 	r.Status = res.Status
 	r.StatusCode = res.StatusCode
 	r.Read, err = ioutil.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("request body read body response: %w", err)
+		return fmt.Errorf("body readall: %w", err)
 	}
 	return nil
 }

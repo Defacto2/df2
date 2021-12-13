@@ -2,29 +2,23 @@
 package directories
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
-	"io/fs"
-	"io/ioutil"
 	"log"
-	m "math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
-	"time"
 
+	"github.com/Defacto2/df2/lib/directories/internal/create"
 	"github.com/spf13/viper"
 )
 
-// random characters used by randString().
+var (
+	ErrNoDir = errors.New("dir structure cannot be nil")
+)
+
 const (
-	dirMode  fs.FileMode = 0o755
-	fileMode fs.FileMode = 0o644
-
-	random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
-
 	// Archives.
 	z7  = ".7z"
 	arc = ".arc"
@@ -40,19 +34,14 @@ const (
 	zip = ".zip"
 )
 
-var (
-	ErrPathIsFile = errors.New("path already exist as a file")
-	ErrPrefix     = errors.New("invalid prefix value, it must be between 0 - 9")
-)
-
-// Dir is a collection of paths containing files.
+// Dir is the collection of directories pointing to specific files.
 type Dir struct {
-	Img000 string // path to screencaptures and previews
-	Img400 string // path to 400x400 squared thumbnails
-	Backup string // path to the backup archives or previously removed files
-	Emu    string // path to the DOSee emulation files
-	Base   string // base directory path that hosts these other subdirectories
-	UUID   string // path to file downloads with UUID as filenames
+	Img000 string // Img000 hold screen captures and previews.
+	Img400 string // Img400 hold 400x400 squared thumbnails.
+	Backup string // Backup archives or previously removed files.
+	Emu    string // Emu are the DOSee emulation files.
+	Base   string // Base or root directory path, the parent of these other subdirectories.
+	UUID   string // UUID file downloads.
 }
 
 // Init initialises the subdirectories and UUID structure.
@@ -81,11 +70,25 @@ func Init(create bool) Dir {
 		if err := createDirectories(&d); err != nil {
 			log.Fatal(err)
 		}
-		if err := createPlaceHolders(&d); err != nil {
+		if err := PlaceHolders(&d); err != nil {
 			log.Fatal(err)
 		}
 	}
 	return d
+}
+
+// createDirectories generates a series of UUID subdirectories.
+func createDirectories(dir *Dir) error {
+	v := reflect.ValueOf(dir)
+	// iterate through the D struct values
+	for i := 0; i < v.NumField(); i++ {
+		if d := fmt.Sprintf("%v", v.Field(i).Interface()); d != "" {
+			if err := create.Dir(d); err != nil {
+				return fmt.Errorf("create directory: %w", err)
+			}
+		}
+	}
+	return nil
 }
 
 // ArchiveExt checks that the named file uses a known archive extension.
@@ -107,108 +110,28 @@ func Files(name string) Dir {
 	return dirs
 }
 
-// createDirectories generates a series of UUID subdirectories.
-func createDirectories(dir *Dir) error {
-	v := reflect.ValueOf(dir)
-	// iterate through the D struct values
-	for i := 0; i < v.NumField(); i++ {
-		if d := fmt.Sprintf("%v", v.Field(i).Interface()); d != "" {
-			if err := createDirectory(d); err != nil {
-				return fmt.Errorf("create directory: %w", err)
-			}
-		}
+// PlaceHolders generates a collection placeholder files in the UUID subdirectories.
+func PlaceHolders(dir *Dir) error {
+	if dir == nil {
+		return fmt.Errorf("placeholder: %w", ErrNoDir)
 	}
-	return nil
-}
-
-// createDirectory creates a UUID subdirectory in the directory path.
-func createDirectory(path string) error {
-	src, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		if err = os.MkdirAll(path, dirMode); err != nil {
-			return fmt.Errorf("create directory mkdir %q: %w", path, err)
-		}
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("create directory stat %q: %w", path, err)
-	}
-	if src.Mode().IsRegular() {
-		return fmt.Errorf("create directory %q: %w", path, ErrPathIsFile)
-	}
-	return nil
-}
-
-// createHolderFiles generates a number of placeholder files in the given directory path.
-func createHolderFiles(path string, size int, count uint) error {
-	const max = 9
-	if count > max {
-		return fmt.Errorf("create holder files number=%d: %w", count, ErrPrefix)
-	}
-	for i := uint(0); i <= count; i++ {
-		if err := createHolderFile(path, size, i); err != nil {
-			return fmt.Errorf("create holder files: %w", err)
-		}
-	}
-	return nil
-}
-
-// createHolderFile generates a placeholder file filled with random text in the given directory path,
-// the size of the file determines the number of random characters and the prefix is a digit between
-// 0 and 9 is appended to the filename.
-func createHolderFile(path string, size int, prefix uint) error {
-	const max = 9
-	if prefix > max {
-		return fmt.Errorf("create holder file prefix=%d: %w", prefix, ErrPrefix)
-	}
-	name := fmt.Sprintf("00000000-0000-0000-0000-00000000000%v", prefix)
-	fn := filepath.Join(path, name)
-	if _, err := os.Stat(fn); err == nil {
-		return nil // don't overwrite existing files
-	}
-	m.Seed(time.Now().UnixNano())
-	r, err := randString(size)
-	if err != nil {
-		return fmt.Errorf("create holder file: %w", err)
-	}
-	text := []byte(r)
-	if err := ioutil.WriteFile(fn, text, fileMode); err != nil {
-		return fmt.Errorf("write create holder file %q: %w", fn, err)
-	}
-	return nil
-}
-
-// createPlaceHolders generates a collection placeholder files in the UUID subdirectories.
-func createPlaceHolders(dir *Dir) error {
 	const oneMB, halfMB, twoFiles, nineFiles = 1000000, 500000, 2, 9
-	if err := createHolderFiles(dir.UUID, oneMB, nineFiles); err != nil {
+	if err := create.Holders(dir.UUID, oneMB, nineFiles); err != nil {
 		return fmt.Errorf("create uuid holders: %w", err)
 	}
-	if err := createHolderFiles(dir.Emu, oneMB, twoFiles); err != nil {
+	if err := create.Holders(dir.Emu, oneMB, twoFiles); err != nil {
 		return fmt.Errorf("create emu holders: %w", err)
 	}
-	if err := createHolderFiles(dir.Img000, oneMB, nineFiles); err != nil {
+	if err := create.Holders(dir.Img000, oneMB, nineFiles); err != nil {
 		return fmt.Errorf("create img000 holders: %w", err)
 	}
-	if err := createHolderFiles(dir.Img400, halfMB, nineFiles); err != nil {
+	if err := create.Holders(dir.Img400, halfMB, nineFiles); err != nil {
 		return fmt.Errorf("create img400 holders: %w", err)
 	}
 	return nil
 }
 
-// randString generates a random string of n x characters.
-func randString(n int) (string, error) {
-	s, r := make([]rune, n), []rune(random)
-	for i := range s {
-		p, err := rand.Prime(rand.Reader, len(r))
-		if err != nil {
-			return "", fmt.Errorf("random string n %d: %w", n, err)
-		}
-		x, y := p.Uint64(), uint64(len(r))
-		s[i] = r[x%y]
-	}
-	return string(s), nil
-}
-
+// Size returns the number of counted files and their summed size as bytes.
 func Size(root string) (count int64, bytes uint64, err error) {
 	err = filepath.Walk(root, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
