@@ -9,12 +9,23 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Defacto2/df2/lib/demozoo/internal/prods"
+)
+
+const (
+	api = "https://demozoo.org/api/v1/productions"
+	cd  = "Content-Disposition"
+	cls = "PouetProduction"
+	df2 = "defacto2.net"
+	dos = "dos"
+	win = "windows"
 )
 
 const (
@@ -96,7 +107,7 @@ func Test_filename(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotFilename := filename(tt.args.h); gotFilename != tt.wantFilename {
+			if gotFilename := prods.Filename(tt.args.h); gotFilename != tt.wantFilename {
 				t.Errorf("filename() = %v, want %v", gotFilename, tt.wantFilename)
 			}
 		})
@@ -155,26 +166,6 @@ func mockInline(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add(cd, "inline")
 }
 
-func TestProductionsAPIv1_Authors(t *testing.T) {
-	tests := []struct {
-		name string
-		p    prods.ProductionsAPIv1
-		want Authors
-	}{
-		{"empty", prods.ProductionsAPIv1{}, Authors{}},
-		{"record 1", example1, Authors{nil, []string{"Ile"}, []string{"Ile"}, nil}},
-		{"record 2", example2, Authors{nil, []string{"Deep Freeze"}, []string{"The Cardinal"}, nil}},
-		{"nick is_group", example3, Authors{nil, nil, nil, nil}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Authors(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("prods.ProductionsAPIv1.Authors() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestProductionsAPIv1_DownloadLink(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -204,30 +195,6 @@ func TestProductionsAPIv1_DownloadLink(t *testing.T) {
 			}
 			if gotLink != tt.wantLink {
 				t.Errorf("ProductionsAPIv1.DownloadLink() gotLink = %v, want %v", gotLink, tt.wantLink)
-			}
-		})
-	}
-}
-
-func TestProductionsAPIv1_Download(t *testing.T) {
-	dl := DownloadsAPIv1{
-		LinkClass: "SceneOrgFile",
-		URL:       "https://files.scene.org/view/parties/2000/ambience00/demo/feestje.zip",
-	}
-	tests := []struct {
-		name    string
-		p       prods.ProductionsAPIv1
-		l       DownloadsAPIv1
-		wantErr bool
-	}{
-		{"empty", prods.ProductionsAPIv1{}, DownloadsAPIv1{}, true},
-		{"example1", example1, DownloadsAPIv1{}, true},
-		{"example1 dl", example1, dl, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.p.Download(tt.l); (err != nil) != tt.wantErr {
-				t.Errorf("ProductionsAPIv1.Download() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -304,13 +271,12 @@ func TestMutateURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MutateURL(tt.args.u).String(); !reflect.DeepEqual(got, tt.want) {
+			if got := prods.MutateURL(tt.args.u).String(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MutateURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
-
 
 func Test_parsePouetProduction(t *testing.T) {
 	type args struct {
@@ -332,7 +298,7 @@ func Test_parsePouetProduction(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parsePouetProduction(tt.args.rawurl)
+			got, err := prods.ParsePouetProduction(tt.args.rawurl)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parsePouetProduction() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -346,7 +312,7 @@ func Test_parsePouetProduction(t *testing.T) {
 
 func Test_randomName(t *testing.T) {
 	rand := func() bool {
-		r, err := randomName()
+		r, err := prods.RandomName()
 		if err != nil {
 			t.Error(err)
 		}
@@ -387,7 +353,7 @@ func Test_saveName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := saveName(tt.args.rawurl)
+			got, err := prods.SaveName(tt.args.rawurl)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("saveName() error = %v, wantErr %v", err, tt.wantErr)
 				return

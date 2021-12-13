@@ -2,7 +2,6 @@ package prods
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -25,62 +24,6 @@ const (
 	dos = "dos"
 	win = "windows"
 )
-
-// Category are tags for production imports.
-type Category int
-
-func (c Category) String() string {
-	switch c {
-	case Text:
-		return "text"
-	case Code:
-		return "code"
-	case Graphics:
-		return "graphics"
-	case Music:
-		return "music"
-	case Magazine:
-		return "magazine"
-	}
-	return ""
-}
-
-const (
-	// Text based files.
-	Text Category = iota
-	// Code are binary files.
-	Code
-	// Graphics are images.
-	Graphics
-	// Music is audio.
-	Music
-	// Magazine are publications.
-	Magazine
-)
-
-func category(s string) Category {
-	switch strings.ToLower(s) {
-	case Text.String():
-		return Text
-	case Code.String():
-		return Code
-	case Graphics.String():
-		return Graphics
-	case Music.String():
-		return Music
-	case Magazine.String():
-		return Magazine
-	}
-	return -1
-}
-
-// Authors contains Defacto2 people rolls.
-type Authors struct {
-	Text  []string // credit_text, writer
-	Code  []string // credit_program, programmer/coder
-	Art   []string // credit_illustration, artist/graphics
-	Audio []string // credit_audio, musician/sound
-}
 
 // ProductionsAPIv1 productions API v1.
 // This can be dynamically generated at https://mholt.github.io/json-to-go/
@@ -152,118 +95,6 @@ type ProductionsAPIv1 struct {
 	} `json:"screenshots"`
 }
 
-// Authors parses Demozoo authors and reclassifies them into Defacto2 people rolls.
-func (p *ProductionsAPIv1) Authors() Authors {
-	var a Authors
-	for _, n := range p.Credits {
-		if n.Nick.Releaser.IsGroup {
-			continue
-		}
-		switch category(n.Category) {
-		case Text:
-			a.Text = append(a.Text, n.Nick.Name)
-		case Code:
-			a.Code = append(a.Code, n.Nick.Name)
-		case Graphics:
-			a.Art = append(a.Art, n.Nick.Name)
-		case Music:
-			a.Audio = append(a.Audio, n.Nick.Name)
-		case Magazine:
-			// do nothing.
-		}
-	}
-	return a
-}
-
-// DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink() (name, link string) {
-	const (
-		found       = 200
-		internalErr = 500
-	)
-	total := len(p.DownloadLinks)
-	for _, l := range p.DownloadLinks {
-		var l DownloadsAPIv1 = l // apply type so we can use it with methods
-		if ok := l.parse(); !ok {
-			continue
-		}
-		// skip defacto2 links if others are available
-		if u, err := url.Parse(l.URL); total > 1 && u.Hostname() == df2 {
-			if flag.Lookup("test.v") != nil {
-				log.Printf("url.Parse(%s) error = %q\n", l.URL, err)
-			}
-			continue
-		}
-		ping, err := download.Ping(l.URL)
-		if err != nil || ping.StatusCode != found {
-			if flag.Lookup("test.v") != nil {
-				if err != nil {
-					log.Printf("download.Ping(%s) error = %q\n", l.URL, err)
-				} else {
-					log.Printf("download.Ping(%s) %v != %v\n", l.URL, ping.StatusCode, found)
-				}
-			}
-			continue
-		}
-		defer ping.Body.Close()
-		name = filename(ping.Header)
-		if name == "" {
-			name, err = saveName(l.URL)
-			if err != nil {
-				continue
-			}
-		}
-		link = l.URL
-		break
-	}
-	return name, link
-}
-
-func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
-	const found = 200
-	if ok := l.parse(); !ok {
-		logs.Print(" not usable\n")
-		return nil
-	}
-	ping, err := download.Ping(l.URL)
-	if err != nil {
-		return fmt.Errorf("download off demozoo ping: %w", err)
-	}
-	defer ping.Body.Close()
-	if ping.StatusCode != found {
-		logs.Printf(" %s", ping.Status) // print the HTTP status
-		return nil
-	}
-	save, err := saveName(l.URL)
-	if err != nil {
-		return fmt.Errorf("download off demozoo: %w", err)
-	}
-	temp, err := ioutil.TempDir("", "demozoo-download")
-	if err != nil {
-		return fmt.Errorf("download off demozoo temp dir: %w", err)
-	}
-	dest, err := filepath.Abs(filepath.Join(temp, save))
-	if err != nil {
-		return fmt.Errorf("download off demozoo abs filepath: %w", err)
-	}
-	_, err = download.Get(dest, l.URL)
-	if err != nil {
-		return fmt.Errorf("download off demozoo download: %w", err)
-	}
-	return nil
-}
-
-// Downloads parses the Demozoo DownloadLinks and saves the first suitable download.
-func (p *ProductionsAPIv1) Downloads() {
-	for _, l := range p.DownloadLinks {
-		if err := p.Download(l); err != nil {
-			log.Printf(" %s", err)
-		} else {
-			break
-		}
-	}
-}
-
 // JSON returns the production API results as tabbed JSON.
 // This is used by internal/generator.go.
 func (p *ProductionsAPIv1) JSON() ([]byte, error) {
@@ -282,7 +113,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
 		if l.LinkClass != cls {
 			continue
 		}
-		id, err := parsePouetProduction(l.URL)
+		id, err := ParsePouetProduction(l.URL)
 		if err != nil {
 			return 0, 0, fmt.Errorf("pouet id parse: %w", err)
 		}
@@ -310,24 +141,7 @@ func (p *ProductionsAPIv1) Print() error {
 	return nil
 }
 
-// DownloadsAPIv1 are DownloadLinks for ProductionsAPIv1.
-type DownloadsAPIv1 struct {
-	LinkClass string `json:"link_class"`
-	URL       string `json:"url"`
-}
-
-// parse corrects any known errors with a Downloads API link.
-func (dl *DownloadsAPIv1) parse() (ok bool) {
-	u, err := url.Parse(dl.URL) // validate url
-	if err != nil {
-		return false
-	}
-	u = MutateURL(u)
-	dl.URL = u.String()
-	return true
-}
-
-func filename(h http.Header) string {
+func Filename(h http.Header) string {
 	gh := h.Get(cd)
 	if gh == "" {
 		return ""
@@ -371,8 +185,8 @@ func MutateURL(u *url.URL) *url.URL {
 	return u
 }
 
-// parsePouetProduction takes a pouet prod URL and extracts the ID.
-func parsePouetProduction(rawurl string) (id int, err error) {
+// ParsePouetProduction takes a pouet prod URL and extracts the ID.
+func ParsePouetProduction(rawurl string) (id int, err error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return 0, fmt.Errorf(" url parse: %w", err)
@@ -393,7 +207,7 @@ func parsePouetProduction(rawurl string) (id int, err error) {
 }
 
 // randomName generates a random temporary filename.
-func randomName() (string, error) {
+func RandomName() (string, error) {
 	tmp, err := ioutil.TempFile("", "df2-download")
 	if err != nil {
 		return "", fmt.Errorf("random name tempfile: %w", err)
@@ -406,14 +220,14 @@ func randomName() (string, error) {
 }
 
 // saveName gets a filename from the URL or generates a random filename.
-func saveName(rawurl string) (string, error) {
+func SaveName(rawurl string) (string, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return "", fmt.Errorf("save name %q: %w", rawurl, err)
 	}
 	name := filepath.Base(u.Path)
 	if name == "." {
-		name, err = randomName()
+		name, err = RandomName()
 		if err != nil {
 			return "", fmt.Errorf("save name random: %w", err)
 		}

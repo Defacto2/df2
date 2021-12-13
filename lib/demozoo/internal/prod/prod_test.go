@@ -70,3 +70,42 @@ func TestProduction_URL(t *testing.T) {
 		})
 	}
 }
+
+func TestProduction_Get(t *testing.T) {
+	type fields struct {
+		ID         int64
+		Timeout    time.Duration
+		Link       string
+		StatusCode int
+		Status     string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{"empty", fields{}, "", false},
+		{"invalid", fields{ID: -1}, "", true},
+		{"okay", fields{ID: 1}, "Rob Is Jarig", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &prod.Production{
+				ID:         tt.fields.ID,
+				Timeout:    tt.fields.Timeout,
+				Link:       tt.fields.Link,
+				StatusCode: tt.fields.StatusCode,
+				Status:     tt.fields.Status,
+			}
+			got, err := p.Get()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Production.Get() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got.Title != tt.want {
+				t.Errorf("Production.Get() = %v, want %v", got.Title, tt.want)
+			}
+		})
+	}
+}
