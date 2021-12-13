@@ -121,7 +121,7 @@ func parse(filename, tpl string, r Request) error {
 			hr = false
 		}
 		data[i] = person.Person{
-			ID:   groups.MakeSlug(n),
+			ID:   groups.Slug(n),
 			Nick: n,
 			Hr:   hr,
 		}

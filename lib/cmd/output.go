@@ -166,7 +166,7 @@ var groupCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 		case txt, "t":
-			if _, err := groups.Print(req); err != nil {
+			if _, err := req.Print(); err != nil {
 				log.Fatal(err)
 			}
 		}

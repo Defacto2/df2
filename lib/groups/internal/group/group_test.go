@@ -236,3 +236,50 @@ func TestList(t *testing.T) {
 		})
 	}
 }
+
+func TestSlug(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{"Defacto2"}, "defacto2"},
+		{"", args{"Defacto 2"}, "defacto-2"},
+		{"", args{"Defacto 2 (DF2)"}, "defacto-2"},
+		{"", args{"Defacto  2"}, "defacto-2"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := group.Slug(tt.args.name); got != tt.want {
+				t.Errorf("Slug() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCount(t *testing.T) {
+	tests := []struct {
+		name      string
+		wantCount bool
+		wantErr   bool
+	}{
+		{"", false, false},
+		{"abcdefgh", false, false},
+		{"Defacto2", true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotCount, err := group.Count(tt.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Count() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if (gotCount > 0) != tt.wantCount {
+				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
+			}
+		})
+	}
+}

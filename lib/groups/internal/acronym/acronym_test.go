@@ -54,3 +54,32 @@ func TestTrim(t *testing.T) {
 		})
 	}
 }
+
+func TestGroup_Get(t *testing.T) {
+	type fields struct {
+		Name       string
+		Initialism string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{"empty", fields{}, false},
+		{"df2", fields{
+			Name:       "defacto2",
+			Initialism: "",
+		}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &acronym.Group{
+				Name:       tt.fields.Name,
+				Initialism: tt.fields.Initialism,
+			}
+			if err := g.Get(); (err != nil) != tt.wantErr {
+				t.Errorf("Group.Get() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/lib/groups/internal/acronym"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
 	"github.com/gookit/color"
@@ -68,30 +70,30 @@ func Get(s string) Filter {
 	return -1
 }
 
-// List all organisations or groups filtered by f.
-func List(f string) (groups []string, total int, err error) {
+// List all organisations or groups filtered by s.
+func List(s string) (groups []string, total int, err error) {
 	db := database.Connect()
 	defer db.Close()
-	s, err := SQLSelect(Get(f), false)
+	r, err := SQLSelect(Get(s), false)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list groups statement: %w", err)
+		return nil, 0, fmt.Errorf("list statement: %w", err)
 	}
-	total, err = database.Total(&s)
+	total, err = database.Total(&r)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list groups total: %w", err)
+		return nil, 0, fmt.Errorf("list total: %w", err)
 	}
 	// interate through records
-	rows, err := db.Query(s)
+	rows, err := db.Query(r)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list groups query: %w", err)
+		return nil, 0, fmt.Errorf("list query: %w", err)
 	} else if err = rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("list groups rows: %w", rows.Err())
+		return nil, 0, fmt.Errorf("list rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	var grp sql.NullString
 	for rows.Next() {
 		if err = rows.Scan(&grp); err != nil {
-			return nil, 0, fmt.Errorf("list groups rows scan: %w", err)
+			return nil, 0, fmt.Errorf("list rows scan: %w", err)
 		}
 		if _, err = grp.Value(); err != nil {
 			continue
@@ -101,7 +103,7 @@ func List(f string) (groups []string, total int, err error) {
 	return groups, total, nil
 }
 
-// groupsStmt returns a complete SQL WHERE statement where the groups are filtered.
+// SQLSelect returns a complete SQL WHERE statement where the groups are filtered.
 func SQLSelect(f Filter, includeSoftDeletes bool) (string, error) {
 	inc, skip := includeSoftDeletes, false
 	if f > -1 {
@@ -109,7 +111,7 @@ func SQLSelect(f Filter, includeSoftDeletes bool) (string, error) {
 	}
 	where, err := SQLWhere(f, inc)
 	if err != nil {
-		return "", fmt.Errorf("group statement %q: %w", f.String(), err)
+		return "", fmt.Errorf("sql select %q: %w", f.String(), err)
 	}
 	var s string
 	switch skip {
@@ -126,11 +128,11 @@ func SQLSelect(f Filter, includeSoftDeletes bool) (string, error) {
 	return s + " ORDER BY pubCombined", nil
 }
 
-// groupsWhere returns a partial SQL WHERE statement where groups are filtered.
+// SQLWhere returns a partial SQL WHERE statement where groups are filtered.
 func SQLWhere(f Filter, softDel bool) (string, error) {
 	s, err := SQLFilter(f)
 	if err != nil {
-		return "", fmt.Errorf("groups where: %w", err)
+		return "", fmt.Errorf("sql where: %w", err)
 	}
 	switch {
 	case s != "" && softDel:
@@ -150,7 +152,7 @@ func SQLWhere(f Filter, softDel bool) (string, error) {
 	return s, nil
 }
 
-// groupsFilter returns a partial SQL WHERE statement to filter groups.
+// SQLFilter returns a partial SQL WHERE statement to filter groups.
 func SQLFilter(f Filter) (string, error) {
 	var s string
 	switch f {
@@ -165,7 +167,7 @@ func SQLFilter(f Filter) (string, error) {
 	case Group: // only display groups who are listed under group_brand_for, group_brand_by only groups will be ignored
 		s = "RIGHT(group_brand_for,4) != ' FTP' AND RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND"
 	default:
-		return "", fmt.Errorf("group filter %q: %w", f.String(), ErrFilter)
+		return "", fmt.Errorf("sql filter %q: %w", f.String(), ErrFilter)
 	}
 	return s, nil
 }
@@ -178,28 +180,28 @@ type Request struct {
 	Progress    bool   // Progress counter when requesting database data.
 }
 
-// cleanGroup fixes and saves a malformed group name.
-func Clean(g string, sim bool) (ok bool) {
-	f := CleanS(g)
-	if f == g {
+// Clean a malformed group name and save the fix to the database.
+func Clean(name string, sim bool) (ok bool) {
+	f := CleanS(name)
+	if f == name {
 		return false
 	}
 	if sim {
-		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), g,
+		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), name,
 			color.Question.Sprint("!="), color.Info.Sprint(f))
 		return true
 	}
 	s := str.Y()
 	ok = true
-	if _, err := rename(f, g); err != nil {
+	if _, err := rename(f, name); err != nil {
 		s = str.X()
 		ok = false
 	}
-	logs.Printf("\n%s %q %s %s", s, g, color.Question.Sprint("⟫"), color.Info.Sprint(f))
+	logs.Printf("\n%s %q %s %s", s, name, color.Question.Sprint("⟫"), color.Info.Sprint(f))
 	return ok
 }
 
-// cleanString fixes any malformed strings.
+// CleanS fixes the malformed string.
 func CleanS(s string) string {
 	f := database.TrimSP(s)
 	f = database.StripChars(f)
@@ -251,16 +253,16 @@ func rename(newName, group string) (count int64, err error) {
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?," +
 		" group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
 	if err != nil {
-		return 0, fmt.Errorf("rename group statement: %w", err)
+		return 0, fmt.Errorf("rename statement: %w", err)
 	}
 	defer stmt.Close()
 	res, err := stmt.Exec(newName, newName, group, group)
 	if err != nil {
-		return 0, fmt.Errorf("rename group exec: %w", err)
+		return 0, fmt.Errorf("rename exec: %w", err)
 	}
 	count, err = res.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf("rename group rows affected: %w", err)
+		return 0, fmt.Errorf("rename rows affected: %w", err)
 	}
 	return count, db.Close()
 }
@@ -303,4 +305,39 @@ func UseHr(prevLetter, group string) (string, bool) {
 		return g, true
 	}
 	return prevLetter, false
+}
+
+// Slug takes a string and makes it into a URL friendly slug.
+func Slug(s string) string {
+	n := database.TrimSP(s)
+	n = acronym.Trim(n)
+	n = strings.ReplaceAll(n, "-", "_")
+	n = strings.ReplaceAll(n, ", ", "*")
+	n = strings.ReplaceAll(n, " & ", " ampersand ")
+	re := regexp.MustCompile(` (\d)`)
+	n = re.ReplaceAllString(n, `-$1`)
+	re = regexp.MustCompile(`[^A-Za-z0-9 \-\+.\_\*]`) // remove all chars except these
+	n = re.ReplaceAllString(n, ``)
+	n = strings.ToLower(n)
+	re = regexp.MustCompile(` ([a-z])`)
+	n = re.ReplaceAllString(n, `-$1`)
+	return n
+}
+
+// Count returns the number of file entries associated with a named group.
+func Count(name string) (int, error) {
+	if name == "" {
+		return 0, nil
+	}
+	db := database.Connect()
+	defer db.Close()
+	n, count := name, 0
+	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
+		"group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR "+
+		"group_brand_for LIKE '%%, ?' OR group_brand_by=? OR group_brand_by "+
+		"LIKE '?,%%' OR group_brand_by LIKE '%%, ?,%%' OR group_brand_by LIKE '%%, ?'", n, n)
+	if err := row.Scan(&count); err != nil {
+		return 0, fmt.Errorf("count: %w", err)
+	}
+	return count, db.Close()
 }

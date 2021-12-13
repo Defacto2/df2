@@ -14,10 +14,11 @@ type Group struct {
 	Initialism string
 }
 
+// Get the initialism for the named group.
 func (g *Group) Get() error {
 	db, err := database.ConnectErr()
 	if err != nil {
-		return fmt.Errorf("get db connect: %w", err)
+		return fmt.Errorf("get connect: %w", err)
 	}
 	defer db.Close()
 	row := db.QueryRow("SELECT `initialisms` FROM `groups` WHERE `pubname`=?", g.Name)
@@ -27,7 +28,7 @@ func (g *Group) Get() error {
 	return db.Close()
 }
 
-// Get returns a group's initialism or acronym.
+// Get a group's initialism or acronym.
 // For example "Defacto2" would return "df2".
 func Get(s string) (string, error) {
 	db := database.Connect()
