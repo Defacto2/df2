@@ -113,7 +113,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
 		if l.LinkClass != cls {
 			continue
 		}
-		id, err := ParsePouetProduction(l.URL)
+		id, err := Parse(l.URL)
 		if err != nil {
 			return 0, 0, fmt.Errorf("pouet id parse: %w", err)
 		}
@@ -130,7 +130,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
 	return 0, 0, nil
 }
 
-// Print displays the production API results as tabbed JSON.
+// Print to stdout the production API results as tabbed JSON.
 func (p *ProductionsAPIv1) Print() error {
 	js, err := json.MarshalIndent(&p, "", "  ")
 	if err != nil {
@@ -141,6 +141,7 @@ func (p *ProductionsAPIv1) Print() error {
 	return nil
 }
 
+// Filename is obtained from the http header metadata.
 func Filename(h http.Header) string {
 	gh := h.Get(cd)
 	if gh == "" {
@@ -162,8 +163,8 @@ func Filename(h http.Header) string {
 	return ""
 }
 
-// MutateURL applies fixes to known problematic URLs.
-func MutateURL(u *url.URL) *url.URL {
+// Mutate applies fixes to known problematic URLs.
+func Mutate(u *url.URL) *url.URL {
 	if u == nil {
 		s, err := url.Parse("")
 		if err != nil {
@@ -185,9 +186,9 @@ func MutateURL(u *url.URL) *url.URL {
 	return u
 }
 
-// ParsePouetProduction takes a pouet prod URL and extracts the ID.
-func ParsePouetProduction(rawurl string) (id int, err error) {
-	u, err := url.Parse(rawurl)
+// Parse takes a Pouet prod URL and extracts the ID.
+func Parse(rawURL string) (id int, err error) {
+	u, err := url.Parse(rawURL)
 	if err != nil {
 		return 0, fmt.Errorf(" url parse: %w", err)
 	}
@@ -206,7 +207,7 @@ func ParsePouetProduction(rawurl string) (id int, err error) {
 	return id, nil
 }
 
-// randomName generates a random temporary filename.
+// RandomName generates a random temporary filename.
 func RandomName() (string, error) {
 	tmp, err := ioutil.TempFile("", "df2-download")
 	if err != nil {
@@ -219,11 +220,11 @@ func RandomName() (string, error) {
 	return tmp.Name(), nil
 }
 
-// saveName gets a filename from the URL or generates a random filename.
-func SaveName(rawurl string) (string, error) {
-	u, err := url.Parse(rawurl)
+// SaveName gets a filename from the URL or generates a random filename.
+func SaveName(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
 	if err != nil {
-		return "", fmt.Errorf("save name %q: %w", rawurl, err)
+		return "", fmt.Errorf("save name %q: %w", rawURL, err)
 	}
 	name := filepath.Base(u.Path)
 	if name == "." {

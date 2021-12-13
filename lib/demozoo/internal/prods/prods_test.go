@@ -2,15 +2,11 @@ package prods_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -29,53 +25,13 @@ const (
 )
 
 const (
-	modDate                      = "Wed, 30 Apr 2012 16:29:51 -0500"
-	channel1, channel2, channel3 = 1, 2, 3
+	modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
 )
-
-var example1, example2, example3 prods.ProductionsAPIv1 //nolint:gochecknoglobals
 
 var (
 	ErrAdd = errors.New("invalid add argument")
 	ErrVal = errors.New("unknown record value")
 )
-
-func init() { //nolint:gochecknoinits
-	c1 := make(chan prods.ProductionsAPIv1)
-	c2 := make(chan prods.ProductionsAPIv1)
-	c3 := make(chan prods.ProductionsAPIv1)
-	go load(channel1, c1)
-	go load(channel2, c2)
-	go load(channel3, c3)
-	example1, example2, example3 = <-c1, <-c2, <-c3
-}
-
-func load(r int, c chan prods.ProductionsAPIv1) {
-	var name string
-	switch r {
-	case channel1:
-		name = "1"
-	case channel2:
-		name = "188796"
-	case channel3:
-		name = "267300"
-	default:
-		log.Fatal(fmt.Errorf("load r %d: %w", r, ErrVal))
-	}
-	path, err := filepath.Abs(fmt.Sprintf("../../tests/json/record_%s.json", name))
-	if err != nil {
-		log.Fatal(fmt.Errorf("path %q: %w", path, err))
-	}
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var dz prods.ProductionsAPIv1
-	if err := json.Unmarshal(data, &dz); err != nil {
-		log.Fatal(fmt.Errorf("load json unmarshal: %w", err))
-	}
-	c <- dz
-}
 
 func Test_filename(t *testing.T) {
 	check := func(err error) {
@@ -252,7 +208,7 @@ func TestProductionsAPIv1_Print(t *testing.T) {
 	}
 }
 
-func TestMutateURL(t *testing.T) {
+func TestMutate(t *testing.T) {
 	exp, _ := url.Parse("http://example.com")
 	bro, _ := url.Parse("not-a-valid-url")
 	fso, _ := url.Parse("https://files.scene.org/view/someplace")
@@ -271,14 +227,14 @@ func TestMutateURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := prods.MutateURL(tt.args.u).String(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MutateURL() = %v, want %v", got, tt.want)
+			if got := prods.Mutate(tt.args.u).String(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Mutate() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_parsePouetProduction(t *testing.T) {
+func TestParse(t *testing.T) {
 	type args struct {
 		rawurl string
 	}
@@ -298,13 +254,13 @@ func Test_parsePouetProduction(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := prods.ParsePouetProduction(tt.args.rawurl)
+			got, err := prods.Parse(tt.args.rawurl)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parsePouetProduction() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("parsePouetProduction() = %v, want %v", got, tt.want)
+				t.Errorf("Parse() = %v, want %v", got, tt.want)
 			}
 		})
 	}

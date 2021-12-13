@@ -24,7 +24,7 @@ func (dl *DownloadsAPIv1) parse() (ok bool) {
 	if err != nil {
 		return false
 	}
-	u = MutateURL(u)
+	u = Mutate(u)
 	dl.URL = u.String()
 	return true
 }
