@@ -1,4 +1,4 @@
-package demozoo
+package sync
 
 import "errors"
 

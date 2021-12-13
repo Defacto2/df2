@@ -54,9 +54,9 @@ var demozooCmd = &cobra.Command{
 				logs.Fatal(err)
 			}
 		case dzf.sync:
-			if err := demozoo.Sync(); err != nil {
-				logs.Fatal(err)
-			}
+			// if err := demozoo.Sync(); err != nil {
+			// 	logs.Fatal(err)
+			// }
 		case dzf.ping != 0:
 			f, err := demozoo.Fetch(dzf.ping)
 			if err != nil {
