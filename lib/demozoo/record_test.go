@@ -179,9 +179,9 @@ func Test_stat_fileExist(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			st := &stat{
-				count:   tt.fields.count,
-				missing: tt.fields.missing,
-				total:   tt.fields.total,
+				Count:   tt.fields.count,
+				Missing: tt.fields.missing,
+				Total:   tt.fields.total,
 			}
 			r.FilePath = tt.path
 			if gotMissing := st.fileExist(&r); gotMissing != tt.wantMissing {

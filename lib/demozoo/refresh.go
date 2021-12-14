@@ -57,8 +57,8 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 	if err = rec.rows.Scan(rec.scanArgs...); err != nil {
 		return true, fmt.Errorf("next refresh rows scan: %w", err)
 	}
-	st.count++
-	r, err := newRecord(st.count, rec.values)
+	st.Count++
+	r, err := newRecord(st.Count, rec.values)
 	if err != nil {
 		return true, fmt.Errorf("next refresh new record 1: %w", err)
 	}
@@ -81,7 +81,7 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 	a := api.Authors()
 	r.authors(&a)
 	var nr Record
-	nr, err = newRecord(st.count, rec.values)
+	nr, err = newRecord(st.Count, rec.values)
 	if err != nil {
 		return true, fmt.Errorf("next refresh new record 2: %w", err)
 	}

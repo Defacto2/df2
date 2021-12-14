@@ -163,7 +163,7 @@ func (req Request) Queries() error { //nolint: funlen
 	if err = st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
 		return fmt.Errorf("req queries sum total: %w", err)
 	}
-	queriesTotal(st.total)
+	queriesTotal(st.Total)
 	rows, err = db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("request queries query 2: %w", err)
@@ -173,19 +173,19 @@ func (req Request) Queries() error { //nolint: funlen
 	}
 	defer rows.Close()
 	for rows.Next() {
-		st.fetched++
+		st.Fetched++
 		if skip, err := st.nextResult(records{rows, scanArgs, values}, req); err != nil {
 			logs.Danger(fmt.Errorf("request queries next row: %w", err))
 			continue
 		} else if skip {
 			continue
 		}
-		r, err := newRecord(st.count, values)
+		r, err := newRecord(st.Count, values)
 		if err != nil {
 			logs.Danger(fmt.Errorf("request queries new record: %w", err))
 			continue
 		}
-		logs.Printcrf(r.String(st.total))
+		logs.Printcrf(r.String(st.Total))
 		if update := r.check(); !update {
 			continue
 		}
@@ -195,7 +195,7 @@ func (req Request) Queries() error { //nolint: funlen
 		} else if skip {
 			continue
 		}
-		if st.total == 0 {
+		if st.Total == 0 {
 			break
 		}
 		switch {
@@ -206,11 +206,11 @@ func (req Request) Queries() error { //nolint: funlen
 		}
 	}
 	if req.byID != "" {
-		st.byID = req.byID
+		st.ByID = req.byID
 		st.print()
 		return nil
 	}
-	if st.total > 0 {
+	if st.Total > 0 {
 		fmt.Println()
 	}
 	st.summary(time.Since(start))
@@ -234,11 +234,11 @@ func (req Request) flags() (skip bool) {
 
 // query statistics.
 type stat struct {
-	count   int
-	fetched int
-	missing int
-	total   int
-	byID    string
+	Count   int
+	Fetched int
+	Missing int
+	Total   int
+	ByID    string
 }
 
 // nextResult checks for the next, new record.
@@ -249,29 +249,29 @@ func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
 	if n := database.NewDemozoo(rec.values); !n && req.flags() {
 		return true, nil
 	}
-	st.count++
+	st.Count++
 	return false, nil
 }
 
 func (st stat) print() {
-	if st.count == 0 {
-		if st.fetched == 0 {
-			fmt.Printf("id %q is not a Demozoo sourced file record\n", st.byID)
+	if st.Count == 0 {
+		if st.Fetched == 0 {
+			fmt.Printf("id %q is not a Demozoo sourced file record\n", st.ByID)
 			return
 		}
 		fmt.Printf("id %q is not a new Demozoo record, "+
-			"use --id=%v --overwrite to refetch the download and data\n", st.byID, st.byID)
+			"use --id=%v --overwrite to refetch the download and data\n", st.ByID, st.ByID)
 		return
 	}
 	logs.Println()
 }
 
 func (st stat) summary(elapsed time.Duration) {
-	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.count, elapsed.Seconds())
+	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.Count, elapsed.Seconds())
 	logs.Println(strings.Repeat("─", len(t)))
 	logs.Println(t)
-	if st.missing > 0 {
-		logs.Println("UUID files not found:", st.missing)
+	if st.Missing > 0 {
+		logs.Println("UUID files not found:", st.Missing)
 	}
 }
 
@@ -284,7 +284,7 @@ func (st *stat) sumTotal(rec records, req Request) error {
 		if n := database.NewDemozoo(rec.values); !n && req.flags() {
 			continue
 		}
-		st.total++
+		st.Total++
 	}
 	return nil
 }
@@ -318,13 +318,13 @@ func (r *Record) download(overwrite bool, api *prods.ProductionsAPIv1, st stat) 
 			return true
 		}
 		const OK = 200
-		logs.Printcrf("%s%s %s", r.String(st.total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
+		logs.Printcrf("%s%s %s", r.String(st.Total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
 		head, err := download.Get(r.FilePath, link)
 		if err != nil {
 			logs.Log(err)
 			return true
 		}
-		logs.Printcrf(r.String(st.total))
+		logs.Printcrf(r.String(st.Total))
 		logs.Printf("• %s", name)
 		r.downloadReset(name)
 		r.lastMod(head)

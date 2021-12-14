@@ -228,7 +228,7 @@ func (r *Record) sqlCreditsArgs() (args []interface{}) {
 
 func (st *stat) fileExist(r *Record) (missing bool) {
 	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
-		st.missing++
+		st.Missing++
 		return true
 	}
 	return false
