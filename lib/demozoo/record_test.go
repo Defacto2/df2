@@ -87,7 +87,7 @@ func TestRecord_sql(t *testing.T) { //nolint:funlen
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := Record{
-				count:          tt.fields.count,
+				Count:          tt.fields.count,
 				FilePath:       tt.fields.FilePath,
 				ID:             tt.fields.ID,
 				UUID:           tt.fields.UUID,
@@ -221,7 +221,7 @@ func TestRecord_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := Record{
-				count:        tt.fields.count,
+				Count:        tt.fields.count,
 				ID:           tt.fields.ID,
 				WebIDDemozoo: tt.fields.WebIDDemozoo,
 				CreatedAt:    tt.fields.CreatedAt,

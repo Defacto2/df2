@@ -15,10 +15,10 @@ import (
 	"github.com/gookit/color"
 )
 
-type records struct {
-	rows     *sql.Rows
-	scanArgs []interface{}
-	values   []sql.RawBytes
+type Records struct {
+	Rows     *sql.Rows
+	ScanArgs []interface{}
+	Values   []sql.RawBytes
 }
 
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
@@ -45,7 +45,7 @@ func RefreshMeta() error {
 	// fetch the rows
 	var st stat
 	for rows.Next() {
-		if _, err := st.nextRefresh(records{rows, scanArgs, values}); err != nil {
+		if _, err := st.nextRefresh(Records{rows, scanArgs, values}); err != nil {
 			return fmt.Errorf("refresh meta next row: %w", err)
 		}
 	}
@@ -53,12 +53,12 @@ func RefreshMeta() error {
 	return nil
 }
 
-func (st *stat) nextRefresh(rec records) (skip bool, err error) {
-	if err = rec.rows.Scan(rec.scanArgs...); err != nil {
+func (st *stat) nextRefresh(rec Records) (skip bool, err error) {
+	if err = rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return true, fmt.Errorf("next refresh rows scan: %w", err)
 	}
 	st.Count++
-	r, err := newRecord(st.Count, rec.values)
+	r, err := newRecord(st.Count, rec.Values)
 	if err != nil {
 		return true, fmt.Errorf("next refresh new record 1: %w", err)
 	}
@@ -81,7 +81,7 @@ func (st *stat) nextRefresh(rec records) (skip bool, err error) {
 	a := api.Authors()
 	r.authors(&a)
 	var nr Record
-	nr, err = newRecord(st.Count, rec.values)
+	nr, err = newRecord(st.Count, rec.Values)
 	if err != nil {
 		return true, fmt.Errorf("next refresh new record 2: %w", err)
 	}

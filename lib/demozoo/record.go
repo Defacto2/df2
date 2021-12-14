@@ -16,7 +16,7 @@ const sep = ","
 
 // Record of a file item.
 type Record struct {
-	count          int
+	Count          int
 	FilePath       string // absolute path to file
 	ID             string // MySQL auto increment id
 	UUID           string // record unique id
@@ -51,7 +51,7 @@ func (r *Record) String(total int) string {
 		d = len(strconv.Itoa(total))
 	}
 	return fmt.Sprintf("%s %0*d. %v (%v) %v",
-		color.Question.Sprint("→"), d, r.count, color.Primary.Sprint(r.ID),
+		color.Question.Sprint("→"), d, r.Count, color.Primary.Sprint(r.ID),
 		color.Info.Sprint(r.WebIDDemozoo),
 		r.CreatedAt)
 }

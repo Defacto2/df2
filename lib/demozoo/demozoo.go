@@ -120,7 +120,7 @@ type Request struct {
 	Overwrite bool // overwrite existing files
 	Refresh   bool // refresh all demozoo entries
 	Simulate  bool // simulate database save
-	byID      string
+	ByID      string
 }
 
 // Query parses a single Demozoo entry.
@@ -128,7 +128,7 @@ func (req *Request) Query(id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %s: %w", id, err)
 	}
-	req.byID = id
+	req.ByID = id
 	if err := req.Queries(); err != nil {
 		return fmt.Errorf("request query queries: %w", err)
 	}
@@ -140,7 +140,7 @@ func (req *Request) Query(id string) error {
 // all parses every proof not just records waiting for approval.
 func (req Request) Queries() error { //nolint: funlen
 	var st stat
-	stmt, start := selectByID(req.byID), time.Now()
+	stmt, start := selectByID(req.ByID), time.Now()
 	db := database.Connect()
 	defer db.Close()
 	rows, err := db.Query(stmt)
@@ -160,7 +160,7 @@ func (req Request) Queries() error { //nolint: funlen
 		scanArgs[i] = &values[i]
 	}
 	storage := directories.Init(false).UUID
-	if err = st.sumTotal(records{rows, scanArgs, values}, req); err != nil {
+	if err = st.sumTotal(Records{rows, scanArgs, values}, req); err != nil {
 		return fmt.Errorf("req queries sum total: %w", err)
 	}
 	queriesTotal(st.Total)
@@ -174,7 +174,7 @@ func (req Request) Queries() error { //nolint: funlen
 	defer rows.Close()
 	for rows.Next() {
 		st.Fetched++
-		if skip, err := st.nextResult(records{rows, scanArgs, values}, req); err != nil {
+		if skip, err := st.nextResult(Records{rows, scanArgs, values}, req); err != nil {
 			logs.Danger(fmt.Errorf("request queries next row: %w", err))
 			continue
 		} else if skip {
@@ -205,8 +205,8 @@ func (req Request) Queries() error { //nolint: funlen
 			r.save()
 		}
 	}
-	if req.byID != "" {
-		st.ByID = req.byID
+	if req.ByID != "" {
+		st.ByID = req.ByID
 		st.print()
 		return nil
 	}
@@ -242,11 +242,11 @@ type stat struct {
 }
 
 // nextResult checks for the next, new record.
-func (st *stat) nextResult(rec records, req Request) (skip bool, err error) {
-	if err := rec.rows.Scan(rec.scanArgs...); err != nil {
+func (st *stat) nextResult(rec Records, req Request) (skip bool, err error) {
+	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
-	if n := database.NewDemozoo(rec.values); !n && req.flags() {
+	if n := database.NewDemozoo(rec.Values); !n && req.flags() {
 		return true, nil
 	}
 	st.Count++
@@ -276,12 +276,12 @@ func (st stat) summary(elapsed time.Duration) {
 }
 
 // sumTotal calculates the total number of conditional rows.
-func (st *stat) sumTotal(rec records, req Request) error {
-	for rec.rows.Next() {
-		if err := rec.rows.Scan(rec.scanArgs...); err != nil {
+func (st *stat) sumTotal(rec Records, req Request) error {
+	for rec.Rows.Next() {
+		if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
 		}
-		if n := database.NewDemozoo(rec.values); !n && req.flags() {
+		if n := database.NewDemozoo(rec.Values); !n && req.flags() {
 			continue
 		}
 		st.Total++
@@ -541,7 +541,7 @@ func newRecord(c int, values []sql.RawBytes) (Record, error) {
 	const webidpouet, groupbrandfor, groupbrandby, recordtitle, section = 12, 13, 14, 15, 16
 	const creditillustration, creditaudio, creditprogram, credittext = 17, 18, 19, 20
 	r := Record{
-		count: c,
+		Count: c,
 		ID:    string(values[id]),
 		UUID:  string(values[uuid]),
 		// deletedat placeholder
