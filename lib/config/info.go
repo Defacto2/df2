@@ -29,7 +29,7 @@ func Info(sizes bool) error {
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(colon), Filepath())
 	Check()
 	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(colon), logs.Filepath(logs.Filename))
-	db := database.ConnectInfo()
+	db := database.ConnInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {
 		s := strings.Split(scanner.Text(), colon)

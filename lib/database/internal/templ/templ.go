@@ -1,4 +1,4 @@
-package database
+package templ
 
 // TableData is a container for the tableTmpl template.
 type TableData struct {
@@ -9,22 +9,6 @@ type TableData struct {
 	SQL    string
 	UPDATE string
 }
-
-const tableTmpl = `
--- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump
--- source:        https://defacto2.net/sql
--- documentation: https://github.com/Defacto2/database
-
-SET NAMES utf8;
-SET time_zone = '+00:00';
-SET foreign_key_checks = 0;
-SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
-{{.CREATE}}
-INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
-{{.SQL}}{{.UPDATE}};
-
--- {{now}}
-`
 
 // TablesTmp is a container for the tablesTmpl template.
 type TablesTmp struct {
@@ -40,7 +24,23 @@ type TablesData struct {
 	Table   string
 }
 
-const tablesTmpl = `
+const Table = `
+-- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump
+-- source:        https://defacto2.net/sql
+-- documentation: https://github.com/Defacto2/database
+
+SET NAMES utf8;
+SET time_zone = '+00:00';
+SET foreign_key_checks = 0;
+SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+{{.CREATE}}
+INSERT INTO {{.TABLE}} ({{.INSERT}}) VALUES
+{{.SQL}}{{.UPDATE}};
+
+-- {{now}}
+`
+
+const Tables = `
 -- df2 v{{.VER}} Defacto2 MySQL complete dump
 -- source:        https://defacto2.net/sql
 -- documentation: https://github.com/Defacto2/database
@@ -57,11 +57,11 @@ SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 // as there is no escape feature for `raw literals`, these SQL CREATE statements append standard strings.
 
-const newDBTempl = "\nDROP DATABASE IF EXISTS `defacto2-inno`;\n" +
+const NewDB = "\nDROP DATABASE IF EXISTS `defacto2-inno`;\n" +
 	"CREATE DATABASE `defacto2-inno` /*!40100 DEFAULT CHARACTER SET utf8 */;\n" +
 	"USE `defacto2-inno`;\n"
 
-const newFilesTempl = "\nDROP TABLE IF EXISTS `files`;\n" +
+const NewFiles = "\nDROP TABLE IF EXISTS `files`;\n" +
 	"CREATE TABLE `files` (\n" +
 	"  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key',\n" +
 	"  `uuid` char(36) DEFAULT 'UUID()' COMMENT 'Global identifier',\n" +
@@ -120,7 +120,7 @@ const newFilesTempl = "\nDROP TABLE IF EXISTS `files`;\n" +
 	" complete collection of files for download';\n" +
 	"\nTRUNCATE `files`;"
 
-const newGroupsTempl = "\nDROP TABLE IF EXISTS `groups`;\n" +
+const NewGroups = "\nDROP TABLE IF EXISTS `groups`;\n" +
 	"CREATE TABLE `groups` (\n" +
 	"  `id` smallint(6) NOT NULL AUTO_INCREMENT COMMENT 'Primary key',\n" +
 	"  `pubname` varchar(100) NOT NULL COMMENT 'Group or brand',\n" +
@@ -131,7 +131,7 @@ const newGroupsTempl = "\nDROP TABLE IF EXISTS `groups`;\n" +
 	") ENGINE=InnoDB AUTO_INCREMENT=341 DEFAULT CHARSET=utf8 COMMENT='Initialism for groups';\n" +
 	"\nTRUNCATE `groups`;"
 
-const newNetresourcesTempl = "\nDROP TABLE IF EXISTS `netresources`;\n" +
+const NewNetresources = "\nDROP TABLE IF EXISTS `netresources`;\n" +
 	"CREATE TABLE `netresources` (\n" +
 	"  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key',\n" +
 	"  `uuid` char(36) DEFAULT 'UUID()' COMMENT 'Global identifier',\n" +
@@ -161,7 +161,7 @@ const newNetresourcesTempl = "\nDROP TABLE IF EXISTS `netresources`;\n" +
 	") ENGINE=InnoDB AUTO_INCREMENT=696 DEFAULT CHARSET=utf8 COMMENT='Scene websites';\n" +
 	"\nTRUNCATE `netresources`;"
 
-const newUsersTempl = "\nDROP TABLE IF EXISTS `users`;\n" +
+const NewUsers = "\nDROP TABLE IF EXISTS `users`;\n" +
 	"CREATE TABLE `users` (\n" +
 	"  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key',\n" +
 	"  `uuid` char(36) DEFAULT 'UUID()' COMMENT 'Global identifier',\n" +

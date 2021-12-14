@@ -137,7 +137,7 @@ func info() string {
 	)
 	var bin string
 	a, w, m, d := miss, miss, miss, disconnect
-	if err := database.ConnectInfo(); err == "" {
+	if err := database.ConnInfo(); err == "" {
 		d = ok
 	}
 	if _, err := exec.LookPath("ansilove"); err == nil {

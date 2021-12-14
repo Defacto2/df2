@@ -12,6 +12,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/Defacto2/df2/lib/database/internal/my57"
+	"github.com/Defacto2/df2/lib/database/internal/templ"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver/v3"
@@ -229,13 +231,13 @@ func (f *Flags) create() string {
 	s := ""
 	switch f.Table {
 	case Files:
-		s += newFilesTempl
+		s += templ.NewFiles
 	case Groups:
-		s += newGroupsTempl
+		s += templ.NewGroups
 	case Netresources:
-		s += newNetresourcesTempl
+		s += templ.NewNetresources
 	case Users:
-		s += newUsersTempl
+		s += templ.NewUsers
 	}
 	return s
 }
@@ -286,7 +288,7 @@ func (f *Flags) queryDB() (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("query db rows: %w", err)
 	}
 	var values colValues = vals
-	data := TablesData{
+	data := templ.TablesData{
 		Table:   f.Table.String(),
 		Columns: fmt.Sprint(names),
 		Rows:    fmt.Sprint(values),
@@ -321,7 +323,7 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("query table rows: %w", err)
 	}
 	var values colValues = vals
-	dat := TableData{
+	dat := templ.TableData{
 		VER:    f.ver(),
 		CREATE: f.create(),
 		TABLE:  f.Table.String(),
@@ -332,7 +334,7 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 		var dupes dupeKeys = col
 		dat.UPDATE = dupes.String()
 	}
-	t := template.Must(template.New("stmt").Funcs(tmplFunc()).Parse(tableTmpl))
+	t := template.Must(template.New("stmt").Funcs(tmplFunc()).Parse(templ.Table))
 	var b bytes.Buffer
 	if err = t.Execute(&b, dat); err != nil {
 		return nil, fmt.Errorf("query table template execute: %w", err)
@@ -356,17 +358,17 @@ func (f *Flags) queryTables() (*bytes.Buffer, error) {
 			return nil, err
 		}
 	}
-	data := TablesTmp{
+	data := templ.TablesTmp{
 		VER: f.ver(),
-		DB:  newDBTempl,
-		CREATE: []TablesData{
-			{newFilesTempl, buf1.String(), ""},
-			{newGroupsTempl, buf2.String(), ""},
-			{newNetresourcesTempl, buf3.String(), ""},
-			{newUsersTempl, buf4.String(), ""},
+		DB:  templ.NewDB,
+		CREATE: []templ.TablesData{
+			{Columns: templ.NewFiles, Rows: buf1.String(), Table: ""},
+			{Columns: templ.NewGroups, Rows: buf2.String(), Table: ""},
+			{Columns: templ.NewNetresources, Rows: buf3.String(), Table: ""},
+			{Columns: templ.NewUsers, Rows: buf4.String(), Table: ""},
 		},
 	}
-	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(tablesTmpl)
+	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(templ.Tables)
 	if err != nil {
 		return nil, fmt.Errorf("query tables template: %w", err)
 	}
@@ -460,6 +462,7 @@ func (f *Flags) ver() string {
 
 // write the buffer to stdout, an SQL file or a compressed SQL file.
 func (f *Flags) write(buf *bytes.Buffer) error {
+	const bz2 = ".bz2"
 	name := path.Join(viper.GetString("directory.sql"), f.fileName())
 	switch {
 	case f.Compress:
@@ -512,7 +515,7 @@ func columns(t Table) ([]string, error) {
 		columns []string
 		err     error
 		rows    *sql.Rows
-		db      = Connect()
+		db      = my57.Connect()
 	)
 	defer db.Close()
 	switch t {
@@ -581,7 +584,7 @@ func format(b sql.RawBytes, colType string) (string, error) {
 
 // rows returns the values of table.
 func rows(t Table, limit int) ([]string, error) {
-	db := Connect()
+	db := my57.Connect()
 	defer db.Close()
 	var rows *sql.Rows
 	const listAll = 0

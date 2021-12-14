@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/lib/database/internal/my57"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 )
@@ -39,7 +40,7 @@ type Update struct {
 
 // Execute Query and Args to update the database and returns the total number of changes.
 func (u Update) Execute() (int64, error) {
-	db := Connect()
+	db := my57.Connect()
 	defer db.Close()
 	update, err := db.Prepare(u.Query)
 	if err != nil {
@@ -59,7 +60,7 @@ func (u Update) Execute() (int64, error) {
 
 func distinct(column string) ([]string, error) {
 	var result string
-	db := Connect()
+	db := my57.Connect()
 	defer db.Close()
 	rows, err := db.Query("SELECT DISTINCT ? AS `result` FROM `files` WHERE ? != \"\"", column, column)
 	if err != nil {
@@ -127,7 +128,7 @@ func updatePlatforms(platforms *[]string) {
 
 func updateNamedTitles() {
 	ctx := context.Background()
-	db := Connect()
+	db := my57.Connect()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Fatal(err)

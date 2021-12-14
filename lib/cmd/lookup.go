@@ -29,7 +29,7 @@ var lookupCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		for _, a := range args {
-			id, err := database.LookupID(a)
+			id, err := database.GetID(a)
 			if err != nil {
 				fmt.Printf("%s\n", err)
 			} else {

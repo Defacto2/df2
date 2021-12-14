@@ -89,56 +89,6 @@ func TestDateTime(t *testing.T) {
 	}
 }
 
-func Test_valid(t *testing.T) {
-	type args struct {
-		deleted sql.RawBytes
-		updated sql.RawBytes
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    bool
-		wantErr bool
-	}{
-		{"new", args{[]byte("2006-01-02T15:04:05Z"), []byte("2006-01-02T15:04:05Z")}, true, false},
-		{"new+offset", args{[]byte("2006-01-02T15:04:06Z"), []byte("2006-01-02T15:04:05Z")}, true, false},
-		{"old del", args{[]byte("2016-01-02T15:04:05Z"), []byte("2006-01-02T15:04:05Z")}, false, false},
-		{"old upd", args{[]byte("2000-01-02T15:04:05Z"), []byte("2016-01-02T15:04:05Z")}, false, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := valid(tt.args.deleted, tt.args.updated)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("valid() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("valid() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_reverseInt(t *testing.T) {
-	tests := []struct {
-		name         string
-		value        uint
-		wantReversed uint
-	}{
-		{"empty", 0, 0},
-		{"count", 12345, 54321},
-		{"seq", 555, 555},
-		{"sign", 662211, 112266},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotReversed, _ := reverseInt(tt.value); gotReversed != tt.wantReversed {
-				t.Errorf("reverseInt() = %v, want %v", gotReversed, tt.wantReversed)
-			}
-		})
-	}
-}
-
 func TestObfuscateParam(t *testing.T) {
 	tests := []struct {
 		name  string

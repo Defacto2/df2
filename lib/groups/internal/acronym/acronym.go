@@ -16,7 +16,7 @@ type Group struct {
 
 // Get the initialism for the named group.
 func (g *Group) Get() error {
-	db, err := database.ConnectErr()
+	db, err := database.ConnErr()
 	if err != nil {
 		return fmt.Errorf("get connect: %w", err)
 	}

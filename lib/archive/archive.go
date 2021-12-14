@@ -104,7 +104,7 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
-	filename, err := database.LookupFile(uuid)
+	filename, err := database.GetFile(uuid)
 	if err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo lookup id %q: %w", uuid, err)
 	}
