@@ -63,27 +63,27 @@ func (r *Record) String(total int) string {
 		r.CreatedAt)
 }
 
-// Save a file item record to the database.
+// Save the record to the database.
 func (r *Record) Save() error {
 	db := database.Connect()
 	defer db.Close()
 	query, args := r.SQL()
 	update, err := db.Prepare(query)
 	if err != nil {
-		return fmt.Errorf("record save db prepare: %w", err)
+		return fmt.Errorf("save prepare: %w", err)
 	}
 	defer update.Close()
 	_, err = update.Exec(args...)
 	if err != nil {
-		return fmt.Errorf("record save db exec: %w", err)
+		return fmt.Errorf("save exec: %w", err)
 	}
 	return nil
 }
 
 func (r *Record) SQL() (query string, args []interface{}) {
 	// an range map iternation is not used due to the varied comparisons
-	set := r.sqlSets()
-	args = r.sqlArgs(set)
+	set := setSQL(r)
+	args = setArg(r, set)
 	if len(set) == 0 {
 		return "", args
 	}
@@ -96,7 +96,7 @@ func (r *Record) SQL() (query string, args []interface{}) {
 	return query, args
 }
 
-func (r *Record) sqlSets() []string {
+func setSQL(r *Record) []string {
 	var set []string
 	if r.Filename != "" {
 		set = append(set, "filename=?")
@@ -132,14 +132,14 @@ func (r *Record) sqlSets() []string {
 	if r.Title != "" {
 		set = append(set, "record_title=?")
 	}
-	set = append(set, r.sqlCredits()...)
+	set = append(set, setCredit(r)...)
 	if r.Platform != "" {
 		set = append(set, "platform=?")
 	}
 	return set
 }
 
-func (r *Record) sqlCredits() []string {
+func setCredit(r *Record) []string {
 	var set []string
 	if len(r.CreditText) > 0 {
 		set = append(set, "credit_text=?")
@@ -156,7 +156,7 @@ func (r *Record) sqlCredits() []string {
 	return set
 }
 
-func (r *Record) sqlArgs(set []string) (args []interface{}) {
+func setArg(r *Record, set []string) (args []interface{}) {
 	if r.Filename != "" {
 		args = append(args, []interface{}{r.Filename}...)
 	}
@@ -191,14 +191,14 @@ func (r *Record) sqlArgs(set []string) (args []interface{}) {
 	if r.Title != "" {
 		args = append(args, []interface{}{r.Title}...)
 	}
-	args = append(args, r.sqlCreditsArgs()...)
+	args = append(args, setCredits(r)...)
 	if r.Platform != "" {
 		args = append(args, []interface{}{r.Platform}...)
 	}
 	return args
 }
 
-func (r *Record) sqlCreditsArgs() (args []interface{}) {
+func setCredits(r *Record) (args []interface{}) {
 	if len(r.CreditText) > 0 {
 		j := strings.Join(r.CreditText, sep)
 		args = append(args, []interface{}{j}...)
@@ -221,13 +221,13 @@ func (r *Record) sqlCreditsArgs() (args []interface{}) {
 // ZipContent reads an archive and saves its content to the database.
 func (r *Record) ZipContent() (ok bool, err error) {
 	if r.FilePath == "" {
-		return false, fmt.Errorf("record filezipcontent: %w", ErrFilePath)
+		return false, fmt.Errorf("zipcontent: %w", ErrFilePath)
 	} else if r.Filename == "" {
-		return false, fmt.Errorf("record filezipcontent: %w", ErrFilename)
+		return false, fmt.Errorf("zipcontent: %w", ErrFilename)
 	}
 	a, err := archive.Read(r.FilePath, r.Filename)
 	if err != nil {
-		return false, fmt.Errorf("record filezipcontent archive read: %w", err)
+		return false, fmt.Errorf("zipcontent read: %w", err)
 	}
 	r.FileZipContent = strings.Join(a, "\n")
 	return true, nil
@@ -283,7 +283,7 @@ func (r *Record) confirm(code int, status string) (ok bool, err error) {
 	if code == nofound {
 		r.WebIDDemozoo = 0
 		if err := r.Save(); err != nil {
-			return true, fmt.Errorf("record confirm save: %w", err)
+			return true, fmt.Errorf("confirm: %w", err)
 		}
 		logs.Printf("(%s)\n", download.StatusColor(code, status))
 		return false, nil
@@ -325,29 +325,29 @@ type Records struct {
 	Values   []sql.RawBytes
 }
 
-func (st *Stat) NextRefresh(rec Records) (skip bool, err error) {
-	if err = rec.Rows.Scan(rec.ScanArgs...); err != nil {
-		return true, fmt.Errorf("next refresh rows scan: %w", err)
+func (st *Stat) NextRefresh(rec Records) error {
+	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
+		return fmt.Errorf("next scan: %w", err)
 	}
 	st.Count++
 	r, err := NewRecord(st.Count, rec.Values)
 	if err != nil {
-		return true, fmt.Errorf("next refresh new record 1: %w", err)
+		return fmt.Errorf("next record 1: %w", err)
 	}
 	logs.Printcrf(r.String(0))
 	f, err := Fetch(r.WebIDDemozoo)
 	if err != nil {
-		return true, fmt.Errorf("next refresh fetch: %w", err)
+		return fmt.Errorf("next fetch: %w", err)
 	}
 	var ok bool
 	code, status, api := f.Code, f.Status, f.API
 	if ok, err = r.confirm(code, status); err != nil {
-		return true, fmt.Errorf("next refresh confirm: %w", err)
+		return fmt.Errorf("next confirm: %w", err)
 	} else if !ok {
-		return true, nil
+		return nil
 	}
 	if err = r.pouet(&api); err != nil {
-		return true, fmt.Errorf("next refresh: %w", err)
+		return fmt.Errorf("next refresh: %w", err)
 	}
 	r.title(&api)
 	a := api.Authors()
@@ -355,18 +355,18 @@ func (st *Stat) NextRefresh(rec Records) (skip bool, err error) {
 	var nr Record
 	nr, err = NewRecord(st.Count, rec.Values)
 	if err != nil {
-		return true, fmt.Errorf("next refresh new record 2: %w", err)
+		return fmt.Errorf("next record 2: %w", err)
 	}
 	if reflect.DeepEqual(nr, r) {
 		logs.Printf("• skipped %v", str.Y())
-		return true, nil
+		return nil
 	}
 	if err = r.Save(); err != nil {
 		logs.Printf("• saved %v ", str.X())
-		return true, fmt.Errorf("next refresh save: %w", err)
+		return fmt.Errorf("next save: %w", err)
 	}
 	logs.Printf("• saved %v", str.Y())
-	return false, nil
+	return nil
 }
 
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
@@ -376,14 +376,14 @@ func RefreshMeta() error {
 	defer db.Close()
 	rows, err := db.Query(selectByID(""))
 	if err != nil {
-		return fmt.Errorf("refresh meta query: %w", err)
+		return fmt.Errorf("meta query: %w", err)
 	} else if rows.Err() != nil {
-		return fmt.Errorf("refresh meta rows: %w", rows.Err())
+		return fmt.Errorf("meta rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
-		return fmt.Errorf("refresh meta columns: %w", err)
+		return fmt.Errorf("meta columns: %w", err)
 	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
@@ -393,8 +393,8 @@ func RefreshMeta() error {
 	// fetch the rows
 	var st Stat
 	for rows.Next() {
-		if _, err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
-			return fmt.Errorf("refresh meta next row: %w", err)
+		if err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
+			return fmt.Errorf("meta rows: %w", err)
 		}
 	}
 	st.summary(time.Since(start))

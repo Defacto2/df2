@@ -39,7 +39,7 @@ type fields struct {
 	CreditAudio    []string
 }
 
-func TestRecord_sql(t *testing.T) { //nolint:funlen
+func TestSQL(t *testing.T) { //nolint:funlen
 	const where string = " WHERE id=?"
 	now := time.Now()
 	tests := []struct {
@@ -110,16 +110,16 @@ func TestRecord_sql(t *testing.T) { //nolint:funlen
 			}
 			got, got1 := r.SQL()
 			if got != tt.want {
-				t.Errorf("Record.sql() got = %v, want %v", got, tt.want)
+				t.Errorf("SQL() got = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(len(got1), tt.want1) {
-				t.Errorf("Record.sql() got1 = %v, want %v", len(got1), tt.want1)
+				t.Errorf("SQL() got1 = %v, want %v", len(got1), tt.want1)
 			}
 		})
 	}
 }
 
-func TestRecord_fileZipContent(t *testing.T) {
+func TestZipContent(t *testing.T) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -134,8 +134,10 @@ func TestRecord_fileZipContent(t *testing.T) {
 		{"empty", fields{}, false, true},
 		{"missing", fields{FilePath: "/dev/null"}, false, true},
 		{"dir", fields{FilePath: "tests/demozoo"}, false, true},
-		{"7zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"), Filename: "test.7z"}, false, true},
-		{"zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.zip"), Filename: "test.zip"}, true, false},
+		{"7zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"),
+			Filename: "test.7z"}, false, true},
+		{"zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.zip"),
+			Filename: "test.zip"}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -145,16 +147,16 @@ func TestRecord_fileZipContent(t *testing.T) {
 			}
 			gotOk, err := r.ZipContent()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Record.fileZipContent()  error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ZipContent()  error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("Record.fileZipContent() = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("ZipContent() = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}
 }
 
-func Test_stat_fileExist(t *testing.T) {
+func TestFileExist(t *testing.T) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -186,7 +188,7 @@ func Test_stat_fileExist(t *testing.T) {
 			}
 			r.FilePath = tt.path
 			if gotMissing := st.FileExist(&r); gotMissing != tt.wantMissing {
-				t.Errorf("stat.fileExist() = %v, want %v", gotMissing, tt.wantMissing)
+				t.Errorf("FileExist() = %v, want %v", gotMissing, tt.wantMissing)
 			}
 		})
 	}
@@ -228,7 +230,7 @@ func TestRecord_String(t *testing.T) {
 				CreatedAt:    tt.fields.CreatedAt,
 			}
 			if got := r.String(tt.args.total); got != tt.want {
-				t.Errorf("Record.String() = %v, want %v", got, tt.want)
+				t.Errorf("String() = %v, want %v", got, tt.want)
 			}
 		})
 	}

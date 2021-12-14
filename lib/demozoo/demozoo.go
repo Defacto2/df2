@@ -21,7 +21,6 @@ import (
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo/internal/prod"
 	"github.com/Defacto2/df2/lib/demozoo/internal/prods"
-	"github.com/Defacto2/df2/lib/directories"
 	"github.com/Defacto2/df2/lib/download"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
@@ -29,53 +28,11 @@ import (
 	"github.com/gookit/color"
 )
 
-// Category are tags for production imports.
-type Category int
-
-func (c Category) String() string {
-	switch c {
-	case Text:
-		return "text"
-	case Code:
-		return "code"
-	case Graphics:
-		return "graphics"
-	case Music:
-		return "music"
-	case Magazine:
-		return "magazine"
-	}
-	return ""
-}
-
-const (
-	// Text based files.
-	Text Category = iota
-	// Code are binary files.
-	Code
-	// Graphics are images.
-	Graphics
-	// Music is audio.
-	Music
-	// Magazine are publications.
-	Magazine
+var (
+	ErrFilePath = errors.New("filepath requirement cannot be empty")
+	ErrFilename = errors.New("filename requirement cannot be empty")
+	ErrTooFew   = errors.New("too few record values")
 )
-
-func category(s string) Category {
-	switch strings.ToLower(s) {
-	case Text.String():
-		return Text
-	case Code.String():
-		return Code
-	case Graphics.String():
-		return Graphics
-	case Music.String():
-		return Music
-	case Magazine.String():
-		return Magazine
-	}
-	return -1
-}
 
 const (
 	api = "https://demozoo.org/api/v1/productions"
@@ -91,11 +48,20 @@ const selectSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesi
 	"`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`record_title`" +
 	",`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 
-var (
-	ErrFilePath = errors.New("filepath requirement cannot be empty")
-	ErrFilename = errors.New("filename requirement cannot be empty")
-	ErrTooFew   = errors.New("too few record values")
+// Category are tags for production imports.
+type Category int
+
+const (
+	Text     Category = iota // Text based files.
+	Code                     // Code are binary files.
+	Graphics                 // Graphics are images.
+	Music                    // Music is audio.
+	Magazine                 // Magazine are publications.
 )
+
+func (c Category) String() string {
+	return [...]string{"text", "code", "graphics", "music", "magazine"}[c]
+}
 
 // Fetched production.
 type Fetched struct {
@@ -104,7 +70,7 @@ type Fetched struct {
 	API    prods.ProductionsAPIv1
 }
 
-// Fetch a Demozoo production by its ID.
+// Fetch a Demozoo production by an id.
 func Fetch(id uint) (Fetched, error) {
 	d := prod.Production{ID: int64(id)}
 	api, err := d.Get()
@@ -114,125 +80,7 @@ func Fetch(id uint) (Fetched, error) {
 	return Fetched{Code: d.StatusCode, Status: d.Status, API: api}, nil
 }
 
-// Request proofs.
-type Request struct {
-	All       bool // parse all demozoo entries
-	Overwrite bool // overwrite existing files
-	Refresh   bool // refresh all demozoo entries
-	Simulate  bool // simulate database save
-	ByID      string
-}
-
-// Query parses a single Demozoo entry.
-func (req *Request) Query(id string) error {
-	if err := database.CheckID(id); err != nil {
-		return fmt.Errorf("request query id %s: %w", id, err)
-	}
-	req.ByID = id
-	if err := req.Queries(); err != nil {
-		return fmt.Errorf("request query queries: %w", err)
-	}
-	return nil
-}
-
-// Queries parses all new proofs.
-// ow will overwrite any existing proof assets such as images.
-// all parses every proof not just records waiting for approval.
-func (req Request) Queries() error { //nolint: funlen
-	var st Stat
-	stmt, start := selectByID(req.ByID), time.Now()
-	db := database.Connect()
-	defer db.Close()
-	rows, err := db.Query(stmt)
-	if err != nil {
-		return fmt.Errorf("request queries query 1: %w", err)
-	} else if err = rows.Err(); err != nil {
-		return fmt.Errorf("request queries rows 1: %w", rows.Err())
-	}
-	defer rows.Close()
-	columns, err := rows.Columns()
-	if err != nil {
-		return fmt.Errorf("request queries columns: %w", err)
-	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
-	}
-	storage := directories.Init(false).UUID
-	if err = st.sumTotal(Records{rows, scanArgs, values}, req); err != nil {
-		return fmt.Errorf("req queries sum total: %w", err)
-	}
-	queriesTotal(st.Total)
-	rows, err = db.Query(stmt)
-	if err != nil {
-		return fmt.Errorf("request queries query 2: %w", err)
-	}
-	if rows.Err() != nil {
-		return fmt.Errorf("request queries rows 2: %w", rows.Err())
-	}
-	defer rows.Close()
-	for rows.Next() {
-		st.Fetched++
-		if skip, err := st.nextResult(Records{rows, scanArgs, values}, req); err != nil {
-			logs.Danger(fmt.Errorf("request queries next row: %w", err))
-			continue
-		} else if skip {
-			continue
-		}
-		r, err := NewRecord(st.Count, values)
-		if err != nil {
-			logs.Danger(fmt.Errorf("request queries new record: %w", err))
-			continue
-		}
-		logs.Printcrf(r.String(st.Total))
-		if update := r.check(); !update {
-			continue
-		}
-		if skip, err := r.parseAPI(st, req.Overwrite, storage); err != nil {
-			logs.Danger(fmt.Errorf("request queries parse api: %w", err))
-			continue
-		} else if skip {
-			continue
-		}
-		if st.Total == 0 {
-			break
-		}
-		switch {
-		case req.Simulate:
-			logs.Printf(" • dry-run %v", str.Y())
-		default:
-			r.save()
-		}
-	}
-	if req.ByID != "" {
-		st.ByID = req.ByID
-		st.print()
-		return nil
-	}
-	if st.Total > 0 {
-		fmt.Println()
-	}
-	st.summary(time.Since(start))
-	return nil
-}
-
-func queriesTotal(total int) {
-	if total == 0 {
-		logs.Println("nothing to do")
-		return
-	}
-	logs.Println("Total records", total)
-}
-
-func (req Request) flags() (skip bool) {
-	if !req.All && !req.Refresh && !req.Overwrite {
-		return true
-	}
-	return false
-}
-
-// query statistics.
+// Stat are the remote query statistics.
 type Stat struct {
 	Count   int
 	Fetched int
@@ -241,12 +89,12 @@ type Stat struct {
 	ByID    string
 }
 
-// nextResult checks for the next, new record.
+// nextResult checks for the next new record.
 func (st *Stat) nextResult(rec Records, req Request) (skip bool, err error) {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
-	if n := database.NewDemozoo(rec.Values); !n && req.flags() {
+	if n := database.NewDemozoo(rec.Values); !n && req.skip() {
 		return true, nil
 	}
 	st.Count++
@@ -281,7 +129,7 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 		if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
 		}
-		if n := database.NewDemozoo(rec.Values); !n && req.flags() {
+		if n := database.NewDemozoo(rec.Values); !n && req.skip() {
 			continue
 		}
 		st.Total++
@@ -397,9 +245,9 @@ func (r *Record) lastMod(head http.Header) {
 	r.LastMod = t
 	if time.Now().Year() == t.Year() {
 		logs.Printf(" • %s", t.Format("2 Jan"))
-	} else {
-		logs.Printf(" • %s", t.Format("Jan 06"))
+		return
 	}
+	logs.Printf(" • %s", t.Format("Jan 06"))
 }
 
 // parseAPI confirms and parses the API request.
