@@ -1,4 +1,4 @@
-package demozoo
+package fix
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 )
 
 // Fix repairs imported Demozoo data conflicts.
-func Fix() error {
-	res, err := updateApplications()
+func Configs() error {
+	res, err := updateApps()
 	if err != nil {
 		return fmt.Errorf("demozoo fix: %w", err)
 	}
@@ -22,23 +22,25 @@ func Fix() error {
 	return nil
 }
 
-func updateApplications() (count int64, err error) {
+func updateApps() (int64, error) {
 	var app database.Update
 	app.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%application%'"
 	app.Args = []interface{}{"groupapplication"}
-	if count, err = app.Execute(); err != nil {
+	count, err := app.Execute()
+	if err != nil {
 		return 0, fmt.Errorf("update applications: %w", err)
 	}
 	return count, nil
 }
 
-func updateInstallers() (count int64, err error) {
+func updateInstallers() (int64, error) {
 	var inst database.Update
 	inst.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%installer%'"
 	inst.Args = []interface{}{"releaseinstall"}
-	if count, err = inst.Execute(); err != nil {
+	count, err := inst.Execute()
+	if err != nil {
 		return 0, fmt.Errorf("update installers: %w", err)
 	}
 	return count, nil

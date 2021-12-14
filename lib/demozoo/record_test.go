@@ -1,4 +1,4 @@
-package demozoo
+package demozoo_test
 
 import (
 	"os"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/gookit/color"
 )
 
@@ -86,7 +87,7 @@ func TestRecord_sql(t *testing.T) { //nolint:funlen
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := Record{
+			r := demozoo.Record{
 				Count:          tt.fields.count,
 				FilePath:       tt.fields.FilePath,
 				ID:             tt.fields.ID,
@@ -107,7 +108,7 @@ func TestRecord_sql(t *testing.T) { //nolint:funlen
 				GroupFor:       tt.fields.GroupFor,
 				GroupBy:        tt.fields.GroupBy,
 			}
-			got, got1 := r.sql()
+			got, got1 := r.SQL()
 			if got != tt.want {
 				t.Errorf("Record.sql() got = %v, want %v", got, tt.want)
 			}
@@ -138,11 +139,11 @@ func TestRecord_fileZipContent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Record{
+			r := &demozoo.Record{
 				FilePath: tt.fields.FilePath,
 				Filename: tt.fields.Filename,
 			}
-			gotOk, err := r.fileZipContent()
+			gotOk, err := r.ZipContent()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Record.fileZipContent()  error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -164,7 +165,7 @@ func Test_stat_fileExist(t *testing.T) {
 		missing int
 		total   int
 	}
-	r := Record{}
+	r := demozoo.Record{}
 	tests := []struct {
 		name        string
 		fields      fields
@@ -178,7 +179,7 @@ func Test_stat_fileExist(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			st := &Stat{
+			st := &demozoo.Stat{
 				Count:   tt.fields.count,
 				Missing: tt.fields.missing,
 				Total:   tt.fields.total,
@@ -220,7 +221,7 @@ func TestRecord_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := Record{
+			r := demozoo.Record{
 				Count:        tt.fields.count,
 				ID:           tt.fields.ID,
 				WebIDDemozoo: tt.fields.WebIDDemozoo,

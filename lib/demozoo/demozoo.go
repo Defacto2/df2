@@ -462,7 +462,7 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 		r.save()
 		fallthrough
 	case r.FileZipContent == "":
-		if zip, err := r.fileZipContent(); err != nil {
+		if zip, err := r.ZipContent(); err != nil {
 			return true, parseAPIErr(err)
 		} else if zip {
 			if err := r.DoseeMeta(); err != nil {
