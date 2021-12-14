@@ -43,9 +43,9 @@ func RefreshMeta() error {
 		scanArgs[i] = &values[i]
 	}
 	// fetch the rows
-	var st stat
+	var st Stat
 	for rows.Next() {
-		if _, err := st.nextRefresh(Records{rows, scanArgs, values}); err != nil {
+		if _, err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
 			return fmt.Errorf("refresh meta next row: %w", err)
 		}
 	}
@@ -53,12 +53,12 @@ func RefreshMeta() error {
 	return nil
 }
 
-func (st *stat) nextRefresh(rec Records) (skip bool, err error) {
+func (st *Stat) NextRefresh(rec Records) (skip bool, err error) {
 	if err = rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return true, fmt.Errorf("next refresh rows scan: %w", err)
 	}
 	st.Count++
-	r, err := newRecord(st.Count, rec.Values)
+	r, err := NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return true, fmt.Errorf("next refresh new record 1: %w", err)
 	}
@@ -81,7 +81,7 @@ func (st *stat) nextRefresh(rec Records) (skip bool, err error) {
 	a := api.Authors()
 	r.authors(&a)
 	var nr Record
-	nr, err = newRecord(st.Count, rec.Values)
+	nr, err = NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return true, fmt.Errorf("next refresh new record 2: %w", err)
 	}

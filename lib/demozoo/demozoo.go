@@ -139,7 +139,7 @@ func (req *Request) Query(id string) error {
 // ow will overwrite any existing proof assets such as images.
 // all parses every proof not just records waiting for approval.
 func (req Request) Queries() error { //nolint: funlen
-	var st stat
+	var st Stat
 	stmt, start := selectByID(req.ByID), time.Now()
 	db := database.Connect()
 	defer db.Close()
@@ -180,7 +180,7 @@ func (req Request) Queries() error { //nolint: funlen
 		} else if skip {
 			continue
 		}
-		r, err := newRecord(st.Count, values)
+		r, err := NewRecord(st.Count, values)
 		if err != nil {
 			logs.Danger(fmt.Errorf("request queries new record: %w", err))
 			continue
@@ -233,7 +233,7 @@ func (req Request) flags() (skip bool) {
 }
 
 // query statistics.
-type stat struct {
+type Stat struct {
 	Count   int
 	Fetched int
 	Missing int
@@ -242,7 +242,7 @@ type stat struct {
 }
 
 // nextResult checks for the next, new record.
-func (st *stat) nextResult(rec Records, req Request) (skip bool, err error) {
+func (st *Stat) nextResult(rec Records, req Request) (skip bool, err error) {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
@@ -253,7 +253,7 @@ func (st *stat) nextResult(rec Records, req Request) (skip bool, err error) {
 	return false, nil
 }
 
-func (st stat) print() {
+func (st Stat) print() {
 	if st.Count == 0 {
 		if st.Fetched == 0 {
 			fmt.Printf("id %q is not a Demozoo sourced file record\n", st.ByID)
@@ -266,7 +266,7 @@ func (st stat) print() {
 	logs.Println()
 }
 
-func (st stat) summary(elapsed time.Duration) {
+func (st Stat) summary(elapsed time.Duration) {
 	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.Count, elapsed.Seconds())
 	logs.Println(strings.Repeat("─", len(t)))
 	logs.Println(t)
@@ -276,7 +276,7 @@ func (st stat) summary(elapsed time.Duration) {
 }
 
 // sumTotal calculates the total number of conditional rows.
-func (st *stat) sumTotal(rec Records, req Request) error {
+func (st *Stat) sumTotal(rec Records, req Request) error {
 	for rec.Rows.Next() {
 		if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
@@ -306,8 +306,8 @@ func (r *Record) check() (update bool) {
 	}
 }
 
-func (r *Record) download(overwrite bool, api *prods.ProductionsAPIv1, st stat) (skip bool) {
-	if st.fileExist(r) || overwrite {
+func (r *Record) Download(overwrite bool, api *prods.ProductionsAPIv1, st Stat) (skip bool) {
+	if st.FileExist(r) || overwrite {
 		if r.UUID == "" {
 			fmt.Print(color.Error.Sprint("UUID is empty, cannot continue"))
 			return true
@@ -340,7 +340,7 @@ func (r *Record) downloadReset(name string) {
 	r.FileZipContent = ""
 }
 
-func (r *Record) doseeMeta() error {
+func (r *Record) DoseeMeta() error {
 	names, err := r.variations()
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
@@ -358,7 +358,7 @@ func (r *Record) doseeMeta() error {
 	return nil
 }
 
-func (r *Record) fileMeta() error {
+func (r *Record) FileMeta() error {
 	stat, err := os.Stat(r.FilePath)
 	if err != nil {
 		return fmt.Errorf("record file meta stat: %w", err)
@@ -403,7 +403,7 @@ func (r *Record) lastMod(head http.Header) {
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, err error) {
+func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (skip bool, err error) {
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
 		fmt.Println("Clearing filename which is incorrectly set as", r.Filename)
@@ -423,7 +423,7 @@ func (r *Record) parseAPI(st stat, overwrite bool, storage string) (skip bool, e
 		return true, parseAPIErr(err)
 	}
 	r.FilePath = filepath.Join(storage, r.UUID)
-	if skip := r.download(overwrite, &api, st); skip {
+	if skip := r.Download(overwrite, &api, st); skip {
 		return true, nil
 	}
 	if update := r.check(); !update {
@@ -456,7 +456,7 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 		r.Filesize == "",
 		r.SumMD5 == "",
 		r.Sum384 == "":
-		if err := r.fileMeta(); err != nil {
+		if err := r.FileMeta(); err != nil {
 			return true, parseAPIErr(err)
 		}
 		r.save()
@@ -465,7 +465,7 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 		if zip, err := r.fileZipContent(); err != nil {
 			return true, parseAPIErr(err)
 		} else if zip {
-			if err := r.doseeMeta(); err != nil {
+			if err := r.DoseeMeta(); err != nil {
 				return true, parseAPIErr(err)
 			}
 		}
@@ -530,8 +530,8 @@ func (r *Record) variations() ([]string, error) {
 // 	"`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`," +
 // 	"`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 
-// newRecord initialises a new file record.
-func newRecord(c int, values []sql.RawBytes) (Record, error) {
+// NewRecord initialises a new file record.
+func NewRecord(c int, values []sql.RawBytes) (Record, error) {
 	const sep, want = ",", 21
 	if l := len(values); l < want {
 		return Record{}, fmt.Errorf("new records = %d, want %d: %w", l, want, ErrTooFew)

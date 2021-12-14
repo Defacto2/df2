@@ -1,15 +1,16 @@
-package demozoo
+package demozoo_test
 
 import (
 	"database/sql"
 	"reflect"
 	"testing"
 
+	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/demozoo/internal/prods"
 )
 
 func TestRequest_Query(t *testing.T) {
-	r := Request{
+	r := demozoo.Request{
 		All:       false,
 		Overwrite: false,
 		Refresh:   false,
@@ -48,7 +49,7 @@ func TestFetch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := Fetch(tt.id)
+			f, err := demozoo.Fetch(tt.id)
 			if err != nil {
 				t.Error(err)
 			}
@@ -120,7 +121,7 @@ func Test_newRecord(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotR, gotErr := newRecord(tt.args.c, tt.args.values)
+			gotR, gotErr := demozoo.NewRecord(tt.args.c, tt.args.values)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("newRecord() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
@@ -150,7 +151,7 @@ func TestRecord_download(t *testing.T) {
 	type args struct {
 		overwrite bool
 		api       prods.ProductionsAPIv1
-		st        stat
+		st        demozoo.Stat
 	}
 	tests := []struct {
 		name     string
@@ -163,10 +164,10 @@ func TestRecord_download(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Record{
+			r := &demozoo.Record{
 				UUID: tt.fields.UUID,
 			}
-			if gotSkip := r.download(tt.args.overwrite, &tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
+			if gotSkip := r.Download(tt.args.overwrite, &tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
 				t.Errorf("Record.download() = %v, want %v", gotSkip, tt.wantSkip)
 			}
 		})
@@ -189,22 +190,22 @@ func TestRecord_doseeMeta_fileMeta(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Record{
+			r := &demozoo.Record{
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := r.doseeMeta(); (err != nil) != tt.wantErr {
+			if err := r.DoseeMeta(); (err != nil) != tt.wantErr {
 				t.Errorf("Record.doseeMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Record{
+			r := &demozoo.Record{
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := r.fileMeta(); (err != nil) != tt.wantErr {
+			if err := r.FileMeta(); (err != nil) != tt.wantErr {
 				t.Errorf("Record.fileMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

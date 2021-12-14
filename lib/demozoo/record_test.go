@@ -178,13 +178,13 @@ func Test_stat_fileExist(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			st := &stat{
+			st := &Stat{
 				Count:   tt.fields.count,
 				Missing: tt.fields.missing,
 				Total:   tt.fields.total,
 			}
 			r.FilePath = tt.path
-			if gotMissing := st.fileExist(&r); gotMissing != tt.wantMissing {
+			if gotMissing := st.FileExist(&r); gotMissing != tt.wantMissing {
 				t.Errorf("stat.fileExist() = %v, want %v", gotMissing, tt.wantMissing)
 			}
 		})
