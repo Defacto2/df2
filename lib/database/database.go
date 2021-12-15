@@ -17,6 +17,7 @@ import (
 	"github.com/Defacto2/df2/lib/database/internal/export"
 	"github.com/Defacto2/df2/lib/database/internal/my57"
 	"github.com/Defacto2/df2/lib/database/internal/recd"
+	"github.com/Defacto2/df2/lib/database/internal/update"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
@@ -230,6 +231,33 @@ func FileUpdate(name string, db time.Time) (bool, error) {
 	return !f.ModTime().UTC().After(db.UTC()), nil
 }
 
+type Update update.Update
+
+// Execute Query and Args to update the database and returns the total number of changes.
+func Execute(u Update) (int64, error) {
+	return update.Update(u).Execute()
+}
+
+// Fix any malformed section and platforms found in the database.
+func Fix() error {
+	start := time.Now()
+	update.NamedTitles()
+	elapsed := time.Since(start).Seconds()
+	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+
+	dist, err := update.Distinct("section")
+	if err != nil {
+		return fmt.Errorf("fix distinct section: %w", err)
+	}
+	update.Sections(&dist)
+	dist, err = update.Distinct("platform")
+	if err != nil {
+		return fmt.Errorf("fix distinct platform: %w", err)
+	}
+	update.Platforms(&dist)
+	return nil
+}
+
 // GetID returns a numeric Id from a UUID or database id s value.
 func GetID(s string) (uint, error) {
 	db := my57.Connect()
@@ -367,6 +395,25 @@ func ObfuscateParam(param string) string {
 	return strconv.FormatInt(int64(b), hex) + strconv.FormatInt(int64(a), hex)
 }
 
+// StripChars removes incompatible characters used for groups and author names.
+func StripChars(s string) string {
+	r := regexp.MustCompile(`[^A-Za-zÀ-ÖØ-öø-ÿ0-9\-,& ]`)
+	return r.ReplaceAllString(s, "")
+}
+
+// StripStart removes non-alphanumeric characters from the start of the string.
+func StripStart(s string) string {
+	r := regexp.MustCompile(`[A-Za-z0-9À-ÖØ-öø-ÿ]`)
+	f := r.FindStringIndex(s)
+	if f == nil {
+		return ""
+	}
+	if f[0] != 0 {
+		return s[f[0]:]
+	}
+	return s
+}
+
 // Tbls are the available tables in the database.
 func Tbls() string {
 	return export.Tbls()
@@ -392,6 +439,12 @@ func Total(s *string) (int, error) {
 		sum++
 	}
 	return sum, db.Close()
+}
+
+// TrimSP removes duplicate spaces from a string.
+func TrimSP(s string) string {
+	r := regexp.MustCompile(`\s+`)
+	return r.ReplaceAllString(s, " ")
 }
 
 // Val returns the column value as either a string or "NULL".

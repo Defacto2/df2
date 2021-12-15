@@ -1,36 +1,15 @@
-package database
+package update
 
 import (
 	"context"
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/lib/database/internal/my57"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/gookit/color"
 )
-
-// Fix any malformed section and platforms found in the database.
-func Fix() error {
-	start := time.Now()
-	updateNamedTitles()
-	elapsed := time.Since(start).Seconds()
-	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
-
-	dist, err := distinct("section")
-	if err != nil {
-		return fmt.Errorf("fix distinct section: %w", err)
-	}
-	updateSections(&dist)
-	dist, err = distinct("platform")
-	if err != nil {
-		return fmt.Errorf("fix distinct platform: %w", err)
-	}
-	updatePlatforms(&dist)
-	return nil
-}
 
 // Update row values based on conditions.
 type Update struct {
@@ -58,7 +37,7 @@ func (u Update) Execute() (int64, error) {
 	return count, db.Close()
 }
 
-func distinct(column string) ([]string, error) {
+func Distinct(column string) ([]string, error) {
 	var result string
 	db := my57.Connect()
 	defer db.Close()
@@ -77,56 +56,7 @@ func distinct(column string) ([]string, error) {
 	return values, db.Close()
 }
 
-func printcr(i int64, s *string) {
-	if i == 0 {
-		logs.Printcr(*s)
-		return
-	}
-	logs.Println("\n" + *s)
-}
-
-func updateSections(sections *[]string) {
-	var u Update
-	u.Query = "UPDATE files SET section=? WHERE `section`=?"
-	for _, s := range *sections {
-		u.Args = []interface{}{strings.ToLower(s), s}
-		c, err := u.Execute()
-		if err != nil {
-			logs.Log(err)
-		}
-		str := fmt.Sprintf("%s %s \"%s\"",
-			color.Question.Sprint(c), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
-		printcr(c, &str)
-	}
-	// set all audio platform files to use intro section
-	// releaseadvert
-	u.Query = "UPDATE files SET section=? WHERE `platform`=?"
-	u.Args = []interface{}{"releaseadvert", "audio"}
-	c, err := u.Execute()
-	if err != nil {
-		logs.Log(err)
-	}
-	str := fmt.Sprintf("%s %s \"%s\"",
-		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
-	printcr(c, &str)
-}
-
-func updatePlatforms(platforms *[]string) {
-	var u Update
-	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
-	for _, p := range *platforms {
-		u.Args = []interface{}{strings.ToLower(p), p}
-		c, err := u.Execute()
-		if err != nil {
-			logs.Log(err)
-		}
-		s := fmt.Sprintf("%s %s \"%s\"",
-			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
-		printcr(c, &s)
-	}
-}
-
-func updateNamedTitles() {
+func NamedTitles() {
 	ctx := context.Background()
 	db := my57.Connect()
 	tx, err := db.BeginTx(ctx, nil)
@@ -152,4 +82,53 @@ func updateNamedTitles() {
 		return
 	}
 	logs.Printcrf("%d named title fixes applied", rows)
+}
+
+func Sections(sections *[]string) {
+	var u Update
+	u.Query = "UPDATE files SET section=? WHERE `section`=?"
+	for _, s := range *sections {
+		u.Args = []interface{}{strings.ToLower(s), s}
+		c, err := u.Execute()
+		if err != nil {
+			logs.Log(err)
+		}
+		str := fmt.Sprintf("%s %s \"%s\"",
+			color.Question.Sprint(c), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
+		printcr(c, &str)
+	}
+	// set all audio platform files to use intro section
+	// releaseadvert
+	u.Query = "UPDATE files SET section=? WHERE `platform`=?"
+	u.Args = []interface{}{"releaseadvert", "audio"}
+	c, err := u.Execute()
+	if err != nil {
+		logs.Log(err)
+	}
+	str := fmt.Sprintf("%s %s \"%s\"",
+		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
+	printcr(c, &str)
+}
+
+func Platforms(platforms *[]string) {
+	var u Update
+	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
+	for _, p := range *platforms {
+		u.Args = []interface{}{strings.ToLower(p), p}
+		c, err := u.Execute()
+		if err != nil {
+			logs.Log(err)
+		}
+		s := fmt.Sprintf("%s %s \"%s\"",
+			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
+		printcr(c, &s)
+	}
+}
+
+func printcr(i int64, s *string) {
+	if i == 0 {
+		logs.Printcr(*s)
+		return
+	}
+	logs.Println("\n" + *s)
 }

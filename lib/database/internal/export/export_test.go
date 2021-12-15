@@ -1,6 +1,7 @@
 package export_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Defacto2/df2/lib/database/internal/export"
@@ -24,11 +25,33 @@ func TestFlags_Run(t *testing.T) {
 			Type:   "c",
 			Tables: export.Users.String(),
 			Limit:  1}, false},
-		{"parallel", fields{
+		{"users parallel", fields{
 			Type:     "c",
 			Tables:   export.Users.String(),
 			Parallel: true,
 			Limit:    1}, false},
+		{"net parallel", fields{
+			Type:     "c",
+			Tables:   export.Netresources.String(),
+			Parallel: true,
+			Limit:    1}, false},
+		{"groups parallel", fields{
+			Type:     "c",
+			Tables:   export.Groups.String(),
+			Parallel: true,
+			Limit:    1}, false},
+		{"update groups parallel", fields{
+			Type:     "update",
+			Tables:   export.Groups.String(),
+			Parallel: true,
+			Limit:    1}, false},
+	}
+	rm := []string{
+		"d2-create_files.sql.bz2",
+		"d2-create_groups.sql.bz2",
+		"d2-create_netresources.sql.bz2",
+		"d2-create_table.sql.bz2",
+		"d2-update_groups.sql.bz2",
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -40,6 +63,9 @@ func TestFlags_Run(t *testing.T) {
 			}
 			if err := f.Run(); (err != nil) != tt.wantErr {
 				t.Errorf("Flags.Run() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			for _, name := range rm {
+				os.Remove(name)
 			}
 		})
 	}

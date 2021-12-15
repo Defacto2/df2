@@ -27,7 +27,7 @@ func updateApps() (int64, error) {
 	app.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%application%'"
 	app.Args = []interface{}{"groupapplication"}
-	count, err := app.Execute()
+	count, err := database.Execute(app)
 	if err != nil {
 		return 0, fmt.Errorf("update applications: %w", err)
 	}
@@ -39,7 +39,7 @@ func updateInstallers() (int64, error) {
 	inst.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%installer%'"
 	inst.Args = []interface{}{"releaseinstall"}
-	count, err := inst.Execute()
+	count, err := database.Execute(inst)
 	if err != nil {
 		return 0, fmt.Errorf("update installers: %w", err)
 	}
