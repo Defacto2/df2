@@ -12,6 +12,10 @@ import (
 	"github.com/gookit/color"
 )
 
+const (
+	uuid1 = "c8cd0b4c-2f54-11e0-8827-cc1607e15609"
+)
+
 func TestIsID(t *testing.T) {
 	type args struct {
 		id string
@@ -125,6 +129,127 @@ func TestVal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Val(tt.args.col); got != tt.want {
 				t.Errorf("Val() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckID(t *testing.T) {
+	tests := []struct {
+		name    string
+		s       string
+		wantErr bool
+	}{
+		{"blank", "", true},
+		{"alpha", "abc", true},
+		{"one", "1", false},
+		{"uuid", uuid1, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CheckID(tt.s); (err != nil) != tt.wantErr {
+				t.Errorf("CheckID() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCheckUUID(t *testing.T) {
+	tests := []struct {
+		name    string
+		s       string
+		wantErr bool
+	}{
+		{"blank", "", true},
+		{"alpha", "abc", true},
+		{"one", "1", true},
+		{"uuid", uuid1, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CheckUUID(tt.s); (err != nil) != tt.wantErr {
+				t.Errorf("CheckUUID() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestFileUpdate(t *testing.T) {
+	type args struct {
+		name string
+		db   time.Time
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{"empty", args{}, true, false},
+		{"test", args{"database_test.go", time.Now()}, true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FileUpdate(tt.args.name, tt.args.db)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FileUpdate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("FileUpdate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetID(t *testing.T) {
+	tests := []struct {
+		name    string
+		s       string
+		want    uint
+		wantErr bool
+	}{
+		{"blank", "", 0, true},
+		{"txt", "invalid", 0, true},
+		{"one", "1", 1, false},
+		{"uuid", uuid1, 1, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetID(tt.s)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetFile(t *testing.T) {
+	const f = "Defacto2_ISO_2007.7z"
+	tests := []struct {
+		name    string
+		s       string
+		want    string
+		wantErr bool
+	}{
+		{"blank", "", "", true},
+		{"txt", "invalid", "", true},
+		{"one", "1", f, false},
+		{"uuid", uuid1, f, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetFile(tt.s)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetFile() = %v, want %v", got, tt.want)
 			}
 		})
 	}

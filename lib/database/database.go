@@ -128,34 +128,61 @@ func CheckUUID(s string) error {
 	return nil
 }
 
+// Tables for the database.
+type Tables int
+
+const (
+	FileTbl  Tables = iota // Table containing files.
+	GroupTbl               // Table containing group names.
+	NetTbl                 // Table containing internet links.
+	UsersTbl               // Table containing user logins.
+)
+
+func (t Tables) String() string {
+	return [...]string{"files", "groups", "netresources", "users"}[t]
+}
+
 // ColTypes details the columns used by the table.
-func ColTypes(table string) error {
+func ColTypes(t Tables) (string, error) {
 	db := my57.Connect()
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
-	rows, err := db.Query("SELECT * FROM ? LIMIT 0", table)
+	var query string
+	switch t {
+	case FileTbl:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", FileTbl)
+	case GroupTbl:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", GroupTbl)
+	case NetTbl:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", NetTbl)
+	case UsersTbl:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", UsersTbl)
+
+	}
+	rows, err := db.Query(query)
 	if err != nil {
-		return fmt.Errorf("column types query: %w", err)
+		return "", fmt.Errorf("column types query: %w", err)
 	}
 	if rows.Err() != nil {
-		return fmt.Errorf("column types rows: %w", rows.Err())
+		return "", fmt.Errorf("column types rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	colTypes, err := rows.ColumnTypes()
 	if err != nil {
-		return fmt.Errorf("column types: %w", err)
+		return "", fmt.Errorf("column types: %w", err)
 	}
 	const padding = 3
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', tabwriter.AlignRight)
+	var buf strings.Builder
+	w := tabwriter.NewWriter(&buf, 0, 0, padding, ' ', tabwriter.AlignRight)
 	fmt.Fprintln(w, "Column name\tType\tNullable\tLength\t")
 	for _, s := range colTypes {
 		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t\n",
 			s.Name(), s.DatabaseTypeName(), nullable(s), recd.ColLen(s))
 	}
 	if err = w.Flush(); err != nil {
-		return fmt.Errorf("column types flush tab writer: %w", err)
+		return "", fmt.Errorf("column types flush tab writer: %w", err)
 	}
-	return nil
+	return buf.String(), nil
 }
 
 func nullable(s *sql.ColumnType) string {
@@ -186,8 +213,9 @@ func DateTime(raw sql.RawBytes) string {
 	return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 15:04")))
 }
 
-// FileUpdate reports if the file is newer than the database time.
-func FileUpdate(name string, database time.Time) (bool, error) {
+// FileUpdate reports if the named file is newer than the database time.
+// True is always returned when the named file does not exist.
+func FileUpdate(name string, db time.Time) (bool, error) {
 	f, err := os.Stat(name)
 	if os.IsNotExist(err) {
 		return true, nil
@@ -195,7 +223,7 @@ func FileUpdate(name string, database time.Time) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("file update stat %q: %w", name, err)
 	}
-	return !f.ModTime().UTC().After(database.UTC()), nil
+	return !f.ModTime().UTC().After(db.UTC()), nil
 }
 
 // GetID returns a numeric Id from a UUID or database id s value.
@@ -342,7 +370,8 @@ func Total(s *string) (int, error) {
 	rows, err := db.Query(*s)
 	switch {
 	case err != nil && strings.Contains(err.Error(), "SQL syntax"):
-		logs.Println(s)
+		logs.Println(*s)
+		return -1, err
 	case err != nil:
 		return -1, fmt.Errorf("total query: %w", err)
 	case rows.Err() != nil:
