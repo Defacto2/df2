@@ -122,11 +122,11 @@ var dataCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		switch {
 		case dbf.CronJob:
-			if err := dbf.ExportCronJob(); err != nil {
+			if err := dbf.Run(); err != nil {
 				log.Fatal(err)
 			}
 		case dbf.Tables == "all":
-			if err := dbf.ExportDB(); err != nil {
+			if err := dbf.DB(); err != nil {
 				log.Fatal(err)
 			}
 		default:

@@ -14,6 +14,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/Defacto2/df2/lib/database/internal/export"
 	"github.com/Defacto2/df2/lib/database/internal/my57"
 	"github.com/Defacto2/df2/lib/database/internal/recd"
 	"github.com/Defacto2/df2/lib/logs"
@@ -49,6 +50,23 @@ type Empty struct{}
 
 // IDs are unique UUID values used by the database and filenames.
 type IDs map[string]struct{}
+
+// Flags are command line arguments.
+type Flags = export.Flags
+
+// A database table.
+type Table int
+
+const (
+	Files        Table = iota // Files records.
+	Groups                    // Groups names.
+	Netresources              // Netresources for online websites.
+	Users                     // Users are site logins.
+)
+
+func (t Table) String() string {
+	return [...]string{"files", "groups", "netresources", "users"}[t]
+}
 
 // Init initialises the database connection using stored settings.
 func Init() my57.Connection {
@@ -128,35 +146,21 @@ func CheckUUID(s string) error {
 	return nil
 }
 
-// Tables for the database.
-type Tables int
-
-const (
-	FileTbl  Tables = iota // Table containing files.
-	GroupTbl               // Table containing group names.
-	NetTbl                 // Table containing internet links.
-	UsersTbl               // Table containing user logins.
-)
-
-func (t Tables) String() string {
-	return [...]string{"files", "groups", "netresources", "users"}[t]
-}
-
 // ColTypes details the columns used by the table.
-func ColTypes(t Tables) (string, error) {
+func ColTypes(t Table) (string, error) {
 	db := my57.Connect()
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
 	var query string
 	switch t {
-	case FileTbl:
-		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", FileTbl)
-	case GroupTbl:
-		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", GroupTbl)
-	case NetTbl:
-		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", NetTbl)
-	case UsersTbl:
-		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", UsersTbl)
+	case Files:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Files)
+	case Groups:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Groups)
+	case Netresources:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Netresources)
+	case Users:
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Users)
 
 	}
 	rows, err := db.Query(query)
@@ -361,6 +365,11 @@ func ObfuscateParam(param string) string {
 	a ^= xor
 	b += sum
 	return strconv.FormatInt(int64(b), hex) + strconv.FormatInt(int64(a), hex)
+}
+
+// Tbls are the available tables in the database.
+func Tbls() string {
+	return export.Tbls()
 }
 
 // Total reports the number of records fetched by the supplied SQL query.

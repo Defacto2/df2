@@ -1,125 +1,76 @@
-package database
+package export
 
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"os"
 	"path"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/Defacto2/df2/lib/database/internal/my57"
 	"github.com/Defacto2/df2/lib/database/internal/templ"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/dustin/go-humanize"
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archiver"
 	"github.com/spf13/viper"
 )
 
-// Table of the database.
+var (
+	ErrColType  = errors.New("the value type is not usable with the mysql column")
+	ErrNoTable  = errors.New("unknown database table")
+	ErrNoMethod = errors.New("unknown database export type")
+)
+
+// A database table.
 type Table int
 
 const (
-	// Files are file items.
-	Files Table = iota
-	// Groups are group names.
-	Groups
-	// Netresources are websites.
-	Netresources
-	// Users contain site login details.
-	Users
+	Files        Table = iota // Files records.
+	Groups                    // Groups names.
+	Netresources              // Netresources for online websites.
+	Users                     // Users are site logins.
 )
 
 const (
-	fs         = "files"
-	gs         = "groups"
-	nr         = "netresources"
-	us         = "users"
-	cr         = "create"
-	up         = "update"
-	apostrophe = "'"
+	cr                     = "create"
+	up                     = "update"
+	null                   = "NULL"
+	apostrophe             = "'"
+	timestamp  string      = "2006-01-02 15:04:05"
+	fsql       os.FileMode = 0o664
+	fo                     = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 )
 
 func (t Table) String() string {
-	switch t {
-	case Files:
-		return fs
-	case Groups:
-		return gs
-	case Netresources:
-		return nr
-	case Users:
-		return us
-	}
-	return ""
+	return [...]string{"files", "groups", "netresources", "users"}[t]
+}
+
+// Tbls are the available tables in the database.
+func Tbls() string {
+	s := []string{
+		Files.String(),
+		Groups.String(),
+		Netresources.String(),
+		Users.String()}
+	return strings.Join(s, ", ")
 }
 
 // Method to interact with the database.
 type Method int
 
 const (
-	// Create uses the CREATE SQL statement to make a new record.
-	Create Method = iota
-	// Insert uses the UPDATE SQL statement to edit an existing record.
-	Insert
+	Create Method = iota // Create uses the CREATE SQL statement to make a new record.
+	Insert               // Insert uses the UPDATE SQL statement to edit an existing record.
 )
 
 func (m Method) String() string {
-	switch m {
-	case Create:
-		return cr
-	case Insert:
-		return up
-	}
-	return ""
-}
-
-const (
-	timestamp string      = "2006-01-02 15:04:05"
-	fsql      os.FileMode = 0o664
-	fo                    = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-)
-
-// Tbls are the available tables in the database.
-func Tbls() string {
-	s := []string{Files.String(), Groups.String(), Netresources.String(), Users.String()}
-	return strings.Join(s, ", ")
-}
-
-type colNames []string
-
-func (c colNames) String() string {
-	return fmt.Sprintf("`%s`", strings.Join(c, "`,`"))
-}
-
-type colValues []string
-
-func (v colValues) String() string {
-	return strings.Join(v, ",\n")
-}
-
-type dupeKeys []string
-
-func (dk dupeKeys) String() string {
-	for i, n := range dk {
-		dk[i] = fmt.Sprintf("`%s` = VALUES(`%s`)", n, n)
-	}
-	stmt := fmt.Sprintf("\nON DUPLICATE KEY UPDATE %s", strings.Join(dk, ", "))
-	return stmt
-}
-
-type row []string
-
-func (r row) String() string {
-	s := strings.Join(r, ",\t")
-	s = strings.ReplaceAll(s, `\\'`, `\'`)
-	s = strings.ReplaceAll(s, `"'`, apostrophe)
-	s = strings.ReplaceAll(s, `'"`, apostrophe)
-	return fmt.Sprintf("(%s)", s)
+	return [...]string{cr, up}[m]
 }
 
 // Flags are command line arguments.
@@ -136,9 +87,9 @@ type Flags struct {
 	Limit    uint   // Limit the number of records
 }
 
-// ExportCronJob is intended for an operating system time-based job scheduler.
+// Run is intended for an operating system time-based job scheduler.
 // It creates both create and update types exports for the files table.
-func (f *Flags) ExportCronJob() error {
+func (f *Flags) Run() error {
 	f.Compress, f.Limit, f.Table = true, 0, Files
 	start := time.Now()
 	const delta = 2
@@ -159,18 +110,18 @@ func (f *Flags) ExportCronJob() error {
 		}(f)
 		wg.Wait()
 		if e1 != nil {
-			return fmt.Errorf("export cronjob: %w", e1)
+			return fmt.Errorf("run e1: %w", e1)
 		} else if e2 != nil {
-			return fmt.Errorf("export cronjob: %w", e2)
+			return fmt.Errorf("run e2: %w", e2)
 		}
 	default:
 		f.Method = Create
 		if err := f.ExportTable(); err != nil {
-			return fmt.Errorf("export cronjob create: %w", err)
+			return fmt.Errorf("run create: %w", err)
 		}
 		f.Method = Insert
 		if err := f.ExportTable(); err != nil {
-			return fmt.Errorf("export cronjob update: %w", err)
+			return fmt.Errorf("run update: %w", err)
 		}
 	}
 	elapsed := time.Since(start)
@@ -178,18 +129,18 @@ func (f *Flags) ExportCronJob() error {
 	return nil
 }
 
-// ExportDB saves or prints a MySQL 5.7 compatible SQL import database statement.
-func (f *Flags) ExportDB() error {
+// DB saves or prints a MySQL 5.7 compatible SQL import database statement.
+func (f *Flags) DB() error {
 	start := time.Now()
 	if err := f.method(); err != nil {
-		return fmt.Errorf("export table: %w", err)
+		return fmt.Errorf("db: %w", err)
 	}
 	buf, err := f.queryTables()
 	if err != nil {
-		return fmt.Errorf("exportdb query: %w", err)
+		return fmt.Errorf("db query: %w", err)
 	}
 	if err = f.write(buf); err != nil {
-		return fmt.Errorf("exportdb write buffer: %w", err)
+		return fmt.Errorf("db write: %w", err)
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("sql exports took %s\n", elapsed)
@@ -199,26 +150,26 @@ func (f *Flags) ExportDB() error {
 // ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
 func (f *Flags) ExportTable() error {
 	if err := f.method(); err != nil {
-		return fmt.Errorf("export table: %w", err)
+		return fmt.Errorf("table: %w", err)
 	}
 	switch strings.ToLower(f.Tables) {
-	case fs, "f":
+	case Files.String(), "f":
 		f.Table = Files
-	case gs, "g":
+	case Groups.String(), "g":
 		f.Table = Groups
-	case nr, "n":
+	case Netresources.String(), "n":
 		f.Table = Netresources
-	case us, "u":
+	case Users.String(), "u":
 		f.Table = Users
 	default:
-		return fmt.Errorf("export table %q: %w", f.Tables, ErrNoTable)
+		return fmt.Errorf("invalid table: %w", ErrNoTable)
 	}
 	buf, err := f.queryTable()
 	if err != nil {
-		return fmt.Errorf("export table query: %w", err)
+		return fmt.Errorf("table query: %w", err)
 	}
 	if err := f.write(buf); err != nil {
-		return fmt.Errorf("export table write buffer: %w", err)
+		return fmt.Errorf("table write: %w", err)
 	}
 	return nil
 }
@@ -264,7 +215,7 @@ func (f *Flags) method() error {
 	case up, "u":
 		f.Method = Insert
 	default:
-		return fmt.Errorf("type flag %q: %w", f.Type, ErrNoMethod)
+		return fmt.Errorf("method %w", ErrNoMethod)
 	}
 	return nil
 }
@@ -501,6 +452,38 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 	}
 }
 
+type colNames []string
+
+func (c colNames) String() string {
+	return fmt.Sprintf("`%s`", strings.Join(c, "`,`"))
+}
+
+type colValues []string
+
+func (v colValues) String() string {
+	return strings.Join(v, ",\n")
+}
+
+type dupeKeys []string
+
+func (dk dupeKeys) String() string {
+	for i, n := range dk {
+		dk[i] = fmt.Sprintf("`%s` = VALUES(`%s`)", n, n)
+	}
+	stmt := fmt.Sprintf("\nON DUPLICATE KEY UPDATE %s", strings.Join(dk, ", "))
+	return stmt
+}
+
+type row []string
+
+func (r row) String() string {
+	s := strings.Join(r, ",\t")
+	s = strings.ReplaceAll(s, `\\'`, `\'`)
+	s = strings.ReplaceAll(s, `"'`, apostrophe)
+	s = strings.ReplaceAll(s, `'"`, apostrophe)
+	return fmt.Sprintf("(%s)", s)
+}
+
 func (t Table) check() error {
 	const outOfRange = 4
 	if t < 0 || t >= outOfRange {
@@ -557,29 +540,6 @@ func columns(t Table) ([]string, error) {
 		return nil, fmt.Errorf("columns rows: %w", err)
 	}
 	return columns, nil
-}
-
-// format the value based on the database type name column type.
-func format(b sql.RawBytes, colType string) (string, error) {
-	switch {
-	case string(b) == "":
-		return null, nil
-	case strings.Contains(colType, "char"):
-		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(string(b), apostrophe, `\'`)), nil
-	case strings.Contains(colType, "int"):
-		return string(b), nil
-	case colType == "text":
-		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(string(b), apostrophe, `\'`)), nil
-	case colType == "datetime":
-		s := string(b)
-		t, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			return "", fmt.Errorf("format parse datetime %q: %w", s, err)
-		}
-		return fmt.Sprintf("'%s'", t.Format(timestamp)), nil
-	default:
-		return "", fmt.Errorf("format invalid value %v: %w", b, ErrColType)
-	}
 }
 
 // rows returns the values of table.
@@ -702,6 +662,36 @@ func limitUsers(limit int, db *sql.DB) ([]string, error) {
 	return values(rows)
 }
 
+// format the value based on the database type name column type.
+func format(b sql.RawBytes, colType string) (string, error) {
+	switch {
+	case string(b) == "":
+		return null, nil
+	case strings.Contains(colType, "char"):
+		return fmt.Sprintf(`'%s'`, strings.ReplaceAll(string(b), apostrophe, `\'`)), nil
+	case strings.Contains(colType, "int"):
+		return string(b), nil
+	case colType == "text":
+		return fmt.Sprintf(`'%q'`, strings.ReplaceAll(string(b), apostrophe, `\'`)), nil
+	case colType == "datetime":
+		s := string(b)
+		t, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return "", fmt.Errorf("format parse datetime %q: %w", s, err)
+		}
+		return fmt.Sprintf("'%s'", t.Format(timestamp)), nil
+	default:
+		return "", fmt.Errorf("format invalid value %v: %w", b, ErrColType)
+	}
+}
+
+// template functions.
+func tmplFunc() template.FuncMap {
+	fm := make(template.FuncMap)
+	fm["now"] = utc
+	return fm
+}
+
 func values(rows *sql.Rows) ([]string, error) {
 	columns, err := rows.Columns()
 	if err != nil {
@@ -733,13 +723,6 @@ func values(rows *sql.Rows) ([]string, error) {
 	}
 	rows.Close()
 	return v, nil
-}
-
-// template functions.
-func tmplFunc() template.FuncMap {
-	fm := make(template.FuncMap)
-	fm["now"] = utc
-	return fm
 }
 
 // utc returns the current UTC date and time in a MySQL timestamp format.
