@@ -2,8 +2,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
@@ -95,6 +97,9 @@ var configSetCmd = &cobra.Command{
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Set(cfgf.name); err != nil {
+			if errors.Is(err, config.ErrSetName) {
+				os.Exit(1)
+			}
 			log.Fatal(fmt.Errorf("config set: %w", err))
 		}
 	},

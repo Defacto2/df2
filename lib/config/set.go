@@ -1,8 +1,8 @@
 package config
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
@@ -13,10 +13,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	ErrSetName = errors.New("invalid flag name")
+)
+
 // Set edits and saves a setting within a configuration file.
 func Set(name string) error {
 	if viper.ConfigFileUsed() == "" {
-		configMissing("set")
+		missing("set")
 	}
 	keys := viper.AllKeys()
 	sort.Strings(keys)
@@ -36,7 +40,7 @@ func Set(name string) error {
 			color.Warn.Sprintf("invalid flag value %v", fmt.Sprintf("--name %s", name)),
 			"to see a list of usable settings run:",
 			color.Bold.Sprint("df2 config info"))
-		os.Exit(1)
+		return ErrSetName
 	}
 	Config.nameFlag = name
 	if err := sets(name); err != nil {
@@ -54,41 +58,42 @@ func sets(name string) error {
 	switch s {
 	case "":
 		fmt.Printf("\n%s is currently disabled\n", name)
+		return nil
 	default:
 		fmt.Printf("\n%s is currently set to \"%v\"\n", name, color.Primary.Sprint(s))
 	}
 	switch {
 	case name == "connection.server.host":
 		fmt.Printf("\nSet a new host, leave blank to keep as-is %v: \n", rec("localhost"))
-		return configSave(prompt.String(s))
+		return save(prompt.String(s))
 	case name == "connection.server.protocol":
 		fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", rec("tcp"))
-		return configSave(prompt.String(s))
+		return save(prompt.String(s))
 	case name == "connection.server.port":
 		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", prompt.PortMin, prompt.PortMax, rec("3306"))
-		return configSave(prompt.Port())
+		return save(prompt.Port())
 	case name[:suffix] == "directory.":
 		fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")
-		return configSave(prompt.Dir())
+		return save(prompt.Dir())
 	case name == "connection.password":
 		fmt.Printf("\nSet a new MySQL user encrypted or plaintext password or leave blank to keep as-is: \n")
-		return configSave(prompt.String(s))
+		return save(prompt.String(s))
 	default:
 		fmt.Printf("\nSet a new value, leave blank to keep as-is or use a dash [-] to disable: \n")
-		return configSave(prompt.String(s))
+		return save(prompt.String(s))
 	}
 }
 
-func configSave(value interface{}) error {
+func save(value interface{}) error {
 	switch value.(type) {
 	case int64, string:
 	default:
-		return fmt.Errorf("config save: %w", ErrSaveType)
+		return fmt.Errorf("save: %w", ErrSaveType)
 	}
 	viper.Set(Config.nameFlag, value)
 	logs.Printf("%s %s is now set to \"%v\"\n", str.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))
-	if err := writeConfig(true); err != nil {
-		return fmt.Errorf("config save: %w", err)
+	if err := write(true); err != nil {
+		return fmt.Errorf("save: %w", err)
 	}
 	return nil
 }

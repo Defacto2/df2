@@ -16,7 +16,7 @@ func Create(ow bool) error {
 	if cfg := viper.ConfigFileUsed(); cfg != "" && !ow {
 		if _, err := os.Stat(cfg); !os.IsNotExist(err) {
 			color.Warn.Println("a config file already is in use")
-			logs.Printf("to edit:\t%s %s\nto remove:\t%s %s\n", cmdPath, "edit", cmdPath, "delete")
+			logs.Printf("to edit:\t%s %s\nto remove:\t%s %s\n", cmdRun, "edit", cmdRun, "delete")
 			os.Exit(1)
 		}
 		p := filepath.Dir(cfg)
@@ -27,7 +27,7 @@ func Create(ow bool) error {
 			}
 		}
 	}
-	if err := writeConfig(false); err != nil {
+	if err := write(false); err != nil {
 		return fmt.Errorf("create: %w", err)
 	}
 	return nil

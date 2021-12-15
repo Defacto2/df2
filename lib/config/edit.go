@@ -20,7 +20,7 @@ func Edit() {
 	editors := []string{"micro", "nano", "vim"}
 	cfg := viper.ConfigFileUsed()
 	if cfg == "" {
-		configMissing("edit")
+		missing("edit")
 	}
 	if err := viper.BindEnv("editor", "EDITOR"); err != nil {
 		editor = fallback(editors...)

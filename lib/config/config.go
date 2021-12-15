@@ -17,34 +17,35 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var (
+	ErrSaveType = errors.New("unsupported value interface type")
+)
+
 // directories are initialised and configured by InitDefaults() in lib/cmd.go.
 
 const (
-	cmdPath              = "df2 config"
+	cmdRun               = "df2 config"
 	filename             = "config.yaml"
 	dir      fs.FileMode = 0o700
 	file     fs.FileMode = 0o600
 )
 
-// ErrSaveType bad value type.
-var ErrSaveType = errors.New("unsupported value interface type")
-
-// settings configurations.
-type settings struct {
+// Settings for the configuration.
+type Settings struct {
+	Name     string // config filename
 	Errors   bool   // flag a config file error, used by root.go initConfig()
 	ignore   bool   // ignore config file error
-	Name     string // config filename
 	nameFlag string // viper configuration path
 }
 
 // Config settings.
-var Config = settings{ //nolint:gochecknoglobals
+var Config = Settings{ //nolint:gochecknoglobals
 	Name:   filename,
 	Errors: false,
 	ignore: false,
 }
 
-// Check prints a missing configuration file notice.
+// Check prints a notice for the missing configuration file.
 func Check() {
 	if Config.ignore {
 		return
@@ -55,7 +56,7 @@ func Check() {
 		}
 		fmt.Printf("%s %s\n",
 			color.Warn.Sprint("config: no config file in use, please run"),
-			color.Bold.Sprintf("df2 config create"))
+			color.Bold.Sprintf(cmdRun+" create"))
 	}
 }
 
@@ -72,13 +73,13 @@ func Filepath() string {
 	return dir
 }
 
-func configMissing(suffix string) {
+func missing(suffix string) {
 	color.Warn.Println("no config file is in use")
-	logs.Printf("to create:\t%s %s\n", cmdPath, suffix)
+	logs.Printf("to create:\t%s %s\n", cmdRun, suffix)
 }
 
-// writeConfig saves all configs to a configuration file.
-func writeConfig(update bool) error {
+// write saves all configs to a configuration file.
+func write(update bool) error {
 	bs, err := yaml.Marshal(viper.AllSettings())
 	if err != nil {
 		return fmt.Errorf("write config yaml marshal: %w", err)
