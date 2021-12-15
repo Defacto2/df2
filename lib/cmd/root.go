@@ -6,10 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
+	"github.com/Defacto2/df2/lib/cmd/internal/print"
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
@@ -35,7 +34,7 @@ var rootCmd = &cobra.Command{
 	Short: "The tool to optimise and manage defacto2.net",
 	Long: fmt.Sprintf("%s\nCopyright © %v Ben Garrett\n%v",
 		color.Info.Sprint("The tool to optimise and manage defacto2.net"),
-		copyright(),
+		print.Copyright(),
 		color.Primary.Sprint("https://github.com/Defacto2/df2")),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := runNew(); err != nil {
@@ -70,39 +69,6 @@ func init() { // nolint:gochecknoinits
 		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
 		logs.Fatal(err)
-	}
-}
-
-// copyright returns a © Copyright year, or a range of years.
-func copyright() string {
-	const initYear = 2020
-	y, c := time.Now().Year(), initYear
-	if y == c {
-		return strconv.Itoa(c) // © 2020
-	}
-	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
-}
-
-// filterFlag compairs the value of the filter flag against the list of slice values.
-func filterFlag(t interface{}, flag, val string) {
-	if val == "" {
-		return
-	}
-	if t, ok := t.([]string); ok {
-		sup := false
-		for _, value := range t {
-			if value == val || (val == value[:1]) {
-				sup = true
-				break
-			}
-		}
-		if !sup {
-			fmt.Printf("%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
-				color.Bold.Sprintf("%q", val),
-				color.Warn.Sprint("available flag values"),
-				color.Primary.Sprint(strings.Join(t, ",")))
-			os.Exit(1)
-		}
 	}
 }
 

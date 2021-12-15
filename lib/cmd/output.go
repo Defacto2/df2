@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Defacto2/df2/lib/cmd/internal/arg"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
@@ -154,7 +155,7 @@ var groupCmd = &cobra.Command{
 			}
 			return
 		}
-		filterFlag(groups.Wheres(), "filter", gpf.filter)
+		arg.FilterFlag(groups.Wheres(), "filter", gpf.filter)
 		req := groups.Request{Filter: gpf.filter, Counts: gpf.counts, Initialisms: gpf.init, Progress: gpf.progress}
 		switch gpf.format {
 		case datal, dl, "d":
@@ -187,9 +188,9 @@ var peopleCmd = &cobra.Command{
 	Aliases: []string{"p", "ppl"},
 	Short:   "A HTML snippet generator to list people",
 	Run: func(cmd *cobra.Command, args []string) {
-		filterFlag(people.Filters(), "filter", pf.filter)
+		arg.FilterFlag(people.Filters(), "filter", pf.filter)
 		var req people.Request
-		if filterFlag(fmtflags, "format", pf.format); pf.format != "" {
+		if arg.FilterFlag(fmtflags, "format", pf.format); pf.format != "" {
 			req = people.Request{Filter: pf.filter, Progress: pf.progress}
 		}
 		switch pf.format {

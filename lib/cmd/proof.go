@@ -2,19 +2,13 @@
 package cmd
 
 import (
+	"github.com/Defacto2/df2/lib/cmd/internal/arg"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/proof"
 	"github.com/spf13/cobra"
 )
 
-type proofArg struct {
-	id          string // auto-generated id or a uuid
-	all         bool   // scan for all proofs, not just new uploads
-	hideMissing bool   // hide proofs that are missing their file download
-	overwrite   bool   // overwrite all existing images
-}
-
-var prf proofArg
+var proofs arg.Proof
 
 // proofCmd represents the proof command.
 var proofCmd = &cobra.Command{
@@ -23,13 +17,13 @@ var proofCmd = &cobra.Command{
 	Aliases: []string{"p"},
 	Run: func(cmd *cobra.Command, args []string) {
 		r := proof.Request{
-			Overwrite:   prf.overwrite,
-			AllProofs:   prf.all,
-			HideMissing: prf.hideMissing,
+			Overwrite:   proofs.Overwrite,
+			AllProofs:   proofs.All,
+			HideMissing: proofs.HideMissing,
 		}
 		switch {
-		case prf.id != "":
-			if err := r.Query(prf.id); err != nil {
+		case proofs.Id != "":
+			if err := r.Query(proofs.Id); err != nil {
 				logs.Danger(err)
 			}
 		default:
@@ -42,12 +36,12 @@ var proofCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(proofCmd)
-	proofCmd.Flags().StringVarP(&prf.id, "id", "i", "",
+	proofCmd.Flags().StringVarP(&proofs.Id, "id", "i", "",
 		"id or uuid to handle only one proof")
-	proofCmd.Flags().BoolVar(&prf.overwrite, "overwrite", false,
+	proofCmd.Flags().BoolVar(&proofs.Overwrite, "overwrite", false,
 		"rescan archives and overwrite all existing images")
-	proofCmd.Flags().BoolVar(&prf.all, "all", false,
+	proofCmd.Flags().BoolVar(&proofs.All, "all", false,
 		"scan for all proofs, not just new uploads")
-	proofCmd.Flags().BoolVarP(&prf.hideMissing, "hide-missing", "m", false,
+	proofCmd.Flags().BoolVarP(&proofs.HideMissing, "hide-missing", "m", false,
 		"hide proofs that are missing their file download")
 }
