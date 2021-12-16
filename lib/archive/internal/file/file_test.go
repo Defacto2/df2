@@ -10,10 +10,11 @@ import (
 	"github.com/Defacto2/df2/lib/archive/internal/file"
 )
 
-func testDir(name string) string {
-	dir, _ := os.Getwd()
-	return filepath.Join(dir, "..", "..", "tests", name)
+func join(s string) string {
+	return filepath.Join(dir, s)
 }
+
+const dir = "../../../../tests/text"
 
 func TestDir(t *testing.T) {
 	tempDir, err := ioutil.TempDir(os.TempDir(), "test-dir")
@@ -51,8 +52,8 @@ func TestMove(t *testing.T) {
 		wantErr     bool
 	}{
 		{"empty", args{"", ""}, 0, true},
-		{"one way", args{testDir("text/test.txt"), testDir("text/test.txt~")}, 12, false},
-		{"restore way", args{testDir("text/test.txt~"), testDir("text/test.txt")}, 12, false},
+		{"one way", args{join("test.txt"), join("test.txt~")}, 12, false},
+		{"restore way", args{join("test.txt~"), join("test.txt")}, 12, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -79,8 +80,8 @@ func TestCopy(t *testing.T) {
 		wantErr     bool
 	}{
 		{"empty", args{"", ""}, 0, true},
-		{"empty", args{testDir("text/test.txt"), testDir("text/test.txt")}, 12, false},
-		{"empty", args{testDir("text/test.txt"), testDir("text/test.txt~")}, 12, false},
+		{"empty", args{join("test.txt"), join("test.txt")}, 12, false},
+		{"empty", args{join("test.txt"), join("test.txt~")}, 12, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
