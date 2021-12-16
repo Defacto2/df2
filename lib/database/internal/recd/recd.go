@@ -25,9 +25,6 @@ const (
 	// UpdateID is a user id to use with the updatedby column.
 	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 
-	hide = "****"
-	null = "NULL"
-
 	fm os.FileMode = 0o666
 
 	filename       = 4
@@ -42,7 +39,6 @@ const (
 
 	z7  = ".7z"
 	arj = ".arj"
-	bz2 = ".bz2"
 	png = ".png"
 	rar = ".rar"
 	zip = ".zip"
@@ -54,7 +50,7 @@ type Record struct {
 	C          int
 	Save       bool
 	Verbose    bool
-	Id         uint
+	ID         uint
 	UUID       string
 	Filename   string
 	filesize   uint
@@ -72,7 +68,7 @@ func (r *Record) String() string {
 	if !r.Save {
 		status = str.X()
 	}
-	return fmt.Sprintf("%s item %04d (%v) %s %s", status, r.C, r.Id,
+	return fmt.Sprintf("%s item %04d (%v) %s %s", status, r.C, r.ID,
 		color.Primary.Sprint(r.UUID), color.Info.Sprint(r.Filename))
 }
 
@@ -85,7 +81,7 @@ func (r *Record) Approve() error {
 		return fmt.Errorf("record approve prepare: %w", err)
 	}
 	defer update.Close()
-	if _, err := update.Exec(UpdateID, r.Id); err != nil {
+	if _, err := update.Exec(UpdateID, r.ID); err != nil {
 		return fmt.Errorf("record approve exec: %w", err)
 	}
 	return nil
@@ -97,7 +93,7 @@ func (r *Record) AutoID(data string) (id uint) {
 		return 0
 	}
 	id = uint(i)
-	r.Id = id
+	r.ID = id
 	return id
 }
 

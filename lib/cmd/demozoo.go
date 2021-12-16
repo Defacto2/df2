@@ -38,7 +38,7 @@ func init() { // nolint:gochecknoinits
 		"scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().BoolVar(&dzf.All, "all", false,
 		"scan all files with demozoo links (SLOW)")
-	demozooCmd.Flags().StringVarP(&dzf.Id, "id", "i", "",
+	demozooCmd.Flags().StringVarP(&dzf.ID, "id", "i", "",
 		"file id or uuid with a demozoo link to scan\n")
 	demozooCmd.Flags().BoolVarP(&dzf.Simulate, "dry-run", "d", false,
 		"simulate the fixes and display the expected changes")

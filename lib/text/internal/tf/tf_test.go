@@ -18,13 +18,13 @@ const (
 	textDir       = "../../../../tests/demozoo/"
 	uuidDir       = "../../../../tests/uuid/"
 	uuid          = "21cb94d3-ffc1-4055-8398-b7b4ed1e67e8"
-	storedName    = "test.zip"
 	fileToExtract = "test.txt"
 	txt           = ".txt"
 )
 
 // config the directories expected by ansilove.
 func config(t *testing.T) string {
+	t.Helper()
 	d, err := filepath.Abs(uuidDir)
 	if err != nil {
 		t.Error(err)
@@ -159,7 +159,8 @@ func TestTextFile_Extract(t *testing.T) {
 			UUID:   uuid,
 			Name:   "test.zip",
 			Ext:    ".zip",
-			Readme: sql.NullString{String: fileToExtract, Valid: true}}, &dirInput, false},
+			Readme: sql.NullString{String: fileToExtract, Valid: true},
+		}, &dirInput, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

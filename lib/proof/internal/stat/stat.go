@@ -28,7 +28,8 @@ func Init() Proof {
 	return Proof{
 		Base:     logs.Path(dir.UUID),
 		BasePath: dir.UUID,
-		start:    time.Now()}
+		start:    time.Now(),
+	}
 }
 
 // Summary of the proofs.

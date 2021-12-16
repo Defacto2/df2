@@ -17,9 +17,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	ErrSaveType = errors.New("unsupported value interface type")
-)
+var ErrSaveType = errors.New("unsupported value interface type")
 
 // directories are initialised and configured by InitDefaults() in lib/cmd.go.
 

@@ -58,7 +58,8 @@ func Cronjob(force bool) error {
 				Filter:      tag,
 				Counts:      true,
 				Initialisms: true,
-				Progress:    false}
+				Progress:    false,
+			}
 			if err := r.HTML(f); err != nil {
 				return fmt.Errorf("group cronjob html: %w", err)
 			}
@@ -143,5 +144,6 @@ func Wheres() []string {
 		group.BBS.String(),
 		group.FTP.String(),
 		group.Group.String(),
-		group.Magazine.String()}
+		group.Magazine.String(),
+	}
 }

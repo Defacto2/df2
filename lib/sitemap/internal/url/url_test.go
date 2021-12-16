@@ -47,7 +47,7 @@ func TestPaths(t *testing.T) {
 
 func tags() []url.Tag {
 	l := len(url.Paths())
-	var urls = make([]url.Tag, l)
+	urls := make([]url.Tag, l)
 	tag := url.Tag{Location: "/url-path-"}
 	for i := 1; i < l; i++ {
 		urls[i] = tag

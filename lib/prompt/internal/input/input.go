@@ -46,7 +46,7 @@ func Dir(r io.Reader) (string, error) {
 		}
 		if _, err := os.Stat(save); os.IsNotExist(err) {
 			return "", fmt.Errorf("%w: %s", ErrDir, logs.Path(save))
-		} else {
+		} else if err == nil {
 			break // exit loop if the directory is found
 		}
 	}

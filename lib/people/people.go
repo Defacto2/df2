@@ -38,7 +38,8 @@ func Filters() []string {
 		role.Artists.String(),
 		role.Coders.String(),
 		role.Musicians.String(),
-		role.Writers.String()}
+		role.Writers.String(),
+	}
 }
 
 // HTML prints a snippet listing links to each person.

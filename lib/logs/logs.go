@@ -15,9 +15,7 @@ import (
 	gap "github.com/muesli/go-app-paths"
 )
 
-var (
-	ErrNoArg = errors.New("no arguments were provided")
-)
+var ErrNoArg = errors.New("no arguments were provided")
 
 const (
 	GapUser  string = "df2"        // GapUser is the configuration and logs subdirectory name.
@@ -30,13 +28,13 @@ const (
 )
 
 var (
-	panic = false
-	quiet = false
+	panicErr = false //nolint:gochecknoglobals
+	quiet    = false //nolint:gochecknoglobals
 )
 
 // Panic enables or disables panicking when Danger is used.
 func Panic(b bool) {
-	panic = b
+	panicErr = b
 }
 
 // Quiet stops most writing to the standard output.
@@ -66,7 +64,7 @@ func Arg(arg string, exit bool, args ...string) error {
 
 // Danger logs the error to stdout, but continues the program.
 func Danger(err error) {
-	switch panic {
+	switch panicErr {
 	case true:
 		log.Println(fmt.Sprintf("error type %T\t: %v", err, err))
 		log.Panic(err)
@@ -78,7 +76,7 @@ func Danger(err error) {
 // Fatal logs error to stdout and exits with an error code.
 func Fatal(err error) {
 	save(Filename, err)
-	switch panic {
+	switch panicErr {
 	case true:
 		log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
 		log.Panic(err)

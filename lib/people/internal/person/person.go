@@ -13,9 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	ErrFilter = errors.New("invalid filter used")
-)
+var ErrFilter = errors.New("invalid filter used")
 
 // Person represent people who are listed as authors on the website.
 type Person struct {

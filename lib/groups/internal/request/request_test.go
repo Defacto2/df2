@@ -9,6 +9,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	t.Parallel()
 	tmp := filepath.Join(os.TempDir(), "request.htm")
 	type args struct {
 		filename string
@@ -34,6 +35,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestPrintr(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		r         request.Flags

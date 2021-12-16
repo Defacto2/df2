@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 )
 
-var (
-	ErrPathEmpty = errors.New("path cannot be empty")
-)
+var ErrPathEmpty = errors.New("path cannot be empty")
 
 func WalkName(basepath, path string) (name string, err error) {
 	if path == "" {

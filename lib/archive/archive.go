@@ -28,9 +28,7 @@ const (
 	txt = ".txt"
 )
 
-var (
-	ErrNotArc = errors.New("format specified by source filename is not an archive format")
-)
+var ErrNotArc = errors.New("format specified by source filename is not an archive format")
 
 // Copy copies a file to the destination.
 func Copy(name, dest string) (written int64, err error) {

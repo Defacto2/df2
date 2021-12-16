@@ -14,9 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	ErrNoDir = errors.New("dir structure cannot be nil")
-)
+var ErrNoDir = errors.New("dir structure cannot be nil")
 
 const (
 	// Archives.

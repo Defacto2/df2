@@ -30,7 +30,8 @@ func Init() Task {
 	return Task{
 		Name: "",
 		Size: 0,
-		Cont: false}
+		Cont: false,
+	}
 }
 
 // Run a scan for proofs in the provided temp directory.

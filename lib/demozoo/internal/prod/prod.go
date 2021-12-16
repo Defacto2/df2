@@ -13,18 +13,9 @@ import (
 	"github.com/Defacto2/df2/lib/download"
 )
 
-var (
-	ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
-)
+var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
 
-const (
-	api = "https://demozoo.org/api/v1/productions"
-	cd  = "Content-Disposition"
-	cls = "PouetProduction"
-	df2 = "defacto2.net"
-	dos = "dos"
-	win = "windows"
-)
+const api = "https://demozoo.org/api/v1/productions"
 
 // Production API production request.
 type Production struct {

@@ -17,9 +17,7 @@ const (
 	channel3 = 3
 )
 
-var (
-	example1, example2, example3 prods.ProductionsAPIv1 //nolint:gochecknoglobals
-)
+var example1, example2, example3 prods.ProductionsAPIv1 //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
 	c1 := make(chan prods.ProductionsAPIv1)

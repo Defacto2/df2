@@ -29,6 +29,7 @@ func TestGet(t *testing.T) {
 		})
 	}
 }
+
 func TestTrim(t *testing.T) {
 	type args struct {
 		s string

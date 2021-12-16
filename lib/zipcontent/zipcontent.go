@@ -8,13 +8,12 @@ import (
 
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/logs"
-
 	"github.com/Defacto2/df2/lib/zipcontent/internal/record"
 	"github.com/Defacto2/df2/lib/zipcontent/internal/scan"
 )
 
 // Fix the content of zip archives within in the database.
-func Fix(summary bool) error {
+func Fix(summary bool) error { //nolint:funlen
 	s := scan.Init()
 	db := database.Connect()
 	defer db.Close()

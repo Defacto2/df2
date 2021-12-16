@@ -57,7 +57,8 @@ func Tbls() string {
 		Files.String(),
 		Groups.String(),
 		Netresources.String(),
-		Users.String()}
+		Users.String(),
+	}
 	return strings.Join(s, ", ")
 }
 

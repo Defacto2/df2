@@ -3,7 +3,6 @@ package sync
 import "errors"
 
 /*
-TODO:
 Create an automated synchronisation with Demozoo.
 
 For optimisation collect the all existing DZ ids into a searchable array.

@@ -124,6 +124,7 @@ func TestFormat(t *testing.T) {
 }
 
 func TesSQLWhere(t *testing.T) {
+	t.Helper()
 	type args struct {
 		f              group.Filter
 		incSoftDeletes bool

@@ -70,10 +70,11 @@ func (r *Request) Body() error {
 // t can be 0 or a number of seconds.
 func CheckTime(t time.Duration) time.Duration {
 	const timeout = 5 * time.Second
-	if t*time.Second < time.Second {
+	secs := time.Duration(t.Seconds())
+	if secs < time.Second {
 		return timeout
 	}
-	return t * time.Second
+	return secs
 }
 
 // printProgress prints that the download progress is complete.

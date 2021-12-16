@@ -15,9 +15,7 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-var (
-	ErrNoSrc = errors.New("no src source filename was provided")
-)
+var ErrNoSrc = errors.New("no src source filename was provided")
 
 // Usability of search, filename pattern matches.
 type Usability uint

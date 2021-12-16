@@ -7,7 +7,7 @@ import (
 	"github.com/Defacto2/df2/lib/database/internal/export"
 )
 
-func TestFlags_Run(t *testing.T) {
+func TestFlags_Run(t *testing.T) { //nolint:funlen
 	type fields struct {
 		Parallel bool
 		Tables   string
@@ -24,27 +24,32 @@ func TestFlags_Run(t *testing.T) {
 		{"users", fields{
 			Type:   "c",
 			Tables: export.Users.String(),
-			Limit:  1}, false},
+			Limit:  1,
+		}, false},
 		{"users parallel", fields{
 			Type:     "c",
 			Tables:   export.Users.String(),
 			Parallel: true,
-			Limit:    1}, false},
+			Limit:    1,
+		}, false},
 		{"net parallel", fields{
 			Type:     "c",
 			Tables:   export.Netresources.String(),
 			Parallel: true,
-			Limit:    1}, false},
+			Limit:    1,
+		}, false},
 		{"groups parallel", fields{
 			Type:     "c",
 			Tables:   export.Groups.String(),
 			Parallel: true,
-			Limit:    1}, false},
+			Limit:    1,
+		}, false},
 		{"update groups parallel", fields{
 			Type:     "update",
 			Tables:   export.Groups.String(),
 			Parallel: true,
-			Limit:    1}, false},
+			Limit:    1,
+		}, false},
 	}
 	rm := []string{
 		"d2-create_files.sql.bz2",

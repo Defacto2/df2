@@ -134,10 +134,14 @@ func TestZipContent(t *testing.T) {
 		{"empty", fields{}, false, true},
 		{"missing", fields{FilePath: "/dev/null"}, false, true},
 		{"dir", fields{FilePath: "tests/demozoo"}, false, true},
-		{"7zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"),
-			Filename: "test.7z"}, false, true},
-		{"zip", fields{FilePath: filepath.Join(pwd, "tests", "demozoo", "test.zip"),
-			Filename: "test.zip"}, true, false},
+		{"7zip", fields{
+			FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"),
+			Filename: "test.7z",
+		}, false, true},
+		{"zip", fields{
+			FilePath: filepath.Join(pwd, "tests", "demozoo", "test.zip"),
+			Filename: "test.zip",
+		}, true, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

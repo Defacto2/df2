@@ -15,22 +15,14 @@ import (
 	"github.com/Defacto2/df2/lib/demozoo/internal/prods"
 )
 
-const (
-	api = "https://demozoo.org/api/v1/productions"
-	cd  = "Content-Disposition"
-	cls = "PouetProduction"
-	df2 = "defacto2.net"
-	dos = "dos"
-	win = "windows"
-)
-
-const (
-	modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
-)
-
 var (
 	ErrAdd = errors.New("invalid add argument")
 	ErrVal = errors.New("unknown record value")
+)
+
+const (
+	cd      = "Content-Disposition"
+	modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
 )
 
 func Test_filename(t *testing.T) {

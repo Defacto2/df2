@@ -40,6 +40,7 @@ func TestArchiveExt(t *testing.T) {
 		})
 	}
 }
+
 func TestFiles(t *testing.T) {
 	const (
 		name     = "myname"

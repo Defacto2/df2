@@ -15,7 +15,7 @@ import (
 func TestNew(t *testing.T) {
 	const id, uuid, filename, readme = 0, 1, 4, 6
 	var empty record.Record
-	var mock = make([]sql.RawBytes, 7)
+	mock := make([]sql.RawBytes, 7)
 	const ids, uuids = "345674", "b4ef0174-57b4-11ec-bf63-0242ac130002"
 	mock[id] = sql.RawBytes(ids)
 	mock[uuid] = sql.RawBytes(uuids)
@@ -96,7 +96,7 @@ func TestIterate(t *testing.T) {
 		{"no stats", fields(mockR), args{}, true},
 		{"no fields", fields(empty), args{&mockSBad}, true},
 		{"missing cols", fields(mockR), args{&mockSBad}, true},
-		// we want an error because it attempts to read a non-existant file.
+		// we want an error because it attempts to read a non-existent file.
 		{"okay, but want error", fields(mockR), args{&mockS}, true},
 	}
 	for _, tt := range tests {
@@ -180,7 +180,7 @@ func TestRecord_Nfo(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", fields{}, nil, true},
-		// this test will fail when attempting to extract a non-existant file
+		// this test will fail when attempting to extract a non-existent file
 		{"fake file", fields{File: fn, Files: files}, &mockS, true},
 	}
 	for _, tt := range tests {
@@ -228,7 +228,8 @@ func TestRecord_Read(t *testing.T) {
 			ID:   "1",
 			UUID: uuid,
 			File: filepath.Join(dir, fn),
-			Name: fn}, &mockS, false},
+			Name: fn,
+		}, &mockS, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -87,7 +87,8 @@ func clean(t Target, d *directories.Dir, remove, human bool) error {
 			Path:   paths[p],
 			Delete: remove,
 			Human:  human,
-			M:      m}
+			M:      m,
+		}
 		if err := sum.Calculate(s, d); err != nil {
 			return fmt.Errorf("clean sum calculate: %w", err)
 		}

@@ -14,9 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	ErrConnect = errors.New("could not connect to the mysql database server")
-)
+var ErrConnect = errors.New("could not connect to the mysql database server")
 
 const (
 	// Datetime MySQL 5.7 format.
@@ -25,7 +23,6 @@ const (
 	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 
 	hide = "****"
-	null = "NULL"
 )
 
 // Connection information for a MySQL database.

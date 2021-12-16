@@ -22,8 +22,8 @@ var proofCmd = &cobra.Command{
 			HideMissing: proofs.HideMissing,
 		}
 		switch {
-		case proofs.Id != "":
-			if err := r.Query(proofs.Id); err != nil {
+		case proofs.ID != "":
+			if err := r.Query(proofs.ID); err != nil {
 				logs.Danger(err)
 			}
 		default:
@@ -36,7 +36,7 @@ var proofCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(proofCmd)
-	proofCmd.Flags().StringVarP(&proofs.Id, "id", "i", "",
+	proofCmd.Flags().StringVarP(&proofs.ID, "id", "i", "",
 		"id or uuid to handle only one proof")
 	proofCmd.Flags().BoolVar(&proofs.Overwrite, "overwrite", false,
 		"rescan archives and overwrite all existing images")

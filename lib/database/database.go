@@ -162,7 +162,6 @@ func ColTypes(t Table) (string, error) {
 		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Netresources)
 	case Users:
 		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Users)
-
 	}
 	rows, err := db.Query(query)
 	if err != nil {

@@ -14,9 +14,7 @@ import (
 	"github.com/gookit/color"
 )
 
-var (
-	ErrFilter = errors.New("invalid filter used")
-)
+var ErrFilter = errors.New("invalid filter used")
 
 const (
 	bbs   = "bbs"

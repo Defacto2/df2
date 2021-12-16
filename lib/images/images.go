@@ -52,7 +52,6 @@ const (
 	fperm       os.FileMode = 0o666
 	fmode                   = os.O_RDWR | os.O_CREATE
 
-	gif  = ".gif"
 	jpg  = ".jpg"
 	jpeg = ".jpeg"
 	_png = ".png"

@@ -17,12 +17,9 @@ import (
 )
 
 const (
-	api = "https://demozoo.org/api/v1/productions"
 	cd  = "Content-Disposition"
 	cls = "PouetProduction"
 	df2 = "defacto2.net"
-	dos = "dos"
-	win = "windows"
 )
 
 // ProductionsAPIv1 productions API v1.

@@ -13,9 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	ErrSetName = errors.New("invalid flag name")
-)
+var ErrSetName = errors.New("invalid flag name")
 
 // Set edits and saves a setting within a configuration file.
 func Set(name string) error {

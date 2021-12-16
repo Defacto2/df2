@@ -204,7 +204,7 @@ func Clean(name string, r Role, sim bool) (ok bool) {
 	return ok
 }
 
-// CleanS seperates and fixes the substrings of s.
+// CleanS separates and fixes the substrings of s.
 func CleanS(s string) string {
 	ppl := strings.Split(s, ",")
 	for i, person := range ppl {

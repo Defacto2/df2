@@ -44,9 +44,7 @@ func Copyright() string {
 	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
 }
 
-var (
-	ErrDZFlag = errors.New("unknown demozoo flag")
-)
+var ErrDZFlag = errors.New("unknown demozoo flag")
 
 func Data(dbf database.Flags) error {
 	switch {
@@ -66,7 +64,7 @@ func Data(dbf database.Flags) error {
 	return nil
 }
 
-func Demozoo(dzf arg.Demozoo) error {
+func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 	var empty []string
 	r := demozoo.Request{
 		All:       dzf.All,
@@ -79,8 +77,8 @@ func Demozoo(dzf arg.Demozoo) error {
 		if err := r.Queries(); err != nil {
 			return err
 		}
-	case dzf.Id != "":
-		if err := r.Query(dzf.Id); err != nil {
+	case dzf.ID != "":
+		if err := r.Query(dzf.ID); err != nil {
 			return err
 		}
 	case dzf.Refresh:
@@ -190,10 +188,7 @@ func Log() error {
 			duration, color.Info.Sprint(s[2]),
 			strings.Join(s[3:], " "))
 	}
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-	return nil
+	return scanner.Err()
 }
 
 func New() error {

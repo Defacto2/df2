@@ -77,8 +77,11 @@ func TestTotal(t *testing.T) {
 	}{
 		{"empty", args{}, ""},
 		{"no req", args{&zero, Request{}}, ""},
-		{"zero", args{&zero, Request{byID: "1"}},
-			"file record id '1' does not exist or is not a release proof"},
+		{
+			"zero",
+			args{&zero, Request{byID: "1"}},
+			"file record id '1' does not exist or is not a release proof",
+		},
 		{"ten", args{&ten, Request{byID: "1"}}, "Total records 10"},
 	}
 	for _, tt := range tests {

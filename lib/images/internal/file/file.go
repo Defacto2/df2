@@ -22,7 +22,6 @@ const (
 	_png = ".png"
 	tif  = ".tif"
 	tiff = ".tiff"
-	webp = ".webp"
 )
 
 // Image is an image object.
@@ -58,7 +57,7 @@ func (i Image) IsDir(dir *directories.Dir) (ok bool) {
 	return false
 }
 
-// Check the existance of the named file and
+// Check the existence of the named file and
 // confirm it is not a directory or zero-byte file.
 func Check(name string, err error) bool {
 	if err != nil {

@@ -42,8 +42,7 @@ func ExampleColTypes() {
 }
 
 func ExampleLastUpdate() {
-	_, err := database.LastUpdate()
-	if err != nil {
+	if _, err := database.LastUpdate(); err != nil {
 		fmt.Print(err)
 	}
 	// Output:

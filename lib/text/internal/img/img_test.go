@@ -13,12 +13,12 @@ import (
 const (
 	root    = "../../../../tests"
 	dir     = "../../../../tests/text"
-	imgs    = "../../../../tests/images"
 	uuidDir = "../../../../tests/uuid/"
 )
 
 // config the directories expected by ansilove.
 func config(t *testing.T) string {
+	t.Helper()
 	d, err := filepath.Abs(uuidDir)
 	if err != nil {
 		t.Error(err)

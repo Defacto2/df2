@@ -32,7 +32,7 @@ type Demozoo struct {
 	New       bool
 	Refresh   bool
 	Sync      bool
-	Id        string // auto-generated id or a uuid
+	ID        string // auto-generated id or a uuid
 	Extract   []string
 	Ping      uint
 	Download  uint
@@ -41,7 +41,7 @@ type Demozoo struct {
 // Execute global flags.
 type Execute struct {
 	Filename string // Filename of the config file.
-	Quiet    bool   // Quiet mode to reduce text ammount of stdout text.
+	Quiet    bool   // Quiet mode to reduce text amount of stdout text.
 	Panic    bool   // Enable panic errors to help debug.
 	Simulate bool   // Simulate...
 }
@@ -63,7 +63,7 @@ type People struct {
 }
 
 type Proof struct {
-	Id          string // auto-generated id or a uuid
+	ID          string // auto-generated id or a uuid
 	All         bool   // scan for all proofs, not just new uploads
 	HideMissing bool   // hide proofs that are missing their file download
 	Overwrite   bool   // overwrite all existing images

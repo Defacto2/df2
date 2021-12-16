@@ -13,9 +13,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 )
 
-var (
-	ErrSameArgs = errors.New("name and dest cannot be the same")
-)
+var ErrSameArgs = errors.New("name and dest cannot be the same")
 
 const (
 	CreateMode = 0o666

@@ -68,7 +68,9 @@ func (r *Record) Iterate(s *scan.Stats) error {
 		value = database.Val(raw)
 		switch s.Columns[i] {
 		case "id":
-			r.id(s)
+			if err := r.id(s); err != nil {
+				return err
+			}
 		case "createdat":
 			database.DateTime(raw)
 		case "filename":
