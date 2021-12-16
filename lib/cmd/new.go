@@ -2,16 +2,8 @@
 package cmd
 
 import (
-	"github.com/Defacto2/df2/lib/config"
-	"github.com/Defacto2/df2/lib/database"
-	"github.com/Defacto2/df2/lib/demozoo"
-	"github.com/Defacto2/df2/lib/groups"
-	"github.com/Defacto2/df2/lib/images"
+	"github.com/Defacto2/df2/lib/cmd/internal/run"
 	"github.com/Defacto2/df2/lib/logs"
-	"github.com/Defacto2/df2/lib/proof"
-	"github.com/Defacto2/df2/lib/text"
-	"github.com/Defacto2/df2/lib/zipcontent"
-	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +20,7 @@ var newCmd = &cobra.Command{
       fix demozoo
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := runNew(); err != nil {
+		if err := run.New(); err != nil {
 			logs.Fatal(err)
 		}
 	},
@@ -36,57 +28,4 @@ var newCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(newCmd)
-}
-
-func runNew() error {
-	i := 0
-	color.Primary.Println("Scans for new submissions and record cleanup")
-	config.Check()
-	i++
-	color.Info.Printf("%d. scan for new demozoo submissions\n", i)
-	newDZ := demozoo.Request{
-		All:       false,
-		Overwrite: false,
-		Refresh:   false,
-		Simulate:  false,
-	}
-	if err := newDZ.Queries(); err != nil {
-		return err
-	}
-	i++
-	color.Info.Printf("%d. scan for new proof submissions\n", i)
-	newProof := proof.Request{
-		Overwrite:   false,
-		AllProofs:   false,
-		HideMissing: false,
-	}
-	if err := newProof.Queries(); err != nil {
-		return err
-	}
-	i++
-	color.Info.Printf("%d. scan for empty archives\n", i)
-	if err := zipcontent.Fix(true); err != nil {
-		return err
-	}
-	i++
-	color.Info.Printf("%d. generate missing images\n", i)
-	if err := images.Fix(false); err != nil {
-		return err
-	}
-	i++
-	color.Info.Printf("%d. generate missing text previews\n", i)
-	if err := text.Fix(false); err != nil {
-		return err
-	}
-	i++
-	color.Info.Printf("%d. fix demozoo data conflicts\n", i)
-	if err := demozoo.Fix(); err != nil {
-		return err
-	}
-	i++
-	color.Info.Printf("%d. fix malformed database entries\n", i)
-	if err := database.Fix(); err != nil {
-		return err
-	}
-	return groups.Fix(false)
 }

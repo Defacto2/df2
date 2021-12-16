@@ -8,7 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Defacto2/df2/lib/cmd/internal/print"
+	"github.com/Defacto2/df2/lib/cmd/internal/arg"
+	"github.com/Defacto2/df2/lib/cmd/internal/run"
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/logs"
 	"github.com/Defacto2/df2/lib/str"
@@ -21,12 +22,9 @@ var (
 	ErrCmd  = errors.New("invalid command, please use one of the available commands")
 	ErrNoID = errors.New("requires an id or uuid argument")
 	ErrID   = errors.New("invalid id or uuid specified")
-
-	configName = ""
-	panics     = false // debug log
-	quiet      = false // quiet disables most printing or output to terminal
-	simulate   bool
 )
+
+var gf arg.Execute
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
@@ -34,17 +32,18 @@ var rootCmd = &cobra.Command{
 	Short: "The tool to optimise and manage defacto2.net",
 	Long: fmt.Sprintf("%s\nCopyright © %v Ben Garrett\n%v",
 		color.Info.Sprint("The tool to optimise and manage defacto2.net"),
-		print.Copyright(),
+		run.Copyright(),
 		color.Primary.Sprint("https://github.com/Defacto2/df2")),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := runNew(); err != nil {
+		if err := run.New(); err != nil {
 			logs.Fatal(err)
 		}
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// Execute is a Cobra command that adds all child commands to the root and
+// sets the appropriate flags. It is called by main.main() and only needs
+// to be called once in the rootCmd.
 func Execute() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	if err := rootCmd.Execute(); err != nil {
@@ -60,22 +59,22 @@ func Execute() {
 
 func init() { // nolint:gochecknoinits
 	cobra.OnInitialize()
-	initConfig()
-	rootCmd.PersistentFlags().StringVar(&configName, "config", "",
+	readIn()
+	rootCmd.PersistentFlags().StringVar(&gf.Filename, "config", "",
 		fmt.Sprintf("config file (default is %s)", config.Filepath()))
-	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false,
+	rootCmd.PersistentFlags().BoolVarP(&gf.Quiet, "quiet", "q", false,
 		"suspend feedback to the terminal")
-	rootCmd.PersistentFlags().BoolVar(&panics, "panic", false,
+	rootCmd.PersistentFlags().BoolVar(&gf.Panic, "panic", false,
 		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
 		logs.Fatal(err)
 	}
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	logs.Panic(panics)
-	logs.Quiet(quiet)
+// readIn the config file and ENV variables if set.
+func readIn() {
+	logs.Panic(gf.Panic)
+	logs.Quiet(gf.Quiet)
 	if cf := config.Filepath(); cf == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -92,7 +91,7 @@ func initConfig() {
 		config.Config.Errors = true
 		return
 	}
-	if !quiet && !str.Piped() {
+	if !gf.Quiet && !str.Piped() {
 		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s",
 			viper.ConfigFileUsed())))
 	}

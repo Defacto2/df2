@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/lib/cmd/internal/arg"
+	"github.com/Defacto2/df2/lib/cmd/internal/run"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/groups"
 	"github.com/Defacto2/df2/lib/logs"
@@ -18,35 +19,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-type groupFlags struct {
-	counts   bool
-	cronjob  bool
-	forcejob bool
-	init     bool
-	progress bool
-	filter   string
-	format   string
-}
-
-type recentFlags struct {
-	compress bool
-	limit    uint
-}
-
-const (
-	datal = "datalist"
-	dl    = "dl"
-	htm   = "html"
-	txt   = "text"
-)
-
 var (
 	dbf database.Flags
-	gpf groupFlags
-	rcf recentFlags
+	gpf arg.Group
+	ppf arg.People
+	rcf arg.Recent
 )
-
-var fmtflags = [7]string{datal, htm, txt, dl, "d", "h", "t"}
 
 // outputCmd represents the output command.
 var outputCmd = &cobra.Command{
@@ -89,29 +67,29 @@ func init() { // nolint:gochecknoinits
 		logs.Fatal(err)
 	}
 	outputCmd.AddCommand(groupCmd)
-	groupCmd.Flags().StringVarP(&gpf.filter, "filter", "f", "",
+	groupCmd.Flags().StringVarP(&gpf.Filter, "filter", "f", "",
 		"filter groups (default all)\noptions: "+strings.Join(groups.Wheres(), ","))
-	groupCmd.Flags().BoolVarP(&gpf.counts, "count", "c", false,
+	groupCmd.Flags().BoolVarP(&gpf.Counts, "count", "c", false,
 		"display the file totals for each group (SLOW)")
-	groupCmd.Flags().BoolVarP(&gpf.progress, "progress", "p", true,
+	groupCmd.Flags().BoolVarP(&gpf.Progress, "progress", "p", true,
 		"show a progress indicator while fetching a large number of records")
-	groupCmd.Flags().BoolVarP(&gpf.cronjob, "cronjob", "j", false,
+	groupCmd.Flags().BoolVarP(&gpf.Cronjob, "cronjob", "j", false,
 		"run in cronjob automated mode, ignores all other arguments")
-	groupCmd.Flags().BoolVar(&gpf.forcejob, "forcejob", false,
+	groupCmd.Flags().BoolVar(&gpf.Forcejob, "forcejob", false,
 		"force the running of the cronjob automated mode")
-	groupCmd.Flags().StringVarP(&gpf.format, "format", "t", "",
+	groupCmd.Flags().StringVarP(&gpf.Format, "format", "t", "",
 		"output format (default html)\noptions: datalist,html,text")
-	groupCmd.Flags().BoolVarP(&gpf.init, "initialism", "i", false,
+	groupCmd.Flags().BoolVarP(&gpf.Init, "initialism", "i", false,
 		"display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
-	peopleCmd.Flags().StringVarP(&pf.filter, "filter", "f", "",
+	peopleCmd.Flags().StringVarP(&ppf.Filter, "filter", "f", "",
 		"filter groups (default all)\noptions: "+people.Roles())
-	peopleCmd.Flags().StringVarP(&pf.format, "format", "t", "",
+	peopleCmd.Flags().StringVarP(&ppf.Format, "format", "t", "",
 		"output format (default html)\noptions: datalist,html,text")
 	outputCmd.AddCommand(recentCmd)
-	recentCmd.Flags().BoolVarP(&rcf.compress, "compress", "c", false,
+	recentCmd.Flags().BoolVarP(&rcf.Compress, "compress", "c", false,
 		"remove insignificant whitespace characters")
-	recentCmd.Flags().UintVarP(&rcf.limit, "limit", "l", fifteen,
+	recentCmd.Flags().UintVarP(&rcf.Limit, "limit", "l", fifteen,
 		"limit the number of rows returned")
 	outputCmd.AddCommand(sitemapCmd)
 }
@@ -121,19 +99,8 @@ var dataCmd = &cobra.Command{
 	Aliases: []string{"d", "sql"},
 	Short:   "An SQL dump generator to export files",
 	Run: func(cmd *cobra.Command, args []string) {
-		switch {
-		case dbf.CronJob:
-			if err := dbf.Run(); err != nil {
-				log.Fatal(err)
-			}
-		case dbf.Tables == "all":
-			if err := dbf.DB(); err != nil {
-				log.Fatal(err)
-			}
-		default:
-			if err := dbf.ExportTable(); err != nil {
-				log.Fatal(err)
-			}
+		if err := run.Data(dbf); err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -144,43 +111,11 @@ var groupCmd = &cobra.Command{
 	Aliases: []string{"g", "group"},
 	Short:   "A HTML snippet generator to list groups",
 	Run: func(cmd *cobra.Command, args []string) {
-		switch {
-		case gpf.cronjob, gpf.forcejob:
-			force := false
-			if gpf.forcejob {
-				force = true
-			}
-			if err := groups.Cronjob(force); err != nil {
-				log.Fatal(err)
-			}
-			return
-		}
-		arg.FilterFlag(groups.Wheres(), "filter", gpf.filter)
-		req := groups.Request{Filter: gpf.filter, Counts: gpf.counts, Initialisms: gpf.init, Progress: gpf.progress}
-		switch gpf.format {
-		case datal, dl, "d":
-			if err := req.DataList(""); err != nil {
-				log.Fatal(err)
-			}
-		case htm, "h", "":
-			if err := req.HTML(""); err != nil {
-				log.Fatal(err)
-			}
-		case txt, "t":
-			if _, err := req.Print(); err != nil {
-				log.Fatal(err)
-			}
+		if err := run.Groups(gpf); err != nil {
+			log.Fatal(err)
 		}
 	},
 }
-
-type pplFlags struct {
-	filter   string
-	format   string
-	progress bool
-}
-
-var pf pplFlags
 
 // peopleCmd represents the authors command.
 var peopleCmd = &cobra.Command{
@@ -188,24 +123,8 @@ var peopleCmd = &cobra.Command{
 	Aliases: []string{"p", "ppl"},
 	Short:   "A HTML snippet generator to list people",
 	Run: func(cmd *cobra.Command, args []string) {
-		arg.FilterFlag(people.Filters(), "filter", pf.filter)
-		var req people.Request
-		if arg.FilterFlag(fmtflags, "format", pf.format); pf.format != "" {
-			req = people.Request{Filter: pf.filter, Progress: pf.progress}
-		}
-		switch pf.format {
-		case datal, dl, "d":
-			if err := people.DataList("", req); err != nil {
-				log.Fatal(err)
-			}
-		case htm, "h", "":
-			if err := people.HTML("", req); err != nil {
-				log.Fatal(err)
-			}
-		case txt, "t":
-			if err := people.Print(req); err != nil {
-				log.Fatal(err)
-			}
+		if err := run.People(ppf); err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -215,7 +134,7 @@ var recentCmd = &cobra.Command{
 	Aliases: []string{"r"},
 	Short:   "A JSON snippet generator to list recent file additions",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := recent.List(rcf.limit, rcf.compress); err != nil {
+		if err := recent.List(rcf.Limit, rcf.Compress); err != nil {
 			log.Fatal(err)
 		}
 	},

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Defacto2/df2/lib/cmd/internal/arg"
 	"github.com/Defacto2/df2/lib/config"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/directories"
@@ -14,15 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type configFlags struct {
-	name      string
-	overwrite bool
-}
-
-var (
-	cfgf     configFlags
-	infoSize bool
-)
+var conf arg.Config
 
 // configCmd represents the config command.
 var configCmd = &cobra.Command{
@@ -46,7 +39,7 @@ var configCreateCmd = &cobra.Command{
 	Short:   "Create a new config file",
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Create(cfgf.overwrite); err != nil {
+		if err := config.Create(conf.Overwrite); err != nil {
 			log.Fatal(fmt.Errorf("config create: %w", err))
 		}
 	},
@@ -77,7 +70,7 @@ var configInfoCmd = &cobra.Command{
 	Short:   "View settings configured by the config",
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Info(infoSize); err != nil {
+		if err := config.Info(conf.InfoSize); err != nil {
 			log.Fatal(fmt.Errorf("config info: %w", err))
 		}
 	},
@@ -96,7 +89,7 @@ var configSetCmd = &cobra.Command{
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Set(cfgf.name); err != nil {
+		if err := config.Set(conf.Name); err != nil {
 			if errors.Is(err, config.ErrSetName) {
 				os.Exit(1)
 			}
@@ -110,15 +103,15 @@ func init() { // nolint:gochecknoinits
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configCreateCmd)
-	configCreateCmd.Flags().BoolVarP(&cfgf.overwrite, "overwrite", "y", false,
+	configCreateCmd.Flags().BoolVarP(&conf.Overwrite, "overwrite", "y", false,
 		"overwrite any existing config file")
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configEditCmd)
 	configCmd.AddCommand(configInfoCmd)
-	configInfoCmd.Flags().BoolVarP(&infoSize, "size", "s", false,
+	configInfoCmd.Flags().BoolVarP(&conf.InfoSize, "size", "s", false,
 		"display directory sizes and file counts (SLOW)")
 	configCmd.AddCommand(configSetCmd)
-	configSetCmd.Flags().StringVarP(&cfgf.name, "name", "n", "",
+	configSetCmd.Flags().StringVarP(&conf.Name, "name", "n", "",
 		`the configuration path to edit in dot syntax (see examples)
 	to see a list of names run: df2 config info`)
 	if err := configSetCmd.MarkFlagRequired("name"); err != nil {

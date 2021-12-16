@@ -56,10 +56,10 @@ var fixDatabaseCmd = &cobra.Command{
 		if err := database.Fix(); err != nil {
 			log.Fatal(err)
 		}
-		if err := groups.Fix(simulate); err != nil {
+		if err := groups.Fix(gf.Simulate); err != nil {
 			log.Fatal(err)
 		}
-		if err := people.Fix(simulate); err != nil {
+		if err := people.Fix(gf.Simulate); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -81,7 +81,7 @@ var fixImagesCmd = &cobra.Command{
 	Short:   "Generate missing images",
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := images.Fix(simulate); err != nil {
+		if err := images.Fix(gf.Simulate); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -92,7 +92,7 @@ var fixTextCmd = &cobra.Command{
 	Short:   "Generate missing text previews",
 	Aliases: []string{"t", "txt"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := text.Fix(simulate); err != nil {
+		if err := text.Fix(gf.Simulate); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -123,7 +123,7 @@ func init() { // nolint:gochecknoinits
 	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.AddCommand(fixZipCmmtCmd)
-	fixCmd.PersistentFlags().BoolVarP(&simulate, "dry-run", "d", false,
+	fixCmd.PersistentFlags().BoolVarP(&gf.Simulate, "dry-run", "d", false,
 		"simulate the fixes and display the expected changes")
 	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ascii, "print", "p", false,
 		"also print saved comments to the stdout")
