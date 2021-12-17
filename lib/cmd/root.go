@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 // Execute is a Cobra command that adds all child commands to the root and
 // sets the appropriate flags. It is called by main.main() and only needs
 // to be called once in the rootCmd.
-func Execute() {
+func Execute() error {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(color.Warn.Sprintf("%s", err))
@@ -52,9 +52,10 @@ func Execute() {
 			logs.Println("see Examples for usage or run to list setting choices:",
 				color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))
 		}
-		os.Exit(1)
+		return err
 	}
 	config.Check()
+	return nil
 }
 
 func init() { // nolint:gochecknoinits

@@ -42,7 +42,7 @@ func (s *Proof) Summary(id string) string {
 	}
 	total := s.Count - s.Missing
 	if total == 0 {
-		return "nothing to do"
+		return "nothing to do\n"
 	}
 	elapsed := time.Since(s.start).Seconds()
 	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, elapsed)

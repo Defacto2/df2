@@ -9,9 +9,10 @@ import (
 
 var newCmd = &cobra.Command{
 	Use:     "new",
-	Short:   "Handler for files flagged as waiting to go live (default)",
+	Short:   "Manage files marked as waiting to go live (default).",
 	Aliases: []string{"n"},
-	Long: `Runs a sequence of commands to handle files waiting to go live.
+	Long: `Runs a sequence of commands to handle the files waiting to go live.
+This is the default df2 command when used without any flags or arguments.
 
   df2 demozoo --new
       proof

@@ -59,7 +59,9 @@ func main() {
 		return
 	}
 	// cobra flag lib
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
 
 func app() string {
