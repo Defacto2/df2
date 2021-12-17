@@ -269,7 +269,7 @@ func GetID(s string) (uint, error) {
 			return 0, fmt.Errorf("lookupid query row: %w", err)
 		}
 		if id == 0 {
-			return 0, fmt.Errorf("lookupid %q: %w", v, ErrNoID)
+			return 0, fmt.Errorf("lookupid %q: %w", s, ErrNoID)
 		}
 		return uint(v), nil
 	}
