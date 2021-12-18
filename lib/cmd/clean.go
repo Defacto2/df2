@@ -19,8 +19,11 @@ var (
 
 // cleanCmd represents the clean command.
 var cleanCmd = &cobra.Command{
-	Use:     "clean",
-	Short:   "Discover or clean orphan files",
+	Use:   "clean",
+	Short: "Discover or clean orphan files.",
+	Long: `Discover or clean orphan files found on the web server.
+Files are considered orphan when they do not match to a correlating record in the
+database. These can include UUID named thumbnails, previews, textfile previews.`,
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		directories.Init(clf.MakeDirs)

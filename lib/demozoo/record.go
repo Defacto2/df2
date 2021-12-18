@@ -394,7 +394,7 @@ func RefreshMeta() error {
 	var st Stat
 	for rows.Next() {
 		if err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
-			return fmt.Errorf("meta rows: %w", err)
+			logs.Println(fmt.Errorf("meta rows: %w", err))
 		}
 	}
 	st.summary(time.Since(start))

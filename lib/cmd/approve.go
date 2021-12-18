@@ -15,7 +15,7 @@ var appr arg.Approve
 
 var approveCmd = &cobra.Command{
 	Use:     "approve",
-	Short:   "Approve the file records that are ready to go live",
+	Short:   "Approve the records that are ready to go live.",
 	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := database.Approve(appr.Verbose); err != nil {

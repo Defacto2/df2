@@ -15,7 +15,8 @@ var dzf arg.Demozoo
 // demozooCmd represents the demozoo command.
 var demozooCmd = &cobra.Command{
 	Use:     "demozoo",
-	Short:   "Interact with Demozoo.org upload submissions",
+	Short:   "Interact with Demozoo submissions.",
+	Long:    "Manage upload submissions that rely on the API hosted on demozoo.org.",
 	Aliases: []string{"d", "dz"},
 	Example: `  df2 demozoo [--new|--all|--id] (--dry-run,--overwrite)
   df2 demozoo [--refresh|--ping|--download]`,

@@ -20,7 +20,8 @@ var conf arg.Config
 // configCmd represents the config command.
 var configCmd = &cobra.Command{
 	Use:     "config",
-	Short:   "Configure the settings for this tool",
+	Short:   "Configure the settings for this tool.",
+	Long:    `Configure settings and defaults for df2.`,
 	Aliases: []string{"cfg"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Usage(); err != nil {
@@ -36,7 +37,7 @@ var configCmd = &cobra.Command{
 
 var configCreateCmd = &cobra.Command{
 	Use:     "create",
-	Short:   "Create a new config file",
+	Short:   "Create a new config file.",
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Create(conf.Overwrite); err != nil {
@@ -47,7 +48,7 @@ var configCreateCmd = &cobra.Command{
 
 var configDeleteCmd = &cobra.Command{
 	Use:     "delete",
-	Short:   "Remove the config file",
+	Short:   "Remove the config file.",
 	Aliases: []string{"d"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Delete(); err != nil {
@@ -58,7 +59,7 @@ var configDeleteCmd = &cobra.Command{
 
 var configEditCmd = &cobra.Command{
 	Use:     "edit",
-	Short:   "Edit the config file",
+	Short:   "Edit the config file.",
 	Aliases: []string{"e"},
 	Run: func(cmd *cobra.Command, args []string) {
 		config.Edit()
@@ -67,7 +68,7 @@ var configEditCmd = &cobra.Command{
 
 var configInfoCmd = &cobra.Command{
 	Use:     "info",
-	Short:   "View settings configured by the config",
+	Short:   "View settings configured by the config.",
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Info(conf.InfoSize); err != nil {
@@ -76,15 +77,13 @@ var configInfoCmd = &cobra.Command{
 	},
 }
 
-const configSetLong = `Change a configuration setting using the name flag. After requesting
+var configSetCmd = &cobra.Command{
+	Use:   "set",
+	Short: "Change a configuration.",
+	Long: `Change a configuration setting using the name flag. After requesting
 a setting change you will be prompted for a new value which will be validated.
 See the examples for usage syntax and also see the --name flag description for
-the command to list the available seettings.`
-
-var configSetCmd = &cobra.Command{
-	Use:     "set",
-	Short:   "Change a configuration",
-	Long:    configSetLong,
+the command to list the available seettings.`,
 	Aliases: []string{"s"},
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
