@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Defacto2/df2/lib/cmd/internal/arg"
 	"github.com/Defacto2/df2/lib/database"
 	"github.com/Defacto2/df2/lib/demozoo"
 	"github.com/Defacto2/df2/lib/groups"
@@ -18,10 +19,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var zcf arg.ZipCmmt
+
 // fixCmd represents the fix command.
 var fixCmd = &cobra.Command{
 	Use:     "fix",
-	Short:   "Fixes database entries and records",
+	Short:   "Fixes database entries and records.",
+	Long:    "Repair broken or invalid formatting for the database records and entries.",
 	Aliases: []string{"f"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
@@ -38,8 +42,11 @@ var fixCmd = &cobra.Command{
 }
 
 var fixArchivesCmd = &cobra.Command{
-	Use:     "archives",
-	Short:   "Repair archives listing empty content",
+	Use:   "archives",
+	Short: "Repair archives listing empty content.",
+	Long: `Records with downloads that are packaged into archives need to have
+their file content added to the database. This command finds and repair
+records that do not have this expected context.`,
 	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := zipcontent.Fix(true); err != nil {
@@ -49,8 +56,10 @@ var fixArchivesCmd = &cobra.Command{
 }
 
 var fixDatabaseCmd = &cobra.Command{
-	Use:     "database",
-	Short:   "Repair malformed database entries",
+	Use:   "database",
+	Short: "Repair malformed database entries.",
+	Long: `Repair malformed records and entries in the database.
+This includes the formatting and trimming of groups, people, platforms and sections.`,
 	Aliases: []string{"d", "db"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := database.Fix(); err != nil {
@@ -67,7 +76,7 @@ var fixDatabaseCmd = &cobra.Command{
 
 var fixDemozooCmd = &cobra.Command{
 	Use:     "demozoo",
-	Short:   "Repair imported Demozoo data conflicts",
+	Short:   "Repair imported Demozoo data conflicts.",
 	Aliases: []string{"dz"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := demozoo.Fix(); err != nil {
@@ -77,8 +86,10 @@ var fixDemozooCmd = &cobra.Command{
 }
 
 var fixImagesCmd = &cobra.Command{
-	Use:     "images",
-	Short:   "Generate missing images",
+	Use:   "images",
+	Short: "Generate missing images.",
+	Long: `Create missing previews, thumbnails and optimised formats for records
+that are raster images.`,
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := images.Fix(gf.Simulate); err != nil {
@@ -88,8 +99,10 @@ var fixImagesCmd = &cobra.Command{
 }
 
 var fixTextCmd = &cobra.Command{
-	Use:     "text",
-	Short:   "Generate missing text previews",
+	Use:   "text",
+	Short: "Generate missing text previews.",
+	Long: `Create missing previews, thumbnails and optimised formats for records
+that are plain text files.`,
 	Aliases: []string{"t", "txt"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := text.Fix(gf.Simulate); err != nil {
@@ -98,18 +111,15 @@ var fixTextCmd = &cobra.Command{
 	},
 }
 
-var fixZipCmmt struct {
-	ascii   bool
-	unicode bool
-	ow      bool
-}
-
 var fixZipCmmtCmd = &cobra.Command{
-	Use:     "zip",
-	Short:   "Extract missing comments from zip archives",
+	Use:   "zip",
+	Short: "Extract missing comments from zip archives.",
+	Long: `Extract and save missing comments from zip archives.
+
+"A comment is optional text information that is embedded in a Zip file."`,
 	Aliases: []string{"z"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcmmt.Fix(fixZipCmmt.ascii, fixZipCmmt.unicode, fixZipCmmt.ow, true); err != nil {
+		if err := zipcmmt.Fix(zcf.Ascii, zcf.Unicode, zcf.OW, true); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -125,10 +135,10 @@ func init() { // nolint:gochecknoinits
 	fixCmd.AddCommand(fixZipCmmtCmd)
 	fixCmd.PersistentFlags().BoolVarP(&gf.Simulate, "dry-run", "d", false,
 		"simulate the fixes and display the expected changes")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ascii, "print", "p", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.Ascii, "print", "p", false,
 		"also print saved comments to the stdout")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.unicode, "unicode", "u", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.Unicode, "unicode", "u", false,
 		"also convert saved comments into Unicode and print to the stdout")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&fixZipCmmt.ow, "overwrite", "o", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.OW, "overwrite", "o", false,
 		"overwrite all existing saved comments")
 }

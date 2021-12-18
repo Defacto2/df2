@@ -74,6 +74,12 @@ type Recent struct {
 	Limit    uint
 }
 
+type ZipCmmt struct {
+	Ascii   bool
+	Unicode bool
+	OW      bool
+}
+
 // FilterFlag compairs the value of the filter flag against the list of slice values.
 func FilterFlag(t interface{}, flag, val string) {
 	if val == "" {
