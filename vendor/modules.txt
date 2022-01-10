@@ -116,7 +116,7 @@ github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.4.3
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/muesli/go-app-paths v0.2.1
+# github.com/muesli/go-app-paths v0.2.2
 ## explicit; go 1.14
 github.com/muesli/go-app-paths
 # github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84

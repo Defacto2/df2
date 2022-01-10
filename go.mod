@@ -16,7 +16,7 @@ require (
 	github.com/gookit/color v1.5.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/muesli/go-app-paths v0.2.1
+	github.com/muesli/go-app-paths v0.2.2
 	github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84 // indirect
 	github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e
 	github.com/nwaples/rardecode v1.1.2
