@@ -1,4 +1,4 @@
-# github.com/alecthomas/chroma v0.9.4
+# github.com/alecthomas/chroma v0.10.0
 ## explicit; go 1.13
 github.com/alecthomas/chroma
 github.com/alecthomas/chroma/formatters
@@ -116,14 +116,14 @@ github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.4.3
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/muesli/go-app-paths v0.2.1
+# github.com/muesli/go-app-paths v0.2.2
 ## explicit; go 1.14
 github.com/muesli/go-app-paths
 # github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84
 ## explicit
 github.com/nickalie/go-binwrapper
-# github.com/nickalie/go-webpbin v0.0.0-20170427122138-7e79cf5bb01e
-## explicit
+# github.com/nickalie/go-webpbin v0.0.0-20220110095747-f10016bf2dc1
+## explicit; go 1.14
 github.com/nickalie/go-webpbin
 # github.com/nwaples/rardecode v1.1.2
 ## explicit
@@ -135,7 +135,7 @@ github.com/pelletier/go-toml
 ## explicit
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
-# github.com/spf13/afero v1.6.0
+# github.com/spf13/afero v1.8.0
 ## explicit; go 1.13
 github.com/spf13/afero
 github.com/spf13/afero/mem
@@ -187,11 +187,11 @@ golang.org/x/image/tiff/lzw
 golang.org/x/image/vp8
 golang.org/x/image/vp8l
 golang.org/x/image/webp
-# golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
+# golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
-# golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
+# golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
