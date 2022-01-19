@@ -33,8 +33,7 @@ func Generate(name, uuid string, amiga bool) error {
 	}
 	const note = `
 this command requires the installation of AnsiLove/C
-installation instructions: https://github.com/ansilove/ansilove
-`
+installation instructions: https://github.com/ansilove/ansilove`
 	n, f := name, directories.Files(uuid)
 	o := f.Img000 + png
 	s, err := MakePng(n, f.Img000, amiga)
