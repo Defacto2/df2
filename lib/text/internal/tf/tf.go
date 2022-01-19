@@ -80,7 +80,6 @@ func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 		if path == "" {
 			return false, nil
 		}
-		fmt.Println(filepath.Join(path, t.UUID+png))
 		s, err := os.Stat(filepath.Join(path, t.UUID+png))
 		if os.IsNotExist(err) {
 			return false, nil
