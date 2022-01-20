@@ -42,11 +42,11 @@ Available Commands:
   demozoo     Interact with Demozoo.org submissions.
   fix         Fixes database entries and records.
   help        Help about any command
-  lookup      Lookup the file URL of a record\'s ID or UUID.
+  lookup      Lookup the file URL of a record's ID or UUID.
   new         Manage files marked as waiting to go live (default).
   output      Generators for JSON, HTML, SQL and sitemap documents.
-  proof       Manage records tagged as #releaseproof
-  shrink      Reduces the space used in directories
+  proof       Manage records tagged as #releaseproof.
+  shrink      Reduces the space used in directories.
 
 Flags:
       --config string   config file (default is config.yaml)
@@ -63,7 +63,7 @@ Is built on [Go v1.x](https://golang.org/doc/install) and is packaged for the Ub
 ```bash
 cd ~/downloads
 wget https://github.com/Defacto2/df2/releases/latest/download/df2.deb
-dpkg -i df2.deb # also works to update
+dpkg -i df2.deb # also works for updating
 df2 --version
 ```
 
