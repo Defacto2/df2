@@ -101,11 +101,11 @@ func (st *Stat) nextResult(rec Records, req Request) (skip bool, err error) {
 func (st Stat) print() {
 	if st.Count == 0 {
 		if st.Fetched == 0 {
-			fmt.Printf("id %q is not a Demozoo sourced file record\n", st.ByID)
+			fmt.Printf("id %q does not have an associated Demozoo link\n", st.ByID)
 			return
 		}
-		fmt.Printf("id %q is not a new Demozoo record, "+
-			"use --id=%v --overwrite to refetch the download and data\n", st.ByID, st.ByID)
+		fmt.Printf("id %q does not have any empty cells that can be replaced with Demozoo data, "+
+			"use --id=%v --overwrite to refetch the linked download and reapply data\n", st.ByID, st.ByID)
 		return
 	}
 	logs.Println()
