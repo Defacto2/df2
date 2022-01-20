@@ -45,6 +45,7 @@ func TestFetch(t *testing.T) {
 		wantTitle  string
 	}{
 		{"invalid", 0, 404, "404 Not Found", ""},
+		{"deleted", 9609, 404, "404 Not Found", ""},
 		{"record 1", 1, 200, "200 OK", "Rob Is Jarig"},
 	}
 	for _, tt := range tests {
