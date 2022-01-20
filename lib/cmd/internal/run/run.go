@@ -86,6 +86,7 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 			return err
 		}
 	case dzf.Sync:
+		return demozoo.ErrNA
 		// if err := demozoo.Sync(); err != nil {
 		// 	return err
 		// }

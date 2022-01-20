@@ -32,6 +32,7 @@ var (
 	ErrFilePath = errors.New("filepath requirement cannot be empty")
 	ErrFilename = errors.New("filename requirement cannot be empty")
 	ErrTooFew   = errors.New("too few record values")
+	ErrNA       = errors.New("this feature is not implemented")
 )
 
 const (
