@@ -19,7 +19,7 @@ var demozooCmd = &cobra.Command{
 	Long:    "Manage upload submissions that rely on the API hosted on demozoo.org.",
 	Aliases: []string{"d", "dz"},
 	Example: `  df2 demozoo [--new|--all|--id] (--dry-run,--overwrite)
-  df2 demozoo [--refresh|--ping|--download]`,
+  df2 demozoo [--refresh|--sync|--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := run.Demozoo(dzf)
 		switch {
@@ -40,19 +40,19 @@ func init() { // nolint:gochecknoinits
 	demozooCmd.Flags().BoolVar(&dzf.All, "all", false,
 		"scan all files with demozoo links (SLOW)")
 	demozooCmd.Flags().StringVarP(&dzf.ID, "id", "i", "",
-		"file id or uuid with a demozoo link to scan\n")
+		"update the empty data of a table id or uuid with its fetched demozoo data")
 	demozooCmd.Flags().BoolVarP(&dzf.Simulate, "dry-run", "d", false,
 		"simulate the fixes and display the expected changes")
 	demozooCmd.Flags().BoolVar(&dzf.Overwrite, "overwrite", false,
 		"rescan archives and overwrite all existing assets\n")
 	demozooCmd.Flags().BoolVarP(&dzf.Refresh, "refresh", "r", false,
-		"replace missing files metadata with demozoo data (SLOW)")
+		"replace empty table data with fetched demozoo data (SLOW)\nany demozoo ids with 404 are removed from the table")
 	demozooCmd.Flags().BoolVarP(&dzf.Sync, "sync", "s", false,
-		"scan the demozoo api for missing bbstros and cracktros (SLOW)")
+		"scan the demozoo api for missing bbstros and cracktros (SLOW) [not implemented]\n")
 	demozooCmd.Flags().UintVarP(&dzf.Ping, "ping", "p", 0,
-		"fetch and display a production record from the Demozoo.org API")
+		"fetch and display a production record from the demozoo API")
 	demozooCmd.Flags().UintVarP(&dzf.Download, "download", "g", 0,
-		"fetch and download a production's link file via the Demozoo.org API\n")
+		"fetch and download a linked file from the demozoo API\n")
 	demozooCmd.Flags().StringArrayVar(&dzf.Extract, "extract", make([]string, 0),
 		`extracts and parses an archived file
 requires two flags: --extract [filename] --extract [uuid]`)
