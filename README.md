@@ -28,23 +28,24 @@ df2 is a command-line tool for managing plus optimising the files and database o
 
 ```bash
 A tool to optimise and manage defacto2.net
-Copyright © 2020-21 Ben Garrett
+Copyright © 2020-22 Ben Garrett
 https://github.com/Defacto2/df2
 
 Usage:
+  df2 [flags]
   df2 [command]
 
 Available Commands:
-  approve     Approve the file records that are ready to go live
-  clean       Discover or clean orphan files
-  config      Configure the settings for this tool
-  demozoo     Interact with Demozoo.org upload submissions
-  fix         Fixes database entries and records
+  approve     Approve the records that are ready to go live.
+  clean       Discover or clean orphan files.
+  config      Configure the settings for this tool.
+  demozoo     Interact with Demozoo.org submissions.
+  fix         Fixes database entries and records.
   help        Help about any command
-  lookup      Lookup the file URL of a database ID or UUID
-  new         Handler for files flagged as waiting to go live
-  output      JSON, HTML, SQL and sitemap generator
-  proof       Handler for files tagged as #releaseproof
+  lookup      Lookup the file URL of a record\'s ID or UUID.
+  new         Manage files marked as waiting to go live (default).
+  output      Generators for JSON, HTML, SQL and sitemap documents.
+  proof       Manage records tagged as #releaseproof
   shrink      Reduces the space used in directories
 
 Flags:
@@ -71,7 +72,6 @@ df2 --version
 The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) in the system `PATH`.
 
 [WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). PNG image compression relies on [pngquant](https://pngquant.org).
-
 
 #### Ubuntu installation
 
