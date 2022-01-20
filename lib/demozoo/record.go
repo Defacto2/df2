@@ -81,7 +81,7 @@ func (r *Record) Save() error {
 }
 
 func (r *Record) SQL() (query string, args []interface{}) {
-	// an range map iternation is not used due to the varied comparisons
+	// a range map iternation is not used due to the varied comparisons
 	set := setSQL(r)
 	args = setArg(r, set)
 	if len(set) == 0 {
@@ -180,7 +180,7 @@ func setArg(r *Record, set []string) (args []interface{}) {
 		args = append(args, []interface{}{r.WebIDPouet}...)
 	}
 	if r.WebIDDemozoo == 0 && len(set) > 0 {
-		args = append(args, []interface{}{""}...)
+		args = append(args, []interface{}{sql.NullInt16{}}...)
 	}
 	if r.DOSeeBinary != "" {
 		args = append(args, []interface{}{r.DOSeeBinary}...)
