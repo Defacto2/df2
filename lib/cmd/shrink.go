@@ -12,7 +12,7 @@ import (
 // shrinkCmd represents the compact command.
 var shrinkCmd = &cobra.Command{
 	Use:   "shrink",
-	Short: "Reduces the space used in directories",
+	Short: "Reduces the space used in directories.",
 	Long: `Shrink reduces the hard drive space used for directories on
 the website. This command will only work when no records in the database
 are 'waiting for approval.'`,

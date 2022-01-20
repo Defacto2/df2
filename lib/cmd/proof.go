@@ -13,7 +13,7 @@ var proofs arg.Proof
 // proofCmd represents the proof command.
 var proofCmd = &cobra.Command{
 	Use:   "proof",
-	Short: "Manage records tagged as #releaseproof",
+	Short: "Manage records tagged as #releaseproof.",
 	Long: `Group release proofs verify the use of retail-ready physical media
 for scene releases. These proofs often come in archives containing
 photos and text NFO files.`,
