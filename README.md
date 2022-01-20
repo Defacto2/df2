@@ -26,7 +26,7 @@ df2 is a command-line tool for managing plus optimising the files and database o
 
 ---
 
-```bash
+```
 A tool to optimise and manage defacto2.net
 Copyright © 2020-22 Ben Garrett
 https://github.com/Defacto2/df2
