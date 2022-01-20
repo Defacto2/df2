@@ -73,7 +73,6 @@ func clean(t Target, d *directories.Dir, remove, human bool) error {
 	if paths == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
-	fmt.Printf("mess: %+v", d)
 	// connect to the database
 	rows, m, err := CreateUUIDMap()
 	if err != nil {
