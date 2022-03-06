@@ -47,6 +47,7 @@ func init() { // nolint:gochecknoinits
 		"rescan archives and overwrite all existing assets\n")
 	demozooCmd.Flags().BoolVarP(&dzf.Refresh, "refresh", "r", false,
 		"replace empty table data with fetched demozoo data (SLOW)\nany demozoo ids with 404 are removed from the table")
+	demozooCmd.Flags().BoolVar(&dzf.Pouet, "pouet", false, "scan the demozoo api for missing or deleted pouet ids [not implemented]")
 	demozooCmd.Flags().BoolVarP(&dzf.Sync, "sync", "s", false,
 		"scan the demozoo api for missing bbstros and cracktros (SLOW) [not implemented]\n")
 	demozooCmd.Flags().UintVarP(&dzf.Ping, "ping", "p", 0,

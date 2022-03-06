@@ -31,6 +31,7 @@ type Demozoo struct {
 	Simulate  bool
 	New       bool
 	Refresh   bool
+	Pouet     bool
 	Sync      bool
 	ID        string // auto-generated id or a uuid
 	Extract   []string

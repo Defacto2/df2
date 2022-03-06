@@ -20,9 +20,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	ErrNoOutput = errors.New("no output command used")
-)
+var ErrNoOutput = errors.New("no output command used")
 
 const notUsed = "\n\nThis document is not in use on the website."
 
