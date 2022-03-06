@@ -177,7 +177,8 @@ func SaveDir() string {
 	var dir string
 	dir, err = os.Getwd()
 	if err != nil {
-		log.Fatalln("shrink saveDir failed to get the user home or the working directory:", err)
+		log.Println("shrink saveDir failed to get the user home or the working directory:", err)
+		return ""
 	}
 	return dir
 }

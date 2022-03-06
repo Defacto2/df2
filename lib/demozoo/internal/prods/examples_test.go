@@ -40,19 +40,19 @@ func loadExample(r int, c chan prods.ProductionsAPIv1) {
 	case channel3:
 		name = "267300"
 	default:
-		log.Fatal(fmt.Errorf("load r %d: %w", r, ErrVal))
+		log.Print(fmt.Errorf("load r %d: %w", r, ErrVal))
 	}
 	path, err := filepath.Abs(filepath.Join(testDir, fmt.Sprintf("record_%s.json", name)))
 	if err != nil {
-		log.Fatal(fmt.Errorf("path %q: %w", path, err))
+		log.Print(fmt.Errorf("path %q: %w", path, err))
 	}
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	var dz prods.ProductionsAPIv1
 	if err := json.Unmarshal(data, &dz); err != nil {
-		log.Fatal(fmt.Errorf("load json unmarshal: %w", err))
+		log.Print(fmt.Errorf("load json unmarshal: %w", err))
 	}
 	c <- dz
 }

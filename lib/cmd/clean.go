@@ -28,7 +28,7 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 	Run: func(cmd *cobra.Command, args []string) {
 		directories.Init(clf.MakeDirs)
 		if err := assets.Clean(clf.Target, clf.Delete, clf.Humanise); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -45,7 +45,7 @@ func init() { // nolint:gochecknoinits
 		"generate uuid directories and placeholder files")
 	cleanCmd.Flags().SortFlags = false
 	if err := cleanCmd.Flags().MarkHidden("makedirs"); err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 }
 

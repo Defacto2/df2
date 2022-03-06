@@ -64,7 +64,7 @@ func Filepath() string {
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {
-			log.Fatal(fmt.Errorf("filepath userhomedir: %w", err))
+			log.Print(fmt.Errorf("filepath userhomedir: %w", err))
 		}
 		return filepath.Join(h, filename)
 	}

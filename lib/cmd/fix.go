@@ -50,7 +50,7 @@ records that do not have this expected context.`,
 	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := zipcontent.Fix(true); err != nil {
-			log.Fatal(fmt.Errorf("archives fix: %w", err))
+			log.Print(fmt.Errorf("archives fix: %w", err))
 		}
 	},
 }
@@ -63,13 +63,13 @@ This includes the formatting and trimming of groups, people, platforms and secti
 	Aliases: []string{"d", "db"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := database.Fix(); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		if err := groups.Fix(gf.Simulate); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		if err := people.Fix(gf.Simulate); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -80,7 +80,7 @@ var fixDemozooCmd = &cobra.Command{
 	Aliases: []string{"dz"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := demozoo.Fix(); err != nil {
-			log.Fatal(fmt.Errorf("demozoo fix: %w", err))
+			log.Print(fmt.Errorf("demozoo fix: %w", err))
 		}
 	},
 }
@@ -93,7 +93,7 @@ that are raster images.`,
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := images.Fix(gf.Simulate); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -106,7 +106,7 @@ that are plain text files.`,
 	Aliases: []string{"t", "txt"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := text.Fix(gf.Simulate); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -120,7 +120,7 @@ var fixZipCmmtCmd = &cobra.Command{
 	Aliases: []string{"z"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := zipcmmt.Fix(zcf.Ascii, zcf.Unicode, zcf.OW, true); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }

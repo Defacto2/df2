@@ -66,10 +66,10 @@ func Init(create bool) Dir {
 	d.UUID = viper.GetString("directory.uuid")
 	if create {
 		if err := createDirectories(&d); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		if err := PlaceHolders(&d); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	}
 	return d

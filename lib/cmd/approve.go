@@ -19,16 +19,16 @@ var approveCmd = &cobra.Command{
 	Aliases: []string{"a"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := database.Approve(appr.Verbose); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		if err := database.Fix(); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		if err := groups.Fix(gf.Simulate); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		if err := people.Fix(gf.Simulate); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }

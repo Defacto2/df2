@@ -111,7 +111,7 @@ The dumps can be used with mysqldump or Adminer to manage content in the
 MySQL databases. `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := run.Data(dbf); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -126,7 +126,7 @@ a heading 2 element containing a relative anchor link to the group's page
 and the name of the group.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := run.Groups(gpf); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -141,7 +141,7 @@ a heading 2 element containing a relative anchor link to the person's page
 and their name.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := run.People(ppf); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -153,7 +153,7 @@ var recentCmd = &cobra.Command{
 	Long:    `JSON snippet generator to list recent additions.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := recent.List(rcf.Limit, rcf.Compress); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }
@@ -177,7 +177,7 @@ can be reached through some form of navigation."
 See: https://developers.google.com/search/docs/advanced/sitemaps/overview`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := sitemap.Create(); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	},
 }

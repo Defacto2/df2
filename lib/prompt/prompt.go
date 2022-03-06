@@ -82,7 +82,8 @@ func YN(query string, yes bool) bool {
 	fmt.Printf("%s? [%s/%s] ", query, y, n)
 	in, err := input.Read(os.Stdin)
 	if err != nil {
-		log.Fatal(fmt.Errorf("prompt yn input: %w", err))
+		log.Print(fmt.Errorf("prompt yn input: %w", err))
+		return false
 	}
 	return input.YN(in, yes)
 }

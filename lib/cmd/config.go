@@ -25,11 +25,11 @@ var configCmd = &cobra.Command{
 	Aliases: []string{"cfg"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Usage(); err != nil {
-			log.Fatal(fmt.Errorf("config cmd usage: %w", err))
+			log.Print(fmt.Errorf("config cmd usage: %w", err))
 		}
 		if len(args) != 0 || cmd.Flags().NFlag() != 0 {
 			if err := logs.Arg("config", true, args...); err != nil {
-				log.Fatal(err)
+				log.Print(err)
 			}
 		}
 	},
@@ -41,7 +41,7 @@ var configCreateCmd = &cobra.Command{
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Create(conf.Overwrite); err != nil {
-			log.Fatal(fmt.Errorf("config create: %w", err))
+			log.Print(fmt.Errorf("config create: %w", err))
 		}
 	},
 }
@@ -52,7 +52,7 @@ var configDeleteCmd = &cobra.Command{
 	Aliases: []string{"d"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Delete(); err != nil {
-			log.Fatal(fmt.Errorf("config delete: %w", err))
+			log.Print(fmt.Errorf("config delete: %w", err))
 		}
 	},
 }
@@ -72,7 +72,7 @@ var configInfoCmd = &cobra.Command{
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Info(conf.InfoSize); err != nil {
-			log.Fatal(fmt.Errorf("config info: %w", err))
+			log.Print(fmt.Errorf("config info: %w", err))
 		}
 	},
 }
@@ -92,7 +92,7 @@ the command to list the available seettings.`,
 			if errors.Is(err, config.ErrSetName) {
 				os.Exit(1)
 			}
-			log.Fatal(fmt.Errorf("config set: %w", err))
+			log.Print(fmt.Errorf("config set: %w", err))
 		}
 	},
 }
@@ -114,6 +114,6 @@ func init() { // nolint:gochecknoinits
 		`the configuration path to edit in dot syntax (see examples)
 	to see a list of names run: df2 config info`)
 	if err := configSetCmd.MarkFlagRequired("name"); err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 }

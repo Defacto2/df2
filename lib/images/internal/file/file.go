@@ -106,7 +106,7 @@ func Vendor() string {
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {
-			log.Fatal(fmt.Errorf("vendorPath userhomedir: %w", err))
+			log.Print(fmt.Errorf("vendorPath userhomedir: %w", err))
 		}
 		return path.Join(h, ".vendor/df2")
 	}

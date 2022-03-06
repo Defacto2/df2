@@ -61,21 +61,21 @@ func NamedTitles() {
 	db := my57.Connect()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	result, err := tx.ExecContext(ctx, "UPDATE files SET record_title=\"\" WHERE files.record_title=files.filename")
 	if err != nil {
 		if err1 := tx.Rollback(); err1 != nil {
-			log.Fatal(err1)
+			log.Print(err1)
 		}
-		log.Fatal(err)
+		log.Print(err)
 	}
 	if err = tx.Commit(); err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	rows, err := result.RowsAffected()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	if rows == 0 {
 		logs.Print("no named title fixes needed")

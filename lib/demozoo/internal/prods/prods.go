@@ -165,7 +165,7 @@ func Mutate(u *url.URL) *url.URL {
 	if u == nil {
 		s, err := url.Parse("")
 		if err != nil {
-			log.Fatal(fmt.Errorf("mutate url parse: %w", err))
+			log.Print(fmt.Errorf("mutate url parse: %w", err))
 		}
 		return s
 	}

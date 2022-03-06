@@ -48,7 +48,7 @@ func Test_save(t *testing.T) {
 	const name = "test.log"
 	fp, err := gap.NewScope(gap.User, GapUser).LogPath(name)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	tests := []struct {
 		name   string
