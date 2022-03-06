@@ -1,20 +1,10 @@
 {
-  "spellright.language": [
-    "en"
-  ],
-  "spellright.documentTypes": [
-    "markdown",
-    "latex"
-  ],
-  "spellright.addToSystemDictionary": true,
-  "spellright.notificationClass": "information",
-  "spellright.recheckOnSave": false,
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/vendor": true,
+    "**/vendor": true
   }
 }
