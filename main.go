@@ -29,8 +29,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Defacto2/df2/lib/cmd"
-	"github.com/Defacto2/df2/lib/database"
+	"github.com/Defacto2/df2/pkg/cmd"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/gookit/color"
 	"github.com/spf13/pflag"
 )
