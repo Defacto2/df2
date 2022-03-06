@@ -63,7 +63,7 @@ github.com/dsnet/compress/internal/prefix
 # github.com/dustin/go-humanize v1.0.0
 ## explicit
 github.com/dustin/go-humanize
-# github.com/frankban/quicktest v1.14.0
+# github.com/frankban/quicktest v1.14.2
 ## explicit; go 1.13
 # github.com/fsnotify/fsnotify v1.5.1
 ## explicit; go 1.13
@@ -104,7 +104,7 @@ github.com/hashicorp/hcl/json/token
 # github.com/inconshreveable/mousetrap v1.0.0
 ## explicit
 github.com/inconshreveable/mousetrap
-# github.com/magiconair/properties v1.8.5
+# github.com/magiconair/properties v1.8.6
 ## explicit; go 1.13
 github.com/magiconair/properties
 # github.com/mholt/archiver v3.1.1+incompatible
@@ -125,7 +125,7 @@ github.com/nickalie/go-binwrapper
 # github.com/nickalie/go-webpbin v0.0.0-20220110095747-f10016bf2dc1
 ## explicit; go 1.14
 github.com/nickalie/go-webpbin
-# github.com/nwaples/rardecode v1.1.2
+# github.com/nwaples/rardecode v1.1.3
 ## explicit
 github.com/nwaples/rardecode
 # github.com/pelletier/go-toml v1.9.4
@@ -135,7 +135,7 @@ github.com/pelletier/go-toml
 ## explicit
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
-# github.com/spf13/afero v1.8.0
+# github.com/spf13/afero v1.8.1
 ## explicit; go 1.13
 github.com/spf13/afero
 github.com/spf13/afero/mem
@@ -177,7 +177,7 @@ github.com/xo/terminfo
 # github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 ## explicit
 github.com/yusukebe/go-pngquant
-# golang.org/x/image v0.0.0-20211028202545-6944b10bf410
+# golang.org/x/image v0.0.0-20220302094943-723b81ca9867
 ## explicit; go 1.12
 golang.org/x/image/bmp
 golang.org/x/image/ccitt
@@ -187,11 +187,11 @@ golang.org/x/image/tiff/lzw
 golang.org/x/image/vp8
 golang.org/x/image/vp8l
 golang.org/x/image/webp
-# golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
+# golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
-# golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
+# golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -226,7 +226,7 @@ golang.org/x/text/message/catalog
 golang.org/x/text/runes
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
-# gopkg.in/ini.v1 v1.66.2
+# gopkg.in/ini.v1 v1.66.4
 ## explicit
 gopkg.in/ini.v1
 # gopkg.in/yaml.v2 v2.4.0
