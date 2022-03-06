@@ -119,7 +119,7 @@ var fixZipCmmtCmd = &cobra.Command{
 "A comment is optional text information that is embedded in a Zip file."`,
 	Aliases: []string{"z"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcmmt.Fix(zcf.Ascii, zcf.Unicode, zcf.OW, true); err != nil {
+		if err := zipcmmt.Fix(zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
 			log.Print(err)
 		}
 	},
@@ -135,7 +135,7 @@ func init() { // nolint:gochecknoinits
 	fixCmd.AddCommand(fixZipCmmtCmd)
 	fixCmd.PersistentFlags().BoolVarP(&gf.Simulate, "dry-run", "d", false,
 		"simulate the fixes and display the expected changes")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.Ascii, "print", "p", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.ASCII, "print", "p", false,
 		"also print saved comments to the stdout")
 	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.Unicode, "unicode", "u", false,
 		"also convert saved comments into Unicode and print to the stdout")

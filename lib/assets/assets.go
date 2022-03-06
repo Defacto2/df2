@@ -56,6 +56,9 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 		return 0, nil, fmt.Errorf("create uuid map query: %w", err)
 	}
 	defer rows.Close()
+	if rows.Err() != nil {
+		return 0, nil, rows.Err()
+	}
 	uuids = make(database.IDs, count)
 	for rows.Next() {
 		if err = rows.Scan(&id, &uuid); err != nil {

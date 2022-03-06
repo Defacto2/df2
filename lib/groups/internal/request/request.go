@@ -155,7 +155,8 @@ func (r Flags) Parse(name, tmpl string) error {
 		defer f.Close()
 		// prepend html
 		s := "<div class=\"pagination-statistics\"><span class=\"label label-default\">"
-		s += fmt.Sprintf("%d %s sites</span></div><div class=\"columns-list\" id=\"organisation-drill-down\">", total, r.Filter)
+		s += fmt.Sprintf("%d %s sites</span></div><div class=\"columns-list\" id=\"organisation-drill-down\">",
+			total, r.Filter)
 		if _, err = f.WriteString(s); err != nil {
 			return fmt.Errorf("prepend writestring: %w", err)
 		}

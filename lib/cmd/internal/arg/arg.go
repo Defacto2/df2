@@ -76,7 +76,7 @@ type Recent struct {
 }
 
 type ZipCmmt struct {
-	Ascii   bool
+	ASCII   bool
 	Unicode bool
 	OW      bool
 }

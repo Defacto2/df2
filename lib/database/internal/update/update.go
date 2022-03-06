@@ -46,6 +46,9 @@ func Distinct(column string) ([]string, error) {
 		return nil, fmt.Errorf("distinct query %q: %w", column, err)
 	}
 	defer rows.Close()
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	values := []string{}
 	for rows.Next() {
 		if err := rows.Scan(&result); err != nil {

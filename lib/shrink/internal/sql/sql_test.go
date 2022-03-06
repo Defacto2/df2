@@ -37,7 +37,7 @@ func TestMonth(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
-	ds := filepath.Join("")
+	ds := string(filepath.Separator)
 	d, err := filepath.Abs(ds)
 	if err != nil {
 		t.Error(err)
