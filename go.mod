@@ -21,7 +21,7 @@ require (
 	github.com/nickalie/go-webpbin v0.0.0-20220110095747-f10016bf2dc1
 	github.com/nwaples/rardecode v1.1.3
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/ulikunitz/xz v0.5.10 // indirect
