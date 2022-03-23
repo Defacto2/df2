@@ -7,6 +7,9 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/logs"
@@ -216,6 +219,7 @@ func Format(s string) string {
 	if len(s) <= acronym {
 		return strings.ToUpper(s)
 	}
+	title := cases.Title(language.English, cases.NoLower)
 	groups := strings.Split(s, ",")
 	for j, g := range groups {
 		words := strings.Split(g, space)
@@ -237,7 +241,7 @@ func Format(s string) string {
 				words[i] = strings.ToUpper(w)
 				continue
 			}
-			words[i] = strings.Title(w)
+			words[i] = title.String(w)
 		}
 		groups[j] = strings.Join(words, space)
 	}

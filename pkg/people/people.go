@@ -13,6 +13,8 @@ import (
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/campoy/unique"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Request flags for people functions.
@@ -69,11 +71,12 @@ func Print(r Request) error {
 		a = append(a, strings.Split(p, ",")...)
 	}
 	// title and sort names
+	title := cases.Title(language.English, cases.NoLower)
 	for i := range a {
 		if r.Progress {
 			str.Progress(r.Filter, i+1, total)
 		}
-		a[i] = strings.Title(a[i])
+		a[i] = title.String(a[i])
 	}
 	sort.Strings(a)
 	// remove duplicates
