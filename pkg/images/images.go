@@ -154,7 +154,7 @@ func Generate(name, id string, remove bool) error {
 	out(s, err)
 	// use netpbm or imagemagick to convert unsupported image formats into PNG
 	if !file.Check(pngDest, err) {
-		if err := External(name, pngDest, s, remove); err == nil {
+		if err := external(name, pngDest, s, remove); err == nil {
 			name = pngDest
 		}
 	}
@@ -178,7 +178,7 @@ func Generate(name, id string, remove bool) error {
 	return file.Remove(remove, name)
 }
 
-func External(name, pngDest, s string, remove bool) error {
+func external(name, pngDest, s string, remove bool) error {
 	prog, err := netpbm.ID(name)
 	if err != nil {
 		return err
