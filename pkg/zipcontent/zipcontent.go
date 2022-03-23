@@ -30,7 +30,7 @@ func Fix(summary bool) error { //nolint:funlen
 		return err
 	}
 	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
+	scanArgs := make([]any, len(values))
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}

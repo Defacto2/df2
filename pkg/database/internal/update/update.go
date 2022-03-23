@@ -14,7 +14,7 @@ import (
 // Update row values based on conditions.
 type Update struct {
 	Query string
-	Args  []interface{}
+	Args  []any
 }
 
 // Execute Query and Args to update the database and returns the total number of changes.
@@ -91,7 +91,7 @@ func Sections(sections *[]string) {
 	var u Update
 	u.Query = "UPDATE files SET section=? WHERE `section`=?"
 	for _, s := range *sections {
-		u.Args = []interface{}{strings.ToLower(s), s}
+		u.Args = []any{strings.ToLower(s), s}
 		c, err := u.Execute()
 		if err != nil {
 			logs.Log(err)
@@ -103,7 +103,7 @@ func Sections(sections *[]string) {
 	// set all audio platform files to use intro section
 	// releaseadvert
 	u.Query = "UPDATE files SET section=? WHERE `platform`=?"
-	u.Args = []interface{}{"releaseadvert", "audio"}
+	u.Args = []any{"releaseadvert", "audio"}
 	c, err := u.Execute()
 	if err != nil {
 		logs.Log(err)
@@ -117,7 +117,7 @@ func Platforms(platforms *[]string) {
 	var u Update
 	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
 	for _, p := range *platforms {
-		u.Args = []interface{}{strings.ToLower(p), p}
+		u.Args = []any{strings.ToLower(p), p}
 		c, err := u.Execute()
 		if err != nil {
 			logs.Log(err)

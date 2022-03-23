@@ -18,7 +18,7 @@ func TestConfigure(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		f       interface{}
+		f       any
 		wantErr bool
 	}{
 		{"empty", nil, true},

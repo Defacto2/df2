@@ -82,7 +82,7 @@ func sets(name string) error {
 	}
 }
 
-func save(value interface{}) error {
+func save(value any) error {
 	switch value.(type) {
 	case int64, string:
 	default:

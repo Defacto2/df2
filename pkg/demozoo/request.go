@@ -52,7 +52,7 @@ func (r Request) Queries() error { //nolint: funlen
 		return fmt.Errorf("queries columns: %w", err)
 	}
 	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
+	scanArgs := make([]any, len(values))
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}

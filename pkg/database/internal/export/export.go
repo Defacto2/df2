@@ -703,7 +703,7 @@ func values(rows *sql.Rows) ([]string, error) {
 		return nil, fmt.Errorf("rows column types: %w", err)
 	}
 	vals := make([]sql.RawBytes, len(columns))
-	dest := make([]interface{}, len(vals))
+	dest := make([]any, len(vals))
 	for i := range vals {
 		dest[i] = &vals[i]
 	}

@@ -16,7 +16,7 @@ var (
 
 // Configure interface for the archiver,
 // a cross-platform, multi-format archive utility and Go library.
-func Configure(f interface{}) error {
+func Configure(f any) error {
 	cfg := &archiver.Tar{
 		OverwriteExisting:      true,
 		MkdirAll:               true,

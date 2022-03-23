@@ -125,7 +125,7 @@ func Path(name string) string {
 
 // Print obeys the --quiet flag
 // or formats using the default formats for its operands and writes to standard output.
-func Print(a ...interface{}) {
+func Print(a ...any) {
 	if quiet {
 		return
 	}
@@ -136,7 +136,7 @@ func Print(a ...interface{}) {
 
 // Printcr obeys the --quiet flag
 // or otherwise erases the current line and writes to standard output.
-func Printcr(a ...interface{}) {
+func Printcr(a ...any) {
 	if quiet {
 		return
 	}
@@ -150,7 +150,7 @@ func Printcr(a ...interface{}) {
 
 // Printf obeys the --quiet flag
 // or formats according to a format specifier and writes to standard output.
-func Printf(format string, a ...interface{}) {
+func Printf(format string, a ...any) {
 	if quiet {
 		return
 	}
@@ -160,7 +160,7 @@ func Printf(format string, a ...interface{}) {
 }
 
 // Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
-func Println(a ...interface{}) {
+func Println(a ...any) {
 	if quiet {
 		return
 	}
@@ -171,7 +171,7 @@ func Println(a ...interface{}) {
 
 // Printcrf obeys the --quiet flag
 // or otherwise erases the current line and formats according to a format specifier.
-func Printcrf(format string, a ...interface{}) {
+func Printcrf(format string, a ...any) {
 	if quiet {
 		return
 	}

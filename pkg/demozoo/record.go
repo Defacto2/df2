@@ -80,7 +80,7 @@ func (r *Record) Save() error {
 	return nil
 }
 
-func (r *Record) SQL() (query string, args []interface{}) {
+func (r *Record) SQL() (query string, args []any) {
 	// a range map iternation is not used due to the varied comparisons
 	set := setSQL(r)
 	args = setArg(r, set)
@@ -88,11 +88,11 @@ func (r *Record) SQL() (query string, args []interface{}) {
 		return "", args
 	}
 	set = append(set, "updatedat=?")
-	args = append(args, []interface{}{time.Now()}...)
+	args = append(args, []any{time.Now()}...)
 	set = append(set, "updatedby=?")
-	args = append(args, []interface{}{database.UpdateID}...)
+	args = append(args, []any{database.UpdateID}...)
 	query = "UPDATE files SET " + strings.Join(set, sep) + " WHERE id=?"
-	args = append(args, []interface{}{r.ID}...)
+	args = append(args, []any{r.ID}...)
 	return query, args
 }
 
@@ -156,64 +156,64 @@ func setCredit(r *Record) []string {
 	return set
 }
 
-func setArg(r *Record, set []string) (args []interface{}) {
+func setArg(r *Record, set []string) (args []any) {
 	if r.Filename != "" {
-		args = append(args, []interface{}{r.Filename}...)
+		args = append(args, []any{r.Filename}...)
 	}
 	if r.Filesize != "" {
-		args = append(args, []interface{}{r.Filesize}...)
+		args = append(args, []any{r.Filesize}...)
 	}
 	if r.FileZipContent != "" {
-		args = append(args, []interface{}{r.FileZipContent}...)
+		args = append(args, []any{r.FileZipContent}...)
 	}
 	if r.SumMD5 != "" {
-		args = append(args, []interface{}{r.SumMD5}...)
+		args = append(args, []any{r.SumMD5}...)
 	}
 	if r.Sum384 != "" {
-		args = append(args, []interface{}{r.Sum384}...)
+		args = append(args, []any{r.Sum384}...)
 	}
 	const errYear = 0o001
 	if r.LastMod.Year() != errYear {
-		args = append(args, []interface{}{r.LastMod}...)
+		args = append(args, []any{r.LastMod}...)
 	}
 	if r.WebIDPouet != 0 {
-		args = append(args, []interface{}{r.WebIDPouet}...)
+		args = append(args, []any{r.WebIDPouet}...)
 	}
 	if r.WebIDDemozoo == 0 && len(set) > 0 {
-		args = append(args, []interface{}{sql.NullInt16{}}...)
+		args = append(args, []any{sql.NullInt16{}}...)
 	}
 	if r.DOSeeBinary != "" {
-		args = append(args, []interface{}{r.DOSeeBinary}...)
+		args = append(args, []any{r.DOSeeBinary}...)
 	}
 	if r.Readme != "" {
-		args = append(args, []interface{}{r.Readme}...)
+		args = append(args, []any{r.Readme}...)
 	}
 	if r.Title != "" {
-		args = append(args, []interface{}{r.Title}...)
+		args = append(args, []any{r.Title}...)
 	}
 	args = append(args, setCredits(r)...)
 	if r.Platform != "" {
-		args = append(args, []interface{}{r.Platform}...)
+		args = append(args, []any{r.Platform}...)
 	}
 	return args
 }
 
-func setCredits(r *Record) (args []interface{}) {
+func setCredits(r *Record) (args []any) {
 	if len(r.CreditText) > 0 {
 		j := strings.Join(r.CreditText, sep)
-		args = append(args, []interface{}{j}...)
+		args = append(args, []any{j}...)
 	}
 	if len(r.CreditCode) > 0 {
 		j := strings.Join(r.CreditCode, sep)
-		args = append(args, []interface{}{j}...)
+		args = append(args, []any{j}...)
 	}
 	if len(r.CreditArt) > 0 {
 		j := strings.Join(r.CreditArt, sep)
-		args = append(args, []interface{}{j}...)
+		args = append(args, []any{j}...)
 	}
 	if len(r.CreditAudio) > 0 {
 		j := strings.Join(r.CreditAudio, sep)
-		args = append(args, []interface{}{j}...)
+		args = append(args, []any{j}...)
 	}
 	return args
 }
@@ -321,7 +321,7 @@ func Fix() error {
 
 type Records struct {
 	Rows     *sql.Rows
-	ScanArgs []interface{}
+	ScanArgs []any
 	Values   []sql.RawBytes
 }
 
@@ -386,7 +386,7 @@ func RefreshMeta() error {
 		return fmt.Errorf("meta columns: %w", err)
 	}
 	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
+	scanArgs := make([]any, len(values))
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}

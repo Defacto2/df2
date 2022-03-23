@@ -40,9 +40,9 @@ type ProductionsAPIv1 struct {
 			IsGroup bool   `json:"is_group"`
 		} `json:"releaser"`
 	} `json:"author_nicks"`
-	AuthorAffiliationNicks []interface{} `json:"author_affiliation_nicks"`
-	ReleaseDate            string        `json:"release_date"`
-	Supertype              string        `json:"supertype"`
+	AuthorAffiliationNicks []any  `json:"author_affiliation_nicks"`
+	ReleaseDate            string `json:"release_date"`
+	Supertype              string `json:"supertype"`
 	Platforms              []struct {
 		URL  string `json:"url"`
 		ID   int    `json:"id"`
@@ -76,9 +76,9 @@ type ProductionsAPIv1 struct {
 		LinkClass string `json:"link_class"`
 		URL       string `json:"url"`
 	} `json:"external_links"`
-	ReleaseParties      []interface{} `json:"release_parties"`
-	CompetitionPlacings []interface{} `json:"competition_placings"`
-	InvitationParties   []interface{} `json:"invitation_parties"`
+	ReleaseParties      []any `json:"release_parties"`
+	CompetitionPlacings []any `json:"competition_placings"`
+	InvitationParties   []any `json:"invitation_parties"`
 	Screenshots         []struct {
 		OriginalURL     string `json:"original_url"`
 		OriginalWidth   int    `json:"original_width"`

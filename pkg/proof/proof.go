@@ -50,7 +50,7 @@ func (request Request) Queries() error { //nolint:funlen
 	}
 	values := make([]sql.RawBytes, len(columns))
 	// more information: https://github.com/go-sql-driver/mysql/wiki/Examples
-	scanArgs := make([]interface{}, len(values))
+	scanArgs := make([]any, len(values))
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}

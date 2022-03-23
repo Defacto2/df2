@@ -263,7 +263,7 @@ func (r *Record) Summary(rows int) {
 	logs.Printf("%s\n%s\n%s\n%s\n", l, t, d, l)
 }
 
-func verbose(v bool, i interface{}) {
+func verbose(v bool, i any) {
 	if !v {
 		return
 	}
@@ -360,7 +360,7 @@ func ReverseInt(i uint) (uint, error) {
 	return uint(n), nil
 }
 
-func Verbose(v bool, i interface{}) {
+func Verbose(v bool, i any) {
 	if !v {
 		return
 	}
@@ -405,7 +405,7 @@ func query(v bool, rows *sql.Rows, columns []string) error {
 		return fmt.Sprintf(" %s", str.X())
 	}
 	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
+	scanArgs := make([]any, len(values))
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
