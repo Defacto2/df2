@@ -69,7 +69,7 @@ func app() string {
 		Version string
 	}
 	const verTmp = `
-   df2 tool version: {{.Version}}
+   Defacto2 / df2 tool version: {{.Version}}
 `
 	data := Data{
 		Version: color.Primary.Sprint(version),
