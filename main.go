@@ -91,6 +91,7 @@ func exeTmp() string {
  │  ansilove:     {{.Ansilove}}  │
  │  webp lib:     {{.Webp}}  │
  │  imagemagick:  {{.Magick}}  │
+ │  netpbm:       {{.Netpbm}}  │
  └─────────────────────────────┘
      path: {{.Path}}
    commit: {{.Commit}}
@@ -126,6 +127,7 @@ func info() string {
 		Ansilove string
 		Webp     string
 		Magick   string
+		Netpbm   string
 		Commit   string
 		Date     string
 		Path     string
@@ -138,7 +140,7 @@ func info() string {
 		miss       = "missing"
 	)
 	var bin string
-	a, w, m, d := miss, miss, miss, disconnect
+	a, w, m, n, d := miss, miss, miss, miss, disconnect
 	if err := database.ConnInfo(); err == "" {
 		d = ok
 	}
@@ -151,6 +153,9 @@ func info() string {
 	if _, err := exec.LookPath("convert"); err == nil {
 		m = ok
 	}
+	if _, err := exec.LookPath("pnmtopng"); err == nil {
+		n = ok
+	}
 	bin, err := self()
 	if err != nil {
 		bin = fmt.Sprint(err)
@@ -161,6 +166,7 @@ func info() string {
 		Ansilove: checks(a),
 		Webp:     checks(w),
 		Magick:   checks(m),
+		Netpbm:   checks(n),
 		Commit:   commit,
 		Date:     localBuild(date),
 		Path:     bin,

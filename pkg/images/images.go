@@ -22,6 +22,7 @@ import (
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
 	"github.com/Defacto2/df2/pkg/images/internal/imagemagick"
+	"github.com/Defacto2/df2/pkg/images/internal/netpbm"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/disintegration/imaging"
@@ -128,17 +129,18 @@ func Duplicate(name, suffix string) (string, error) {
 	return fmt.Sprintf("%s%s%s", fn, suffix, ext), nil
 }
 
+func out(s string, e error) {
+	if s != "" {
+		logs.Printf("  %s", s)
+		return
+	}
+	logs.Log(e)
+}
+
 // Generate a collection of site images.
 func Generate(name, id string, remove bool) error {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		return fmt.Errorf("generate stat %q: %w", name, err)
-	}
-	out := func(s string, e error) {
-		if s != "" {
-			logs.Printf("  %s", s)
-			return
-		}
-		logs.Log(e)
 	}
 	if viper.GetString("directory.root") == "" {
 		return fmt.Errorf("%w: directory.root", ErrViper)
@@ -150,17 +152,11 @@ func Generate(name, id string, remove bool) error {
 	const width = 1500
 	s, err := ToPng(name, pngDest, width, width)
 	out(s, err)
-	// use imagemagick to convert unsupported image formats into PNG
+	// use netpbm or imagemagick to convert unsupported image formats into PNG
 	if !file.Check(pngDest, err) {
-		err1 := imagemagick.Convert(name, pngDest)
-		if err1 != nil {
-			out(s, err1)
-			return file.Remove(remove, name)
+		if err := External(name, pngDest, s, remove); err == nil {
+			name = pngDest
 		}
-		if !file.Check(pngDest, err1) {
-			return file.Remove(remove, name)
-		}
-		name = pngDest
 	}
 	// convert to webp
 	if s, err = ToWebp(name, webpDest, true); !errors.Is(err, ErrFormat) {
@@ -180,6 +176,33 @@ func Generate(name, id string, remove bool) error {
 	}
 	out(s, err)
 	return file.Remove(remove, name)
+}
+
+func External(name, pngDest, s string, remove bool) error {
+	prog, err := netpbm.ID(name)
+	if err != nil {
+		return err
+	}
+	if prog != "" {
+		err := netpbm.Convert(name, pngDest)
+		if err != nil {
+			out(s, err)
+			return file.Remove(remove, name)
+		}
+		if !file.Check(pngDest, err) {
+			return file.Remove(remove, name)
+		}
+		return nil
+	}
+	err1 := imagemagick.Convert(name, pngDest)
+	if err1 != nil {
+		out(s, err1)
+		return file.Remove(remove, name)
+	}
+	if !file.Check(pngDest, err1) {
+		return file.Remove(remove, name)
+	}
+	return nil
 }
 
 // Move a file from the source location to the destination.

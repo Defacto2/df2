@@ -71,12 +71,12 @@ df2 --version
 
 The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) in the system `PATH`.
 
-[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). PNG image compression relies on [pngquant](https://pngquant.org).
+[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). PNG image compression relies on [pngquant](https://pngquant.org). Legacy image conversion needs both [imagemagick](https://imagemagick.org) and [netpbm](http://netpbm.sourceforge.net/).
 
 #### Ubuntu installation
 
 ```bash
-sudo apt install -y ansilove pngquant webp
+sudo apt install -y ansilove imagemagick netpbm pngquant webp
 ```
 
 ## Configuration

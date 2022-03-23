@@ -12,6 +12,9 @@ import (
 // imagemagick tools require the installation of ImageMagick v6.
 // ubuntu: sudo apt install imagemagick
 //
+// List all supported formats
+// identify -list format
+//
 // Convert Between Image Formats
 // https://imagemagick.org/script/convert.php
 
