@@ -24,8 +24,6 @@ df2 is a command-line tool for managing plus optimising the files and database o
 
 **shrink** moves old SQL backups and incoming uploads to the user home directory ready for download and removal.
 
----
-
 ```
 A tool to optimise and manage defacto2.net
 Copyright © 2020-22 Ben Garrett
@@ -58,10 +56,9 @@ Use "df2 [command] --help" for more information about a command.
 
 ## Install
 
-Is built on [Go v1.x](https://golang.org/doc/install) and is packaged for the Ubuntu Linux platform.
+df2 is built on [Go](https://golang.org/doc/install) and is packaged for Debian Linux.
 
 ```bash
-cd ~/downloads
 wget https://github.com/Defacto2/df2/releases/latest/download/df2.deb
 dpkg -i df2.deb # also works for updating
 df2 --version
@@ -71,7 +68,7 @@ df2 --version
 
 The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) in the system `PATH`.
 
-[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). PNG image compression relies on [pngquant](https://pngquant.org). Legacy image conversion needs both [imagemagick](https://imagemagick.org) and [netpbm](http://netpbm.sourceforge.net/).
+[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). PNG image compression relies on [pngquant](https://pngquant.org). Image conversion needs both [imagemagick](https://imagemagick.org) and [netpbm](http://netpbm.sourceforge.net/).
 
 #### Ubuntu installation
 
