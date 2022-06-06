@@ -22,7 +22,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
-	golang.org/x/image v0.0.0-20220321031419-a8550c1d254a
+	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0
@@ -46,11 +46,11 @@ require (
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/subosito/gotenv v1.3.0 // indirect
+	github.com/subosito/gotenv v1.4.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
-	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	gopkg.in/ini.v1 v1.66.4 // indirect
-	gopkg.in/yaml.v3 v3.0.0 // indirect
+	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
+	gopkg.in/ini.v1 v1.66.6 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
