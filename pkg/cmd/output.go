@@ -90,9 +90,15 @@ func init() { // nolint:gochecknoinits
 		"display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
 	peopleCmd.Flags().StringVarP(&ppf.Filter, "filter", "f", "",
-		"filter groups (default all)\noptions: "+people.Roles())
+		"filter people (default all)\noptions: "+people.Roles())
 	peopleCmd.Flags().StringVarP(&ppf.Format, "format", "t", "",
 		"output format (default html)\noptions: datalist,html,text")
+
+	peopleCmd.Flags().BoolVarP(&ppf.Cronjob, "cronjob", "j", false,
+		"run in cronjob automated mode, ignores all other arguments")
+	peopleCmd.Flags().BoolVar(&ppf.Forcejob, "forcejob", false,
+		"force the running of the cronjob automated mode")
+
 	outputCmd.AddCommand(recentCmd)
 	recentCmd.Flags().BoolVarP(&rcf.Compress, "compress", "c", false,
 		"remove insignificant whitespace characters")

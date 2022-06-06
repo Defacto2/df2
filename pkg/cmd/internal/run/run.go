@@ -248,6 +248,17 @@ func New() error {
 }
 
 func People(pf arg.People) error {
+	switch {
+	case pf.Cronjob, pf.Forcejob:
+		force := false
+		if pf.Forcejob {
+			force = true
+		}
+		if err := people.Cronjob(force); err != nil {
+			return err
+		}
+		return nil
+	}
 	fmtflags := [7]string{datal, htm, txt, dl, "d", "h", "t"}
 	arg.FilterFlag(people.Filters(), "filter", pf.Filter)
 	var req people.Request

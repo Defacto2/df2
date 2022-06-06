@@ -3,25 +3,67 @@ package people
 
 import (
 	"fmt"
+	"path"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/people/internal/person"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/campoy/unique"
+	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+const htm = ".htm"
 
 // Request flags for people functions.
 type Request struct {
 	Filter   string // Filter people by category.
 	Counts   bool   // Counts the person's total files.
 	Progress bool   // Progress counter when requesting database data.
+}
+
+// HTML prints a snippet listing links to each group, with an optional file count.
+func (r Request) HTML(name string) error {
+	return HTML(name, r)
+}
+
+// Cronjob is used for system automation to generate dynamic HTML pages.
+func Cronjob(force bool) error {
+	for _, tag := range Wheres() {
+		last, err := database.LastUpdate()
+		if err != nil {
+			return fmt.Errorf("cronjob lastupdate: %w", err)
+		}
+		f := tag + htm
+		n := path.Join(viper.GetString("directory.html"), f)
+		update := true
+		if !force {
+			update, err = database.FileUpdate(n, last)
+		}
+		switch {
+		case err != nil:
+			return fmt.Errorf("cronjob fileupdate: %w", err)
+		case !update:
+			logs.Printf("%s has nothing to update (%s)\n", tag, n)
+		default:
+			r := Request{
+				Filter:   tag,
+				Counts:   true,
+				Progress: false,
+			}
+			if err := r.HTML(f); err != nil {
+				return fmt.Errorf("group cronjob html: %w", err)
+			}
+		}
+	}
+	return nil
 }
 
 // DataList prints an auto-complete list for HTML input elements.
@@ -163,4 +205,14 @@ func Fix(simulate bool) error {
 		logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
 	}
 	return nil
+}
+
+// Wheres are group categories.
+func Wheres() []string {
+	return []string{
+		role.Artists.String(),
+		role.Coders.String(),
+		role.Musicians.String(),
+		role.Writers.String(),
+	}
 }

@@ -58,9 +58,11 @@ type Group struct {
 }
 
 type People struct {
+	Cronjob  bool
+	Forcejob bool
+	Progress bool
 	Filter   string
 	Format   string
-	Progress bool
 }
 
 type Proof struct {
