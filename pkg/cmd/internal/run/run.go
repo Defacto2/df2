@@ -86,7 +86,9 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 			return err
 		}
 	case dzf.Pouet:
-		return demozoo.ErrNA
+		if err := demozoo.RefreshPouet(); err != nil {
+			return err
+		}
 	case dzf.Sync:
 		return demozoo.ErrNA
 		// if err := demozoo.Sync(); err != nil {

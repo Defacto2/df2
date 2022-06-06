@@ -49,7 +49,7 @@ func init() { // nolint:gochecknoinits
 		"replace empty table data with fetched demozoo data (SLOW)\n"+
 			"any demozoo ids with 404 are removed from the table")
 	demozooCmd.Flags().BoolVar(&dzf.Pouet, "pouet", false,
-		"scan the demozoo api for missing or deleted pouet ids [not implemented]")
+		"scan the demozoo api for missing or deleted pouet ids (SLOW)")
 	demozooCmd.Flags().BoolVarP(&dzf.Sync, "sync", "s", false,
 		"scan the demozoo api for missing bbstros and cracktros (SLOW) [not implemented]\n")
 	demozooCmd.Flags().UintVarP(&dzf.Ping, "ping", "p", 0,

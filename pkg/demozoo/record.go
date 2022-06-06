@@ -369,6 +369,50 @@ func (st *Stat) NextRefresh(rec Records) error {
 	return nil
 }
 
+func (st *Stat) NextPouet(rec Records) error {
+	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
+		return fmt.Errorf("next scan: %w", err)
+	}
+	st.Count++
+	r, err := NewRecord(st.Count, rec.Values)
+	if err != nil {
+		return fmt.Errorf("next record 1: %w", err)
+	}
+	if r.WebIDPouet > 0 {
+		return nil
+	}
+	logs.Printcrf(r.String(0))
+	f, err := Fetch(r.WebIDDemozoo)
+	if err != nil {
+		return fmt.Errorf("next fetch: %w", err)
+	}
+	var ok bool
+	code, status, api := f.Code, f.Status, f.API
+	if ok, err = r.confirm(code, status); err != nil {
+		return fmt.Errorf("next confirm: %w", err)
+	} else if !ok {
+		return nil
+	}
+	if err = r.pouet(&api); err != nil {
+		return fmt.Errorf("next refresh: %w", err)
+	}
+	var nr Record
+	nr, err = NewRecord(st.Count, rec.Values)
+	if err != nil {
+		return fmt.Errorf("next record 2: %w", err)
+	}
+	if reflect.DeepEqual(nr, r) {
+		logs.Printf("• skipped %v", str.Y())
+		return nil
+	}
+	if err = r.Save(); err != nil {
+		logs.Printf("• saved %v ", str.X())
+		return fmt.Errorf("next save: %w", err)
+	}
+	logs.Printf("• saved %v", str.Y())
+	return nil
+}
+
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
 func RefreshMeta() error {
 	start := time.Now()
@@ -394,6 +438,37 @@ func RefreshMeta() error {
 	var st Stat
 	for rows.Next() {
 		if err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
+			logs.Println(fmt.Errorf("meta rows: %w", err))
+		}
+	}
+	st.summary(time.Since(start))
+	return nil
+}
+
+func RefreshPouet() error {
+	start := time.Now()
+	db := database.Connect()
+	defer db.Close()
+	rows, err := db.Query(selectByID(""))
+	if err != nil {
+		return fmt.Errorf("meta query: %w", err)
+	} else if rows.Err() != nil {
+		return fmt.Errorf("meta rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	columns, err := rows.Columns()
+	if err != nil {
+		return fmt.Errorf("meta columns: %w", err)
+	}
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]any, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+	// fetch the rows
+	var st Stat
+	for rows.Next() {
+		if err := st.NextPouet(Records{rows, scanArgs, values}); err != nil {
 			logs.Println(fmt.Errorf("meta rows: %w", err))
 		}
 	}
