@@ -3,6 +3,7 @@ package request
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -148,8 +149,12 @@ func (r Flags) Parse(name, tmpl string) error {
 	}
 	switch group.Get(r.Filter) {
 	case group.BBS, group.FTP, group.Group, group.Magazine:
-		f, err := os.Create(path.Join(viper.GetString("directory.html"), name))
+		html := path.Join(viper.GetString("directory.html"), name)
+		f, err := os.Create(html)
 		if err != nil {
+			if _, _ = os.Stat(viper.GetString("directory.html")); errors.Is(err, os.ErrNotExist) {
+				return fmt.Errorf("parse create: parent directory is missing: %w", err)
+			}
 			return fmt.Errorf("parse create: %w", err)
 		}
 		defer f.Close()
