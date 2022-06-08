@@ -50,7 +50,8 @@ func main() {
 	fs.Usage = func() {
 		// disable go flag help
 	}
-	if err := fs.Parse(os.Args[1:]); err != nil && !errors.As(err, &pflag.ErrHelp) {
+	if err := fs.Parse(os.Args[1:]); err != nil &&
+		!errors.As(err, &pflag.ErrHelp) {
 		log.Print(err)
 	}
 	if *ver || *v {
@@ -86,7 +87,7 @@ func app() string {
 }
 
 func exeTmp() string {
-	const tmp = ` ┌── requirements ─────────────┐
+	const tmp = ` ┌──── requirements ───────────┐
  │  database:     {{.Database}}  │
  │  ansilove:     {{.Ansilove}}  │
  │  webp lib:     {{.Webp}}  │
