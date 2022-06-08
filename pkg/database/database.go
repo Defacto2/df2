@@ -257,6 +257,18 @@ func Fix() error {
 	return nil
 }
 
+// DemozooID finds a record ID by the saved Demozoo production ID. If no production exists a zero is returned.
+func DemozooID(id uint) (uint, error) {
+	db := my57.Connect()
+	defer db.Close()
+	var dz uint
+	// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
+	if err := db.QueryRow("SELECT id FROM files WHERE web_id_demozoo=?", id).Scan(&dz); err != nil {
+		return 0, fmt.Errorf("demozoo exist query row: %w", err)
+	}
+	return dz, db.Close()
+}
+
 // GetID returns a numeric Id from a UUID or database id s value.
 func GetID(s string) (uint, error) {
 	db := my57.Connect()

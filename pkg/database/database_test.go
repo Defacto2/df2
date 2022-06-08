@@ -325,3 +325,29 @@ func Test_TrimSP(t *testing.T) {
 		})
 	}
 }
+
+func TestDemozooID(t *testing.T) {
+	tests := []struct {
+		name    string
+		id      uint
+		want    uint
+		wantErr bool
+	}{
+		{"zero", 0, 0, true},
+		{"one", 1, 0, true},
+		{"valid dz id but not in db", 169268, 0, true},
+		{"valid dz id in db", 164151, 1047, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := DemozooID(tt.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DemozooID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("DemozooID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
