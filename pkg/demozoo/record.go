@@ -335,7 +335,8 @@ func (st *Stat) NextRefresh(rec Records) error {
 		return fmt.Errorf("next record 1: %w", err)
 	}
 	logs.Printcrf(r.String(0))
-	f, err := Fetch(r.WebIDDemozoo)
+	var f Product
+	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
 		return fmt.Errorf("next fetch: %w", err)
 	}
@@ -382,7 +383,8 @@ func (st *Stat) NextPouet(rec Records) error {
 		return nil
 	}
 	logs.Printcrf(r.String(0))
-	f, err := Fetch(r.WebIDDemozoo)
+	var f Product
+	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
 		return fmt.Errorf("next fetch: %w", err)
 	}

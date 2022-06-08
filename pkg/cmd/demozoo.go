@@ -18,8 +18,8 @@ var demozooCmd = &cobra.Command{
 	Short:   "Interact with Demozoo submissions.",
 	Long:    "Manage upload submissions that rely on the API hosted on demozoo.org.",
 	Aliases: []string{"d", "dz"},
-	Example: `  df2 demozoo [--new|--all|--id] (--dry-run,--overwrite)
-  df2 demozoo [--refresh|--sync|--ping|--download]`,
+	Example: `  df2 demozoo [--new|--all|--releases|--id] (--dry-run,--overwrite)
+  df2 demozoo [--refresh|--pouet|--sync|--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := run.Demozoo(dzf)
 		switch {
@@ -39,6 +39,8 @@ func init() { // nolint:gochecknoinits
 		"scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().BoolVar(&dzf.All, "all", false,
 		"scan all files with demozoo links (SLOW)")
+	demozooCmd.Flags().UintVar(&dzf.Releaser, "releases", 0,
+		"add to the database all the productions of a demozoo scener")
 	demozooCmd.Flags().StringVarP(&dzf.ID, "id", "i", "",
 		"update the empty data of a table id or uuid with its fetched demozoo data")
 	demozooCmd.Flags().BoolVarP(&dzf.Simulate, "dry-run", "d", false,

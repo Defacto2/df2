@@ -18,6 +18,7 @@ import (
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/people"
+	"github.com/Defacto2/df2/pkg/prompt"
 	"github.com/Defacto2/df2/pkg/proof"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/text"
@@ -91,11 +92,39 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 		}
 	case dzf.Sync:
 		return demozoo.ErrNA
-		// if err := demozoo.Sync(); err != nil {
+	// if err := demozoo.Sync(); err != nil {
+	// 	return err
+	// }
+	case dzf.Releaser != 0:
+		var r demozoo.Releaser
+		err := r.Get(dzf.Releaser)
+		if err != nil {
+			return err
+		}
+		logs.Printf("Demozoo ID %v, HTTP status %v\n", dzf.Releaser, r.Status)
+		var p demozoo.ReleaserProducts
+		if err := p.Get(dzf.Releaser); err != nil {
+			return err
+		}
+		if len(p.API) == 0 {
+			return fmt.Errorf("%w: %s", demozoo.ErrNoRel, r.API.Name)
+		}
+		v := "scener"
+		if r.API.IsGroup {
+			v = "group"
+		}
+		s := fmt.Sprintf("Add to the database the %d productions found for the %s, %s",
+			len(p.API), v, r.API.Name)
+		prompt.YN(s, false)
+
+		// if err := p.API.Print(); err != nil {
 		// 	return err
 		// }
+		// TODO: loop and ping that the releases are new items
+		// TODO: Save
 	case dzf.Ping != 0:
-		f, err := demozoo.Fetch(dzf.Ping)
+		var f demozoo.Product
+		err := f.Get(dzf.Ping)
 		if err != nil {
 			return err
 		}
@@ -106,7 +135,8 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 			return err
 		}
 	case dzf.Download != 0:
-		f, err := demozoo.Fetch(dzf.Download)
+		var f demozoo.Product
+		err := f.Get(dzf.Download)
 		if err != nil {
 			return err
 		}

@@ -21,6 +21,8 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prod"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
+	"github.com/Defacto2/df2/pkg/demozoo/internal/releaser"
+	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/logs"
@@ -33,6 +35,7 @@ var (
 	ErrFilename = errors.New("filename requirement cannot be empty")
 	ErrTooFew   = errors.New("too few record values")
 	ErrNA       = errors.New("this feature is not implemented")
+	ErrNoRel    = errors.New("no productions exist for this releaser")
 )
 
 const (
@@ -60,21 +63,61 @@ func (c Category) String() string {
 	return [...]string{"text", "code", "graphics", "music", "magazine"}[c]
 }
 
-// Fetched production.
-type Fetched struct {
+// Product is a demozoo production.
+type Product struct {
 	Code   int
 	Status string
 	API    prods.ProductionsAPIv1
 }
 
-// Fetch a Demozoo production by an id.
-func Fetch(id uint) (Fetched, error) {
+func (p *Product) Get(id uint) error {
 	d := prod.Production{ID: int64(id)}
 	api, err := d.Get()
 	if err != nil {
-		return Fetched{}, fmt.Errorf("fetched %d: %w", id, err)
+		return fmt.Errorf("get product id %d: %w", id, err)
 	}
-	return Fetched{Code: d.StatusCode, Status: d.Status, API: api}, nil
+	p.Code = d.StatusCode
+	p.Status = d.Status
+	p.API = api
+	return nil
+}
+
+// Releaser is a demozoo scener or group.
+type Releaser struct {
+	Code   int
+	Status string
+	API    releaser.ReleaserV1
+}
+
+func (r *Releaser) Get(id uint) error {
+	d := releaser.Releaser{ID: int64(id)}
+	api, err := d.Get()
+	if err != nil {
+		return fmt.Errorf("get releaser id %d: %w", id, err)
+	}
+	r.Code = d.StatusCode
+	r.Status = d.Status
+	r.API = api
+	return nil
+}
+
+// ReleaserProducts are the productions of a demozoo releaser.
+type ReleaserProducts struct {
+	Code   int
+	Status string
+	API    releases.Productions
+}
+
+func (r *ReleaserProducts) Get(id uint) error {
+	d := releaser.Releaser{ID: int64(id)}
+	api, err := d.Prods()
+	if err != nil {
+		return fmt.Errorf("get releaser prods id %d: %w", id, err)
+	}
+	r.Code = d.StatusCode
+	r.Status = d.Status
+	r.API = api
+	return nil
 }
 
 // Stat are the remote query statistics.
@@ -254,7 +297,8 @@ func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (skip bool, e
 		fmt.Println("Clearing filename which is incorrectly set as", r.Filename)
 		r.Filename = ""
 	}
-	f, err := Fetch(r.WebIDDemozoo)
+	var f Product
+	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
 		return true, fmt.Errorf("parse api fetch: %w", err)
 	}

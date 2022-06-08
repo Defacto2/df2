@@ -37,6 +37,7 @@ type Demozoo struct {
 	Extract   []string
 	Ping      uint
 	Download  uint
+	Releaser  uint // id for a releaser
 }
 
 // Execute global flags.
