@@ -61,7 +61,7 @@ func TestSize(t *testing.T) {
 		wantBytes uint64
 		wantErr   bool
 	}{
-		{"empty", "", 0, 0, true},
+		{"empty", "", 0, 0, true}, // empty contains a .gitignore file
 		{"nul", "/dev/null/no-such-dir", 0, 0, true},
 		{"empty", "../../tests/empty", 0, 0, false},
 		{"valid", "../../tests/demozoo", 12, 7156, false},

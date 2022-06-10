@@ -57,22 +57,19 @@ func TestCheckTime(t *testing.T) {
 		sec, _ := time.ParseDuration(fmt.Sprintf("%ds", v))
 		return sec
 	}
-	type args struct {
-		t time.Duration
-	}
 	tests := []struct {
 		name string
-		args args
+		t    time.Duration
 		want time.Duration
 	}{
-		{"0 sec", args{0}, td(5)},
-		{"5 secs", args{5}, td(5)},
-		{"300 secs", args{300}, td(300)},
-		{"-99 secs", args{-99}, td(5)},
+		{"0 sec", 0, td(5)},
+		{"5 secs", 5, td(5)},
+		{"300 secs", 300, td(5)},
+		{"-99 secs", -99, td(5)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := download.CheckTime(tt.args.t); got != tt.want {
+			if got := download.CheckTime(tt.t); got != tt.want {
 				t.Errorf("CheckTime() = %v, want %v", got, tt.want)
 			}
 		})

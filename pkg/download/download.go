@@ -69,10 +69,10 @@ func (r *Request) Body() error {
 // CheckTime creates a valid time duration for use with http.Client.Timeout.
 // t can be 0 or a number of seconds.
 func CheckTime(t time.Duration) time.Duration {
-	const timeout = 5 * time.Second
+	const maxTime = 5 * time.Second
 	secs := time.Duration(t.Seconds())
 	if secs < time.Second {
-		return timeout
+		return maxTime
 	}
 	return secs
 }
