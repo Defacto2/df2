@@ -100,9 +100,6 @@ func InsertProds(p *releases.Productions, quiet bool) error {
 			fmt.Printf("\n%s ↳ production added using auto-id: %d", pad, newId)
 		}
 		new++
-		if new > 1 {
-			break
-		}
 	}
 	if !quiet && new > 0 {
 		fmt.Printf("\nAdded %d new releaser productions from Demozoo.\n", new)

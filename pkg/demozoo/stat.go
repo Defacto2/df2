@@ -25,7 +25,8 @@ type Stat struct {
 	ByID    string
 }
 
-func (st *Stat) FileExist(r *Record) (missing bool) {
+// FileExist returns false if the FilePath of the record points to a missing file.
+func (st *Stat) FileExist(r *Record) bool {
 	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
 		st.Missing++
 		return true
@@ -33,12 +34,14 @@ func (st *Stat) FileExist(r *Record) (missing bool) {
 	return false
 }
 
+// Records contain more than one Record.
 type Records struct {
 	Rows     *sql.Rows
 	ScanArgs []any
 	Values   []sql.RawBytes
 }
 
+// NextRefresh iterates over the Records to update sync their Demozoo data to the database.
 func (st *Stat) NextRefresh(rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
@@ -84,6 +87,7 @@ func (st *Stat) NextRefresh(rec Records) error {
 	return nil
 }
 
+// NextPouet iterates over the Records to update sync their Pouet data to the database.
 func (st *Stat) NextPouet(rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
@@ -177,6 +181,7 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 	return nil
 }
 
+// Download the first available remote file linked in the Demozoo production record.
 func (r *Record) Download(overwrite bool, api *prods.ProductionsAPIv1, st Stat) (skip bool) {
 	if st.FileExist(r) || overwrite {
 		if r.UUID == "" {

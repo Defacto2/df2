@@ -60,7 +60,7 @@ func (c Category) String() string {
 	return [...]string{"text", "code", "graphics", "music", "magazine"}[c]
 }
 
-// Record of a file item.
+// Record update for an item in the "file" table of the database.
 type Record struct {
 	Count          int
 	FilePath       string // absolute path to file
@@ -166,7 +166,7 @@ func (r *Record) Save() error {
 	return nil
 }
 
-// UpdateStmt creates the SQL prepare statement and values to update a Demozoo production.
+// Stmt creates the SQL prepare statement and values to update a Demozoo production.
 func (r *Record) Stmt() (query string, args []any) {
 	// a range map iternation is not used due to the varied comparisons
 	set, args := updates(r)

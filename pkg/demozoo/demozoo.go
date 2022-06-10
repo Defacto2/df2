@@ -77,9 +77,10 @@ func (r *ReleaserProducts) Get(id uint) error {
 	return nil
 }
 
-// "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`,`web_id_demozoo`,`file_zip_content`," +
-// 	"`updatedat`,`platform`,`file_integrity_strong`,`file_integrity_weak`,`web_id_pouet`,`group_brand_for`," +
-// 	"`group_brand_by`,`record_title`,`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
+// Fix repairs imported Demozoo data conflicts.
+func Fix() error {
+	return fix.Configs()
+}
 
 // NewRecord initialises a new file record.
 func NewRecord(c int, values []sql.RawBytes) (Record, error) {
@@ -122,11 +123,6 @@ func NewRecord(c int, values []sql.RawBytes) (Record, error) {
 		r.WebIDPouet = uint(i)
 	}
 	return r, nil
-}
-
-// Fix repairs imported Demozoo data conflicts.
-func Fix() error {
-	return fix.Configs()
 }
 
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
