@@ -371,12 +371,12 @@ func TestSQL(t *testing.T) { //nolint:funlen
 				GroupFor:       tt.fields.GroupFor,
 				GroupBy:        tt.fields.GroupBy,
 			}
-			got, got1 := r.SQL()
+			got, got1 := r.Stmt()
 			if got != tt.want {
-				t.Errorf("SQL() got = %v, want %v", got, tt.want)
+				t.Errorf("Stmt() got = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(len(got1), tt.want1) {
-				t.Errorf("SQL() got1 = %v, want %v", len(got1), tt.want1)
+				t.Errorf("Stmt() got1 = %v, want %v", len(got1), tt.want1)
 			}
 		})
 	}

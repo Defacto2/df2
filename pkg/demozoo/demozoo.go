@@ -9,12 +9,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/demozoo/internal/fix"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prod"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releaser"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
+	"github.com/Defacto2/df2/pkg/logs"
 )
 
 // Product is a demozoo production.
@@ -119,4 +122,72 @@ func NewRecord(c int, values []sql.RawBytes) (Record, error) {
 		r.WebIDPouet = uint(i)
 	}
 	return r, nil
+}
+
+// Fix repairs imported Demozoo data conflicts.
+func Fix() error {
+	return fix.Configs()
+}
+
+// RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
+func RefreshMeta() error {
+	start := time.Now()
+	db := database.Connect()
+	defer db.Close()
+	rows, err := db.Query(selectByID(""))
+	if err != nil {
+		return fmt.Errorf("meta query: %w", err)
+	} else if rows.Err() != nil {
+		return fmt.Errorf("meta rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	columns, err := rows.Columns()
+	if err != nil {
+		return fmt.Errorf("meta columns: %w", err)
+	}
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]any, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+	// fetch the rows
+	var st Stat
+	for rows.Next() {
+		if err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
+			logs.Println(fmt.Errorf("meta rows: %w", err))
+		}
+	}
+	st.summary(time.Since(start))
+	return nil
+}
+
+func RefreshPouet() error {
+	start := time.Now()
+	db := database.Connect()
+	defer db.Close()
+	rows, err := db.Query(selectByID(""))
+	if err != nil {
+		return fmt.Errorf("meta query: %w", err)
+	} else if rows.Err() != nil {
+		return fmt.Errorf("meta rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	columns, err := rows.Columns()
+	if err != nil {
+		return fmt.Errorf("meta columns: %w", err)
+	}
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]any, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+	// fetch the rows
+	var st Stat
+	for rows.Next() {
+		if err := st.NextPouet(Records{rows, scanArgs, values}); err != nil {
+			logs.Println(fmt.Errorf("meta rows: %w", err))
+		}
+	}
+	st.summary(time.Since(start))
+	return nil
 }
