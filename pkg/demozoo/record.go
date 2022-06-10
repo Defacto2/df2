@@ -83,7 +83,7 @@ func (r *Record) Save() error {
 func (r *Record) SQL() (query string, args []any) {
 	// a range map iternation is not used due to the varied comparisons
 	set := setSQL(r)
-	args = setArg(r, set)
+	args = setArgs(r, set)
 	if len(set) == 0 {
 		return "", args
 	}
@@ -156,7 +156,7 @@ func setCredit(r *Record) []string {
 	return set
 }
 
-func setArg(r *Record, set []string) (args []any) {
+func setArgs(r *Record, set []string) (args []any) {
 	if r.Filename != "" {
 		args = append(args, []any{r.Filename}...)
 	}

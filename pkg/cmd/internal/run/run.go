@@ -102,6 +102,9 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 			return err
 		}
 		logs.Printf("Demozoo ID %v, HTTP status %v\n", dzf.Releaser, r.Status)
+		if r.Code != 200 {
+			return nil
+		}
 		var p demozoo.ReleaserProducts
 		if err := p.Get(dzf.Releaser); err != nil {
 			return err
@@ -113,15 +116,14 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 		if r.API.IsGroup {
 			v = "group"
 		}
-		s := fmt.Sprintf("Add to the database the %d productions found for the %s, %s",
+		s := fmt.Sprintf("Attempt to add the %d productions found for the %s, %s",
 			len(p.API), v, r.API.Name)
-		prompt.YN(s, false)
-
-		// if err := p.API.Print(); err != nil {
-		// 	return err
-		// }
-		// TODO: loop and ping that the releases are new items
-		// TODO: Save
+		if !prompt.YN(s, true) {
+			return nil
+		}
+		if err := demozoo.InsertProds(&p.API, false); err != nil {
+			return err
+		}
 	case dzf.Ping != 0:
 		var f demozoo.Product
 		err := f.Get(dzf.Ping)
