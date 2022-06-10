@@ -1,4 +1,4 @@
-package database
+package database_test
 
 import (
 	"database/sql"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/database"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
@@ -36,7 +37,7 @@ func TestIsID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsID(tt.args.id); got != tt.want {
+			if got := database.IsID(tt.args.id); got != tt.want {
 				t.Errorf("IsID() = %v, want %v", got, tt.want)
 			}
 		})
@@ -60,7 +61,7 @@ func TestIsUUID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsUUID(tt.args.id); got != tt.want {
+			if got := database.IsUUID(tt.args.id); got != tt.want {
 				t.Errorf("IsUUID() = %v, want %v", got, tt.want)
 			}
 		})
@@ -86,7 +87,7 @@ func TestDateTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := strings.TrimSpace(DateTime(tt.args.value)); got != tt.want {
+			if got := strings.TrimSpace(database.DateTime(tt.args.value)); got != tt.want {
 				t.Errorf("DateTime() = %q, want %q", got, tt.want)
 			}
 		})
@@ -107,7 +108,7 @@ func TestObfuscateParam(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ObfuscateParam(tt.param); got != tt.want {
+			if got := database.ObfuscateParam(tt.param); got != tt.want {
 				t.Errorf("ObfuscateParam() = %v, want %v", got, tt.want)
 			}
 		})
@@ -123,11 +124,11 @@ func TestVal(t *testing.T) {
 		args args
 		want string
 	}{
-		{"null", args{nil}, null},
+		{"null", args{nil}, database.Null},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Val(tt.args.col); got != tt.want {
+			if got := database.Val(tt.args.col); got != tt.want {
 				t.Errorf("Val() = %v, want %v", got, tt.want)
 			}
 		})
@@ -147,7 +148,7 @@ func TestCheckID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := CheckID(tt.s); (err != nil) != tt.wantErr {
+			if err := database.CheckID(tt.s); (err != nil) != tt.wantErr {
 				t.Errorf("CheckID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -167,7 +168,7 @@ func TestCheckUUID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := CheckUUID(tt.s); (err != nil) != tt.wantErr {
+			if err := database.CheckUUID(tt.s); (err != nil) != tt.wantErr {
 				t.Errorf("CheckUUID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -190,7 +191,7 @@ func TestFileUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := FileUpdate(tt.args.name, tt.args.db)
+			got, err := database.FileUpdate(tt.args.name, tt.args.db)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FileUpdate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -216,7 +217,7 @@ func TestGetID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetID(tt.s)
+			got, err := database.GetID(tt.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetID() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -243,7 +244,7 @@ func TestGetFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetFile(tt.s)
+			got, err := database.GetFile(tt.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -272,7 +273,7 @@ func Test_StripChars(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := StripChars(tt.args.s); got != tt.want {
+			if got := database.StripChars(tt.args.s); got != tt.want {
 				t.Errorf("StripChars() = %v, want %v", got, tt.want)
 			}
 		})
@@ -297,7 +298,7 @@ func Test_StripStart(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := StripStart(tt.args.s); got != tt.want {
+			if got := database.StripStart(tt.args.s); got != tt.want {
 				t.Errorf("StripStart() = %v, want %v", got, tt.want)
 			}
 		})
@@ -319,7 +320,7 @@ func Test_TrimSP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := TrimSP(tt.args.s); got != tt.want {
+			if got := database.TrimSP(tt.args.s); got != tt.want {
 				t.Errorf("TrimSP() = %v, want %v", got, tt.want)
 			}
 		})
@@ -340,7 +341,7 @@ func TestDemozooID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := DemozooID(tt.id)
+			got, err := database.DemozooID(tt.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DemozooID() error = %v, wantErr %v", err, tt.wantErr)
 				return

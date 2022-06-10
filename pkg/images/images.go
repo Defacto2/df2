@@ -6,13 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
-
-	// register GIF decoding.
-	_ "image/gif"
-
-	// register Jpeg decoding.
-	_ "image/jpeg"
-	"image/png"
+	"image/png" //nolint:gci
 	"io"
 	"os"
 	"path/filepath"
@@ -32,14 +26,15 @@ import (
 	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
 
-	// register BMP decoding.
-	_ "golang.org/x/image/bmp"
+	_ "image/gif" // register GIF decoding.
 
-	// register TIFF decoding.
-	_ "golang.org/x/image/tiff"
+	_ "image/jpeg" // register Jpeg decoding.
 
-	// register WebP decoding.
-	_ "golang.org/x/image/webp"
+	_ "golang.org/x/image/bmp" // register BMP decoding.
+
+	_ "golang.org/x/image/tiff" // register TIFF decoding.
+
+	_ "golang.org/x/image/webp" // register WebP decoding.
 )
 
 var (

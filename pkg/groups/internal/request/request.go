@@ -114,7 +114,7 @@ func (r Flags) iterate(groups ...string) (*[]Result, error) {
 
 // Parse the group template and save it to the named file.
 // If the named file is empty, the results will be sent to stdout.
-func (r Flags) Parse(name, tmpl string) error {
+func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 	groups, total, err := group.List(r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)

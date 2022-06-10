@@ -34,14 +34,14 @@ func Prod(prod releases.ProductionV1, quiet bool) insert.Record {
 	}
 	platform, section := releases.Tags(p, t)
 	if platform == "" && section == "" {
+		s := ""
+		if p != "" {
+			s = p
+		}
+		if t != "" {
+			s += " " + t
+		}
 		if !quiet {
-			s := ""
-			if p != "" {
-				s = p
-			}
-			if t != "" {
-				s += " " + t
-			}
 			fmt.Printf(": skipped, unsuitable production [%s]", strings.TrimSpace(s))
 		}
 		return insert.Record{}

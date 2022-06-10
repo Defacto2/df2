@@ -122,11 +122,10 @@ func lastmodValue(createdat, updatedat sql.NullString) string {
 	} else if ok := createdat.Valid; ok {
 		lm = createdat.String
 	}
-	f := strings.Fields(lm)
 	// NOTE: most search engines do not bother with the lastmod value so it could be removed to improve size.
 	// blank by default; <lastmod> tag has `omitempty` set, so it won't display if no value is given.
 	s := ""
-	if len(f) > 0 {
+	if f := strings.Fields(lm); len(f) > 0 {
 		t := strings.Split(f[0], "T") // example value: 2020-04-06T20:51:36Z
 		s = t[0]
 	}

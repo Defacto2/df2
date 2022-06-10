@@ -24,8 +24,8 @@ type Productions []ProductionV1
 // Get the Demozoo JSON output from https://demozoo.org/api/v1/releasers/{{.ID}}/productions?format=json
 type ProductionV1 struct {
 	ExistsInDB bool
-	//URL        string `json:"url"`
-	//DemozooURL string `json:"demozoo_url"`
+	// URL        string `json:"url"`
+	// DemozooURL string `json:"demozoo_url"`
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
 	AuthorNicks []struct {
@@ -55,10 +55,9 @@ type ProductionV1 struct {
 }
 
 func Tags(platforms, types string) (platform, section string) {
-
 	// TODO
 	// read Title and find "application generator" and set groupapplication
-
+	const logo = "logo"
 	switch types {
 	case "Diskmag", "Textmag":
 		section = "magazine"
@@ -72,60 +71,68 @@ func Tags(platforms, types string) (platform, section string) {
 	case "Tool":
 		section = "programmingtool"
 	case "Executable Graphics":
-		section = "logo"
+		section = logo
 		platform = "dos"
 	case "Artpack", "Pack", "ASCII Collection":
 		section = "bbs"
 		platform = "package"
 	case "Graphics":
-		section = "logo"
+		section = logo
 		platform = "image"
 	case "ANSI":
-		section = "logo"
+		section = logo
 		platform = "ansi"
 	case "ASCII":
-		section = "logo"
+		section = logo
 		platform = "text"
 	case "Music", "Musicdisk", "Tracked Music":
 		section = "demo"
 		platform = "audio"
 	default:
 	}
+	if p := tagPlatform(platforms); p != "" {
+		platform = p
+	}
+	return platform, section
+}
 
+func tagPlatform(platforms string) string {
 	switch platforms {
 	case "Browser":
-		platform = "html"
+		return "html"
 	case "Java":
-		platform = "java"
+		return "java"
 	case "Linux":
-		platform = "linux"
+		return "linux"
 	case "MS-Dos":
-		platform = "dos"
+		return "dos"
 	case "Windows":
-		platform = "windows"
+		return "windows"
 	default:
+		return ""
 	}
-
-	return platform, section
 }
 
 // Released returns the production's release date as date_issued_ year, month, day values.
 func (p ProductionV1) Released() (year, month, day int) {
 	dates := strings.Split(p.ReleaseDate, "-")
 	const (
-		y = 0
-		m = 1
-		d = 2
+		y    = 0
+		m    = 1
+		d    = 2
+		ymd  = 3
+		ym   = 2
+		yyyy = 1
 	)
 	switch len(dates) {
-	case 3:
+	case ymd:
 		year, _ = strconv.Atoi(dates[y])
 		month, _ = strconv.Atoi(dates[m])
 		day, _ = strconv.Atoi(dates[d])
-	case 2:
+	case ym:
 		year, _ = strconv.Atoi(dates[y])
 		month, _ = strconv.Atoi(dates[m])
-	case 1:
+	case yyyy:
 		year, _ = strconv.Atoi(dates[y])
 	default:
 	}

@@ -42,8 +42,6 @@ func List(limit uint, compress bool) error {
 	for rows.Next() {
 		if err = rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("list rows next: %w", err)
-		} else if values == nil {
-			continue
 		}
 		var v file.Thumb
 		v.Scan(values)

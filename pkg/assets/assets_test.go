@@ -1,4 +1,4 @@
-package assets
+package assets_test
 
 import (
 	"io/ioutil"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/archive"
+	"github.com/Defacto2/df2/pkg/assets"
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
 	"github.com/Defacto2/df2/pkg/directories"
 	_ "github.com/go-sql-driver/mysql"
@@ -71,7 +72,7 @@ func TestClean(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Clean(tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := assets.Clean(tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("Clean() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -90,7 +91,7 @@ func TestCreateUUIDMap(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTotal, gotUuids, err := CreateUUIDMap()
+			gotTotal, gotUuids, err := assets.CreateUUIDMap()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreateUUIDMap() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -110,7 +111,7 @@ func TestBackup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, uuids, err := CreateUUIDMap()
+	_, uuids, err := assets.CreateUUIDMap()
 	if err != nil {
 		t.Error(err)
 	}
@@ -151,9 +152,9 @@ func TestBackup(t *testing.T) {
 	}
 }
 
-func Test_clean(t *testing.T) {
+func TestCleaner(t *testing.T) {
 	type args struct {
-		t      Target
+		t      assets.Target
 		delete bool
 		human  bool
 	}
@@ -165,13 +166,13 @@ func Test_clean(t *testing.T) {
 	}{
 		{"bad", args{-1, false, false}, true},
 		{empty, args{}, false},
-		{"good", args{Download, false, false}, false},
+		{"good", args{assets.Download, false, false}, false},
 	}
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := clean(tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
-				t.Errorf("clean() error = %v, wantErr %v", err, tt.wantErr)
+			if err := assets.Cleaner(tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+				t.Errorf("Cleaner() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -186,23 +187,23 @@ func TestIgnoreList(t *testing.T) {
 	}
 }
 
-func Test_targets(t *testing.T) {
+func TestTargets(t *testing.T) {
 	const allTargets = 5
 	tests := []struct {
 		name   string
-		target Target
+		target assets.Target
 		want   int
 	}{
-		{"", All, allTargets},
-		{"", Image, 2},
+		{"", assets.All, allTargets},
+		{"", assets.Image, 2},
 		{"error", -1, 0},
 	}
 	d := directories.Init(false)
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := targets(tt.target, &d); len(got) != tt.want {
-				t.Errorf("targets() = %v, want %v", got, tt.want)
+			if got := assets.Targets(tt.target, &d); len(got) != tt.want {
+				t.Errorf("Targets() = %v, want %v", got, tt.want)
 			}
 		})
 	}

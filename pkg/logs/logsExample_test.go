@@ -8,6 +8,6 @@ import (
 func ExampleDanger() {
 	color.Enable = false
 	logs.Panic(false)
-	logs.Danger(logs.ErrATest)
+	logs.Danger(ErrATest)
 	// Output:
 }

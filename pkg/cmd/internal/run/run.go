@@ -65,7 +65,7 @@ func Data(dbf database.Flags) error {
 	return nil
 }
 
-func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
+func Demozoo(dzf arg.Demozoo) error {
 	var empty []string
 	r := demozoo.Request{
 		All:       dzf.All,
@@ -173,8 +173,7 @@ func ping(id uint) error {
 
 func download(id uint) error {
 	var f demozoo.Product
-	err := f.Get(id)
-	if err != nil {
+	if err := f.Get(id); err != nil {
 		return err
 	}
 	logs.Printf("Demozoo ID %v, HTTP status %v\n", id, f.Status)

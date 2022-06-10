@@ -1,10 +1,11 @@
-package proof
+package proof_test
 
 import (
 	"database/sql"
 	"strings"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/proof"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 )
 
@@ -28,7 +29,7 @@ func TestQuery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := Request{
+			request := proof.Request{
 				Overwrite:   tt.fields.Overwrite,
 				AllProofs:   tt.fields.AllProofs,
 				HideMissing: tt.fields.HideMissing,
@@ -40,7 +41,7 @@ func TestQuery(t *testing.T) {
 	}
 }
 
-func Test_sqlSelect(t *testing.T) {
+func Test_Select(t *testing.T) {
 	tests := []struct {
 		name string
 		id   string
@@ -52,8 +53,8 @@ func Test_sqlSelect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := sqlSelect(tt.id); len(got) != tt.want {
-				t.Errorf("sqlSelect() = %v, want %v", len(got), tt.want)
+			if got := proof.Select(tt.id); len(got) != tt.want {
+				t.Errorf("Select() = %v, want %v", len(got), tt.want)
 			}
 		})
 	}
@@ -68,7 +69,7 @@ func TestTotal(t *testing.T) {
 	}
 	type args struct {
 		s       *stat.Proof
-		request Request
+		request proof.Request
 	}
 	tests := []struct {
 		name string
@@ -76,17 +77,17 @@ func TestTotal(t *testing.T) {
 		want string
 	}{
 		{"empty", args{}, ""},
-		{"no req", args{&zero, Request{}}, ""},
+		{"no req", args{&zero, proof.Request{}}, ""},
 		{
 			"zero",
-			args{&zero, Request{byID: "1"}},
+			args{&zero, proof.Request{ByID: "1"}},
 			"file record id '1' does not exist or is not a release proof",
 		},
-		{"ten", args{&ten, Request{byID: "1"}}, "Total records 10"},
+		{"ten", args{&ten, proof.Request{ByID: "1"}}, "Total records 10"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := strings.TrimSpace(Total(tt.args.s, tt.args.request)); got != tt.want {
+			if got := strings.TrimSpace(proof.Total(tt.args.s, tt.args.request)); got != tt.want {
 				t.Errorf("Total() = %v, want %v", got, tt.want)
 			}
 		})
@@ -98,7 +99,7 @@ func TestRequest_Skip(t *testing.T) {
 		Overwrite   bool
 		AllProofs   bool
 		HideMissing bool
-		byID        string
+		ByID        string
 	}
 	tests := []struct {
 		name   string
@@ -107,15 +108,15 @@ func TestRequest_Skip(t *testing.T) {
 		want   bool
 	}{
 		{"empty", fields{}, nil, true},
-		{"false", fields{byID: "1", Overwrite: true}, nil, false},
+		{"false", fields{ByID: "1", Overwrite: true}, nil, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := Request{
+			request := proof.Request{
 				Overwrite:   tt.fields.Overwrite,
 				AllProofs:   tt.fields.AllProofs,
 				HideMissing: tt.fields.HideMissing,
-				byID:        tt.fields.byID,
+				ByID:        tt.fields.ByID,
 			}
 			if got := request.Skip(tt.values); got != tt.want {
 				t.Errorf("Request.Skip() = %v, want %v", got, tt.want)

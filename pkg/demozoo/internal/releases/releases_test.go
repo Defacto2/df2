@@ -1,7 +1,9 @@
-package releases
+package releases_test
 
 import (
 	"testing"
+
+	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 )
 
 func TestSite(t *testing.T) {
@@ -17,7 +19,7 @@ func TestSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
-			if got := Site(tt.title); got != tt.want {
+			if got := releases.Site(tt.title); got != tt.want {
 				t.Errorf("Site() = %v, want %v", got, tt.want)
 			}
 		})
@@ -39,7 +41,7 @@ func TestProductionV1_Released(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.ReleaseDate, func(t *testing.T) {
-			p := ProductionV1{
+			p := releases.ProductionV1{
 				ReleaseDate: tt.ReleaseDate,
 			}
 			gotYear, gotMonth, gotDay := p.Released()

@@ -16,7 +16,7 @@ type Request struct {
 	Overwrite   bool   // Overwrite any existing proof assets such as images.
 	AllProofs   bool   // AllProofs parses all proofs, not just new uploads.
 	HideMissing bool   // HideMissing ignore proofs that are missing UUID download files.
-	byID        string // Id used for proofs, either a uuid or id string.
+	ByID        string // Id used for proofs, either a uuid or id string.
 }
 
 // Query parses a single proof with the record id or uuid.
@@ -24,7 +24,7 @@ func (request *Request) Query(id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %q: %w", id, err)
 	}
-	request.byID = id
+	request.ByID = id
 	if err := request.Queries(); err != nil {
 		return fmt.Errorf("request queries: %w", err)
 	}
@@ -36,7 +36,7 @@ func (request Request) Queries() error { //nolint:funlen
 	s := stat.Init()
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(sqlSelect(request.byID))
+	rows, err := db.Query(Select(request.ByID))
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (request Request) Queries() error { //nolint:funlen
 		s.Total++
 	}
 	fmt.Print(Total(&s, request))
-	rows, err = db.Query(sqlSelect(request.byID))
+	rows, err = db.Query(Select(request.ByID))
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (request Request) Queries() error { //nolint:funlen
 			return err
 		}
 	}
-	fmt.Print(s.Summary(request.byID))
+	fmt.Print(s.Summary(request.ByID))
 	return nil
 }
 
@@ -96,8 +96,8 @@ func Total(s *stat.Proof, request Request) string {
 	if s == nil {
 		return ""
 	}
-	if s.Total < 1 && request.byID != "" {
-		return fmt.Sprintf("file record id '%s' does not exist or is not a release proof\n", request.byID)
+	if s.Total < 1 && request.ByID != "" {
+		return fmt.Sprintf("file record id '%s' does not exist or is not a release proof\n", request.ByID)
 	}
 	if s.Total > 1 {
 		return fmt.Sprintln("Total records", s.Total)
@@ -107,19 +107,19 @@ func Total(s *stat.Proof, request Request) string {
 
 // Skip uses argument flags to check if a record is to be ignored.
 func (request Request) Skip(values []sql.RawBytes) bool {
-	if request.byID != "" && request.Overwrite {
+	if request.ByID != "" && request.Overwrite {
 		return false
 	}
 	if n := database.IsProof(values); !n && !request.AllProofs {
-		if request.byID != "" {
-			logs.Printf("skip record id '%s', as it is not new\n", request.byID)
+		if request.ByID != "" {
+			logs.Printf("skip record id '%s', as it is not new\n", request.ByID)
 		}
 		return true
 	}
 	return false
 }
 
-func sqlSelect(id string) string {
+func Select(id string) string {
 	s := "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file_zip_content`,`updatedat`,`platform`"
 	w := " WHERE `section` = 'releaseproof'"
 	if id != "" {

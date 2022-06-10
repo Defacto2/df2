@@ -66,7 +66,7 @@ func Arg(arg string, exit bool, args ...string) error {
 func Danger(err error) {
 	switch panicErr {
 	case true:
-		log.Println(fmt.Sprintf("error type %T\t: %v", err, err))
+		log.Printf("error type %T\t: %v\n", err, err)
 		log.Panic(err)
 	default:
 		log.Printf("%s %s", color.Danger.Sprint("!"), err)
@@ -75,10 +75,10 @@ func Danger(err error) {
 
 // Fatal logs error to stdout and exits with an error code.
 func Fatal(err error) {
-	save(Filename, err)
+	Save(Filename, err)
 	switch panicErr {
 	case true:
-		log.Println(fmt.Sprintf("error type: %T\tmsg: %v", err, err))
+		log.Printf("error type: %T\tmsg: %v\n", err, err)
 		log.Panic(err)
 	default:
 		log.Fatal(color.Danger.Sprint("ERROR: "), err)
@@ -100,7 +100,7 @@ func Filepath(filename string) string {
 
 // Log the error to stdout, but continue the program.
 func Log(err error) {
-	save(Filename, err)
+	Save(Filename, err)
 	Danger(err)
 }
 
@@ -193,13 +193,13 @@ func fatal(err error) {
 }
 
 func fatalLog(err error) {
-	save(Filename, err)
+	Save(Filename, err)
 	fatal(err)
 }
 
-// save an error to the logs.
+// Save an error to the logs.
 // path is available for unit tests.
-func save(filename string, err error) (ok bool) {
+func Save(filename string, err error) (ok bool) {
 	if err == nil {
 		return false
 	}

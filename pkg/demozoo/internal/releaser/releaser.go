@@ -29,7 +29,7 @@ type Releaser struct {
 // ReleaserV1 releasers API v1.
 // This can be dynamically generated at https://mholt.github.io/json-to-go/
 // Get the Demozoo JSON output from https://demozoo.org/api/v1/releasers/{{.ID}}/?format=json
-type ReleaserV1 struct {
+type ReleaserV1 struct { // nolint:revive
 	URL        string `json:"url"`
 	DemozooURL string `json:"demozoo_url"`
 	ID         int    `json:"id"`
@@ -103,7 +103,7 @@ func (r *Releaser) Get() (ReleaserV1, error) {
 
 // Prods gets all the productions of a releaser and normalises the results.
 func (r *Releaser) Prods() (releases.Productions, error) {
-	url, err := releases.URL(int64(r.ID))
+	url, err := releases.URL(r.ID)
 	if err != nil {
 		return releases.Productions{}, err
 	}

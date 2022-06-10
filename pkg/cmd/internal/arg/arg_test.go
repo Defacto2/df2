@@ -1,6 +1,10 @@
-package cmd
+package arg_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
+)
 
 func Test_options(t *testing.T) {
 	type args struct {
@@ -12,13 +16,13 @@ func Test_options(t *testing.T) {
 		want string
 	}{
 		{"empty", args{}, "\noptions: "},
-		{"targets", args{targets}, "\noptions: all,download,emulation,image"},
+		{"targets", args{arg.Targets()}, "\noptions: all,download,emulation,image"},
 		{"test", args{[]string{"test"}}, "\noptions: test"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := options(tt.args.a...); got != tt.want {
-				t.Errorf("options() = %q, want %q", got, tt.want)
+			if got := arg.CleanOpts(tt.args.a...); got != tt.want {
+				t.Errorf("CleanOpts() = %q, want %q", got, tt.want)
 			}
 		})
 	}

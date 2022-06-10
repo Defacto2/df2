@@ -122,39 +122,24 @@ func NewRecord(c int, values []sql.RawBytes) (Record, error) {
 	return r, nil
 }
 
+type request uint
+
+const (
+	meta request = iota
+	pouet
+)
+
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
 func RefreshMeta() error {
-	start := time.Now()
-	db := database.Connect()
-	defer db.Close()
-	rows, err := db.Query(selectByID(""))
-	if err != nil {
-		return fmt.Errorf("meta query: %w", err)
-	} else if rows.Err() != nil {
-		return fmt.Errorf("meta rows: %w", rows.Err())
-	}
-	defer rows.Close()
-	columns, err := rows.Columns()
-	if err != nil {
-		return fmt.Errorf("meta columns: %w", err)
-	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]any, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
-	}
-	// fetch the rows
-	var st Stat
-	for rows.Next() {
-		if err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
-			logs.Println(fmt.Errorf("meta rows: %w", err))
-		}
-	}
-	st.summary(time.Since(start))
-	return nil
+	return refresh(meta)
 }
 
+// RefreshPouet synchronises missing file entries with Demozoo sourced metadata.
 func RefreshPouet() error {
+	return refresh(pouet)
+}
+
+func refresh(r request) error {
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
@@ -176,9 +161,18 @@ func RefreshPouet() error {
 	}
 	// fetch the rows
 	var st Stat
-	for rows.Next() {
-		if err := st.NextPouet(Records{rows, scanArgs, values}); err != nil {
-			logs.Println(fmt.Errorf("meta rows: %w", err))
+	switch r {
+	case meta:
+		for rows.Next() {
+			if err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
+				logs.Println(fmt.Errorf("meta rows: %w", err))
+			}
+		}
+	case pouet:
+		for rows.Next() {
+			if err := st.NextPouet(Records{rows, scanArgs, values}); err != nil {
+				logs.Println(fmt.Errorf("meta rows: %w", err))
+			}
 		}
 	}
 	st.summary(time.Since(start))

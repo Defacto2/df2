@@ -1,7 +1,9 @@
-package recent
+package recent_test
 
 import (
 	"testing"
+
+	"github.com/Defacto2/df2/pkg/recent"
 )
 
 func TestList(t *testing.T) {
@@ -19,7 +21,7 @@ func TestList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := List(tt.args.limit, tt.args.compress); (err != nil) != tt.wantErr {
+			if err := recent.List(tt.args.limit, tt.args.compress); (err != nil) != tt.wantErr {
 				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

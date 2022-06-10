@@ -2,7 +2,7 @@ package demozoo
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec
 	"crypto/sha512"
 	"database/sql"
 	"errors"
@@ -197,6 +197,7 @@ func (r *Record) ZipContent() (ok bool, err error) {
 	return true, nil
 }
 
+//nolint:funlen
 func updates(r *Record) (set []string, args []any) {
 	if r.Filename != "" {
 		set = append(set, "filename=?")

@@ -42,7 +42,7 @@ const (
 	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 
 	hide = "****"
-	null = "NULL"
+	Null = "NULL"
 )
 
 // Empty is used as a blank value for search maps.
@@ -461,7 +461,7 @@ func TrimSP(s string) string {
 // Val returns the column value as either a string or "NULL".
 func Val(col sql.RawBytes) string {
 	if col == nil {
-		return null
+		return Null
 	}
 	return string(col)
 }

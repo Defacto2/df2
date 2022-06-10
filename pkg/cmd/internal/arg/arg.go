@@ -3,10 +3,15 @@ package arg
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/gookit/color"
 )
+
+func Targets() []string {
+	return []string{"all", "download", "emulation", "image"}
+}
 
 type Approve struct {
 	Verbose bool
@@ -105,4 +110,9 @@ func FilterFlag(t any, flag, val string) {
 			os.Exit(1)
 		}
 	}
+}
+
+func CleanOpts(a ...string) string {
+	sort.Strings(a)
+	return "\noptions: " + strings.Join(a, ",")
 }

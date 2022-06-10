@@ -11,9 +11,7 @@ import (
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
-
-	// MySQL database driver.
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql" // MySQL database driver.
 	"github.com/gookit/color"
 )
 
@@ -37,42 +35,25 @@ var (
 // and erases any orphans that cannot be matched to the database.
 func Clean(dir string, remove, human bool) error {
 	d := directories.Init(false)
-	return clean(targetfy(dir), &d, remove, human)
+	return Cleaner(targetfy(dir), &d, remove, human)
 }
 
-// CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
-func CreateUUIDMap() (total int, uuids database.IDs, err error) {
-	db := database.Connect()
-	defer db.Close()
-	// count rows
-	count := 0
-	if err = db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
-		return 0, nil, fmt.Errorf("create uuid map query row: %w", err)
+func targetfy(s string) Target {
+	switch strings.ToLower(s) {
+	case "all":
+		return All
+	case "download":
+		return Download
+	case "emulation":
+		return Emulation
+	case "image":
+		return Image
 	}
-	// query database
-	var id, uuid string
-	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
-	if err != nil {
-		return 0, nil, fmt.Errorf("create uuid map query: %w", err)
-	}
-	defer rows.Close()
-	if rows.Err() != nil {
-		return 0, nil, rows.Err()
-	}
-	uuids = make(database.IDs, count)
-	for rows.Next() {
-		if err = rows.Scan(&id, &uuid); err != nil {
-			return 0, nil, fmt.Errorf("create uuid map row: %w", err)
-		}
-		// store record `uuid` value as a key name in the map `m` with an empty value
-		uuids[uuid] = database.Empty{}
-		total++
-	}
-	return total, uuids, db.Close()
+	return -1
 }
 
-func clean(t Target, d *directories.Dir, remove, human bool) error {
-	paths := targets(t, d)
+func Cleaner(t Target, d *directories.Dir, remove, human bool) error {
+	paths := Targets(t, d)
 	if paths == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
@@ -112,21 +93,38 @@ func clean(t Target, d *directories.Dir, remove, human bool) error {
 	return nil
 }
 
-func targetfy(s string) Target {
-	switch strings.ToLower(s) {
-	case "all":
-		return All
-	case "download":
-		return Download
-	case "emulation":
-		return Emulation
-	case "image":
-		return Image
+// CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
+func CreateUUIDMap() (total int, uuids database.IDs, err error) {
+	db := database.Connect()
+	defer db.Close()
+	// count rows
+	count := 0
+	if err = db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
+		return 0, nil, fmt.Errorf("create uuid map query row: %w", err)
 	}
-	return -1
+	// query database
+	var id, uuid string
+	rows, err := db.Query("SELECT `id`,`uuid` FROM `files`")
+	if err != nil {
+		return 0, nil, fmt.Errorf("create uuid map query: %w", err)
+	}
+	defer rows.Close()
+	if rows.Err() != nil {
+		return 0, nil, rows.Err()
+	}
+	uuids = make(database.IDs, count)
+	for rows.Next() {
+		if err = rows.Scan(&id, &uuid); err != nil {
+			return 0, nil, fmt.Errorf("create uuid map row: %w", err)
+		}
+		// store record `uuid` value as a key name in the map `m` with an empty value
+		uuids[uuid] = database.Empty{}
+		total++
+	}
+	return total, uuids, db.Close()
 }
 
-func targets(t Target, d *directories.Dir) []string {
+func Targets(t Target, d *directories.Dir) []string {
 	if d.Base == "" {
 		reset := directories.Init(false)
 		d = &reset

@@ -1,4 +1,4 @@
-package logs
+package logs_test
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 )
@@ -37,7 +38,7 @@ func TestArg(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Arg(tt.args.arg, false, tt.args.args...); (err != nil) != tt.wantErr {
+			if err := logs.Arg(tt.args.arg, false, tt.args.args...); (err != nil) != tt.wantErr {
 				t.Errorf("Arg() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -46,7 +47,7 @@ func TestArg(t *testing.T) {
 
 func Test_save(t *testing.T) {
 	const name = "test.log"
-	fp, err := gap.NewScope(gap.User, GapUser).LogPath(name)
+	fp, err := gap.NewScope(gap.User, logs.GapUser).LogPath(name)
 	if err != nil {
 		log.Print(err)
 	}
@@ -61,8 +62,8 @@ func Test_save(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := save(name, tt.err); gotOk != tt.wantOk {
-				t.Errorf("save() = %v, want %v", gotOk, tt.wantOk)
+			if gotOk := logs.Save(name, tt.err); gotOk != tt.wantOk {
+				t.Errorf("Save() = %v, want %v", gotOk, tt.wantOk)
 			} else if gotOk {
 				// cleanup
 				if err := os.Remove(fp); err != nil {
@@ -75,7 +76,7 @@ func Test_save(t *testing.T) {
 
 func TestFilepath(t *testing.T) {
 	t.Run("file path", func(t *testing.T) {
-		if got := Filepath(Filename); got == "" {
+		if got := logs.Filepath(logs.Filename); got == "" {
 			t.Errorf("Filepath() = %q, want a directory path", got)
 		}
 	})
@@ -85,21 +86,21 @@ func capture(test, text string, quiet bool) (output string) {
 	rescueStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	Quiet(false)
+	logs.Quiet(false)
 	if quiet {
-		Quiet(true)
+		logs.Quiet(true)
 	}
 	switch test {
 	case p:
-		Print(text)
+		logs.Print(text)
 	case "printcr":
-		Printcr(text)
+		logs.Printcr(text)
 	case "printf":
-		Printf("%s", text)
+		logs.Printf("%s", text)
 	case "println":
-		Println(text)
+		logs.Println(text)
 	case "printfcr":
-		Printcrf("%s", text)
+		logs.Printcrf("%s", text)
 	}
 	w.Close()
 	bytes, _ := ioutil.ReadAll(r)
@@ -156,7 +157,7 @@ func TestPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Path(tt.name); got != tt.want {
+			if got := logs.Path(tt.name); got != tt.want {
 				t.Errorf("Path() = %v, want %v", got, tt.want)
 			}
 		})

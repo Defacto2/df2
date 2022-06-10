@@ -7,14 +7,13 @@ import (
 	"regexp"
 	"strings"
 
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
-
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var ErrFilter = errors.New("invalid filter used")

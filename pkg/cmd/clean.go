@@ -3,8 +3,6 @@ package cmd
 
 import (
 	"log"
-	"sort"
-	"strings"
 
 	"github.com/Defacto2/df2/pkg/assets"
 	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
@@ -12,10 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	clf     arg.Clean
-	targets = []string{"all", "download", "emulation", "image"}
-)
+var clf arg.Clean
 
 // cleanCmd represents the clean command.
 var cleanCmd = &cobra.Command{
@@ -36,7 +31,7 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(cleanCmd)
 	cleanCmd.Flags().StringVarP(&clf.Target, "target", "t", "all",
-		"what file section to clean"+options(targets...))
+		"what file section to clean"+arg.CleanOpts())
 	cleanCmd.Flags().BoolVarP(&clf.Delete, "delete", "x", false,
 		"erase all discovered files to free up drive space")
 	cleanCmd.Flags().BoolVar(&clf.Humanise, "humanise", true,
@@ -47,9 +42,4 @@ func init() { // nolint:gochecknoinits
 	if err := cleanCmd.Flags().MarkHidden("makedirs"); err != nil {
 		log.Print(err)
 	}
-}
-
-func options(a ...string) string {
-	sort.Strings(a)
-	return "\noptions: " + strings.Join(a, ",")
 }
