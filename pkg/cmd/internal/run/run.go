@@ -96,65 +96,21 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 	// 	return err
 	// }
 	case dzf.Releaser != 0:
-		var r demozoo.Releaser
-		err := r.Get(dzf.Releaser)
-		if err != nil {
-			return err
-		}
-		logs.Printf("Demozoo ID %v, HTTP status %v\n", dzf.Releaser, r.Status)
-		if r.Code != 200 {
-			return nil
-		}
-		var p demozoo.ReleaserProducts
-		if err := p.Get(dzf.Releaser); err != nil {
-			return err
-		}
-		if len(p.API) == 0 {
-			return fmt.Errorf("%w: %s", demozoo.ErrNoRel, r.API.Name)
-		}
-		v := "scener"
-		if r.API.IsGroup {
-			v = "group"
-		}
-		s := fmt.Sprintf("Attempt to add the %d productions found for the %s, %s",
-			len(p.API), v, r.API.Name)
-		if !prompt.YN(s, true) {
-			return nil
-		}
-		if err := demozoo.InsertProds(&p.API, false); err != nil {
+		if err := releaser(dzf.Releaser); err != nil {
 			return err
 		}
 	case dzf.Ping != 0:
-		var f demozoo.Product
-		err := f.Get(dzf.Ping)
-		if err != nil {
-			return err
-		}
-		if !str.Piped() {
-			logs.Printf("Demozoo ID %v, HTTP status %v\n", dzf.Ping, f.Status)
-		}
-		if err := f.API.Print(); err != nil {
+		if err := ping(dzf.Ping); err != nil {
 			return err
 		}
 	case dzf.Download != 0:
-		var f demozoo.Product
-		err := f.Get(dzf.Download)
-		if err != nil {
+		if err := download(dzf.Download); err != nil {
 			return err
 		}
-		logs.Printf("Demozoo ID %v, HTTP status %v\n", dzf.Download, f.Status)
-		f.API.Downloads()
-		logs.Print("\n")
 	case len(dzf.Extract) == 1:
-		id, err := uuid.NewRandom()
-		if err != nil {
+		if err := extract(dzf.Extract[0]); err != nil {
 			return err
 		}
-		d, err := archive.Demozoo(dzf.Extract[0], id.String(), &empty)
-		if err != nil {
-			return err
-		}
-		logs.Println(d.String())
 	case len(dzf.Extract) > 1: // limit to the first 2 flags
 		d, err := archive.Demozoo(dzf.Extract[0], dzf.Extract[1], &empty)
 		if err != nil {
@@ -164,6 +120,80 @@ func Demozoo(dzf arg.Demozoo) error { //nolint:funlen
 	default:
 		return ErrDZFlag
 	}
+	return nil
+}
+
+func releaser(id uint) error {
+	const ok = 200
+	var r demozoo.Releaser
+	err := r.Get(id)
+	if err != nil {
+		return err
+	}
+	logs.Printf("Demozoo ID %v, HTTP status %v\n", id, r.Status)
+	if r.Code != ok {
+		return nil
+	}
+	var p demozoo.ReleaserProducts
+	if err := p.Get(id); err != nil {
+		return err
+	}
+	if len(p.API) == 0 {
+		return fmt.Errorf("%w: %s", demozoo.ErrNoRel, r.API.Name)
+	}
+	v := "scener"
+	if r.API.IsGroup {
+		v = "group"
+	}
+	s := fmt.Sprintf("Attempt to add the %d productions found for the %s, %s",
+		len(p.API), v, r.API.Name)
+	if !prompt.YN(s, true) {
+		return nil
+	}
+	if err := demozoo.InsertProds(&p.API, false); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ping(id uint) error {
+	var f demozoo.Product
+	err := f.Get(id)
+	if err != nil {
+		return err
+	}
+	if !str.Piped() {
+		logs.Printf("Demozoo ID %v, HTTP status %v\n", id, f.Status)
+	}
+	if err := f.API.Print(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func download(id uint) error {
+	var f demozoo.Product
+	err := f.Get(id)
+	if err != nil {
+		return err
+	}
+	logs.Printf("Demozoo ID %v, HTTP status %v\n", id, f.Status)
+	f.API.Downloads()
+	logs.Print("\n")
+	return nil
+}
+
+func extract(src string) error {
+	var empty []string
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return err
+	}
+	d, err := archive.Demozoo(src, id.String(), &empty)
+	if err != nil {
+		return err
+	}
+	logs.Println(d.String())
 	return nil
 }
 

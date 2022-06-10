@@ -2,9 +2,6 @@
 package demozoo
 
 import (
-
-	// nolint: gosec
-
 	"database/sql"
 	"fmt"
 	"strconv"

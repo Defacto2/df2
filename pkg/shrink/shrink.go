@@ -27,7 +27,7 @@ func Previews() error {
 	dir := viper.GetString("directory.incoming.previews")
 	color.Primary.Printf("Previews incoming directory: %s\n", dir)
 	if err := sql.Preview.Approve(); err != nil {
-		return nil //nolint:nilerr
+		return nil
 	}
 	if err := sql.Preview.Store(dir, "incoming-preview"); err != nil {
 		return err

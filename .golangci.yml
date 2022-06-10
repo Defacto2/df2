@@ -14,11 +14,14 @@ linters:
     - exhaustivestruct # 'It is not recommended to use it for all files in a project'
     - forbidigo # forbids the use for fmt.Print(f|ln)
     - nlreturn # opinionated
+    - nonamedreturns # opinionated
     - paralleltest # causes tests to randomly fail
     - testpackage # removes the ability to test internal functions
     - varnamelen # too many false-pos.
     - wrapcheck # wrapping 3rd party errors such as those from bolt are unnecessary
     - wsl # whitespace linter, slow, aggressive and opinionated
+
+    - exhaustruct
 
 # Fixes
 # gofumpt -l -w <file> || <dir>/*

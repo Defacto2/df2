@@ -77,7 +77,7 @@ func Prod(prod releases.ProductionV1, quiet bool) insert.Record {
 // API: https://demozoo.org/api/v1/releasers/
 // Except for errors, setting quiet to false disables all stdout feedback.
 func InsertProds(p *releases.Productions, quiet bool) error {
-	new := 0
+	recs := 0
 	for i, prod := range *p {
 		item := fmt.Sprintf("%d. ", i)
 		if !quiet {
@@ -91,18 +91,18 @@ func InsertProds(p *releases.Productions, quiet bool) error {
 		if err != nil {
 			return err
 		}
-		newId, err := res.LastInsertId()
+		newID, err := res.LastInsertId()
 		if err != nil {
 			return err
 		}
 		if !quiet {
 			pad := strings.Repeat(" ", len(item))
-			fmt.Printf("\n%s ↳ production added using auto-id: %d", pad, newId)
+			fmt.Printf("\n%s ↳ production added using auto-id: %d", pad, newID)
 		}
-		new++
+		recs++
 	}
-	if !quiet && new > 0 {
-		fmt.Printf("\nAdded %d new releaser productions from Demozoo.\n", new)
+	if !quiet && recs > 0 {
+		fmt.Printf("\nAdded %d new releaser productions from Demozoo.\n", recs)
 	}
 	return nil
 }
