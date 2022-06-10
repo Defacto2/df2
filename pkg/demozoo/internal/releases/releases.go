@@ -54,9 +54,7 @@ type ProductionV1 struct {
 	// Tags []string `json:"tags"`
 }
 
-func Tags(platforms, types string) (platform, section string) {
-	// TODO
-	// read Title and find "application generator" and set groupapplication
+func Tags(platforms, types, title string) (platform, section string) {
 	const logo = "logo"
 	switch types {
 	case "Diskmag", "Textmag":
@@ -89,6 +87,9 @@ func Tags(platforms, types string) (platform, section string) {
 		section = "demo"
 		platform = "audio"
 	default:
+	}
+	if strings.Contains(strings.ToLower(title), "application generator") {
+		section = "groupapplication"
 	}
 	if p := tagPlatform(platforms); p != "" {
 		platform = p

@@ -32,7 +32,7 @@ func Prod(prod releases.ProductionV1, quiet bool) insert.Record {
 	if len(prod.Types) > 0 {
 		t = prod.Types[0].Name
 	}
-	platform, section := releases.Tags(p, t)
+	platform, section := releases.Tags(p, t, prod.Title)
 	if platform == "" && section == "" {
 		s := ""
 		if p != "" {
