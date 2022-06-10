@@ -18,6 +18,6 @@ func ExampleList() {
 	if err != nil {
 		fmt.Print(err)
 	}
-	fmt.Printf("%d %s", total, r)
-	// Output: 452 musicians
+	fmt.Printf("%s found? %v", r, total > 0)
+	// Output: musicians found? true
 }
