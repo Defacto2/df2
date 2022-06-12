@@ -23,7 +23,7 @@ type Filter uint
 
 const (
 	MsDos   Filter = iota // MsDos filters by platforms id 4.
-	Windows               // Windows filters by platforms id X.
+	Windows               // Windows filters by platforms id 1.
 )
 
 func (f Filter) String() string {
@@ -33,7 +33,9 @@ func (f Filter) String() string {
 		return v1 + "/productions/?supertype=production&title=&platform=4&released_before=" +
 			before + "&released_since=&added_before=&added_since=&updated_before=&updated_since=&author="
 	case Windows:
-		return ""
+		const before = ""
+		return v1 + "/productions/?supertype=production&title=&platform=1&released_before=" +
+			before + "&released_since=&added_before=&added_since=&updated_before=&updated_since=&author="
 	}
 	return ""
 }

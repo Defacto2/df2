@@ -150,11 +150,11 @@ func syncdos() error {
 }
 
 func syncwin() error {
-	var p demozoo.MsDosProducts
+	var p demozoo.WindowsProducts
 	if err := p.Get(); err != nil {
 		return err
 	}
-	fmt.Printf("Fetched %d pre-2000, Ms-DOS productions\n", p.Count)
+	fmt.Printf("Fetched %d Windows productions\n", p.Count)
 	fmt.Printf("%d new productions found in %d downloads\n", p.Finds, len(p.API))
 	return nil
 }

@@ -100,6 +100,28 @@ func (m *MsDosProducts) Get() error {
 	return nil
 }
 
+type WindowsProducts struct {
+	Code   int
+	Status string
+	API    []releases.ProductionV1
+	Count  int
+	Finds  int
+}
+
+func (m *WindowsProducts) Get() error {
+	d := filter.Productions{Filter: releases.Windows}
+	api, err := d.Prods(false)
+	if err != nil {
+		return fmt.Errorf("get msdos prods: %w", err)
+	}
+	m.Code = d.StatusCode
+	m.Status = d.Status
+	m.Count = d.Count
+	m.Finds = d.Finds
+	m.API = api
+	return nil
+}
+
 // Fix repairs imported Demozoo data conflicts.
 func Fix() error {
 	return fix.Configs()
