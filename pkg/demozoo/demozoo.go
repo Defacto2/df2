@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/demozoo/internal/filter"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/fix"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prod"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
@@ -71,6 +72,31 @@ func (r *ReleaserProducts) Get(id uint) error {
 	r.Code = d.StatusCode
 	r.Status = d.Status
 	r.API = api
+	return nil
+}
+
+// MsDosProducts are productions that match platforms id 4, MS-DOS.
+// Productions with the tag "lost" are skipped.
+// Productions created on or newer than 1 Jan. 2000 are skipped.
+type MsDosProducts struct {
+	Code   int
+	Status string
+	API    []releases.ProductionV1 //[]filter.Production
+	Count  int
+	Finds  int
+}
+
+func (m *MsDosProducts) Get() error {
+	d := filter.Productions{Filter: releases.MsDos}
+	api, err := d.Prods()
+	if err != nil {
+		return fmt.Errorf("get msdos prods: %w", err)
+	}
+	m.Code = d.StatusCode
+	m.Status = d.Status
+	m.Count = d.Count
+	m.Finds = d.Finds
+	m.API = api
 	return nil
 }
 

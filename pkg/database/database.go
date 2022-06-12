@@ -8,6 +8,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -477,4 +478,69 @@ func Waiting() (uint, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+// DeObfuscate a public facing, obfuscated file ID or file URL.
+// A URL can point to a Defacto2 file download or detail page.
+func DeObfuscate(s string) int {
+	p := strings.Split(s, "?")
+	d := deObfuscate(path.Base(p[0]))
+	id, _ := strconv.Atoi(d)
+	return id
+}
+
+// deObfuscate de-obfuscates a CFWheels obfuscateParam or Obfuscate() obfuscated string.
+func deObfuscate(s string) string {
+	const twoChrs, decimal, hexadecimal = 2, 10, 16
+	// CFML source:
+	// https://github.com/cfwheels/cfwheels/blob/cf8e6da4b9a216b642862e7205345dd5fca34b54/wheels/global/misc.cfm
+	if _, err := strconv.Atoi(s); err == nil || len(s) < twoChrs {
+		return s
+	}
+	// De-obfuscate string.
+	tail := s[twoChrs:]
+	n, err := strconv.ParseInt(tail, hexadecimal, 0)
+
+	if err != nil {
+		return s
+	}
+
+	n ^= 461 // bitxor
+	ns := strconv.Itoa(int(n))
+	l := len(ns) - 1
+	tail = ""
+
+	for i := 0; i < l; i++ {
+		f := ns[l-i:][:1]
+		tail += f
+	}
+	// Create checks.
+	ct := 0
+	l = len(tail)
+
+	for i := 0; i < l; i++ {
+		chr := tail[i : i+1]
+		n, err1 := strconv.Atoi(chr)
+
+		if err1 != nil {
+			return s
+		}
+
+		ct += n
+	}
+	// Run checks.
+	ci, err := strconv.ParseInt(s[:2], hexadecimal, 0)
+	if err != nil {
+		return s
+	}
+
+	c2 := strconv.FormatInt(ci, decimal)
+
+	const unknown = 154
+
+	if strconv.FormatInt(int64(ct+unknown), decimal) != c2 {
+		return s
+	}
+
+	return tail
 }

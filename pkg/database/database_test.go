@@ -352,3 +352,27 @@ func TestDemozooID(t *testing.T) {
 		})
 	}
 }
+
+func TestDeObfuscate(t *testing.T) {
+	tests := []struct {
+		s    string
+		want int
+	}{
+		{"", 0},
+		{"some random text", 0},
+		{"defacto2.net/d/b84058", 9876},
+		{"https://defacto2.net/d/b84058", 9876},
+		{"https://defacto2.net/d/b84058?filename=KIWI.EXE", 9876},
+		{"https://defacto2.net/f/b84058", 9876},
+		{"https://defacto2.net/f/b84058?filename=KIWI.EXE", 9876},
+		{"https://defacto2.net/file/detail/af3d95", 8445},
+	}
+	for _, tt := range tests {
+		t.Run(tt.s, func(t *testing.T) {
+			got := database.DeObfuscate(tt.s)
+			if got != tt.want {
+				t.Errorf("DeObfuscate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -29,10 +29,11 @@ import (
 )
 
 const (
-	datal = "datalist"
-	dl    = "dl"
-	htm   = "html"
-	txt   = "text"
+	datal    = "datalist"
+	dl       = "dl"
+	htm      = "html"
+	txt      = "text"
+	statusOk = 200
 )
 
 // Copyright returns a © Copyright year, or a range of years.
@@ -67,6 +68,8 @@ func Data(dbf database.Flags) error {
 
 func Demozoo(dzf arg.Demozoo) error {
 	var empty []string
+	// TODO: apply these to --sync, --releases, etc
+	// TODO: apply --quiet to this Request
 	r := demozoo.Request{
 		All:       dzf.All,
 		Overwrite: dzf.Overwrite,
@@ -91,10 +94,9 @@ func Demozoo(dzf arg.Demozoo) error {
 			return err
 		}
 	case dzf.Sync:
-		return demozoo.ErrNA
-	// if err := demozoo.Sync(); err != nil {
-	// 	return err
-	// }
+		if err := sync(); err != nil {
+			return err
+		}
 	case dzf.Releaser != 0:
 		if err := releaser(dzf.Releaser); err != nil {
 			return err
@@ -123,15 +125,24 @@ func Demozoo(dzf arg.Demozoo) error {
 	return nil
 }
 
+func sync() error {
+	var p demozoo.MsDosProducts
+	if err := p.Get(); err != nil {
+		return err
+	}
+	// todo: remove tag = lost
+	fmt.Printf("Fetched %d pre-2000, Ms-DOS productions\n", p.Count)
+	fmt.Printf("%d new productions found in %d downloads\n", p.Finds, len(p.API))
+	return nil
+}
+
 func releaser(id uint) error {
-	const ok = 200
 	var r demozoo.Releaser
-	err := r.Get(id)
-	if err != nil {
+	if err := r.Get(id); err != nil {
 		return err
 	}
 	logs.Printf("Demozoo ID %v, HTTP status %v\n", id, r.Status)
-	if r.Code != ok {
+	if r.Code != statusOk {
 		return nil
 	}
 	var p demozoo.ReleaserProducts

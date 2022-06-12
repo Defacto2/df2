@@ -103,7 +103,7 @@ func (r *Releaser) Get() (ReleaserV1, error) {
 
 // Prods gets all the productions of a releaser and normalises the results.
 func (r *Releaser) Prods() (releases.Productions, error) {
-	url, err := releases.URL(r.ID)
+	url, err := releases.URLReleasers(r.ID)
 	if err != nil {
 		return releases.Productions{}, err
 	}

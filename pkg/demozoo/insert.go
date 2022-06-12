@@ -13,9 +13,9 @@ import (
 
 var ErrNoQuery = errors.New("query statement is empty")
 
-// Prod mutates the raw Demozoo API releaser production data to database ready values.
+// InsertProd mutates the raw Demozoo API releaser production data to database ready values.
 // Except for errors, setting quiet to false disables all stdout feedback.
-func Prod(prod releases.ProductionV1, quiet bool) insert.Record {
+func InsertProd(prod releases.ProductionV1, quiet bool) insert.Record {
 	dbID, _ := database.DemozooID(uint(prod.ID))
 	if dbID > 0 {
 		prod.ExistsInDB = true
@@ -83,7 +83,7 @@ func InsertProds(p *releases.Productions, quiet bool) error {
 		if !quiet {
 			fmt.Printf("\n%s%s", item, prod.Title)
 		}
-		rec := Prod(prod, quiet)
+		rec := InsertProd(prod, quiet)
 		if reflect.DeepEqual(rec, insert.Record{}) {
 			continue
 		}

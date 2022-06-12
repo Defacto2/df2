@@ -13,9 +13,29 @@ import (
 var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
 
 const (
-	api  = "https://demozoo.org/api/v1/releasers"
-	prod = "productions"
+	v1           = "https://demozoo.org/api/v1"
+	releasersAPI = v1 + "/releasers"
+	prod         = "productions"
 )
+
+// Filter the Production List using API fields.
+type Filter uint
+
+const (
+	MsDos   Filter = iota // MsDos filters by platforms id 4.
+	Windows               // Windows filters by platforms id X.
+)
+
+func (f Filter) String() string {
+	switch f {
+	case MsDos:
+		const before = "2000-01-01"
+		return v1 + "/productions/?supertype=production&title=&platform=4&released_before=" + before + "&released_since=&added_before=&added_since=&updated_before=&updated_since=&author="
+	case Windows:
+		return ""
+	}
+	return ""
+}
 
 type Productions []ProductionV1
 
@@ -46,12 +66,20 @@ type ProductionV1 struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
 	} `json:"platforms"`
-	Types []struct {
-		URL  string `json:"url"`
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	} `json:"types"`
-	// Tags []string `json:"tags"`
+	Types []Type `json:"types"`
+	// Types []struct {
+	// 	URL  string `json:"url"`
+	// 	ID   int    `json:"id"`
+	// 	Name string `json:"name"`
+	// } `json:"types"`
+	Tags []string `json:"tags"`
+}
+
+// Type of production.
+type Type struct {
+	URL  string `json:"url"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 func Tags(platforms, types, title string) (platform, section string) {
@@ -195,13 +223,26 @@ func (p *Productions) Print() error {
 	return nil
 }
 
+// URL generates an API v1 URL used to fetch the productions filtered by a productions id.
+// i.e. https://demozoo.org/api/v1/productions/?supertype=production&title=&platform=4
+func URLFilter(f Filter) (string, error) {
+	u, err := url.Parse(f.String()) // base URL
+	if err != nil {
+		return "", fmt.Errorf("releaser productions parse: %w", err)
+	}
+	q := u.Query()
+	q.Set("format", "json") // append format=json
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
+
 // URL generates an API v1 URL used to fetch the productions of a releaser ID.
 // i.e. https://demozoo.org/api/v1/releasers/1/productions/
-func URL(id int64) (string, error) {
+func URLReleasers(id int64) (string, error) {
 	if id < 0 {
 		return "", fmt.Errorf("releaser productions id %v: %w", id, ErrNegativeID)
 	}
-	u, err := url.Parse(api) // base URL
+	u, err := url.Parse(releasersAPI) // base URL
 	if err != nil {
 		return "", fmt.Errorf("releaser productions parse: %w", err)
 	}
