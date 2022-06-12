@@ -81,14 +81,14 @@ func (r *ReleaserProducts) Get(id uint) error {
 type MsDosProducts struct {
 	Code   int
 	Status string
-	API    []releases.ProductionV1 //[]filter.Production
+	API    []releases.ProductionV1
 	Count  int
 	Finds  int
 }
 
 func (m *MsDosProducts) Get() error {
 	d := filter.Productions{Filter: releases.MsDos}
-	api, err := d.Prods()
+	api, err := d.Prods(false)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}

@@ -30,7 +30,8 @@ func (f Filter) String() string {
 	switch f {
 	case MsDos:
 		const before = "2000-01-01"
-		return v1 + "/productions/?supertype=production&title=&platform=4&released_before=" + before + "&released_since=&added_before=&added_since=&updated_before=&updated_since=&author="
+		return v1 + "/productions/?supertype=production&title=&platform=4&released_before=" +
+			before + "&released_since=&added_before=&added_since=&updated_before=&updated_since=&author="
 	case Windows:
 		return ""
 	}

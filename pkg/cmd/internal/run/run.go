@@ -130,7 +130,6 @@ func sync() error {
 	if err := p.Get(); err != nil {
 		return err
 	}
-	// todo: remove tag = lost
 	fmt.Printf("Fetched %d pre-2000, Ms-DOS productions\n", p.Count)
 	fmt.Printf("%d new productions found in %d downloads\n", p.Finds, len(p.API))
 	return nil

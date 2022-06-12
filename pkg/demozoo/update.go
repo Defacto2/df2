@@ -18,7 +18,9 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/demozoo/internal/insert"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
+	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/logs"
@@ -195,6 +197,11 @@ func (r *Record) ZipContent() (ok bool, err error) {
 	}
 	r.FileZipContent = strings.Join(a, "\n")
 	return true, nil
+}
+
+// InsertProds adds the collection of Demozoo productions to the file database.
+func InsertProds(p *releases.Productions, quiet bool) error {
+	return insert.Prods(p, quiet)
 }
 
 //nolint:funlen

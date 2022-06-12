@@ -500,7 +500,6 @@ func deObfuscate(s string) string {
 	// De-obfuscate string.
 	tail := s[twoChrs:]
 	n, err := strconv.ParseInt(tail, hexadecimal, 0)
-
 	if err != nil {
 		return s
 	}

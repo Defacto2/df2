@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/demozoo/internal/insert"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prod"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
@@ -16,8 +17,8 @@ import (
 // Productions API production request.
 type Productions struct {
 	Filter     releases.Filter
-	Count      int
-	Finds      int
+	Count      int           // Total productions
+	Finds      int           // Found productions to add
 	Timeout    time.Duration // HTTP request timeout in seconds (default 5)
 	Link       string        // URL link to send the request
 	StatusCode int           // received HTTP statuscode
@@ -26,58 +27,63 @@ type Productions struct {
 
 // Production List result.
 type ProductionList struct {
-	Count    int                     `json:"count"`
-	Next     string                  `json:"next"`
-	Previous interface{}             `json:"previous"`
+	Count    int                     `json:"count"`    // Total productions
+	Next     string                  `json:"next"`     // URL for the next page
+	Previous interface{}             `json:"previous"` // URL for the previous page
 	Results  []releases.ProductionV1 `json:"results"`
 }
 
-var empty []releases.ProductionV1
+func empty() []releases.ProductionV1 {
+	return []releases.ProductionV1{}
+}
 
 // Prods gets all the productions of a releaser and normalises the results.
-func (p *Productions) Prods() ([]releases.ProductionV1, error) {
-	const endOfRecords = ""
-	const maxPage = 1000
+func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) {
+	const endOfRecords, maxPage = "", 1000
 	var next []releases.ProductionV1
 	var dz ProductionList
-	var totalFinds = 0
+	totalFinds := 0
 
 	url, err := releases.URLFilter(p.Filter)
 	if err != nil {
-		return empty, err
+		return empty(), err
 	}
 	req := download.Request{
 		Link: url,
 	}
-
-	fmt.Printf("Fetch the first 100 of many records from Demozoo\n")
+	if !quiet {
+		fmt.Printf("Fetch the first 100 of many records from Demozoo\n")
+	}
 	if err := req.Body(); err != nil {
-		return empty, fmt.Errorf("filter data body: %w", err)
+		return empty(), fmt.Errorf("filter data body: %w", err)
 	}
 	p.Status = req.Status
 	p.StatusCode = req.StatusCode
 	if len(req.Read) > 0 {
 		if err := json.Unmarshal(req.Read, &dz); err != nil {
-			return empty, fmt.Errorf("filter data json unmarshal: %w", err)
+			return empty(), fmt.Errorf("filter data json unmarshal: %w", err)
 		}
 	}
-	p.Count = int(dz.Count)
-	var prods = make([]releases.ProductionV1, dz.Count)
-	finds, prods := Filter(dz.Results)
-	pp(1, finds)
-	page := 1
-	nextUrl := dz.Next
+	p.Count = dz.Count
+	finds, prods := Filter(dz.Results, quiet)
+	if !quiet {
+		pp(1, finds)
+	}
+
+	nu, page := dz.Next, 1
 	for {
 		page++
-		next, nextUrl, err = Next(nextUrl)
+		next, nu, err = Next(nu)
 		if err != nil {
-			return empty, err
+			return empty(), err
 		}
-		finds, next = Filter(next)
+		finds, next = Filter(next, quiet)
 		totalFinds += finds
-		pp(page, finds)
+		if !quiet {
+			pp(page, finds)
+		}
 		prods = append(prods, next...)
-		if nextUrl == endOfRecords {
+		if nu == endOfRecords {
 			break
 		}
 		if page > maxPage {
@@ -89,30 +95,39 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) {
 }
 
 func pp(page, finds int) {
-	fmt.Printf("   Page %d, new records found %d\n", page, finds)
+	if finds == 0 {
+		fmt.Printf("   Page %d, no new records found\n", page)
+		return
+	}
+	if finds == 1 {
+		fmt.Printf("   Page %d, new record found, 1\n", page)
+		return
+	}
+	fmt.Printf("   Page %d, new records found, %d\n", page, finds)
 }
 
-//
+// Next gets all the next page of productions.
 func Next(url string) ([]releases.ProductionV1, string, error) {
 	req := download.Request{
 		Link: url,
 	}
 	if err := req.Body(); err != nil {
-		return empty, "", fmt.Errorf("filter data body: %w", err)
+		return empty(), "", fmt.Errorf("filter data body: %w", err)
 	}
 	var dz ProductionList
 	if len(req.Read) > 0 {
 		if err := json.Unmarshal(req.Read, &dz); err != nil {
-			return empty, "", fmt.Errorf("filter data json unmarshal: %w", err)
+			return empty(), "", fmt.Errorf("filter data json unmarshal: %w", err)
 		}
 	}
 	return dz.Results, dz.Next, nil
 }
 
 // Filter productions removes any records that are not suitable for Defacto2.
-func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
-	var finds, prods = 0, make([]releases.ProductionV1, 100)
-	for i, prod := range p {
+func Filter(p []releases.ProductionV1, quiet bool) (int, []releases.ProductionV1) {
+	finds := 0
+	var prods []releases.ProductionV1 //nolint:prealloc
+	for _, prod := range p {
 		if !prodType(prod.Types) {
 			continue
 		}
@@ -124,18 +139,27 @@ func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
 			continue
 		}
 		if l, _ := linked(prod.ID); l != "" {
-			sync(prod.ID, database.DeObfuscate(l))
+			sync(prod.ID, database.DeObfuscate(l), quiet)
 			continue
 		}
-		fmt.Printf("%d. (%d) %s\n", i, prod.ID, prod.Title)
+		rec := make(releases.Productions, 1)
+		rec[0] = prod
+		if err := insert.Prods(&rec, true); err != nil {
+			logs.Println(err)
+			continue
+		}
+		fmt.Printf("%d. (%d) %s\n", finds+1, prod.ID, prod.Title)
 		finds++
 		prods = append(prods, prod)
 	}
 	return finds, prods
 }
 
-func sync(demozooID, recordID int) {
+func sync(demozooID, recordID int, quiet bool) {
 	i, err := update(demozooID, recordID)
+	if quiet {
+		return
+	}
 	if err != nil {
 		fmt.Printf(" Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
 			demozooID, recordID)
@@ -144,7 +168,6 @@ func sync(demozooID, recordID int) {
 	}
 	fmt.Printf(" Updated %d record, the Demozoo ID %d was saved to record id: %v\n", i,
 		demozooID, recordID)
-
 }
 
 func update(demozooID, recordID int) (int64, error) {
