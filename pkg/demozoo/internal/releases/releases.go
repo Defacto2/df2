@@ -27,6 +27,10 @@ const (
 )
 
 func (f Filter) String() string {
+	return []string{"Ms-Dos", "Windows"}[f]
+}
+
+func (f Filter) URL() string {
 	switch f {
 	case MsDos:
 		const before = "2000-01-01"
@@ -229,7 +233,7 @@ func (p *Productions) Print() error {
 // URL generates an API v1 URL used to fetch the productions filtered by a productions id.
 // i.e. https://demozoo.org/api/v1/productions/?supertype=production&title=&platform=4
 func URLFilter(f Filter) (string, error) {
-	u, err := url.Parse(f.String()) // base URL
+	u, err := url.Parse(f.URL()) // base URL
 	if err != nil {
 		return "", fmt.Errorf("releaser productions parse: %w", err)
 	}

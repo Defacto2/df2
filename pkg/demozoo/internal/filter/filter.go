@@ -52,7 +52,7 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) {
 		Link: url,
 	}
 	if !quiet {
-		fmt.Printf("Fetch the first 100 of many records from Demozoo\n")
+		fmt.Printf("Fetching the first 100 of many records from Demozoo\n")
 	}
 	if err := req.Body(); err != nil {
 		return empty(), fmt.Errorf("filter data body: %w", err)
@@ -65,6 +65,9 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) {
 		}
 	}
 	p.Count = dz.Count
+	if !quiet {
+		fmt.Printf("There are %d %s production matches\n", dz.Count, p.Filter)
+	}
 	finds, prods := Filter(dz.Results, quiet)
 	if !quiet {
 		pp(1, finds)

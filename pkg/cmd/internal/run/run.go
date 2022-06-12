@@ -144,8 +144,7 @@ func syncdos() error {
 	if err := p.Get(); err != nil {
 		return err
 	}
-	fmt.Printf("Fetched %d pre-2000, Ms-DOS productions\n", p.Count)
-	fmt.Printf("%d new productions found in %d downloads\n", p.Finds, len(p.API))
+	fmt.Printf("There were %d new productions found\n", p.Finds)
 	return nil
 }
 
@@ -154,8 +153,7 @@ func syncwin() error {
 	if err := p.Get(); err != nil {
 		return err
 	}
-	fmt.Printf("Fetched %d Windows productions\n", p.Count)
-	fmt.Printf("%d new productions found in %d downloads\n", p.Finds, len(p.API))
+	fmt.Printf("There were %d new productions found\n", p.Finds)
 	return nil
 }
 
