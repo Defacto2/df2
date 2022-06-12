@@ -22,7 +22,12 @@ There are additional Demozoo commands found under the api command.`,
 	Example: `  df2 demozoo [--new|--all|--releases|--id] (--dry-run,--overwrite)
   df2 demozoo [--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := run.Demozoo(dzf)
+		quiet := false
+		q := rootCmd.PersistentFlags().Lookup("quiet")
+		if q.Value.String() == "true" {
+			quiet = true
+		}
+		err := run.Demozoo(dzf, quiet)
 		switch {
 		case errors.Is(err, run.ErrDZFlag):
 			if err := cmd.Usage(); err != nil {

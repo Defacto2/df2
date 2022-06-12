@@ -19,10 +19,15 @@ var apisCmd = &cobra.Command{
 	Long: `Run batch data synchronizations with the remote APIs hosted
 on demozoo.org and pouet.net. All these commands are SLOW and
 require the parsing of 10,000s of records.`,
-	Aliases: []string{"ap", "api"},
+	Aliases: []string{"api"},
 	Example: `  df2 apis [--refresh|--pouet|--msdos|--windows]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := run.Apis(apis)
+		quiet := false
+		q := rootCmd.PersistentFlags().Lookup("quiet")
+		if q.Value.String() == "true" {
+			quiet = true
+		}
+		err := run.Apis(apis, quiet)
 		switch {
 		case errors.Is(err, run.ErrArgFlag):
 			if err := cmd.Usage(); err != nil {

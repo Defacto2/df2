@@ -48,9 +48,7 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) {
 	if err != nil {
 		return empty(), err
 	}
-	req := download.Request{
-		Link: url,
-	}
+	req := download.Request{Link: url}
 	if !quiet {
 		fmt.Printf("Fetching the first 100 of many records from Demozoo\n")
 	}
@@ -111,9 +109,7 @@ func pp(page, finds int) {
 
 // Next gets all the next page of productions.
 func Next(url string) ([]releases.ProductionV1, string, error) {
-	req := download.Request{
-		Link: url,
-	}
+	req := download.Request{Link: url}
 	if err := req.Body(); err != nil {
 		return empty(), "", fmt.Errorf("filter data body: %w", err)
 	}

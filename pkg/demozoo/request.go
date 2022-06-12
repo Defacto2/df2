@@ -18,6 +18,7 @@ type Request struct {
 	Refresh   bool   // Refresh all demozoo entries.
 	Simulate  bool   // Simulate database save.
 	ByID      string // Filter by ID.
+	Quiet     bool
 }
 
 // Query parses a single Demozoo entry.

@@ -84,11 +84,12 @@ type MsDosProducts struct {
 	API    []releases.ProductionV1
 	Count  int
 	Finds  int
+	Quiet  bool
 }
 
 func (m *MsDosProducts) Get() error {
 	d := filter.Productions{Filter: releases.MsDos}
-	api, err := d.Prods(false)
+	api, err := d.Prods(m.Quiet)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
@@ -106,11 +107,12 @@ type WindowsProducts struct {
 	API    []releases.ProductionV1
 	Count  int
 	Finds  int
+	Quiet  bool
 }
 
 func (m *WindowsProducts) Get() error {
 	d := filter.Productions{Filter: releases.Windows}
-	api, err := d.Prods(false)
+	api, err := d.Prods(m.Quiet)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
