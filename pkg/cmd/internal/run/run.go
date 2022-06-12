@@ -46,7 +46,10 @@ func Copyright() string {
 	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
 }
 
-var ErrDZFlag = errors.New("unknown demozoo flag")
+var (
+	ErrArgFlag = errors.New("unknown args flag")
+	ErrDZFlag  = errors.New("unknown demozoo flag")
+)
 
 func Data(dbf database.Flags) error {
 	switch {
@@ -66,6 +69,30 @@ func Data(dbf database.Flags) error {
 	return nil
 }
 
+func Apis(a arg.Apis) error {
+	switch {
+	case a.Refresh:
+		if err := demozoo.RefreshMeta(); err != nil {
+			return err
+		}
+	case a.Pouet:
+		if err := demozoo.RefreshPouet(); err != nil {
+			return err
+		}
+	case a.SyncDos:
+		if err := syncdos(); err != nil {
+			return err
+		}
+	case a.SyncWin:
+		if err := syncwin(); err != nil {
+			return err
+		}
+	default:
+		return ErrDZFlag
+	}
+	return nil
+}
+
 func Demozoo(dzf arg.Demozoo) error {
 	var empty []string
 	// TODO: apply these to --sync, --releases, etc
@@ -73,7 +100,6 @@ func Demozoo(dzf arg.Demozoo) error {
 	r := demozoo.Request{
 		All:       dzf.All,
 		Overwrite: dzf.Overwrite,
-		Refresh:   dzf.Refresh,
 		Simulate:  dzf.Simulate,
 	}
 	switch {
@@ -83,18 +109,6 @@ func Demozoo(dzf arg.Demozoo) error {
 		}
 	case dzf.ID != "":
 		if err := r.Query(dzf.ID); err != nil {
-			return err
-		}
-	case dzf.Refresh:
-		if err := demozoo.RefreshMeta(); err != nil {
-			return err
-		}
-	case dzf.Pouet:
-		if err := demozoo.RefreshPouet(); err != nil {
-			return err
-		}
-	case dzf.Sync:
-		if err := sync(); err != nil {
 			return err
 		}
 	case dzf.Releaser != 0:
@@ -125,7 +139,17 @@ func Demozoo(dzf arg.Demozoo) error {
 	return nil
 }
 
-func sync() error {
+func syncdos() error {
+	var p demozoo.MsDosProducts
+	if err := p.Get(); err != nil {
+		return err
+	}
+	fmt.Printf("Fetched %d pre-2000, Ms-DOS productions\n", p.Count)
+	fmt.Printf("%d new productions found in %d downloads\n", p.Finds, len(p.API))
+	return nil
+}
+
+func syncwin() error {
 	var p demozoo.MsDosProducts
 	if err := p.Get(); err != nil {
 		return err

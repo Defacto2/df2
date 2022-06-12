@@ -14,12 +14,13 @@ var dzf arg.Demozoo
 
 // demozooCmd represents the demozoo command.
 var demozooCmd = &cobra.Command{
-	Use:     "demozoo",
-	Short:   "Interact with Demozoo submissions.",
-	Long:    "Manage upload submissions that rely on the API hosted on demozoo.org.",
+	Use:   "demozoo",
+	Short: "Interact with Demozoo submissions.",
+	Long: `Manage upload submissions that rely on the API hosted on demozoo.org.
+There are additional Demozoo commands found under the api command.`,
 	Aliases: []string{"d", "dz"},
 	Example: `  df2 demozoo [--new|--all|--releases|--id] (--dry-run,--overwrite)
-  df2 demozoo [--refresh|--pouet|--sync|--ping|--download]`,
+  df2 demozoo [--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := run.Demozoo(dzf)
 		switch {
@@ -38,22 +39,15 @@ func init() { // nolint:gochecknoinits
 	demozooCmd.Flags().BoolVarP(&dzf.New, "new", "n", false,
 		"scan for new demozoo submissions (recommended)")
 	demozooCmd.Flags().BoolVar(&dzf.All, "all", false,
-		"scan all files with demozoo links (SLOW)")
+		"scan all local files entries with demozoo links (SLOW)")
 	demozooCmd.Flags().UintVar(&dzf.Releaser, "releases", 0,
-		"add to the database all the productions of a demozoo scener")
+		"add to the local files all the productions of a demozoo scener")
 	demozooCmd.Flags().StringVarP(&dzf.ID, "id", "i", "",
-		"update the empty data of a table id or uuid with its fetched demozoo data")
+		"replace any empty data cells of a local file with linked demozoo data")
 	demozooCmd.Flags().BoolVarP(&dzf.Simulate, "dry-run", "d", false,
 		"simulate the fixes and display the expected changes")
 	demozooCmd.Flags().BoolVar(&dzf.Overwrite, "overwrite", false,
 		"rescan archives and overwrite all existing assets\n")
-	demozooCmd.Flags().BoolVarP(&dzf.Refresh, "refresh", "r", false,
-		"replace empty table data with fetched demozoo data (SLOW)\n"+
-			"any demozoo ids with 404 are removed from the table")
-	demozooCmd.Flags().BoolVar(&dzf.Pouet, "pouet", false,
-		"scan the demozoo api for missing or deleted pouet ids (SLOW)")
-	demozooCmd.Flags().BoolVarP(&dzf.Sync, "sync", "s", false,
-		"scan the demozoo api for missing bbstros and cracktros (SLOW) [not implemented]\n")
 	demozooCmd.Flags().UintVarP(&dzf.Ping, "ping", "p", 0,
 		"fetch and display a production record from the demozoo API")
 	demozooCmd.Flags().UintVarP(&dzf.Download, "download", "g", 0,

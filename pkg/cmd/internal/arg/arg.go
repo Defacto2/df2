@@ -30,14 +30,18 @@ type Config struct {
 	Overwrite bool
 }
 
+type Apis struct {
+	Refresh bool
+	Pouet   bool
+	SyncDos bool
+	SyncWin bool
+}
+
 type Demozoo struct {
 	All       bool // scan for all proofs, not just new submissions
 	Overwrite bool // overwrite all existing assets
 	Simulate  bool
 	New       bool
-	Refresh   bool
-	Pouet     bool
-	Sync      bool
 	ID        string // auto-generated id or a uuid
 	Extract   []string
 	Ping      uint
