@@ -72,11 +72,11 @@ func Data(dbf database.Flags) error {
 func Apis(a arg.Apis, quiet bool) error {
 	switch {
 	case a.Refresh:
-		if err := demozoo.RefreshMeta(); err != nil {
+		if err := demozoo.RefreshMeta(quiet); err != nil {
 			return err
 		}
 	case a.Pouet:
-		if err := demozoo.RefreshPouet(); err != nil {
+		if err := demozoo.RefreshPouet(quiet); err != nil {
 			return err
 		}
 	case a.SyncDos:

@@ -87,7 +87,7 @@ func (st *Stat) NextRefresh(rec Records) error {
 	return nil
 }
 
-// NextPouet iterates over the Records to update sync their Pouet data to the database.
+// NextPouet iterates over the linked Demozoo records and sync any linked Pouet data to the local files table.
 func (st *Stat) NextPouet(rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)

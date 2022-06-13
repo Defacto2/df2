@@ -24,3 +24,15 @@ func selectByID(id string) string {
 	}
 	return selectSQL + where
 }
+
+func countPouet() string {
+	s := "SELECT COUNT(*) FROM `files` "
+	s += "WHERE `web_id_pouet` IS NOT NULL"
+	return s
+}
+
+func count() string {
+	s := "SELECT COUNT(*) FROM `files` "
+	s += "WHERE `web_id_demozoo` IS NOT NULL"
+	return s
+}

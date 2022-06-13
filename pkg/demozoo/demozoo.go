@@ -179,20 +179,35 @@ const (
 	pouet
 )
 
+func (r request) String() string {
+	return []string{"Demozoo", "Pouet"}[r]
+}
+
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
-func RefreshMeta() error {
-	return refresh(meta)
+func RefreshMeta(quiet bool) error {
+	return refresh(meta, quiet)
 }
 
 // RefreshPouet synchronises missing file entries with Demozoo sourced metadata.
-func RefreshPouet() error {
-	return refresh(pouet)
+func RefreshPouet(quiet bool) error {
+	return refresh(pouet, quiet)
 }
 
-func refresh(r request) error {
+func refresh(r request, quiet bool) error {
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
+	var cnt int
+	stmt := count()
+	if r == pouet {
+		stmt = countPouet()
+	}
+	if err := db.QueryRow(stmt).Scan(&cnt); err != nil {
+		return fmt.Errorf("count query: %w", err)
+	}
+	if !quiet {
+		fmt.Printf("There are %d records with %s links\n", cnt, r)
+	}
 	rows, err := db.Query(selectByID(""))
 	if err != nil {
 		return fmt.Errorf("meta query: %w", err)
