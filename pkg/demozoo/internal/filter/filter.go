@@ -44,7 +44,7 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) {
 	var dz ProductionList
 	totalFinds := 0
 
-	url, err := releases.URLFilter(p.Filter)
+	url, err := p.Filter.URL(0)
 	if err != nil {
 		return empty(), err
 	}

@@ -30,15 +30,32 @@ func (f Filter) String() string {
 	return []string{"Ms-Dos", "Windows"}[f]
 }
 
-func (f Filter) URL() string {
+// URL generates an API v1 URL used to fetch the productions filtered by a productions id.
+// i.e. https://demozoo.org/api/v1/productions/?supertype=production&title=&platform=4
+func (f Filter) URL(startPage int) (string, error) {
+	u, err := url.Parse(f.URLString(startPage)) // base URL
+	if err != nil {
+		return "", fmt.Errorf("releaser productions parse: %w", err)
+	}
+	q := u.Query()
+	q.Set("format", "json") // append format=json
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
+
+func (f Filter) URLString(startPage int) string {
+	page := ""
+	if startPage > 0 {
+		page = fmt.Sprintf("&page=%d", startPage)
+	}
 	switch f {
 	case MsDos:
 		const before = "2000-01-01"
-		return v1 + "/productions/?supertype=production&title=&platform=4&released_before=" +
+		return v1 + "/productions/?supertype=production&title=" + page + "&platform=4&released_before=" +
 			before + "&released_since=&added_before=&added_since=&updated_before=&updated_since=&author="
 	case Windows:
 		const before = ""
-		return v1 + "/productions/?supertype=production&title=&platform=1&released_before=" +
+		return v1 + "/productions/?supertype=production&title=" + page + "&platform=1&released_before=" +
 			before + "&released_since=&added_before=&added_since=&updated_before=&updated_since=&author="
 	}
 	return ""
@@ -228,19 +245,6 @@ func (p *Productions) Print() error {
 	// ignore --quiet
 	fmt.Println(string(js))
 	return nil
-}
-
-// URL generates an API v1 URL used to fetch the productions filtered by a productions id.
-// i.e. https://demozoo.org/api/v1/productions/?supertype=production&title=&platform=4
-func URLFilter(f Filter) (string, error) {
-	u, err := url.Parse(f.URL()) // base URL
-	if err != nil {
-		return "", fmt.Errorf("releaser productions parse: %w", err)
-	}
-	q := u.Query()
-	q.Set("format", "json") // append format=json
-	u.RawQuery = q.Encode()
-	return u.String(), nil
 }
 
 // URL generates an API v1 URL used to fetch the productions of a releaser ID.
