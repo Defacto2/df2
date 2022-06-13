@@ -14,6 +14,8 @@ import (
 	"github.com/Defacto2/df2/pkg/logs"
 )
 
+const maxTries = 5
+
 // Productions API production request.
 type Productions struct {
 	Filter     releases.Filter
@@ -52,9 +54,18 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) {
 	if !quiet {
 		fmt.Printf("Fetching the first 100 of many records from Demozoo\n")
 	}
-	if err := req.Body(); err != nil {
-		return empty(), fmt.Errorf("filter data body: %w", err)
+	tries := 0
+	for {
+		tries++
+		if err := req.Body(); err != nil {
+			if tries <= maxTries {
+				continue
+			}
+			return empty(), fmt.Errorf("filter data body: %w", err)
+		}
+		break
 	}
+
 	p.Status = req.Status
 	p.StatusCode = req.StatusCode
 	if len(req.Read) > 0 {
@@ -110,8 +121,16 @@ func pp(page, finds int) {
 // Next gets all the next page of productions.
 func Next(url string) ([]releases.ProductionV1, string, error) {
 	req := download.Request{Link: url}
-	if err := req.Body(); err != nil {
-		return empty(), "", fmt.Errorf("filter data body: %w", err)
+	tries := 0
+	for {
+		tries++
+		if err := req.Body(); err != nil {
+			if tries <= maxTries {
+				continue
+			}
+			return empty(), "", fmt.Errorf("filter data body: %w", err)
+		}
+		break
 	}
 	var dz ProductionList
 	if len(req.Read) > 0 {
