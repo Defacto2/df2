@@ -149,7 +149,7 @@ func Filter(p []releases.ProductionV1, quiet bool) (int, []releases.ProductionV1
 		if !prodType(prod.Types) {
 			continue
 		}
-		if lost(prod.Tags) {
+		if invalid(prod.Tags) {
 			continue
 		}
 		// confirm ID is not already used in a defacto2 file record
@@ -237,9 +237,12 @@ func prodType(types []releases.Type) bool {
 	return false
 }
 
-func lost(tags []string) bool {
+func invalid(tags []string) bool {
 	for _, tag := range tags {
 		if strings.ToLower(tag) == "lost" {
+			return true
+		}
+		if strings.ToLower(tag) == "no-binaries" {
 			return true
 		}
 	}
