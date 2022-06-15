@@ -152,7 +152,7 @@ func Tags(platforms, types, title string) (platform, section string) {
 func tagPlatform(platforms string) string {
 	switch platforms {
 	case "Browser":
-		return "html"
+		return "markup"
 	case "Java":
 		return "java"
 	case "Linux":
