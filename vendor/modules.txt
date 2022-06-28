@@ -146,7 +146,7 @@ github.com/spf13/afero/mem
 # github.com/spf13/cast v1.5.0
 ## explicit; go 1.18
 github.com/spf13/cast
-# github.com/spf13/cobra v1.4.0
+# github.com/spf13/cobra v1.5.0
 ## explicit; go 1.15
 github.com/spf13/cobra
 # github.com/spf13/jwalterweatherman v1.1.0
@@ -184,7 +184,7 @@ github.com/xo/terminfo
 # github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 ## explicit
 github.com/yusukebe/go-pngquant
-# golang.org/x/image v0.0.0-20220601225756-64ec528b34cd
+# golang.org/x/image v0.0.0-20220617043117-41969df76e82
 ## explicit; go 1.12
 golang.org/x/image/bmp
 golang.org/x/image/ccitt
@@ -194,11 +194,11 @@ golang.org/x/image/tiff/lzw
 golang.org/x/image/vp8
 golang.org/x/image/vp8l
 golang.org/x/image/webp
-# golang.org/x/net v0.0.0-20220607020251-c690dde0001d
+# golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
-# golang.org/x/sys v0.0.0-20220608164250-635b8c9b7f68
+# golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix

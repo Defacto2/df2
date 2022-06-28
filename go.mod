@@ -18,12 +18,12 @@ require (
 	github.com/muesli/go-app-paths v0.2.2
 	github.com/nickalie/go-webpbin v0.0.0-20220110095747-f10016bf2dc1
 	github.com/nwaples/rardecode v1.1.3
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
-	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd
-	golang.org/x/sys v0.0.0-20220608164250-635b8c9b7f68
+	golang.org/x/image v0.0.0-20220617043117-41969df76e82
+	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b
 	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -50,7 +50,7 @@ require (
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
-	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
