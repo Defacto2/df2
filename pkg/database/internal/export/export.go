@@ -48,7 +48,7 @@ const (
 )
 
 func (t Table) String() string {
-	return [...]string{"files", "groups", "netresources", "users"}[t]
+	return [...]string{"files", "groupnames", "netresources", "users"}[t]
 }
 
 // Tbls are the available tables in the database.
@@ -512,11 +512,11 @@ func columns(t Table) ([]string, error) {
 		}
 		defer rows.Close()
 	case Groups:
-		rows, err = db.Query("SELECT * FROM groups LIMIT 0")
+		rows, err = db.Query("SELECT * FROM groupnames LIMIT 0")
 		if err != nil {
-			return nil, fmt.Errorf("columns groups query: %w", err)
+			return nil, fmt.Errorf("columns groupnames query: %w", err)
 		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns groups query rows: %w", rows.Err())
+			return nil, fmt.Errorf("columns groupnames query rows: %w", rows.Err())
 		}
 		defer rows.Close()
 	case Netresources:
@@ -587,11 +587,11 @@ func allFiles(db *sql.DB) ([]string, error) {
 }
 
 func allGroups(db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT * FROM groups")
+	rows, err := db.Query("SELECT * FROM groupnames")
 	if err != nil {
-		return nil, fmt.Errorf("rows groups query: %w", err)
+		return nil, fmt.Errorf("rows groupnames query: %w", err)
 	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows groups query rows: %w", rows.Err())
+		return nil, fmt.Errorf("rows groupnames query rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	return values(rows)
@@ -631,11 +631,11 @@ func limitFiles(limit int, db *sql.DB) ([]string, error) {
 }
 
 func limitGroups(limit int, db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT * FROM groups LIMIT ?", limit)
+	rows, err := db.Query("SELECT * FROM groupnames LIMIT ?", limit)
 	if err != nil {
-		return nil, fmt.Errorf("rows limit groups query: %w", err)
+		return nil, fmt.Errorf("rows limit groupnames query: %w", err)
 	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows limit groups query rows: %w", rows.Err())
+		return nil, fmt.Errorf("rows limit groupnames query rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	return values(rows)

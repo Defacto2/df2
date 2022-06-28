@@ -34,7 +34,7 @@ func Get(s string) (string, error) {
 	db := database.Connect()
 	defer db.Close()
 	var i string
-	row := db.QueryRow("SELECT `initialisms` FROM groups WHERE `pubname` = ?", s)
+	row := db.QueryRow("SELECT `initialisms` FROM groupnames WHERE `pubname` = ?", s)
 	if err := row.Scan(&i); err != nil &&
 		strings.Contains(err.Error(), "no rows in result set") {
 		return "", nil

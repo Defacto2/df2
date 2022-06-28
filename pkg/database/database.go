@@ -67,7 +67,7 @@ const (
 )
 
 func (t Table) String() string {
-	return [...]string{"files", "groups", "netresources", "users"}[t]
+	return [...]string{"files", "groupnames", "netresources", "users"}[t]
 }
 
 // Init initialises the database connection using stored settings.
