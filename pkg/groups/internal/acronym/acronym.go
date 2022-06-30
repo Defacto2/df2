@@ -21,7 +21,7 @@ func (g *Group) Get() error {
 		return fmt.Errorf("get connect: %w", err)
 	}
 	defer db.Close()
-	row := db.QueryRow("SELECT `initialisms` FROM `groups` WHERE `pubname`=?", g.Name)
+	row := db.QueryRow("SELECT `initialisms` FROM `groupnames` WHERE `pubname`=?", g.Name)
 	if err = row.Scan(&g.Initialism); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("get row scan: %w", err)
 	}
