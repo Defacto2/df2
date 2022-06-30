@@ -212,15 +212,18 @@ func Proof(src, filename, uuid string) error {
 	return nil
 }
 
-// Read returns a list of files within an rar, tar, zip or 7z archive.
+// Read returns both a list of files within an rar, tar, zip or 7z archive;
+// as-well as a suitable filename string for the archive. This filename is
+// useful when the original archive filename has been given an invalid file
+// extension.
 // src is the absolute path to the archive file named as a unique id.
-// filename is the original archive filename and file extension.
-func Read(src, name string) ([]string, error) {
-	files, err := Readr(src, name)
+// name is the original archive filename and file extension.
+func Read(src, name string) ([]string, string, error) {
+	files, filename, err := Readr(src, name)
 	if err != nil {
-		return nil, fmt.Errorf("read uuid/filename: %w", err)
+		return nil, "", fmt.Errorf("read uuid/filename: %w", err)
 	}
-	return files, nil
+	return files, filename, nil
 }
 
 // Restore unpacks or decompresses a given archive file to the destination.
@@ -234,7 +237,7 @@ func Restore(src, name, dest string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("restore unarchiver: %w", err)
 	}
-	files, err := Readr(src, name)
+	files, _, err := Readr(src, name)
 	if err != nil {
 		return nil, fmt.Errorf("restore readr: %w", err)
 	}

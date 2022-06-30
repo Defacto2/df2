@@ -63,17 +63,24 @@ func TestRead(t *testing.T) {
 		name      string
 		args      args
 		wantFiles []string
+		wantFile  string
 		wantErr   bool
 	}{
-		{"empty", args{"", ""}, nil, true},
-		{"zip", args{testDir("demozoo/test.zip"), "test.zip"}, []string{"test.png", "test.txt"}, false},
+		{"empty", args{"", ""}, nil, "", true},
+		{"invalid rar ext", args{testDir("demozoo/test.invalid.ext.rar"), "test.invalid.ext.rar"}, []string{"test.png", "test.txt"},
+			"test.invalid.ext.zip", false},
+		{"zip", args{testDir("demozoo/test.zip"), "test.zip"}, []string{"test.png", "test.txt"},
+			"test.zip", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, err := archive.Read(tt.args.archive, tt.args.filename)
+			gotFiles, gotFile, err := archive.Read(tt.args.archive, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if gotFile != tt.wantFile {
+				t.Errorf("Read() = %v, want %v", gotFile, tt.wantFile)
 			}
 			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
 				t.Errorf("Read() = %v, want %v", gotFiles, tt.wantFiles)

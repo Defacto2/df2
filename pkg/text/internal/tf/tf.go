@@ -102,7 +102,7 @@ func (t *TextFile) Extract(dir *directories.Dir) error {
 		return ErrMeUnk
 	}
 	s := strings.Split(t.Readme.String, ",")
-	f, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
+	f, _, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
 	if err != nil {
 		return err
 	}

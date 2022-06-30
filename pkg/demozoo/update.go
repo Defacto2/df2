@@ -191,11 +191,12 @@ func (r *Record) ZipContent() (ok bool, err error) {
 	} else if r.Filename == "" {
 		return false, fmt.Errorf("zipcontent: %w", ErrFilename)
 	}
-	a, err := archive.Read(r.FilePath, r.Filename)
+	a, fn, err := archive.Read(r.FilePath, r.Filename)
 	if err != nil {
 		return false, fmt.Errorf("zipcontent read: %w", err)
 	}
 	r.FileZipContent = strings.Join(a, "\n")
+	r.Filename = fn
 	return true, nil
 }
 

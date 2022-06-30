@@ -94,14 +94,16 @@ func (r *Record) Read(s *scan.Stats) error {
 	}
 	var err error
 	logs.Print(" • ")
-	r.Files, err = archive.Read(r.File, r.Name)
+	r.Files, r.Name, err = archive.Read(r.File, r.Name)
 	if err != nil {
 		s.Missing++
 		return fmt.Errorf("%s archive read: %w", errPrefix, err)
 	}
 	logs.Printf("%d items", len(r.Files))
 	if err := r.Nfo(s); err != nil {
-		return err
+		// instead of returning the error, print it.
+		// otherwise the results of archive.Read will never be saved
+		fmt.Printf(" %s", err)
 	}
 	updates, err := r.Save()
 	if err != nil {
@@ -164,8 +166,8 @@ func (r *Record) Save() (int64, error) {
 		return 0, ErrID
 	}
 	const (
-		files = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=? WHERE id=?"
-		nfo   = "UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?," +
+		files = "UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=? WHERE id=?"
+		nfo   = "UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=?," +
 			"retrotxt_readme=?,retrotxt_no_readme=? WHERE id=?"
 	)
 	var err error
@@ -183,13 +185,13 @@ func (r *Record) Save() (int64, error) {
 	defer update.Close()
 	content := strings.Join(r.Files, "\n")
 	if r.NFO == "" {
-		a, err := update.Exec(content, database.UpdateID, r.ID)
+		a, err := update.Exec(r.Name, content, database.UpdateID, r.ID)
 		if err != nil {
 			return 0, fmt.Errorf("%s db exec: %w", errPrefix, err)
 		}
 		return a.RowsAffected()
 	}
-	a, err := update.Exec(content, database.UpdateID, r.NFO, 0, r.ID)
+	a, err := update.Exec(r.Name, content, database.UpdateID, r.NFO, 0, r.ID)
 	if err != nil {
 		return 0, fmt.Errorf("%s db exec: %w", errPrefix, err)
 	}

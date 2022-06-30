@@ -26,7 +26,7 @@ func TestReadr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, err := archive.Readr(tt.args.archive, tt.args.filename)
+			gotFiles, _, err := archive.Readr(tt.args.archive, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return

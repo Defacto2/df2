@@ -107,15 +107,15 @@ func (r Record) Iterate(s stat.Proof) error {
 }
 
 // UpdateZipContent sets the file_zip_content column to match content and platform to "image".
-func UpdateZipContent(id string, items int, content string) error {
+func UpdateZipContent(id, filename, content string, items int) error {
 	db := database.Connect()
 	defer db.Close()
-	update, err := db.Prepare("UPDATE files SET file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
+	update, err := db.Prepare("UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
 	if err != nil {
 		return fmt.Errorf("updatezip prepare: %w", err)
 	}
 	defer update.Close()
-	if _, err := update.Exec(content, database.UpdateID, "image", id); err != nil {
+	if _, err := update.Exec(filename, content, database.UpdateID, "image", id); err != nil {
 		return fmt.Errorf("updatezip exec: %w", err)
 	}
 	logs.Printf("%d items", items)
@@ -160,11 +160,11 @@ func (r Record) fileZipContent() (ok bool, err error) {
 	if reflect.DeepEqual(r, Record{}) {
 		return false, ErrNoRec
 	}
-	a, err := archive.Read(r.File, r.Name)
+	a, fn, err := archive.Read(r.File, r.Name)
 	if err != nil {
 		return false, err
 	}
-	if err := UpdateZipContent(r.ID, len(a), strings.Join(a, "\n")); err != nil {
+	if err := UpdateZipContent(r.ID, fn, strings.Join(a, "\n"), len(a)); err != nil {
 		return false, err
 	}
 	return true, nil

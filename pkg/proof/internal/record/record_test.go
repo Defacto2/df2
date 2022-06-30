@@ -215,9 +215,10 @@ func TestRecord_Zip(t *testing.T) {
 
 func TestUpdateZipContent(t *testing.T) {
 	type args struct {
-		id      string
-		items   int
-		content string
+		id       string
+		filename string
+		content  string
+		items    int
 	}
 	tests := []struct {
 		name    string
@@ -226,14 +227,15 @@ func TestUpdateZipContent(t *testing.T) {
 	}{
 		{"empty", args{}, false},
 		{"okay", args{
-			id:      "1",
-			items:   1,
-			content: "somefile.txt",
+			id:       "1",
+			filename: "",
+			content:  "somefile.txt",
+			items:    1,
 		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := record.UpdateZipContent(tt.args.id, tt.args.items, tt.args.content); (err != nil) != tt.wantErr {
+			if err := record.UpdateZipContent(tt.args.id, tt.args.filename, tt.args.content, tt.args.items); (err != nil) != tt.wantErr {
 				t.Errorf("UpdateZipContent() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

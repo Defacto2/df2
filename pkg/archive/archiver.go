@@ -4,12 +4,14 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/Defacto2/df2/pkg/archive/internal/arc"
+	"github.com/Defacto2/df2/pkg/archive/internal/sys"
 	"github.com/mholt/archiver"
 	"github.com/nwaples/rardecode"
 	"golang.org/x/text/encoding/charmap"
@@ -34,16 +36,42 @@ func Extractor(src, filename, target, dest string) error {
 		return fmt.Errorf("extractor %s (%T): %w", filename, f, ErrNotArc)
 	}
 	if err := e.Extract(src, target, dest); err != nil {
+		// second attempt at extraction using a system archiver program
+		if err := sys.Extract(filename, src, target, dest); err != nil {
+			return fmt.Errorf("extractor, system attempt: %w", err)
+		}
 		return fmt.Errorf("extractor: %w", err)
 	}
 	return nil
 }
 
-// Readr returns a list of files within an rar, tar or zip archive.
-// It has offers compatibility with compression formats.
-func Readr(src, filename string) ([]string, error) {
+// Readr returns both a list of files within an rar, tar or zip archive,
+// and a suitable archive filename string.
+// If there are problems reading the archive due to an incorrect filename
+// extension, the returned filename string will be corrected.
+func Readr(src, filename string) ([]string, string, error) {
+	if files, err := readr(src, filename); err == nil {
+		return files, filename, nil
+	}
+	files, ext, err := sys.Readr(src, filename)
+	if errors.Is(err, sys.ErrWrongExt) {
+		newname := sys.Rename(ext, filename)
+		fmt.Printf("rename to %s; ", newname)
+		files, err = readr(src, newname)
+		if err != nil {
+			return nil, "", fmt.Errorf("readr fix: %w", err)
+		}
+		return files, newname, nil
+	}
+	if err != nil {
+		return nil, "", fmt.Errorf("readr: %w", err)
+	}
+	return files, filename, nil
+}
+
+func readr(src, filename string) ([]string, error) {
 	files := []string{}
-	err := arc.Walkr(src, filename, func(f archiver.File) error {
+	return files, arc.Walkr(src, filename, func(f archiver.File) error {
 		if f.IsDir() {
 			return nil
 		}
@@ -63,7 +91,7 @@ func Readr(src, filename string) ([]string, error) {
 			files = append(files, fn)
 			return nil
 		}
-		// handle cheecky DOS era filenames with CP437 extended characters.
+		// handle cheeky DOS era filenames with CP437 extended characters.
 		r := transform.NewReader(bytes.NewReader(b), charmap.CodePage437.NewDecoder())
 		result, err := ioutil.ReadAll(r)
 		if err != nil {
@@ -72,10 +100,6 @@ func Readr(src, filename string) ([]string, error) {
 		files = append(files, string(result))
 		return nil
 	})
-	if err != nil {
-		return nil, fmt.Errorf("readr: %w", err)
-	}
-	return files, nil
 }
 
 // Unarchiver unarchives the given archive file into the destination folder.

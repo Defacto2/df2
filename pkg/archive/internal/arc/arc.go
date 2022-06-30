@@ -75,18 +75,22 @@ func Walkr(src, filename string, walkFn archiver.WalkFunc) error {
 			fmt.Printf("walkr paniced with %s in archive %s: %v\n", filename, filepath.Base(src), r)
 		}
 	}()
+	w, err := walkr(src, filename)
+	if err != nil {
+		return err
+	}
+	return w.Walk(src, walkFn)
+}
 
+func walkr(src, filename string) (archiver.Walker, error) {
 	filename = strings.ToLower(filename)
 	a, err := archiver.ByExtension(filename)
 	if err != nil {
-		return fmt.Errorf("walkr byextension %q: %w", filename, err)
+		return nil, fmt.Errorf("walkr byextension %q: %w", filename, err)
 	}
 	w, ok := a.(archiver.Walker)
 	if !ok {
-		return fmt.Errorf("walkr %s (%T): %w", filename, a, ErrWalkrFmt)
+		return nil, fmt.Errorf("walkr %s (%T): %w", filename, a, ErrWalkrFmt)
 	}
-	if err := w.Walk(src, walkFn); err != nil {
-		return fmt.Errorf("walkr %q: %w", filepath.Base(src), err)
-	}
-	return nil
+	return w, nil
 }
