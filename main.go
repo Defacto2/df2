@@ -95,6 +95,8 @@ func exeTmp() string {
  │  netpbm:       {{.Netpbm}}  │
  │  -------------              │
  │  arj:          {{.Arj}}  │
+ │  lhasa:        {{.Lha}}  │
+ │  unrar:        {{.UnRar}}  │
  │  unzip:        {{.UnZip}}  │
  │  zipinfo:      {{.ZipInfo}}  │
  └─────────────────────────────┘
@@ -134,6 +136,8 @@ func info() string {
 		Magick   string
 		Netpbm   string
 		Arj      string
+		Lha      string
+		UnRar    string
 		UnZip    string
 		ZipInfo  string
 		Commit   string
@@ -148,8 +152,8 @@ func info() string {
 		miss       = "missing"
 	)
 	var bin string
-	d, a, w, m, n, ar, uz, zi :=
-		disconnect, miss, miss, miss, miss, miss, miss, miss
+	d, a, w, m, n, ar, lh, ur, uz, zi :=
+		disconnect, miss, miss, miss, miss, miss, miss, miss, miss, miss
 	if err := database.ConnInfo(); err == "" {
 		d = ok
 	}
@@ -167,6 +171,12 @@ func info() string {
 	}
 	if _, err := exec.LookPath("arj"); err == nil {
 		ar = ok
+	}
+	if _, err := exec.LookPath("lha"); err == nil {
+		lh = ok
+	}
+	if _, err := exec.LookPath("unrar"); err == nil {
+		ur = ok
 	}
 	if _, err := exec.LookPath("unzip"); err == nil {
 		uz = ok
@@ -186,6 +196,8 @@ func info() string {
 		Magick:   checks(m),
 		Netpbm:   checks(n),
 		Arj:      checks(ar),
+		Lha:      checks(lh),
+		UnRar:    checks(ur),
 		UnZip:    checks(uz),
 		ZipInfo:  checks(zi),
 		Commit:   commit,

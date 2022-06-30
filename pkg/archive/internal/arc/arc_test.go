@@ -43,32 +43,6 @@ func TestConfigure(t *testing.T) {
 	}
 }
 
-func TestRename(t *testing.T) {
-	type args struct {
-		ext      string
-		filename string
-	}
-	tests := []struct {
-		args args
-		want string
-	}{
-		{args{}, ""},
-		{args{"", "somefile"}, "somefile"},
-		{args{"", "some.file"}, "some"},
-		{args{"txt", "somefile"}, "somefile.txt"},
-		{args{"text", "some.file"}, "some.text"},
-		{args{".txt", "some.file"}, "some.txt"},
-		{args{".txt", "some.file.text"}, "some.file.txt"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.args.filename, func(t *testing.T) {
-			if got := sys.Rename(tt.args.ext, tt.args.filename); got != tt.want {
-				t.Errorf("Rename() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestMagicExt(t *testing.T) {
 	tests := []struct {
 		name    string
