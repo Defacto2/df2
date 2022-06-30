@@ -64,7 +64,7 @@ func TestSize(t *testing.T) {
 		{"empty", "", 0, 0, true}, // empty contains a .gitignore file
 		{"nul", "/dev/null/no-such-dir", 0, 0, true},
 		{"empty", "../../tests/empty", 0, 0, false},
-		{"valid", "../../tests/demozoo", 12, 7156, false},
+		{"valid", "../../tests/demozoo", 18, 9602, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
