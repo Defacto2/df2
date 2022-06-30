@@ -70,6 +70,7 @@ func Cronjob(force bool) error {
 
 // Fix any malformed group names found in the database.
 func Fix(simulate bool) error {
+	// fix group names stored in the files table
 	names, _, err := group.List("")
 	if err != nil {
 		return err
@@ -91,6 +92,21 @@ func Fix(simulate bool) error {
 	default:
 		logs.Printcr("no group fixes needed")
 	}
+	// fix initialisms stored in the groupnames table
+	logs.Print(" and...\n")
+	i, err := acronym.Fix()
+	if err != nil {
+		return err
+	}
+	switch i {
+	case 1:
+		logs.Printcr("removed a broken initialism entry")
+	case 0:
+		logs.Printcr("no initialism fixes needed")
+	default:
+		logs.Printcrf("%d broken initialism entries removed", i)
+	}
+	// report time taken
 	elapsed := time.Since(start).Seconds()
 	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
 	return nil

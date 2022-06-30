@@ -14,6 +14,20 @@ type Group struct {
 	Initialism string
 }
 
+// Fix deletes any malformed initialisms in the database and returns the number of rows affected.
+func Fix() (int64, error) {
+	db, err := database.ConnErr()
+	if err != nil {
+		return 0, fmt.Errorf("fix connect: %w", err)
+	}
+	defer db.Close()
+	row, err := db.Exec("DELETE FROM `groupnames` WHERE `pubname`=? OR `initialisms`=?", "", "")
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return 0, fmt.Errorf("fix exec: %w", err)
+	}
+	return row.RowsAffected()
+}
+
 // Get the initialism for the named group.
 func (g *Group) Get() error {
 	db, err := database.ConnErr()
