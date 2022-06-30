@@ -93,6 +93,10 @@ func exeTmp() string {
  │  webp lib:     {{.Webp}}  │
  │  imagemagick:  {{.Magick}}  │
  │  netpbm:       {{.Netpbm}}  │
+ │  -------------              │
+ │  arj:          {{.Arj}}  │
+ │  unzip:        {{.UnZip}}  │
+ │  zipinfo:      {{.ZipInfo}}  │
  └─────────────────────────────┘
      path: {{.Path}}
    commit: {{.Commit}}
@@ -129,6 +133,9 @@ func info() string {
 		Webp     string
 		Magick   string
 		Netpbm   string
+		Arj      string
+		UnZip    string
+		ZipInfo  string
 		Commit   string
 		Date     string
 		Path     string
@@ -141,7 +148,8 @@ func info() string {
 		miss       = "missing"
 	)
 	var bin string
-	a, w, m, n, d := miss, miss, miss, miss, disconnect
+	d, a, w, m, n, ar, uz, zi :=
+		disconnect, miss, miss, miss, miss, miss, miss, miss
 	if err := database.ConnInfo(); err == "" {
 		d = ok
 	}
@@ -157,6 +165,15 @@ func info() string {
 	if _, err := exec.LookPath("pnmtopng"); err == nil {
 		n = ok
 	}
+	if _, err := exec.LookPath("arj"); err == nil {
+		ar = ok
+	}
+	if _, err := exec.LookPath("unzip"); err == nil {
+		uz = ok
+	}
+	if _, err := exec.LookPath("zipinfo"); err == nil {
+		zi = ok
+	}
 	bin, err := self()
 	if err != nil {
 		bin = fmt.Sprint(err)
@@ -168,6 +185,9 @@ func info() string {
 		Webp:     checks(w),
 		Magick:   checks(m),
 		Netpbm:   checks(n),
+		Arj:      checks(ar),
+		UnZip:    checks(uz),
+		ZipInfo:  checks(zi),
 		Commit:   commit,
 		Date:     localBuild(date),
 		Path:     bin,

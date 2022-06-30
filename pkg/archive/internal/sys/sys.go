@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +16,12 @@ var (
 	ErrTypeOut  = errors.New("os magic file program result is empty")
 	ErrWrongExt = errors.New("filename has the wrong file extension")
 	ErrUnknExt  = errors.New("the archive uses an unsupported file extension")
+)
+
+const (
+	// 7z,arc,ark,arj,cab,gz,lha,lzh,rar,tar,tar.gz,zip
+	arjext = ".arj"
+	zipext = ".zip"
 )
 
 // MagicExt uses the Linux file program to determine the src archive file type.
@@ -41,6 +48,8 @@ func MagicExt(src string) (string, error) {
 	switch magic {
 	case "7-zip archive data":
 		return ".7z", nil
+	case "arj archive data":
+		return arjext, nil
 	case "bzip2 compressed data":
 		return ".tar.bz2", nil
 	case "gzip compressed data":
@@ -50,7 +59,7 @@ func MagicExt(src string) (string, error) {
 	case "posix tar archive":
 		return ".tar", nil
 	case "zip archive data":
-		return ".zip", nil
+		return zipext, nil
 	default:
 		return "", fmt.Errorf("no unsupport for magic file type: %q", magic)
 	}
@@ -86,7 +95,9 @@ func Readr(src, filename string) ([]string, string, error) {
 		return []string{}, ext, fmt.Errorf("system reader: %w", ErrWrongExt)
 	}
 	switch ext {
-	case ".zip":
+	case arjext:
+		return ArjReader(src)
+	case zipext:
 		return ZipReader(src)
 	}
 	return []string{}, "", fmt.Errorf("system reader: %w", ErrOSFix)
@@ -99,11 +110,34 @@ func Readr(src, filename string) ([]string, string, error) {
 func Extract(filename, src, targets, dest string) error {
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext {
-	case ".zip":
+	case arjext:
+		return ArjExtract(src, targets, dest)
+	case zipext:
 		return ZipExtract(src, targets, dest)
 	default:
 		return ErrUnknExt
 	}
+}
+
+func ArjExtract(src, targets, dest string) error {
+	prog, err := exec.LookPath("arj")
+	if err != nil {
+		return fmt.Errorf("arj extract: %w", err)
+	}
+	var b bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// arj x archive destdir/ *
+	const extract = "x"
+	cmd := exec.CommandContext(ctx, prog, extract, src, dest, targets)
+	cmd.Stderr = &b
+	if err = cmd.Run(); err != nil {
+		if b.String() != "" {
+			return fmt.Errorf("%s: %s", prog, strings.TrimSpace(b.String()))
+		}
+		return fmt.Errorf("%s: %w", prog, err)
+	}
+	return nil
 }
 
 // ZipExtract extracts the target filenames from the src zip archive
@@ -130,10 +164,10 @@ func ZipExtract(src, targets, dest string) error {
 	)
 	// unzip [-options] file[.zip] [file(s)...] [-x files(s)] [-d exdir]
 	// file[.zip]		path to the zip archive
-	// [file(s)...]		optional list of archived files to porcess, sep by spaces.
+	// [file(s)...]		optional list of archived files to process, sep by spaces.
 	// [-x files(s)]	optional files to be excluded.
 	// [-d exdir]		optional target directory to extract files in.
-	cmd := exec.CommandContext(ctx, prog, quieter, junkpaths, targets, targetDir, src)
+	cmd := exec.CommandContext(ctx, prog, quieter, junkpaths, overwrite, src, targets, targetDir, dest)
 	cmd.Stderr = &b
 	if err = cmd.Run(); err != nil {
 		if b.String() != "" {
@@ -142,6 +176,51 @@ func ZipExtract(src, targets, dest string) error {
 		return fmt.Errorf("%s: %w", prog, err)
 	}
 	return nil
+}
+
+// note: limits to 999 items
+func ArjReader(src string) ([]string, string, error) {
+	prog, err := exec.LookPath("arj")
+	if err != nil {
+		return nil, "", fmt.Errorf("arj reader: %w", err)
+	}
+
+	const verboselist = "v"
+	var b bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cmd := exec.CommandContext(ctx, prog, verboselist, src)
+	cmd.Stderr = &b
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, "", err
+	}
+	outs := strings.Split(string(out), "\n")
+	files := []string{}
+	const start = len("001) ")
+	for _, s := range outs {
+		if !ArjItem(s) {
+			continue
+		}
+		files = append(files, s[start:])
+	}
+	// append empty value to match the other readers
+	files = append(files, "")
+	return files, arjext, nil
+}
+
+func ArjItem(s string) bool {
+	if len(s) < 6 {
+		return false
+	}
+	if s[3:4] != ")" {
+		return false
+	}
+	x := s[:3]
+	if _, err := strconv.Atoi(x); err != nil {
+		return false
+	}
+	return true
 }
 
 func ZipReader(src string) ([]string, string, error) {
@@ -163,7 +242,7 @@ func ZipReader(src string) ([]string, string, error) {
 		// handle broken zips that still contain some valid files
 		if b.String() != "" && len(out) > 0 {
 			fmt.Print(strings.ReplaceAll(b.String(), "\n", " "))
-			return files, ".zip", nil
+			return files, zipext, nil
 		}
 		// otherwise the zipinfo threw an error
 		return nil, "", fmt.Errorf("%q: %w", src, err)
@@ -171,5 +250,5 @@ func ZipReader(src string) ([]string, string, error) {
 	if len(out) == 0 {
 		return nil, "", ErrOSFix
 	}
-	return files, ".zip", nil
+	return files, zipext, nil
 }
