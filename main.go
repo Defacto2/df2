@@ -93,7 +93,7 @@ func exeTmp() string {
  │  webp lib:     {{.Webp}}  │
  │  imagemagick:  {{.Magick}}  │
  │  netpbm:       {{.Netpbm}}  │
- │  -------------              │
+ │ ─────────────────────────── │
  │  arj:          {{.Arj}}  │
  │  lhasa:        {{.Lha}}  │
  │  unrar:        {{.UnRar}}  │
@@ -108,7 +108,7 @@ func exeTmp() string {
 	return tmp
 }
 
-func checks(s string) string {
+func check(s string) string {
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
@@ -126,6 +126,41 @@ func checks(s string) string {
 		return color.Error.Sprint("disconnect") + strings.Repeat(" ", padding-len(s))
 	}
 	return ""
+}
+
+type looks = map[string]string
+
+func checks() looks {
+	const (
+		disconnect = "disconnect"
+		ok         = "ok"
+		miss       = "missing"
+		db         = "db"
+	)
+	l := looks{
+		"db":       disconnect,
+		"ansilove": miss,
+		"cwebp":    miss,
+		"convert":  miss,
+		"pnmtopng": miss,
+		"arj":      miss,
+		"lha":      miss,
+		"unrar":    miss,
+		"unzip":    miss,
+		"zipinfo":  miss,
+	}
+	if err := database.ConnInfo(); err == "" {
+		l[db] = ok
+	}
+	for file := range l {
+		if file == db {
+			continue
+		}
+		if _, err := exec.LookPath(file); err == nil {
+			l[file] = ok
+		}
+	}
+	return l
 }
 
 func info() string {
@@ -146,60 +181,22 @@ func info() string {
 		GoVer    string
 		GoOS     string
 	}
-	const (
-		disconnect = "disconnect"
-		ok         = "ok"
-		miss       = "missing"
-	)
-	var bin string
-	d, a, w, m, n, ar, lh, ur, uz, zi :=
-		disconnect, miss, miss, miss, miss, miss, miss, miss, miss, miss
-	if err := database.ConnInfo(); err == "" {
-		d = ok
-	}
-	if _, err := exec.LookPath("ansilove"); err == nil {
-		a = ok
-	}
-	if _, err := exec.LookPath("cwebp"); err == nil {
-		w = ok
-	}
-	if _, err := exec.LookPath("convert"); err == nil {
-		m = ok
-	}
-	if _, err := exec.LookPath("pnmtopng"); err == nil {
-		n = ok
-	}
-	if _, err := exec.LookPath("arj"); err == nil {
-		ar = ok
-	}
-	if _, err := exec.LookPath("lha"); err == nil {
-		lh = ok
-	}
-	if _, err := exec.LookPath("unrar"); err == nil {
-		ur = ok
-	}
-	if _, err := exec.LookPath("unzip"); err == nil {
-		uz = ok
-	}
-	if _, err := exec.LookPath("zipinfo"); err == nil {
-		zi = ok
-	}
 	bin, err := self()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
-
+	l := checks()
 	data := Data{
-		Database: checks(d),
-		Ansilove: checks(a),
-		Webp:     checks(w),
-		Magick:   checks(m),
-		Netpbm:   checks(n),
-		Arj:      checks(ar),
-		Lha:      checks(lh),
-		UnRar:    checks(ur),
-		UnZip:    checks(uz),
-		ZipInfo:  checks(zi),
+		Database: check(l["db"]),
+		Ansilove: check(l["ansilove"]),
+		Webp:     check(l["cwebp"]),
+		Magick:   check(l["convert"]),
+		Netpbm:   check(l["pnmtopng"]),
+		Arj:      check(l["arj"]),
+		Lha:      check(l["lha"]),
+		UnRar:    check(l["unrar"]),
+		UnZip:    check(l["unzip"]),
+		ZipInfo:  check(l["zipinfo"]),
 		Commit:   commit,
 		Date:     localBuild(date),
 		Path:     bin,

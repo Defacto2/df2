@@ -47,7 +47,8 @@ func TestRename(t *testing.T) {
 // The test files were created by me but sourced from:
 // https://github.com/jvilk/browserfs-zipfs-extras/tree/master/test/fixtures
 func TestPKZip(t *testing.T) {
-	const okay = "TEST.ANS;TEST.ASC;TEST.BMP;TEST.CAP;TEST.DIZ;TEST.DOC;TEST.EXE;TEST.GIF;TEST.JPG;TEST.ME;TEST.NFO;TEST.PCX;TEST.PNG;TEST.TXT;TEST~1.JPE;"
+	const okay = "TEST.ANS;TEST.ASC;TEST.BMP;TEST.CAP;TEST.DIZ;TEST.DOC;TEST.EXE;TEST.GIF;" +
+		"TEST.JPG;TEST.ME;TEST.NFO;TEST.PCX;TEST.PNG;TEST.TXT;TEST~1.JPE;"
 	v080a1 := testDir("pkzip/PKZ80A1.ZIP")
 	v080b4 := testDir("pkzip/PKZ80B4.ZIP")
 	v110 := testDir("pkzip/PKZ110.ZIP")
@@ -184,7 +185,6 @@ func TestExtract(t *testing.T) {
 		dest    string
 	}
 	const tgt = "test.png"
-	//const tspace = "test file.text"
 	arj := testDir("demozoo/test.arj")
 	lha := testDir("demozoo/test.lha")
 	zip := testDir("demozoo/test.zip")

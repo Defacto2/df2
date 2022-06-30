@@ -40,7 +40,7 @@ func empty() []releases.ProductionV1 {
 }
 
 // Prods gets all the productions of a releaser and normalises the results.
-func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) {
+func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) { // nolint:funlen
 	const endOfRecords, maxPage = "", 1000
 	var next []releases.ProductionV1
 	var dz ProductionList

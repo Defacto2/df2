@@ -235,7 +235,8 @@ func TestUpdateZipContent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := record.UpdateZipContent(tt.args.id, tt.args.filename, tt.args.content, tt.args.items); (err != nil) != tt.wantErr {
+			err := record.UpdateZipContent(tt.args.id, tt.args.filename, tt.args.content, tt.args.items)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateZipContent() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

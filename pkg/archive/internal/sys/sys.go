@@ -12,6 +12,8 @@ import (
 )
 
 var (
+	ErrMagic    = errors.New("no unsupport for magic file type")
+	ErrProg     = errors.New("archive program error")
 	ErrReadr    = errors.New("system could not read the file archive")
 	ErrTypeOut  = errors.New("magic file program result is empty")
 	ErrSilent   = errors.New("archiver program silently failed, it return no output or errors")
@@ -21,7 +23,7 @@ var (
 
 const (
 	// permitted archives on the site:
-	// 7z,arc,ark,arj,cab,gz,lha,lzh,rar,tar,tar.gz,zip
+	// 7z,arc,ark,arj,cab,gz,lha,lzh,rar,tar,tar.gz,zip.
 	arjext = ".arj" // Archived by Robert Jung
 	lhaext = ".lha" // LHarc by Haruyasu Yoshizaki (Yoshi)
 	rarext = ".rar" // Roshal ARchive by Alexander Roshal
@@ -68,17 +70,18 @@ func MagicExt(src string) (string, error) {
 		if MagicLHA(magic) {
 			return lhaext, nil
 		}
-		return "", fmt.Errorf("no unsupport for magic file type: %q", magic)
+		return "", fmt.Errorf("%w: %q", ErrMagic, magic)
 	}
 }
 
 // MagicLHA returns true if the LHA file type is matched in the magic string.
 func MagicLHA(magic string) bool {
 	s := strings.Split(magic, " ")
-	if s[0] != "lha" {
+	const lha = "lha"
+	if s[0] != lha {
 		return false
 	}
-	if len(s) < 3 {
+	if len(s) < len(lha) {
 		return false
 	}
 	if strings.Join(s[0:3], " ") == "lha archive data" {
@@ -167,7 +170,7 @@ func ArjExtract(src, targets, dest string) error {
 	cmd.Stderr = &b
 	if err = cmd.Run(); err != nil {
 		if b.String() != "" {
-			return fmt.Errorf("%s: %s", prog, strings.TrimSpace(b.String()))
+			return fmt.Errorf("%w: %s: %s", ErrProg, prog, strings.TrimSpace(b.String()))
 		}
 		return fmt.Errorf("%s: %w", prog, err)
 	}
@@ -200,7 +203,7 @@ func LhaExtract(src, targets, dest string) error {
 	out, err := cmd.Output()
 	if err != nil {
 		if b.String() != "" {
-			return fmt.Errorf("%s: %s", prog, strings.TrimSpace(b.String()))
+			return fmt.Errorf("%w: %s: %s", ErrProg, prog, strings.TrimSpace(b.String()))
 		}
 		return fmt.Errorf("%s: %w", prog, err)
 	}
@@ -241,7 +244,7 @@ func ZipExtract(src, targets, dest string) error {
 	cmd.Stderr = &b
 	if err = cmd.Run(); err != nil {
 		if b.String() != "" {
-			return fmt.Errorf("%s: %s", prog, strings.TrimSpace(b.String()))
+			return fmt.Errorf("%w: %s: %s", ErrProg, prog, strings.TrimSpace(b.String()))
 		}
 		return fmt.Errorf("%s: %w", prog, err)
 	}
@@ -285,7 +288,8 @@ func ArjReader(src string) ([]string, string, error) {
 
 // ArjItem returns true if the string is a row from an ARJ list.
 func ArjItem(s string) bool {
-	if len(s) < 6 {
+	const minLen = 6
+	if len(s) < minLen {
 		return false
 	}
 	if s[3:4] != ")" {

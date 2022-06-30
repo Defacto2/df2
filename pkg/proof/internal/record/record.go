@@ -110,7 +110,8 @@ func (r Record) Iterate(s stat.Proof) error {
 func UpdateZipContent(id, filename, content string, items int) error {
 	db := database.Connect()
 	defer db.Close()
-	update, err := db.Prepare("UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?")
+	const q = "UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?"
+	update, err := db.Prepare(q)
 	if err != nil {
 		return fmt.Errorf("updatezip prepare: %w", err)
 	}

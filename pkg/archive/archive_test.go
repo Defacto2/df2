@@ -67,10 +67,18 @@ func TestRead(t *testing.T) {
 		wantErr   bool
 	}{
 		{"empty", args{"", ""}, nil, "", true},
-		{"invalid rar ext", args{testDir("demozoo/test.invalid.ext.rar"), "test.invalid.ext.rar"}, []string{"test.png", "test.txt"},
-			"test.invalid.ext.zip", false},
-		{"zip", args{testDir("demozoo/test.zip"), "test.zip"}, []string{"test.png", "test.txt"},
-			"test.zip", false},
+		{
+			"invalid rar ext",
+			args{testDir("demozoo/test.invalid.ext.rar"), "test.invalid.ext.rar"},
+			[]string{"test.png", "test.txt"},
+			"test.invalid.ext.zip", false,
+		},
+		{
+			"zip",
+			args{testDir("demozoo/test.zip"), "test.zip"},
+			[]string{"test.png", "test.txt"},
+			"test.zip", false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
