@@ -53,10 +53,10 @@ func TestFlags_Run(t *testing.T) { //nolint:funlen
 	}
 	rm := []string{
 		"d2-create_files.sql.bz2",
-		"d2-create_groups.sql.bz2",
+		"d2-create_groupnames.sql.bz2",
 		"d2-create_netresources.sql.bz2",
 		"d2-create_table.sql.bz2",
-		"d2-update_groups.sql.bz2",
+		"d2-update_groupnames.sql.bz2",
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

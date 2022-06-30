@@ -328,6 +328,8 @@ func Test_TrimSP(t *testing.T) {
 }
 
 func TestDemozooID(t *testing.T) {
+	const cls701 = 164151    // msdos intro
+	const dycpintro = 309360 // c64 intro
 	tests := []struct {
 		name    string
 		id      uint
@@ -336,8 +338,8 @@ func TestDemozooID(t *testing.T) {
 	}{
 		{"zero", 0, 0, true},
 		{"one", 1, 0, true},
-		{"valid dz id but not in db", 169268, 0, true},
-		{"valid dz id in db", 164151, 1047, false},
+		{"valid dz id but not in db", dycpintro, 0, true},
+		{"valid dz id in db", cls701, 1047, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

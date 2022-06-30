@@ -14,5 +14,5 @@ func ExampleTable() {
 func ExampleTbls() {
 	s := export.Tbls()
 	fmt.Print(s)
-	// Output: files, groups, netresources, users
+	// Output: files, groupnames, netresources, users
 }
