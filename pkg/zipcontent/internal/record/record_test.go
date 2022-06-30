@@ -132,7 +132,7 @@ func TestRecord_Save(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", fields{}, 0, true},
-		{"bad id", fields{ID: "abcde"}, 0, false},
+		{"bad id", fields{ID: "abcde"}, 0, true},
 		{"good id", fields{ID: "1"}, 1, false},
 		// use the time now value to force an update to the database.
 		{"nfo", fields{ID: "1", NFO: "sometextfile-" + time.Now().String() + ".txt"}, 1, false},
