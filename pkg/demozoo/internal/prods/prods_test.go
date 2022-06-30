@@ -115,6 +115,7 @@ func mockInline(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestProductionsAPIv1_DownloadLink(t *testing.T) {
+	const proto = "http"
 	tests := []struct {
 		name     string
 		p        prods.ProductionsAPIv1
@@ -124,15 +125,15 @@ func TestProductionsAPIv1_DownloadLink(t *testing.T) {
 		{"empty", prods.ProductionsAPIv1{}, "", ""},
 		{
 			"record 1", example1, "feestje.zip",
-			"https://files.scene.org/get:nl-http/parties/2000/ambience00/demo/feestje.zip",
+			"https://files.scene.org/get:nl-" + proto + "/parties/2000/ambience00/demo/feestje.zip",
 		},
 		{
 			"record 2", example2, "the_untouchables_bbs7.zip",
-			"http://www.sensenstahl.com/untergrund_mirror/bbs/the_untouchables_bbs7.zip",
+			"https://files.scene.org/get:nl-" + proto + "/demos/compilations/lost_found_and_more/bbs/the_untouchables_bbs7.zip",
 		},
 		{
 			"record 3", example3, "x-wing_cracktro.zip",
-			"http://www.sensenstahl.com/untergrund_mirror/cracktro/x-wing_cracktro.zip",
+			"https://files.scene.org/get:nl-" + proto + "/demos/compilations/lost_found_and_more/cracktro/x-wing_cracktro.zip",
 		},
 	}
 	for _, tt := range tests {
