@@ -32,7 +32,9 @@ func Fix() error {
 	i, c := 0, 0
 	for rows.Next() {
 		if i, c, err = fixRow(i, c, &dir, rows); err != nil {
-			return err
+			if !errors.Is(err, tf.ErrPNG) {
+				return err
+			}
 		}
 	}
 	logs.Println("scanned", c, "fixes from", i, "text file records")

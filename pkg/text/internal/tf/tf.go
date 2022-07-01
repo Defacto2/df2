@@ -22,6 +22,7 @@ var (
 	ErrMeNo  = errors.New("no readme chosen")
 	ErrMeUnk = errors.New("unknown readme")
 	ErrMeNF  = errors.New("readme not found in archive")
+	ErrPNG   = errors.New("no such png file")
 )
 
 const (
@@ -154,7 +155,7 @@ func (t *TextFile) TextPng(c int, dir string) error {
 	name := filepath.Join(dir, t.UUID)
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		logs.Printf("%s\n", str.X())
-		return nil
+		return fmt.Errorf("txtpng: %w", ErrPNG)
 	} else if err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
