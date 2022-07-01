@@ -82,14 +82,10 @@ func TestFilepath(t *testing.T) {
 	})
 }
 
-func capture(test, text string, quiet bool) (output string) {
+func printer(test, text string) (output string) {
 	rescueStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-	logs.Quiet(false)
-	if quiet {
-		logs.Quiet(true)
-	}
 	switch test {
 	case p:
 		logs.Print(text)
@@ -110,35 +106,29 @@ func capture(test, text string, quiet bool) (output string) {
 
 func TestPrints(t *testing.T) {
 	type args struct {
-		test  string
-		text  string
-		quiet bool
+		test string
+		text string
 	}
 	tests := []struct {
 		name       string
 		args       args
 		wantOutput string
 	}{
-		{p, args{p, "", false}, ""},
-		{"print hello", args{p, hi, false}, hi},
-		{"print !hello", args{p, hi, true}, ""},
-		{"cr", args{"printcr", "", false}, ""},
-		{"cr hello", args{"printcr", hi, false}, hi},
-		{"cr !hello", args{"printcr", hi, true}, ""},
-		{"f", args{"printf", "", false}, ""},
-		{"f hello", args{"printf", hi, false}, hi},
-		{"f !hello", args{"printf", hi, true}, ""},
-		{"ln", args{"println", "", false}, ""},
-		{"ln hello", args{"println", hi, false}, hi},
-		{"ln !hello", args{"println", hi, true}, ""},
-		{"fcr", args{"printfcr", "", false}, ""},
-		{"fcr hello", args{"printfcr", hi, false}, hi},
-		{"fcr !hello", args{"printfcr", hi, true}, ""},
+		{p, args{p, ""}, ""},
+		{"print hello", args{p, hi}, hi},
+		{"cr", args{"printcr", ""}, ""},
+		{"cr hello", args{"printcr", hi}, hi},
+		{"f", args{"printf", ""}, ""},
+		{"f hello", args{"printf", hi}, hi},
+		{"ln", args{"println", ""}, ""},
+		{"ln hello", args{"println", hi}, hi},
+		{"fcr", args{"printfcr", ""}, ""},
+		{"fcr hello", args{"printfcr", hi}, hi},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOutput := capture(tt.args.test, tt.args.text, tt.args.quiet); gotOutput != tt.wantOutput {
-				t.Errorf("capture() = %v, want %v", gotOutput, tt.wantOutput)
+			if gotOutput := printer(tt.args.test, tt.args.text); gotOutput != tt.wantOutput {
+				t.Errorf("printer = %v, want %v", gotOutput, tt.wantOutput)
 			}
 		})
 	}

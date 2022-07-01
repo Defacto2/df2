@@ -63,8 +63,10 @@ func init() { // nolint:gochecknoinits
 	readIn()
 	rootCmd.PersistentFlags().StringVar(&gf.Filename, "config", "",
 		fmt.Sprintf("config file (default is %s)", config.Filepath()))
-	rootCmd.PersistentFlags().BoolVarP(&gf.Quiet, "quiet", "q", false,
-		"suspend feedback to the terminal")
+	rootCmd.PersistentFlags().BoolVar(&gf.Quiet, "quiet", false,
+		"suppress all feedback except for errors")
+	rootCmd.PersistentFlags().BoolVarP(&gf.Version, "version", "v", false,
+		"version and information for this program")
 	rootCmd.PersistentFlags().BoolVar(&gf.Panic, "panic", false,
 		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
@@ -75,7 +77,6 @@ func init() { // nolint:gochecknoinits
 // readIn the config file and ENV variables if set.
 func readIn() {
 	logs.Panic(gf.Panic)
-	logs.Quiet(gf.Quiet)
 	if cf := config.Filepath(); cf == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -92,6 +93,7 @@ func readIn() {
 		config.Config.Errors = true
 		return
 	}
+	// TODO: replace checks with used and default
 	if !gf.Quiet && !str.Piped() {
 		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s",
 			viper.ConfigFileUsed())))

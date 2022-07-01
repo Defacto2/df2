@@ -22,12 +22,7 @@ require the parsing of 10,000s of records.`,
 	Aliases: []string{"api"},
 	Example: `  df2 apis [--refresh|--pouet|--msdos|--windows]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		quiet := false
-		q := rootCmd.PersistentFlags().Lookup("quiet")
-		if q.Value.String() == "true" {
-			quiet = true
-		}
-		err := run.Apis(apis, quiet)
+		err := run.Apis(apis)
 		switch {
 		case errors.Is(err, run.ErrArgFlag):
 			if err := cmd.Usage(); err != nil {

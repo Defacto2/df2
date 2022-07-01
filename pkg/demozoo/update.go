@@ -201,8 +201,8 @@ func (r *Record) ZipContent() (ok bool, err error) {
 }
 
 // InsertProds adds the collection of Demozoo productions to the file database.
-func InsertProds(p *releases.Productions, quiet bool) error {
-	return insert.Prods(p, quiet)
+func InsertProds(p *releases.Productions) error {
+	return insert.Prods(p)
 }
 
 //nolint:funlen

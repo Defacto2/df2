@@ -69,22 +69,22 @@ func Data(dbf database.Flags) error {
 	return nil
 }
 
-func Apis(a arg.Apis, quiet bool) error {
+func Apis(a arg.Apis) error {
 	switch {
 	case a.Refresh:
-		if err := demozoo.RefreshMeta(quiet); err != nil {
+		if err := demozoo.RefreshMeta(); err != nil {
 			return err
 		}
 	case a.Pouet:
-		if err := demozoo.RefreshPouet(quiet); err != nil {
+		if err := demozoo.RefreshPouet(); err != nil {
 			return err
 		}
 	case a.SyncDos:
-		if err := syncdos(quiet); err != nil {
+		if err := syncdos(); err != nil {
 			return err
 		}
 	case a.SyncWin:
-		if err := syncwin(quiet); err != nil {
+		if err := syncwin(); err != nil {
 			return err
 		}
 	default:
@@ -93,12 +93,11 @@ func Apis(a arg.Apis, quiet bool) error {
 	return nil
 }
 
-func Demozoo(dzf arg.Demozoo, quiet bool) error {
+func Demozoo(dzf arg.Demozoo) error {
 	var empty []string
 	r := demozoo.Request{
 		All:       dzf.All,
 		Overwrite: dzf.Overwrite,
-		Quiet:     quiet,
 	}
 	switch {
 	case dzf.New, dzf.All:
@@ -137,27 +136,21 @@ func Demozoo(dzf arg.Demozoo, quiet bool) error {
 	return nil
 }
 
-func syncdos(quiet bool) error {
+func syncdos() error {
 	var p demozoo.MsDosProducts
-	p.Quiet = quiet
 	if err := p.Get(); err != nil {
 		return err
 	}
-	if !quiet {
-		fmt.Printf("There were %d new productions found\n", p.Finds)
-	}
+	fmt.Printf("There were %d new productions found\n", p.Finds)
 	return nil
 }
 
-func syncwin(quiet bool) error {
+func syncwin() error {
 	var p demozoo.WindowsProducts
-	p.Quiet = quiet
 	if err := p.Get(); err != nil {
 		return err
 	}
-	if !quiet {
-		fmt.Printf("There were %d new productions found\n", p.Finds)
-	}
+	fmt.Printf("There were %d new productions found\n", p.Finds)
 	return nil
 }
 
@@ -186,7 +179,7 @@ func releaser(id uint) error {
 	if !prompt.YN(s, true) {
 		return nil
 	}
-	if err := demozoo.InsertProds(&p.API, false); err != nil {
+	if err := demozoo.InsertProds(&p.API); err != nil {
 		return err
 	}
 	return nil

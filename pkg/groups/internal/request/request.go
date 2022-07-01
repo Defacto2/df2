@@ -89,7 +89,7 @@ func (r Flags) iterate(groups ...string) (*[]Result, error) {
 		lastLetter string
 	)
 	for i, grp := range groups {
-		if !piped && !logs.IsQuiet() && r.Progress {
+		if !piped && r.Progress {
 			str.Progress(r.Filter, i+1, total)
 		}
 		lastLetter, hr = group.UseHr(lastLetter, grp)

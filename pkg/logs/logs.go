@@ -29,21 +29,11 @@ const (
 
 var (
 	panicErr = false //nolint:gochecknoglobals
-	quiet    = false //nolint:gochecknoglobals
 )
 
 // Panic enables or disables panicking when Danger is used.
 func Panic(b bool) {
 	panicErr = b
-}
-
-// Quiet stops most writing to the standard output.
-func Quiet(b bool) {
-	quiet = b
-}
-
-func IsQuiet() bool {
-	return quiet
 }
 
 // Arg returns instructions for invalid command arguments and exits with an error code.
@@ -123,23 +113,15 @@ func Path(name string) string {
 	return fmt.Sprint(s)
 }
 
-// Print obeys the --quiet flag
-// or formats using the default formats for its operands and writes to standard output.
+// Print formats using the default formats for its operands and writes to standard output.
 func Print(a ...any) {
-	if quiet {
-		return
-	}
 	if _, err := fmt.Print(a...); err != nil {
 		fatalLog(err)
 	}
 }
 
-// Printcr obeys the --quiet flag
-// or otherwise erases the current line and writes to standard output.
+// Printcr otherwise erases the current line and writes to standard output.
 func Printcr(a ...any) {
-	if quiet {
-		return
-	}
 	if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(terminal.Size()))); err != nil {
 		fatalLog(err)
 	}
@@ -148,33 +130,22 @@ func Printcr(a ...any) {
 	}
 }
 
-// Printf obeys the --quiet flag
-// or formats according to a format specifier and writes to standard output.
+// Printf formats according to a format specifier and writes to standard output.
 func Printf(format string, a ...any) {
-	if quiet {
-		return
-	}
 	if _, err := fmt.Printf(format, a...); err != nil {
 		fatalLog(err)
 	}
 }
 
-// Println obeys the --quiet flag or formats using the default formats for its operands and writes to standard output.
+// Println formats using the default formats for its operands and writes to standard output.
 func Println(a ...any) {
-	if quiet {
-		return
-	}
 	if _, err := fmt.Println(a...); err != nil {
 		fatalLog(err)
 	}
 }
 
-// Printcrf obeys the --quiet flag
-// or otherwise erases the current line and formats according to a format specifier.
+// Printcrf erases the current line and formats according to a format specifier.
 func Printcrf(format string, a ...any) {
-	if quiet {
-		return
-	}
 	if _, err := fmt.Printf("\r%s\r%s",
 		strings.Repeat(" ", int(terminal.Size())),
 		fmt.Sprintf(format, a...)); err != nil {

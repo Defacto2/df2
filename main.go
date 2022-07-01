@@ -18,8 +18,6 @@ limitations under the License.
 
 import (
 	"bytes"
-	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -32,7 +30,6 @@ import (
 	"github.com/Defacto2/df2/pkg/cmd"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/gookit/color"
-	"github.com/spf13/pflag"
 )
 
 // goreleaser generated ldflags containers.
@@ -43,26 +40,51 @@ var (
 )
 
 func main() {
-	// go flag lib
-	fs := flag.NewFlagSet("df2", flag.ContinueOnError)
-	ver := fs.Bool("version", false, "version and information for this program")
-	v := fs.Bool("v", false, "alias for version")
-	fs.Usage = func() {
-		// disable go flag help
-	}
-	if err := fs.Parse(os.Args[1:]); err != nil &&
-		!errors.As(err, &pflag.ErrHelp) {
-		log.Print(err)
-	}
-	if *ver || *v {
+	if ver() {
 		fmt.Println(app())
 		fmt.Println(info())
 		return
 	}
-	// cobra flag lib
+	// supress stdout except when requesting help
+	if quiet() && !help() {
+		os.Stdout, _ = os.OpenFile(os.DevNull, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+		defer os.Stdout.Close()
+	}
+	// cobra flag library
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+// global flags that should not be handled by the Cobra library
+// to keep things simple, avoid using the flag standard library
+
+func help() bool {
+	for _, f := range os.Args {
+		switch strings.ToLower(f) {
+		case "-h", "--h", "-help", "--help":
+			return true
+		}
+	}
+	return false
+}
+func quiet() bool {
+	for _, f := range os.Args {
+		switch strings.ToLower(f) {
+		case "-quiet", "--quiet":
+			return true
+		}
+	}
+	return false
+}
+func ver() bool {
+	for _, f := range os.Args {
+		switch strings.ToLower(f) {
+		case "-v", "--v", "-version", "--version":
+			return true
+		}
+	}
+	return false
 }
 
 func app() string {

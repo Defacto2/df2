@@ -63,7 +63,6 @@ func (r *ReleaserV1) Print() error {
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	// ignore --quiet
 	fmt.Println(string(js))
 	return nil
 }

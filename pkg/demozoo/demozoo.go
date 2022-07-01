@@ -84,12 +84,11 @@ type MsDosProducts struct {
 	API    []releases.ProductionV1
 	Count  int
 	Finds  int
-	Quiet  bool
 }
 
 func (m *MsDosProducts) Get() error {
 	d := filter.Productions{Filter: releases.MsDos}
-	api, err := d.Prods(m.Quiet)
+	api, err := d.Prods()
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
@@ -107,12 +106,11 @@ type WindowsProducts struct {
 	API    []releases.ProductionV1
 	Count  int
 	Finds  int
-	Quiet  bool
 }
 
 func (m *WindowsProducts) Get() error {
 	d := filter.Productions{Filter: releases.Windows}
-	api, err := d.Prods(m.Quiet)
+	api, err := d.Prods()
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
@@ -184,16 +182,16 @@ func (r request) String() string {
 }
 
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
-func RefreshMeta(quiet bool) error {
-	return refresh(meta, quiet)
+func RefreshMeta() error {
+	return refresh(meta)
 }
 
 // RefreshPouet synchronises missing file entries with Demozoo sourced metadata.
-func RefreshPouet(quiet bool) error {
-	return refresh(pouet, quiet)
+func RefreshPouet() error {
+	return refresh(pouet)
 }
 
-func refresh(r request, quiet bool) error {
+func refresh(r request) error {
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
@@ -205,9 +203,7 @@ func refresh(r request, quiet bool) error {
 	if err := db.QueryRow(stmt).Scan(&cnt); err != nil {
 		return fmt.Errorf("count query: %w", err)
 	}
-	if !quiet {
-		fmt.Printf("There are %d records with %s links\n", cnt, r)
-	}
+	fmt.Printf("There are %d records with %s links\n", cnt, r)
 	rows, err := db.Query(selectByID(""))
 	if err != nil {
 		return fmt.Errorf("meta query: %w", err)

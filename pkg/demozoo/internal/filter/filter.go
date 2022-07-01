@@ -40,7 +40,7 @@ func empty() []releases.ProductionV1 {
 }
 
 // Prods gets all the productions of a releaser and normalises the results.
-func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) { // nolint:funlen
+func (p *Productions) Prods() ([]releases.ProductionV1, error) { // nolint:funlen
 	const endOfRecords, maxPage = "", 1000
 	var next []releases.ProductionV1
 	var dz ProductionList
@@ -51,9 +51,7 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) { // no
 		return empty(), err
 	}
 	req := download.Request{Link: url}
-	if !quiet {
-		fmt.Printf("Fetching the first 100 of many records from Demozoo\n")
-	}
+	fmt.Printf("Fetching the first 100 of many records from Demozoo\n")
 	tries := 0
 	for {
 		tries++
@@ -74,14 +72,9 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) { // no
 		}
 	}
 	p.Count = dz.Count
-	if !quiet {
-		fmt.Printf("There are %d %s production matches\n", dz.Count, p.Filter)
-	}
-	finds, prods := Filter(dz.Results, quiet)
-	if !quiet {
-		pp(1, finds)
-	}
-
+	fmt.Printf("There are %d %s production matches\n", dz.Count, p.Filter)
+	finds, prods := Filter(dz.Results)
+	pp(1, finds)
 	nu, page := dz.Next, 1
 	for {
 		page++
@@ -89,11 +82,9 @@ func (p *Productions) Prods(quiet bool) ([]releases.ProductionV1, error) { // no
 		if err != nil {
 			return empty(), err
 		}
-		finds, next = Filter(next, quiet)
+		finds, next = Filter(next)
 		totalFinds += finds
-		if !quiet {
-			pp(page, finds)
-		}
+		pp(page, finds)
 		prods = append(prods, next...)
 		if nu == endOfRecords {
 			break
@@ -142,7 +133,7 @@ func Next(url string) ([]releases.ProductionV1, string, error) {
 }
 
 // Filter productions removes any records that are not suitable for Defacto2.
-func Filter(p []releases.ProductionV1, quiet bool) (int, []releases.ProductionV1) {
+func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
 	finds := 0
 	var prods []releases.ProductionV1 //nolint:prealloc
 	for _, prod := range p {
@@ -157,12 +148,12 @@ func Filter(p []releases.ProductionV1, quiet bool) (int, []releases.ProductionV1
 			continue
 		}
 		if l, _ := linked(prod.ID); l != "" {
-			sync(prod.ID, database.DeObfuscate(l), quiet)
+			sync(prod.ID, database.DeObfuscate(l))
 			continue
 		}
 		rec := make(releases.Productions, 1)
 		rec[0] = prod
-		if err := insert.Prods(&rec, true); err != nil {
+		if err := insert.Prods(&rec); err != nil {
 			logs.Println(err)
 			continue
 		}
@@ -173,11 +164,8 @@ func Filter(p []releases.ProductionV1, quiet bool) (int, []releases.ProductionV1
 	return finds, prods
 }
 
-func sync(demozooID, recordID int, quiet bool) {
+func sync(demozooID, recordID int) {
 	i, err := update(demozooID, recordID)
-	if quiet {
-		return
-	}
 	if err != nil {
 		fmt.Printf(" Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
 			demozooID, recordID)

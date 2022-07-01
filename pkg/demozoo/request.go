@@ -16,7 +16,6 @@ type Request struct {
 	Overwrite bool   // Overwrite any existing files.
 	Refresh   bool   // Refresh all demozoo entries.
 	ByID      string // Filter by ID.
-	Quiet     bool
 }
 
 // Query parses a single Demozoo entry.

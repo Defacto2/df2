@@ -68,15 +68,12 @@ func (r *Record) Insert() (sql.Result, error) {
 
 // Prods adds the Demozoo releasers productions to the database.
 // API: https://demozoo.org/api/v1/releasers/
-// Except for errors, setting quiet to false disables all stdout feedback.
-func Prods(p *releases.Productions, quiet bool) error {
+func Prods(p *releases.Productions) error {
 	recs := 0
 	for i, prod := range *p {
 		item := fmt.Sprintf("%d. ", i)
-		if !quiet {
-			fmt.Printf("\n%s%s", item, prod.Title)
-		}
-		rec := Prod(prod, quiet)
+		fmt.Printf("\n%s%s", item, prod.Title)
+		rec := Prod(prod)
 		if reflect.DeepEqual(rec, Record{}) {
 			continue
 		}
@@ -88,27 +85,22 @@ func Prods(p *releases.Productions, quiet bool) error {
 		if err != nil {
 			return err
 		}
-		if !quiet {
-			pad := strings.Repeat(" ", len(item))
-			fmt.Printf("\n%s ↳ production added using auto-id: %d", pad, newID)
-		}
+		pad := strings.Repeat(" ", len(item))
+		fmt.Printf("\n%s ↳ production added using auto-id: %d", pad, newID)
 		recs++
 	}
-	if !quiet && recs > 0 {
+	if recs > 0 {
 		fmt.Printf("\nAdded %d new releaser productions from Demozoo.\n", recs)
 	}
 	return nil
 }
 
 // Prod mutates the raw Demozoo API releaser production data to database ready values.
-// Except for errors, setting quiet to false disables all stdout feedback.
-func Prod(prod releases.ProductionV1, quiet bool) Record {
+func Prod(prod releases.ProductionV1) Record {
 	dbID, _ := database.DemozooID(uint(prod.ID))
 	if dbID > 0 {
 		prod.ExistsInDB = true
-		if !quiet {
-			fmt.Printf(": skipped, production already exists")
-		}
+		fmt.Printf(": skipped, production already exists")
 		return Record{}
 	}
 
@@ -128,20 +120,16 @@ func Prod(prod releases.ProductionV1, quiet bool) Record {
 		if t != "" {
 			s += " " + t
 		}
-		if !quiet {
-			fmt.Printf(": skipped, unsuitable production [%s]", strings.TrimSpace(s))
-		}
+		fmt.Printf(": skipped, unsuitable production [%s]", strings.TrimSpace(s))
 		return Record{}
 	}
-	if !quiet {
-		fmt.Printf(" [%s/%s]", platform, section)
-	}
+	fmt.Printf(" [%s/%s]", platform, section)
 
 	a, b := prod.Groups()
-	if !quiet && a != "" {
+	if a != "" {
 		fmt.Printf(" for: %s", a)
 	}
-	if !quiet && b != "" {
+	if b != "" {
 		fmt.Printf(" by: %s", b)
 	}
 

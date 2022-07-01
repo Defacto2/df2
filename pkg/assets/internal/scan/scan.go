@@ -244,9 +244,7 @@ func parse(s *Scan, ignore Files, list *[]os.FileInfo) (Results, error) {
 			i.mod(file)
 			i.size(file)
 			i.bits(file)
-			if !logs.IsQuiet() {
-				fmt.Fprintf(w, "%v\t%v%v\t%v\t%v\t%v\n", i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
-			}
+			fmt.Fprintf(w, "%v\t%v%v\t%v\t%v\t%v\n", i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
 		}
 		if err := w.Flush(); err != nil {
 			return stat, fmt.Errorf("parse tabwriter flush: %w", err)
