@@ -38,13 +38,18 @@ func Panic(b bool) {
 
 // Arg returns instructions for invalid command arguments and exits with an error code.
 func Arg(arg string, exit bool, args ...string) error {
-	if args == nil {
-		return fmt.Errorf("arg: %w", ErrNoArg)
+	s := ""
+	if len(args) == 0 {
+		s = fmt.Sprintf("%s %s", color.Warn.Sprint("invalid command"),
+			color.Bold.Sprintf("\"%s\"", arg))
 	}
-	fmt.Printf("%s %s %s\n",
-		color.Warn.Sprint("invalid command"),
-		color.Bold.Sprintf("\"%s %s\"", arg, args[0]),
-		color.Warn.Sprint("\nplease use one of the Available Commands shown above"))
+	if len(args) > 0 {
+		s = fmt.Sprintf("%s %s",
+			color.Warn.Sprint("invalid command"),
+			color.Bold.Sprintf("\"%s %s\"", arg, args[0]))
+	}
+	s += fmt.Sprint("\n" + color.Warn.Sprint("please use one of the Available Commands shown above"))
+	log.Println(s)
 	if !exit {
 		return nil
 	}

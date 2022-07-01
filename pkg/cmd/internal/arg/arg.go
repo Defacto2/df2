@@ -50,10 +50,9 @@ type Demozoo struct {
 
 // Execute global flags.
 type Execute struct {
-	Filename string // Filename of the config file.
-	Panic    bool   // Enable panic errors to help debug.
-	Quiet    bool   // Quiet is placeholder for Cobra to store the PersistentFlag value, but the quiet flag is handled by main.go.
-	Version  bool   // Version is placeholder for Cobra to store the PersistentFlag value, but the version flag is handled by main.go.
+	Panic   bool // Enable panic errors to help debug.
+	Quiet   bool // Quiet is placeholder for Cobra to store the PersistentFlag value, but the quiet flag is handled by main.go.
+	Version bool // Version is placeholder for Cobra to store the PersistentFlag value, but the version flag is handled by main.go.
 }
 
 type Group struct {

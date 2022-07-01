@@ -12,7 +12,6 @@ import (
 	"github.com/Defacto2/df2/pkg/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/config"
 	"github.com/Defacto2/df2/pkg/logs"
-	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -61,8 +60,6 @@ func Execute() error {
 func init() { // nolint:gochecknoinits
 	cobra.OnInitialize()
 	readIn()
-	rootCmd.PersistentFlags().StringVar(&gf.Filename, "config", "",
-		fmt.Sprintf("config file (default is %s)", config.Filepath()))
 	rootCmd.PersistentFlags().BoolVar(&gf.Quiet, "quiet", false,
 		"suppress all feedback except for errors")
 	rootCmd.PersistentFlags().BoolVarP(&gf.Version, "version", "v", false,
@@ -74,7 +71,7 @@ func init() { // nolint:gochecknoinits
 	}
 }
 
-// readIn the config file and ENV variables if set.
+// readIn the config file and any set ENV variables.
 func readIn() {
 	logs.Panic(gf.Panic)
 	if cf := config.Filepath(); cf == "" {
@@ -87,15 +84,11 @@ func readIn() {
 	} else {
 		viper.SetConfigFile(cf)
 	}
-	viper.AutomaticEnv() // read in environment variables that match
+	// read in environment variables that match
+	viper.AutomaticEnv()
 	// if a config file is found, read it in
 	if err := viper.ReadInConfig(); err != nil {
 		config.Config.Errors = true
 		return
-	}
-	// TODO: replace checks with used and default
-	if !gf.Quiet && !str.Piped() {
-		logs.Println(str.Sec(fmt.Sprintf("config file in use: %s",
-			viper.ConfigFileUsed())))
 	}
 }
