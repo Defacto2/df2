@@ -4,6 +4,8 @@
 
 df2 is a command-line tool for managing plus optimising the files and database of defacto2.net. It is broken down into multiple parts.
 
+**apis** Batch data synchronization with remote Demozoo and Pouet APIs.
+
 **approve** all validated file records that are ready to go live.
 
 **clean** discover and remove orphan files that exist on the server but have no matching database entries.
@@ -25,7 +27,7 @@ df2 is a command-line tool for managing plus optimising the files and database o
 **shrink** moves old SQL backups and incoming uploads to the user home directory ready for download and removal.
 
 ```
-A tool to optimise and manage defacto2.net
+The tool to optimise and manage defacto2.net
 Copyright © 2020-22 Ben Garrett
 https://github.com/Defacto2/df2
 
@@ -34,10 +36,11 @@ Usage:
   df2 [command]
 
 Available Commands:
+  apis        Batch data synchronization with remote APIs.
   approve     Approve the records that are ready to go live.
   clean       Discover or clean orphan files.
   config      Configure the settings for this tool.
-  demozoo     Interact with Demozoo.org submissions.
+  demozoo     Interact with Demozoo submissions.
   fix         Fixes database entries and records.
   help        Help about any command
   lookup      Lookup the file URL of a record's ID or UUID.
@@ -47,9 +50,10 @@ Available Commands:
   shrink      Reduces the space used in directories.
 
 Flags:
-      --config string   config file (default is config.yaml)
-  -h, --help            help for df2
-  -q, --quiet           suspend feedback to the terminal
+      --ascii     suppress all ANSI color feedback
+  -h, --help      help for df2
+      --quiet     suppress all feedback except for errors
+  -v, --version   version and information for this program
 
 Use "df2 [command] --help" for more information about a command.
 ```
@@ -74,6 +78,8 @@ The `df2 fix text` command requires the installation of [AnsiLove/C](https://git
 
 ```bash
 sudo apt install -y ansilove imagemagick netpbm pngquant webp
+# optional file archivers
+sudo apt install -y arj lhasa unrar unzip
 ```
 
 ## Configuration
@@ -100,7 +106,7 @@ All changes should be tested with the `golangci-lint` [Go linters aggregator](ht
 # Tests on Linux
 # term 1
 cd /defacto2-dev
-docker-compose up
+docker compose up
 # term 2
 cd /df2
 go test ./...
