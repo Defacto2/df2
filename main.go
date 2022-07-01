@@ -41,7 +41,6 @@ var (
 
 func main() {
 	if ver() {
-		fmt.Println(app())
 		fmt.Println(info())
 		return
 	}
@@ -87,29 +86,10 @@ func ver() bool {
 	return false
 }
 
-func app() string {
-	type Data struct {
-		Version string
-	}
-	const verTmp = `
-   Defacto2 / df2 tool version: {{.Version}}
-`
-	data := Data{
-		Version: color.Primary.Sprint(version),
-	}
-	tmpl, err := template.New("ver").Parse(verTmp)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var b bytes.Buffer
-	if err := tmpl.Execute(&b, data); err != nil {
-		log.Fatal(err)
-	}
-	return b.String()
-}
-
 func exeTmp() string {
-	const tmp = ` ┌──── requirements ───────────┐
+	const tmp = `
+ ┌──── Defacto2 tool (df2) ────┐
+ │  requirements               │
  │  database:     {{.Database}}  │
  │  ansilove:     {{.Ansilove}}  │
  │  webp lib:     {{.Webp}}  │
@@ -122,6 +102,8 @@ func exeTmp() string {
  │  unzip:        {{.UnZip}}  │
  │  zipinfo:      {{.ZipInfo}}  │
  └─────────────────────────────┘
+
+  version: {{.Version}}
      path: {{.Path}}
    commit: {{.Commit}}
      date: {{.Date}}
@@ -197,6 +179,7 @@ func info() string {
 		UnRar    string
 		UnZip    string
 		ZipInfo  string
+		Version  string
 		Commit   string
 		Date     string
 		Path     string
@@ -219,6 +202,7 @@ func info() string {
 		UnRar:    check(l["unrar"]),
 		UnZip:    check(l["unzip"]),
 		ZipInfo:  check(l["zipinfo"]),
+		Version:  color.Style{color.FgCyan, color.OpBold}.Sprint(version),
 		Commit:   commit,
 		Date:     localBuild(date),
 		Path:     bin,
