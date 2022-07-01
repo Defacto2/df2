@@ -101,7 +101,7 @@ func (r Request) Queries() error { //nolint: funlen
 		return nil
 	}
 	if st.Total > 0 {
-		fmt.Println()
+		logs.Println()
 	}
 	st.summary(time.Since(start))
 	return nil

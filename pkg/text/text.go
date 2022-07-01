@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
@@ -34,7 +35,7 @@ func Fix() error {
 			return err
 		}
 	}
-	fmt.Println("scanned", c, "fixes from", i, "text file records")
+	logs.Println("scanned", c, "fixes from", i, "text file records")
 	if c == 0 {
 		logs.Println("everything is okay, there is nothing to do")
 	}
@@ -61,11 +62,11 @@ func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records in
 		case errors.Is(err1, tf.ErrMeNo):
 			return i, c, nil
 		case err1 != nil:
-			fmt.Println(t.String(), err1)
+			log.Println(t.String(), err1)
 			return i, c, nil
 		}
 		if err1 := t.ExtractedImgs(dir.UUID); err1 != nil {
-			fmt.Println(t.String(), err1)
+			log.Println(t.String(), err1)
 		}
 		return i, c, nil
 	}

@@ -90,7 +90,7 @@ func DOS(name string, files content.Contents, varNames *[]string) string {
 		ext := strings.ToLower(file.Ext)                     // normalise file extensions
 		e := findVariant(fn, exe, varNames)
 		c := findVariant(fn, com, varNames)
-		fmt.Printf(" > %q, %q, chk1 %s", ext, fn, base+exe)
+		logs.Printf(" > %q, %q, chk1 %s", ext, fn, base+exe)
 		switch {
 		case ext == bat: // [random].bat
 			f[file.Name] = Lvl1

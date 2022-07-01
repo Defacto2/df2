@@ -3,6 +3,7 @@ package arc
 import (
 	"errors"
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
 
@@ -72,7 +73,7 @@ func Configure(f any) error {
 func Walkr(src, filename string, walkFn archiver.WalkFunc) error {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("walkr paniced with %s in archive %s: %v\n", filename, filepath.Base(src), r)
+			log.Printf("walkr paniced with %s in archive %s: %v\n", filename, filepath.Base(src), r)
 		}
 	}()
 	filename = strings.ToLower(filename)

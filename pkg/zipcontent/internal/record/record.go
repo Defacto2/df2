@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -103,11 +104,11 @@ func (r *Record) Read(s *scan.Stats) error {
 	if err := r.Nfo(s); err != nil {
 		// instead of returning the error, print it.
 		// otherwise the results of archive.Read will never be saved
-		fmt.Printf(" %s", err)
+		log.Printf(" %s", err)
 	}
 	updates, err := r.Save()
 	if err != nil {
-		logs.Printf(" %s", str.X())
+		log.Printf(" %s", str.X())
 		return err
 	}
 	if updates == 0 {

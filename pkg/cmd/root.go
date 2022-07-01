@@ -5,6 +5,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -46,7 +47,7 @@ var rootCmd = &cobra.Command{
 func Execute() error {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(color.Warn.Sprintf("%s", err))
+		log.Println(color.Warn.Sprintf("%s", err))
 		if e := err.Error(); strings.Contains(e, "required flag(s) \"name\"") {
 			logs.Println("see Examples for usage or run to list setting choices:",
 				color.Bold.Sprintf("%s config info", rootCmd.CommandPath()))

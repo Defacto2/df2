@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/logs"
@@ -25,15 +26,15 @@ var lookupCmd = &cobra.Command{
 		}
 		for _, a := range args {
 			if err := database.CheckID(a); err != nil {
-				fmt.Printf("%s: %s\n", ErrID, a)
+				log.Printf("%s: %s\n", ErrID, a)
 				continue
 			}
 			id, err := database.GetID(a)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				continue
 			}
-			fmt.Printf("https://defacto2.net/f/%v\n",
+			logs.Printf("https://defacto2.net/f/%v\n",
 				database.ObfuscateParam(fmt.Sprint(id)))
 		}
 	},

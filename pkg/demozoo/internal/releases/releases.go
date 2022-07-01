@@ -8,6 +8,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
@@ -242,7 +244,7 @@ func (p *Productions) Print() error {
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	fmt.Println(string(js))
+	logs.Println(string(js))
 	return nil
 }
 

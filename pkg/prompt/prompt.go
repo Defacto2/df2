@@ -34,30 +34,6 @@ func Port() int64 {
 		os.Exit(1)
 	}
 	return i
-	// cnt, in := 0, ""
-	// const decimal = 10
-	// for {
-	// 	in = ""
-	// 	cnt++
-	// 	fmt.Scanln(&in)
-	// 	if in == "" {
-	// 		check(cnt)
-	// 		continue
-	// 	}
-	// 	i, err := strconv.ParseInt(in, decimal, 0)
-	// 	if err != nil && in != "" {
-	// 		fmt.Printf("%s %v\n", str.X(), in)
-	// 		check(cnt)
-	// 		continue
-	// 	}
-	// 	// check that the input a valid port
-	// 	if v := input.IsPort(int(i)); !v {
-	// 		fmt.Printf("%s %q is out of range\n", str.X(), in)
-	// 		check(cnt)
-	// 		continue
-	// 	}
-	// 	return i
-	// }
 }
 
 // String asks the user for a string configuration value and saves it.

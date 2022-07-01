@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var (
@@ -395,7 +397,7 @@ func ZipReader(src string) ([]string, string, error) {
 	if err != nil {
 		// handle broken zips that still contain some valid files
 		if b.String() != "" && len(out) > 0 {
-			fmt.Print(strings.ReplaceAll(b.String(), "\n", " "))
+			logs.Print(strings.ReplaceAll(b.String(), "\n", " "))
 			return files, zipext, nil
 		}
 		// otherwise the zipinfo threw an error

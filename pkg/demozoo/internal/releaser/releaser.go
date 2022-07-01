@@ -11,6 +11,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
+	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
@@ -63,7 +64,7 @@ func (r *ReleaserV1) Print() error {
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	fmt.Println(string(js))
+	logs.Println(string(js))
 	return nil
 }
 

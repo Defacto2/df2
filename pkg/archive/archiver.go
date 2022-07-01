@@ -12,6 +12,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive/internal/arc"
 	"github.com/Defacto2/df2/pkg/archive/internal/sys"
+	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/mholt/archiver"
 	"github.com/nwaples/rardecode"
 	"golang.org/x/text/encoding/charmap"
@@ -56,7 +57,7 @@ func Readr(src, filename string) ([]string, string, error) {
 	files, ext, err := sys.Readr(src, filename)
 	if errors.Is(err, sys.ErrWrongExt) {
 		newname := sys.Rename(ext, filename)
-		fmt.Printf("rename to %s; ", newname)
+		logs.Printf("rename to %s; ", newname)
 		files, err = readr(src, newname)
 		if err != nil {
 			return nil, "", fmt.Errorf("readr fix: %w", err)

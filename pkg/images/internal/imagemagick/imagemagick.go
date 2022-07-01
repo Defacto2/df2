@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"os/exec"
 	"time"
+
+	"github.com/Defacto2/df2/pkg/logs"
 )
 
 // imagemagick tools require the installation of ImageMagick v6.
@@ -38,13 +39,13 @@ func Convert(src, dest string) error {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, path, args...)
-	fmt.Printf("running %s %s\n", file, args)
+	logs.Printf("running %s %s\n", file, args)
 	out, err := cmd.Output()
 	if err != nil {
 		return err
 	}
 	if len(out) > 0 {
-		fmt.Println("magick:", string(out))
+		logs.Println("magick:", string(out))
 	}
 
 	return nil

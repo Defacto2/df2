@@ -55,29 +55,29 @@ func sets(name string) error {
 	s := viper.GetString(name)
 	switch s {
 	case "":
-		fmt.Printf("\n%s is currently disabled\n", name)
+		logs.Printf("\n%s is currently disabled\n", name)
 		return nil
 	default:
-		fmt.Printf("\n%s is currently set to \"%v\"\n", name, color.Primary.Sprint(s))
+		logs.Printf("\n%s is currently set to \"%v\"\n", name, color.Primary.Sprint(s))
 	}
 	switch {
 	case name == "connection.server.host":
-		fmt.Printf("\nSet a new host, leave blank to keep as-is %v: \n", rec("localhost"))
+		logs.Printf("\nSet a new host, leave blank to keep as-is %v: \n", rec("localhost"))
 		return save(prompt.String(s))
 	case name == "connection.server.protocol":
-		fmt.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", rec("tcp"))
+		logs.Printf("\nSet a new protocol, leave blank to keep as-is %v: \n", rec("tcp"))
 		return save(prompt.String(s))
 	case name == "connection.server.port":
-		fmt.Printf("Set a new MySQL port, choices: %v-%v %v\n", prompt.PortMin, prompt.PortMax, rec("3306"))
+		logs.Printf("Set a new MySQL port, choices: %v-%v %v\n", prompt.PortMin, prompt.PortMax, rec("3306"))
 		return save(prompt.Port())
 	case name[:suffix] == "directory.":
-		fmt.Printf("\nSet a new directory or leave blank to keep as-is: \n")
+		logs.Printf("\nSet a new directory or leave blank to keep as-is: \n")
 		return save(prompt.Dir())
 	case name == "connection.password":
-		fmt.Printf("\nSet a new MySQL user encrypted or plaintext password or leave blank to keep as-is: \n")
+		logs.Printf("\nSet a new MySQL user encrypted or plaintext password or leave blank to keep as-is: \n")
 		return save(prompt.String(s))
 	default:
-		fmt.Printf("\nSet a new value, leave blank to keep as-is or use a dash [-] to disable: \n")
+		logs.Printf("\nSet a new value, leave blank to keep as-is or use a dash [-] to disable: \n")
 		return save(prompt.String(s))
 	}
 }

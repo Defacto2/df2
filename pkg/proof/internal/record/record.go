@@ -182,7 +182,7 @@ func Skip(s stat.Proof, r Record, hide bool) (skip bool, err error) {
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
 		s.Missing++
 		if !hide {
-			fmt.Printf("%s %0*d. %v is missing %v %s\n",
+			logs.Printf("%s %0*d. %v is missing %v %s\n",
 				color.Question.Sprint("→"),
 				len(strconv.Itoa(s.Total)),
 				s.Count,

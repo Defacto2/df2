@@ -128,7 +128,7 @@ func Print(r Request) error {
 	if a[0] == "" {
 		a = a[1:]
 	}
-	fmt.Printf("\n%s\nTotal authors %d\n", strings.Join(a, ", "), len(a))
+	logs.Printf("\n%s\nTotal authors %d\n", strings.Join(a, ", "), len(a))
 	return nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -381,11 +382,11 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
 		if n, _ := api.DownloadLink(); n != "" {
-			fmt.Print(n)
+			logs.Print(n)
 			r.Filename = n
 			r.save()
 		} else {
-			fmt.Println("could not find a suitable value for the required filename column")
+			log.Println("could not find a suitable value for the required filename column")
 			return true, nil
 		}
 		fallthrough
@@ -415,7 +416,7 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (skip bool, err error) {
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
-		fmt.Println("Clearing filename which is incorrectly set as", r.Filename)
+		logs.Println("Clearing filename which is incorrectly set as", r.Filename)
 		r.Filename = ""
 	}
 	var f Product

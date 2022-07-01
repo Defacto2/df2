@@ -51,7 +51,7 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { // nolint:funle
 		return empty(), err
 	}
 	req := download.Request{Link: url}
-	fmt.Printf("Fetching the first 100 of many records from Demozoo\n")
+	logs.Printf("Fetching the first 100 of many records from Demozoo\n")
 	tries := 0
 	for {
 		tries++
@@ -72,7 +72,7 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { // nolint:funle
 		}
 	}
 	p.Count = dz.Count
-	fmt.Printf("There are %d %s production matches\n", dz.Count, p.Filter)
+	logs.Printf("There are %d %s production matches\n", dz.Count, p.Filter)
 	finds, prods := Filter(dz.Results)
 	pp(1, finds)
 	nu, page := dz.Next, 1
@@ -99,14 +99,14 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { // nolint:funle
 
 func pp(page, finds int) {
 	if finds == 0 {
-		fmt.Printf("   Page %d, no new records found\n", page)
+		logs.Printf("   Page %d, no new records found\n", page)
 		return
 	}
 	if finds == 1 {
-		fmt.Printf("   Page %d, new record found, 1\n", page)
+		logs.Printf("   Page %d, new record found, 1\n", page)
 		return
 	}
-	fmt.Printf("   Page %d, new records found, %d\n", page, finds)
+	logs.Printf("   Page %d, new records found, %d\n", page, finds)
 }
 
 // Next gets all the next page of productions.
@@ -157,7 +157,7 @@ func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
 			logs.Println(err)
 			continue
 		}
-		fmt.Printf("%d. (%d) %s\n", finds+1, prod.ID, prod.Title)
+		logs.Printf("%d. (%d) %s\n", finds+1, prod.ID, prod.Title)
 		finds++
 		prods = append(prods, prod)
 	}
@@ -167,12 +167,12 @@ func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
 func sync(demozooID, recordID int) {
 	i, err := update(demozooID, recordID)
 	if err != nil {
-		fmt.Printf(" Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
+		logs.Printf(" Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
 			demozooID, recordID)
 		logs.Println(err)
 		return
 	}
-	fmt.Printf(" Updated %d record, the Demozoo ID %d was saved to record id: %v\n", i,
+	logs.Printf(" Updated %d record, the Demozoo ID %d was saved to record id: %v\n", i,
 		demozooID, recordID)
 }
 

@@ -28,9 +28,9 @@ func Progress(name string, count, total int) float64 {
 	r := float64(count) / float64(total) * fin
 	switch r {
 	case fin:
-		fmt.Printf("\rquerying %s %s %.0f %%  ", name, bar(r), r)
+		logs.Printf("\rquerying %s %s %.0f %%  ", name, bar(r), r)
 	default:
-		fmt.Printf("\rquerying %s %s %.2f %% ", name, bar(r), r)
+		logs.Printf("\rquerying %s %s %.2f %% ", name, bar(r), r)
 	}
 	return r
 }

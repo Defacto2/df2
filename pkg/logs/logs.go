@@ -15,7 +15,7 @@ import (
 	gap "github.com/muesli/go-app-paths"
 )
 
-var ErrNoArg = errors.New("no arguments were provided")
+var ErrNoCmd = errors.New("no command argument was provided")
 
 const (
 	GapUser  string = "df2"        // GapUser is the configuration and logs subdirectory name.
@@ -38,6 +38,9 @@ func Panic(b bool) {
 
 // Arg returns instructions for invalid command arguments and exits with an error code.
 func Arg(arg string, exit bool, args ...string) error {
+	if arg == "" {
+		return ErrNoCmd
+	}
 	s := ""
 	if len(args) == 0 {
 		s = fmt.Sprintf("%s %s", color.Warn.Sprint("invalid command"),

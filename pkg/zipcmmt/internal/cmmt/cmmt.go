@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/bengarrett/retrotxtgo/lib/convert"
 )
 
@@ -69,7 +70,7 @@ func (z *Zipfile) Save(path string) error {
 	if strings.Contains(cmmt, SceneOrg) {
 		return nil
 	}
-	fmt.Print(z.Print(&cmmt))
+	logs.Print(z.Print(&cmmt))
 	f, err := os.Create(name)
 	if err != nil {
 		return err

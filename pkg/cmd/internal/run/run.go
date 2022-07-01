@@ -141,7 +141,7 @@ func syncdos() error {
 	if err := p.Get(); err != nil {
 		return err
 	}
-	fmt.Printf("There were %d new productions found\n", p.Finds)
+	logs.Printf("There were %d new productions found\n", p.Finds)
 	return nil
 }
 
@@ -150,7 +150,7 @@ func syncwin() error {
 	if err := p.Get(); err != nil {
 		return err
 	}
-	fmt.Printf("There were %d new productions found\n", p.Finds)
+	logs.Printf("There were %d new productions found\n", p.Finds)
 	return nil
 }
 
@@ -274,11 +274,11 @@ func Log() error {
 		s := strings.SplitN(scanner.Text(), " ", maxSplit)
 		t, err := time.Parse("2006/01/02 15:04:05", strings.Join(s[0:2], " "))
 		if err != nil {
-			fmt.Printf("%d. %v\n", c, scanner.Text())
+			logs.Printf("%d. %v\n", c, scanner.Text())
 			continue
 		}
 		duration := durafmt.Parse(time.Since(t)).LimitFirstN(1)
-		fmt.Printf("%v %v ago  %v %s\n",
+		logs.Printf("%v %v ago  %v %s\n",
 			color.Secondary.Sprintf("%d.", c),
 			duration, color.Info.Sprint(s[2]),
 			strings.Join(s[3:], " "))

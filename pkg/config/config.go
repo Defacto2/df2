@@ -49,7 +49,7 @@ func Check() {
 		return
 	}
 	if Config.Errors {
-		fmt.Printf("%s %s\n",
+		log.Printf("%s %s\n",
 			color.Warn.Sprint("config: no config file in use, please run"),
 			color.Bold.Sprintf(cmdRun+" create"))
 	}

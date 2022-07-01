@@ -3,6 +3,7 @@ package demozoo
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -148,10 +149,10 @@ func (st *Stat) nextResult(rec Records, req Request) (skip bool, err error) {
 func (st Stat) print() {
 	if st.Count == 0 {
 		if st.Fetched == 0 {
-			fmt.Printf("id %q does not have an associated Demozoo link\n", st.ByID)
+			log.Printf("id %q does not have an associated Demozoo link\n", st.ByID)
 			return
 		}
-		fmt.Printf("id %q does not have any empty cells that can be replaced with Demozoo data, "+
+		log.Printf("id %q does not have any empty cells that can be replaced with Demozoo data, "+
 			"use --id=%v --overwrite to refetch the linked download and reapply data\n", st.ByID, st.ByID)
 		return
 	}
@@ -185,7 +186,7 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 func (r *Record) Download(overwrite bool, api *prods.ProductionsAPIv1, st Stat) (skip bool) {
 	if st.FileExist(r) || overwrite {
 		if r.UUID == "" {
-			fmt.Print(color.Error.Sprint("UUID is empty, cannot continue"))
+			log.Print(color.Error.Sprint("UUID is empty, cannot continue"))
 			return true
 		}
 		name, link := api.DownloadLink()

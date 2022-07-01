@@ -9,6 +9,7 @@ import (
 	"path"
 	"text/template"
 
+	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/spf13/viper"
 )
@@ -39,7 +40,7 @@ func (p Persons) Template(filename, tpl string, filter string) error {
 		if err := wr.Flush(); err != nil {
 			return fmt.Errorf("parse writer flush: %w", err)
 		}
-		fmt.Println(buf.String())
+		logs.Println(buf.String())
 		return nil
 	}
 	switch role.Roles(filter) {

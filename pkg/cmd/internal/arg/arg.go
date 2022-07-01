@@ -1,7 +1,7 @@
 package arg
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -106,7 +106,7 @@ func FilterFlag(t any, flag, val string) {
 			}
 		}
 		if !sup {
-			fmt.Printf("%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
+			log.Printf("%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
 				color.Bold.Sprintf("%q", val),
 				color.Warn.Sprint("available flag values"),
 				color.Primary.Sprint(strings.Join(t, ",")))

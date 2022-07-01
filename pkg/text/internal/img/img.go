@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
+	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
@@ -29,7 +31,7 @@ const (
 // Generate a collection of site images.
 func Generate(name, uuid string, amiga bool) error {
 	prnt := func(s string) {
-		fmt.Printf("  %s", s)
+		logs.Printf("  %s", s)
 	}
 	const note = `
 this command requires the installation of AnsiLove/C
@@ -38,7 +40,7 @@ installation instructions: https://github.com/ansilove/ansilove`
 	o := f.Img000 + png
 	s, err := MakePng(n, f.Img000, amiga)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
-		fmt.Println(note)
+		log.Println(note)
 		return fmt.Errorf("generate, ansilove not found: %w", err)
 	} else if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
 		tmp, err1 := Reduce(f.UUID, uuid)
@@ -80,7 +82,7 @@ installation instructions: https://github.com/ansilove/ansilove`
 
 // Reduce the length of the textfile so it can be parsed by AnsiLove.
 func Reduce(src, uuid string) (string, error) {
-	fmt.Print(" will attempt to reduce the length of file")
+	logs.Print(" will attempt to reduce the length of file")
 
 	f, err := os.Open(src)
 	if err != nil {

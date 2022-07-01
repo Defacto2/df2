@@ -75,7 +75,7 @@ func Connect() *sql.DB {
 	if err = db.Ping(); err != nil {
 		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
 		// filter the password and then print the datasource connection info
-		// to discover more errors fmt.Printf("%T", err)
+		// to discover more errors, use log.Printf("%T", err)
 		me := &mysql.MySQLError{}
 		nop := &net.OpError{}
 		switch {

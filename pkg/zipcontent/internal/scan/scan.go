@@ -31,7 +31,7 @@ func Init() Stats {
 func (s *Stats) Summary() {
 	total := s.Count - s.Missing
 	if total == 0 {
-		fmt.Print("nothing to do")
+		logs.Print("nothing to do")
 	}
 	elapsed := time.Since(s.start).Seconds()
 	t := fmt.Sprintf("Total archives scanned: %v, time elapsed %.1f seconds", total, elapsed)

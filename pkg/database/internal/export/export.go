@@ -126,7 +126,7 @@ func (f *Flags) Run() error {
 		}
 	}
 	elapsed := time.Since(start)
-	fmt.Printf("cronjob export took %s\n", elapsed)
+	logs.Printf("cronjob export took %s\n", elapsed)
 	return nil
 }
 
@@ -144,7 +144,7 @@ func (f *Flags) DB() error {
 		return fmt.Errorf("db write: %w", err)
 	}
 	elapsed := time.Since(start)
-	fmt.Printf("sql exports took %s\n", elapsed)
+	logs.Printf("sql exports took %s\n", elapsed)
 	return nil
 }
 

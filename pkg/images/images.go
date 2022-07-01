@@ -379,7 +379,7 @@ func cropWebP(name string) (string, error) {
 		return "", fmt.Errorf("to webp size: %w", err)
 	}
 	if w+h > WebpMaxSize {
-		fmt.Printf("crop to %dx%d", w, h)
+		logs.Printf("crop to %dx%d", w, h)
 		cropW, cropH := WebPCalc(w, h)
 		ext := filepath.Ext(name)
 		fn := strings.TrimSuffix(name, ext)

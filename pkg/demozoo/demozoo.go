@@ -203,7 +203,7 @@ func refresh(r request) error {
 	if err := db.QueryRow(stmt).Scan(&cnt); err != nil {
 		return fmt.Errorf("count query: %w", err)
 	}
-	fmt.Printf("There are %d records with %s links\n", cnt, r)
+	logs.Printf("There are %d records with %s links\n", cnt, r)
 	rows, err := db.Query(selectByID(""))
 	if err != nil {
 		return fmt.Errorf("meta query: %w", err)

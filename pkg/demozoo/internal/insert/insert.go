@@ -11,6 +11,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
+	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/google/uuid"
 )
 
@@ -72,7 +73,7 @@ func Prods(p *releases.Productions) error {
 	recs := 0
 	for i, prod := range *p {
 		item := fmt.Sprintf("%d. ", i)
-		fmt.Printf("\n%s%s", item, prod.Title)
+		logs.Printf("\n%s%s", item, prod.Title)
 		rec := Prod(prod)
 		if reflect.DeepEqual(rec, Record{}) {
 			continue
@@ -86,11 +87,11 @@ func Prods(p *releases.Productions) error {
 			return err
 		}
 		pad := strings.Repeat(" ", len(item))
-		fmt.Printf("\n%s ↳ production added using auto-id: %d", pad, newID)
+		logs.Printf("\n%s ↳ production added using auto-id: %d", pad, newID)
 		recs++
 	}
 	if recs > 0 {
-		fmt.Printf("\nAdded %d new releaser productions from Demozoo.\n", recs)
+		logs.Printf("\nAdded %d new releaser productions from Demozoo.\n", recs)
 	}
 	return nil
 }
@@ -100,7 +101,7 @@ func Prod(prod releases.ProductionV1) Record {
 	dbID, _ := database.DemozooID(uint(prod.ID))
 	if dbID > 0 {
 		prod.ExistsInDB = true
-		fmt.Printf(": skipped, production already exists")
+		logs.Printf(": skipped, production already exists")
 		return Record{}
 	}
 
@@ -120,17 +121,17 @@ func Prod(prod releases.ProductionV1) Record {
 		if t != "" {
 			s += " " + t
 		}
-		fmt.Printf(": skipped, unsuitable production [%s]", strings.TrimSpace(s))
+		logs.Printf(": skipped, unsuitable production [%s]", strings.TrimSpace(s))
 		return Record{}
 	}
-	fmt.Printf(" [%s/%s]", platform, section)
+	logs.Printf(" [%s/%s]", platform, section)
 
 	a, b := prod.Groups()
 	if a != "" {
-		fmt.Printf(" for: %s", a)
+		logs.Printf(" for: %s", a)
 	}
 	if b != "" {
-		fmt.Printf(" by: %s", b)
+		logs.Printf(" by: %s", b)
 	}
 
 	y, m, d := prod.Released()

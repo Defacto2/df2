@@ -144,7 +144,7 @@ func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 		if err := wr.Flush(); err != nil {
 			return fmt.Errorf("parse flush: %w", err)
 		}
-		fmt.Println(buf.String())
+		logs.Println(buf.String())
 		return nil
 	}
 	switch group.Get(r.Filter) {

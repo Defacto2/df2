@@ -57,7 +57,7 @@ func (request Request) Queries() error { //nolint:funlen
 	for rows.Next() {
 		s.Total++
 	}
-	fmt.Print(Total(&s, request))
+	logs.Print(Total(&s, request))
 	rows, err = db.Query(Select(request.ByID))
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (request Request) Queries() error { //nolint:funlen
 			return err
 		}
 	}
-	fmt.Print(s.Summary(request.ByID))
+	logs.Print(s.Summary(request.ByID))
 	return nil
 }
 

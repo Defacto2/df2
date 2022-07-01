@@ -135,7 +135,7 @@ func (t *TextFile) ExtractedImgs(dir string) error {
 	if err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
-	fmt.Println("n", n)
+	logs.Println("n", n)
 	if _, err := os.Stat(n); os.IsNotExist(err) {
 		return fmt.Errorf("extractedimgs: %w", os.ErrNotExist)
 	} else if err != nil {

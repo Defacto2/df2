@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/Defacto2/df2/pkg/logs"
 )
 
 // netpbm requires the installation of Netpbm.
@@ -84,13 +86,13 @@ func Convert(src, dest string) error {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, bash, "-c", cmdStr)
-	fmt.Printf("running %s\n", cmdStr)
+	logs.Printf("running %s\n", cmdStr)
 	out, err := cmd.Output()
 	if err != nil {
 		return err
 	}
 	if len(out) > 0 {
-		fmt.Printf("%s: %s", prog, string(out))
+		logs.Printf("%s: %s", prog, string(out))
 	}
 	return nil
 }

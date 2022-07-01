@@ -57,8 +57,7 @@ func Fix(summary bool) error { //nolint:funlen
 		s.Columns = columns
 		s.Values = &values
 		if err := r.Iterate(&s); err != nil {
-			fmt.Println()
-			log.Printf("%s\n", err)
+			log.Printf("\n%s\n", err)
 			continue
 		}
 		logs.Println()
