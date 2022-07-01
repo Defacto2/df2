@@ -28,7 +28,11 @@ const (
 	txt = ".txt"
 )
 
-var ErrNotArc = errors.New("format specified by source filename is not an archive format")
+var (
+	ErrDir    = errors.New("is a directory")
+	ErrFile   = errors.New("no such file")
+	ErrNotArc = errors.New("format specified by source filename is not an archive format")
+)
 
 // Copy copies a file to the destination.
 func Copy(name, dest string) (written int64, err error) {
@@ -219,6 +223,11 @@ func Proof(src, filename, uuid string) error {
 // src is the absolute path to the archive file named as a unique id.
 // name is the original archive filename and file extension.
 func Read(src, name string) ([]string, string, error) {
+	if info, err := os.Stat(src); os.IsNotExist(err) {
+		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrFile)
+	} else if info.IsDir() {
+		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrDir)
+	}
 	files, filename, err := Readr(src, name)
 	if err != nil {
 		return nil, "", fmt.Errorf("read uuid/filename: %w", err)
