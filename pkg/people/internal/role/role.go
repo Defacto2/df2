@@ -182,15 +182,10 @@ func Rename(replacement, name string, r Role) (count int64, err error) {
 }
 
 // Clean fixes and saves a malformed name.
-func Clean(name string, r Role, sim bool) (ok bool) {
+func Clean(name string, r Role) (ok bool) {
 	rep := CleanS(Trim(name))
 	if rep == name {
 		return false
-	}
-	if sim {
-		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), name,
-			color.Question.Sprint("!="), color.Info.Sprint(r))
-		return true
 	}
 	s := str.Y()
 	ok = true

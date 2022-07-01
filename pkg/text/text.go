@@ -18,7 +18,7 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix(simulate bool) error {
+func Fix() error {
 	dir, db := directories.Init(false), database.Connect()
 	defer db.Close()
 	rows, err := db.Query(fixStmt)
@@ -35,9 +35,7 @@ func Fix(simulate bool) error {
 		}
 	}
 	fmt.Println("scanned", c, "fixes from", i, "text file records")
-	if simulate && c > 0 {
-		logs.Simulate()
-	} else if c == 0 {
+	if c == 0 {
 		logs.Println("everything is okay, there is nothing to do")
 	}
 	return nil

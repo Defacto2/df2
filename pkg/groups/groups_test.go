@@ -40,15 +40,14 @@ func TestVariations(t *testing.T) {
 
 func TestFix(t *testing.T) {
 	tests := []struct {
-		name     string
-		simulate bool
-		wantErr  bool
+		name    string
+		wantErr bool
 	}{
-		{"sim", true, false},
+		{"fix", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := groups.Fix(tt.simulate); (err != nil) != tt.wantErr {
+			if err := groups.Fix(); (err != nil) != tt.wantErr {
 				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

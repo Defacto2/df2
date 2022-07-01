@@ -8,7 +8,6 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logs"
-	"github.com/Defacto2/df2/pkg/str"
 )
 
 // Request Demozoo entries.
@@ -16,7 +15,6 @@ type Request struct {
 	All       bool   // Parse all demozoo entries.
 	Overwrite bool   // Overwrite any existing files.
 	Refresh   bool   // Refresh all demozoo entries.
-	Simulate  bool   // Simulate database save.
 	ByID      string // Filter by ID.
 	Quiet     bool
 }
@@ -96,12 +94,7 @@ func (r Request) Queries() error { //nolint: funlen
 		if st.Total == 0 {
 			break
 		}
-		switch {
-		case r.Simulate:
-			logs.Printf(" • dry-run %v", str.Y())
-		default:
-			rec.save()
-		}
+		rec.save()
 	}
 	if r.ByID != "" {
 		st.ByID = r.ByID

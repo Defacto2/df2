@@ -19,7 +19,7 @@ var demozooCmd = &cobra.Command{
 	Long: `Manage upload submissions that rely on the API hosted on demozoo.org.
 There are additional Demozoo commands found under the api command.`,
 	Aliases: []string{"d", "dz"},
-	Example: `  df2 demozoo [--new|--all|--releases|--id] (--dry-run,--overwrite)
+	Example: `  df2 demozoo [--new|--all|--releases|--id] (--overwrite)
   df2 demozoo [--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		quiet := false
@@ -49,8 +49,6 @@ func init() { // nolint:gochecknoinits
 		"add to the local files all the productions of a demozoo scener")
 	demozooCmd.Flags().StringVarP(&dzf.ID, "id", "i", "",
 		"replace any empty data cells of a local file with linked demozoo data")
-	demozooCmd.Flags().BoolVarP(&dzf.Simulate, "dry-run", "d", false,
-		"simulate the fixes and display the expected changes")
 	demozooCmd.Flags().BoolVar(&dzf.Overwrite, "overwrite", false,
 		"rescan archives and overwrite all existing assets\n")
 	demozooCmd.Flags().UintVarP(&dzf.Ping, "ping", "p", 0,

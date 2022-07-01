@@ -65,10 +65,10 @@ This includes the formatting and trimming of groups, people, platforms and secti
 		if err := database.Fix(); err != nil {
 			log.Print(err)
 		}
-		if err := groups.Fix(gf.Simulate); err != nil {
+		if err := groups.Fix(); err != nil {
 			log.Print(err)
 		}
-		if err := people.Fix(gf.Simulate); err != nil {
+		if err := people.Fix(); err != nil {
 			log.Print(err)
 		}
 	},
@@ -92,7 +92,7 @@ var fixImagesCmd = &cobra.Command{
 that are raster images.`,
 	Aliases: []string{"i"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := images.Fix(gf.Simulate); err != nil {
+		if err := images.Fix(); err != nil {
 			log.Print(err)
 		}
 	},
@@ -105,7 +105,7 @@ var fixTextCmd = &cobra.Command{
 that are plain text files.`,
 	Aliases: []string{"t", "txt"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := text.Fix(gf.Simulate); err != nil {
+		if err := text.Fix(); err != nil {
 			log.Print(err)
 		}
 	},
@@ -133,8 +133,6 @@ func init() { // nolint:gochecknoinits
 	fixCmd.AddCommand(fixImagesCmd)
 	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.AddCommand(fixZipCmmtCmd)
-	fixCmd.PersistentFlags().BoolVarP(&gf.Simulate, "dry-run", "d", false,
-		"simulate the fixes and display the expected changes")
 	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.ASCII, "print", "p", false,
 		"also print saved comments to the stdout")
 	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.Unicode, "unicode", "u", false,

@@ -24,10 +24,10 @@ var approveCmd = &cobra.Command{
 		if err := database.Fix(); err != nil {
 			log.Print(err)
 		}
-		if err := groups.Fix(gf.Simulate); err != nil {
+		if err := groups.Fix(); err != nil {
 			log.Print(err)
 		}
-		if err := people.Fix(gf.Simulate); err != nil {
+		if err := people.Fix(); err != nil {
 			log.Print(err)
 		}
 	},
@@ -37,6 +37,4 @@ func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(approveCmd)
 	approveCmd.Flags().BoolVarP(&appr.Verbose, "verbose", "v", false,
 		"display all file records that qualify to go public")
-	approveCmd.PersistentFlags().BoolVarP(&gf.Simulate, "dry-run", "d", false,
-		"simulate the fixes and display the expected changes")
 }

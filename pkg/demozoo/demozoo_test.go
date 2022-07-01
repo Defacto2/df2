@@ -18,7 +18,6 @@ func TestRequest_Query(t *testing.T) {
 		All:       false,
 		Overwrite: false,
 		Refresh:   false,
-		Simulate:  true,
 	}
 	tests := []struct {
 		name    string

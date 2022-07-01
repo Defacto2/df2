@@ -230,7 +230,7 @@ func TestGetID(t *testing.T) {
 }
 
 func TestGetFile(t *testing.T) {
-	const f = "Defacto2_ISO_2007.7z"
+	const f = "Defacto2_Cracktro_Pack-2007.7z"
 	tests := []struct {
 		name    string
 		s       string
@@ -239,8 +239,8 @@ func TestGetFile(t *testing.T) {
 	}{
 		{"blank", "", "", true},
 		{"txt", "invalid", "", true},
-		{"one", "1", f, false},
-		{"uuid", uuid1, f, false},
+		{"id2", "2", f, false},
+		{"uuid2", "c8cd0f9e-2f54-11e0-8827-cc1607e15609", f, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

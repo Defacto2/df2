@@ -176,7 +176,7 @@ func parse(filename, tpl string, r Request) error {
 }
 
 // Fix any malformed group names found in the database.
-func Fix(simulate bool) error {
+func Fix() error {
 	c, start := 0, time.Now()
 	for _, r := range []role.Role{role.Artists, role.Coders, role.Musicians, role.Writers} {
 		credits, _, err := role.List(r)
@@ -184,15 +184,12 @@ func Fix(simulate bool) error {
 			return err
 		}
 		for _, credit := range credits {
-			if r := role.Clean(credit, r, simulate); r {
+			if r := role.Clean(credit, r); r {
 				c++
 			}
 		}
 	}
 	switch {
-	case c > 0 && simulate:
-		logs.Printcrf("%d fixes required", c)
-		logs.Simulate()
 	case c == 1:
 		logs.Printcr("1 fix applied")
 	case c > 0:
@@ -200,10 +197,8 @@ func Fix(simulate bool) error {
 	default:
 		logs.Printcr("no people fixes needed")
 	}
-	if !simulate {
-		elapsed := time.Since(start).Seconds()
-		logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
-	}
+	elapsed := time.Since(start).Seconds()
+	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
 	return nil
 }
 

@@ -355,16 +355,14 @@ func TestWebPCalc(t *testing.T) {
 
 func TestFix(t *testing.T) {
 	tests := []struct {
-		name     string
-		simulate bool
-		wantErr  bool
+		name    string
+		wantErr bool
 	}{
-		{"simulate", true, false},
-		{"run", false, false},
+		{"run", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := images.Fix(tt.simulate); (err != nil) != tt.wantErr {
+			if err := images.Fix(); (err != nil) != tt.wantErr {
 				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

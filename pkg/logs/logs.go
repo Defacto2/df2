@@ -182,11 +182,6 @@ func Printcrf(format string, a ...any) {
 	}
 }
 
-// Simulate prints the --simulate=false flag info.
-func Simulate() {
-	Println(color.Notice.Sprint("use the --simulate=false flag to apply these fixes"))
-}
-
 func fatal(err error) {
 	log.Printf("%s %s", color.Danger.Sprint("!"), err)
 	os.Exit(1)

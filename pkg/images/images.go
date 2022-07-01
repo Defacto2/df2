@@ -21,7 +21,6 @@ import (
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/gookit/color"
 	"github.com/nickalie/go-webpbin"
 	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
@@ -57,7 +56,7 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are images.
-func Fix(simulate bool) error {
+func Fix() error {
 	dir := directories.Init(false)
 	db := database.Connect()
 	defer db.Close()
@@ -86,19 +85,13 @@ func Fix(simulate bool) error {
 			} else if err != nil {
 				return fmt.Errorf("images fix stat: %w", err)
 			}
-			if simulate {
-				logs.Printf("%s\n", color.Question.Sprint("?"))
-				continue
-			}
 			if err := Generate(filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
 				return fmt.Errorf("images fix generate: %w", err)
 			}
 			logs.Print("\n")
 		}
 	}
-	if simulate && c > 0 {
-		logs.Simulate()
-	} else if c == 0 {
+	if c == 0 {
 		logs.Println("everything is okay, there is nothing to do")
 	}
 	return nil

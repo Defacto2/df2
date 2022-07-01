@@ -40,7 +40,6 @@ type Apis struct {
 type Demozoo struct {
 	All       bool // scan for all proofs, not just new submissions
 	Overwrite bool // overwrite all existing assets
-	Simulate  bool
 	New       bool
 	ID        string // auto-generated id or a uuid
 	Extract   []string
@@ -54,7 +53,6 @@ type Execute struct {
 	Filename string // Filename of the config file.
 	Quiet    bool   // Quiet mode to reduce text amount of stdout text.
 	Panic    bool   // Enable panic errors to help debug.
-	Simulate bool   // Simulate...
 }
 
 type Group struct {

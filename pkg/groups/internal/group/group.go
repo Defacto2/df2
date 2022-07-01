@@ -181,15 +181,10 @@ type Request struct {
 }
 
 // Clean a malformed group name and save the fix to the database.
-func Clean(name string, sim bool) (ok bool) {
+func Clean(name string) (ok bool) {
 	f := CleanS(name)
 	if f == name {
 		return false
-	}
-	if sim {
-		logs.Printf("\n%s %q %s %s", color.Question.Sprint("?"), name,
-			color.Question.Sprint("!="), color.Info.Sprint(f))
-		return true
 	}
 	s := str.Y()
 	ok = true

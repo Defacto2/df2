@@ -98,7 +98,6 @@ func Demozoo(dzf arg.Demozoo, quiet bool) error {
 	r := demozoo.Request{
 		All:       dzf.All,
 		Overwrite: dzf.Overwrite,
-		Simulate:  dzf.Simulate,
 		Quiet:     quiet,
 	}
 	switch {
@@ -304,7 +303,6 @@ func New() error {
 		All:       false,
 		Overwrite: false,
 		Refresh:   false,
-		Simulate:  false,
 	}
 	if err := newDZ.Queries(); err != nil {
 		return err
@@ -326,12 +324,12 @@ func New() error {
 	}
 	i++
 	color.Info.Printf("%d. generate missing images\n", i)
-	if err := images.Fix(false); err != nil {
+	if err := images.Fix(); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. generate missing text previews\n", i)
-	if err := text.Fix(false); err != nil {
+	if err := text.Fix(); err != nil {
 		return err
 	}
 	i++
@@ -344,7 +342,7 @@ func New() error {
 	if err := database.Fix(); err != nil {
 		return err
 	}
-	return groups.Fix(false)
+	return groups.Fix()
 }
 
 func People(pf arg.People) error {

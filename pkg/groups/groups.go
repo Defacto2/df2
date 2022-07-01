@@ -69,7 +69,7 @@ func Cronjob(force bool) error {
 }
 
 // Fix any malformed group names found in the database.
-func Fix(simulate bool) error {
+func Fix() error {
 	// fix group names stored in the files table
 	names, _, err := group.List("")
 	if err != nil {
@@ -77,14 +77,11 @@ func Fix(simulate bool) error {
 	}
 	c, start := 0, time.Now()
 	for _, name := range names {
-		if r := group.Clean(name, simulate); r {
+		if r := group.Clean(name); r {
 			c++
 		}
 	}
 	switch {
-	case c > 0 && simulate:
-		logs.Printcrf("%d fixes required", c)
-		logs.Simulate()
 	case c == 1:
 		logs.Printcr("1 fix applied")
 	case c > 0:
