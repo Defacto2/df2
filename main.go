@@ -40,9 +40,12 @@ var (
 )
 
 func main() {
+	// terminal stderr and stdout configurations
+	rmLogTimestamp()
 	if ascii() {
 		color.Enable = false
 	}
+	// print the compile and version details
 	if ver() {
 		fmt.Println(info())
 		return
@@ -96,6 +99,12 @@ func ver() bool {
 		}
 	}
 	return false
+}
+
+// rmLogTimestamp removes the timestamp prefixed to the print functions of the log lib.
+func rmLogTimestamp() {
+	// source: https://stackoverflow.com/questions/48629988/remove-timestamp-prefix-from-go-logger
+	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 }
 
 func exeTmp() string {
