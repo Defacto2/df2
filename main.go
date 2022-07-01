@@ -40,6 +40,9 @@ var (
 )
 
 func main() {
+	if ascii() {
+		color.Enable = false
+	}
 	if ver() {
 		fmt.Println(info())
 		return
@@ -58,6 +61,15 @@ func main() {
 // global flags that should not be handled by the Cobra library
 // to keep things simple, avoid using the flag standard library
 
+func ascii() bool {
+	for _, f := range os.Args {
+		switch strings.ToLower(f) {
+		case "-ascii", "--ascii":
+			return true
+		}
+	}
+	return false
+}
 func help() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {

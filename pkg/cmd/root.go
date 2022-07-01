@@ -60,6 +60,8 @@ func Execute() error {
 func init() { // nolint:gochecknoinits
 	cobra.OnInitialize()
 	readIn()
+	rootCmd.PersistentFlags().BoolVar(&gf.Ascii, "ascii", false,
+		"suppress all ANSI color feedback")
 	rootCmd.PersistentFlags().BoolVar(&gf.Quiet, "quiet", false,
 		"suppress all feedback except for errors")
 	rootCmd.PersistentFlags().BoolVarP(&gf.Version, "version", "v", false,
