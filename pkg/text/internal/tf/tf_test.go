@@ -214,6 +214,7 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 }
 
 func TestImages(t *testing.T) {
+	color.Enable = false
 	d := config(t)
 	type fields struct {
 		UUID string
@@ -223,26 +224,29 @@ func TestImages(t *testing.T) {
 		dir string
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name        string
+		fields      fields
+		args        args
+		wantPngErr  bool
+		wantWebPErr bool
 	}{
-		{"empty", fields{}, args{}, false},
-		{"okay", fields{UUID: uuid}, args{c: 1, dir: textDir}, false},
+		{"empty", fields{}, args{}, true, false},
+		{"okay", fields{UUID: uuid}, args{c: 1, dir: textDir}, false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tr := &tf.TextFile{
 				UUID: tt.fields.UUID,
 			}
-			if err := tr.TextPng(tt.args.c, tt.args.dir); (err != nil) != tt.wantErr {
-				t.Errorf("TextFile.TextPng() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if _, err := tr.WebP(tt.args.c, tt.args.dir); (err != nil) != tt.wantErr {
-				t.Errorf("TextFile.WebP() error = %v, wantErr %v", err, tt.wantErr)
+			if err := tr.TextPng(tt.args.c, tt.args.dir); (err != nil) != tt.wantPngErr {
+				t.Errorf("TextFile.TextPng() error = %v, wantErr %v", err, tt.wantPngErr)
+				return
 			}
 			defer os.Remove(filepath.Join(d, uuid+".png"))
+			if _, err := tr.WebP(tt.args.c, tt.args.dir); (err != nil) != tt.wantWebPErr {
+				t.Errorf("TextFile.WebP() error = %v, wantErr %v", err, tt.wantWebPErr)
+				return
+			}
 			defer os.Remove(filepath.Join(d, uuid+".webp"))
 		})
 	}
