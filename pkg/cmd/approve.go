@@ -35,6 +35,6 @@ var approveCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(approveCmd)
-	approveCmd.Flags().BoolVarP(&appr.Verbose, "verbose", "v", false,
+	approveCmd.Flags().BoolVar(&appr.Verbose, "verbose", false,
 		"display all file records that qualify to go public")
 }
