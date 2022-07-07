@@ -50,14 +50,14 @@ func main() {
 		fmt.Println(info())
 		return
 	}
-	// supress stdout except when requesting help
+	// suppress stdout except when requesting help
 	if quiet() && !help() {
 		os.Stdout, _ = os.OpenFile(os.DevNull, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		defer os.Stdout.Close()
 	}
 	// cobra flag library
 	if err := cmd.Execute(); err != nil {
-		os.Exit(1)
+		defer os.Exit(1)
 	}
 }
 
@@ -73,6 +73,7 @@ func ascii() bool {
 	}
 	return false
 }
+
 func help() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -82,6 +83,7 @@ func help() bool {
 	}
 	return false
 }
+
 func quiet() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -91,6 +93,7 @@ func quiet() bool {
 	}
 	return false
 }
+
 func ver() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {

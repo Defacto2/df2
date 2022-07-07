@@ -13,7 +13,7 @@ import (
 )
 
 // Fix the content of zip archives within in the database.
-func Fix(summary bool) error { //nolint:funlen
+func Fix(summary bool) error {
 	s := scan.Init()
 	db := database.Connect()
 	defer db.Close()

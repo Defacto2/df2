@@ -51,9 +51,10 @@ type Demozoo struct {
 // Execute global flags.
 type Execute struct {
 	Panic   bool // Enable panic errors to help debug.
-	Ascii   bool // Ascii is placeholder for Cobra to store the PersistentFlag value, but the quiet flag is handled by main.go.
-	Quiet   bool // Quiet is placeholder for Cobra to store the PersistentFlag value, but the quiet flag is handled by main.go.
-	Version bool // Version is placeholder for Cobra to store the PersistentFlag value, but the version flag is handled by main.go.
+	ASCII   bool // Ascii is placeholder for Cobra to store the PersistentFlag value*
+	Quiet   bool // Quiet is placeholder for Cobra to store the PersistentFlag value*
+	Version bool // Version is placeholder for Cobra to store the PersistentFlag value*
+	// * but the quiet flag is handled by main.go.
 }
 
 type Group struct {

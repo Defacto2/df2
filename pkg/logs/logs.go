@@ -27,9 +27,7 @@ const (
 	newmode int         = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 )
 
-var (
-	panicErr = false //nolint:gochecknoglobals
-)
+var panicErr = false //nolint:gochecknoglobals
 
 // Panic enables or disables panicking when Danger is used.
 func Panic(b bool) {
