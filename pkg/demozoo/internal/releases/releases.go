@@ -125,9 +125,12 @@ func Tags(platforms, types, title string) (platform, section string) {
 	case "Executable Graphics":
 		section = logo
 		platform = "dos"
-	case "Artpack", "Pack", "ASCII Collection":
-		section = "bbs"
-		platform = "package"
+	case "ASCII Collection":
+		section = "package"
+		platform = "text"
+	case "Artpack", "Pack":
+		section = "package"
+		platform = "bbs"
 	case "Graphics":
 		section = logo
 		platform = "image"
