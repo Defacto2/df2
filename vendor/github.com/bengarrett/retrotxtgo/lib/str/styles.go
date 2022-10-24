@@ -38,6 +38,7 @@ const (
 	Term16M
 	// HBar is a the Unicode horizontal bar character.
 	HBar = "\u2500"
+
 	none = "none"
 	term = "terminal"
 )
@@ -55,22 +56,22 @@ type JSONExample struct {
 	}
 }
 
-func (s JSONExample) String(flag string) string {
+func (s JSONExample) String(flag string) (string, error) {
 	w := new(bytes.Buffer)
 	fmt.Fprintln(w)
 	// config is stored as YAML but printed as JSON
 	out, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
-		log.Fatalln(fmt.Errorf("json example marshal indent: %w", err))
+		return "", fmt.Errorf("json example marshal indent: %w", err)
 	}
 	if flag != "" {
 		fmt.Fprintln(w, "\n"+color.Secondary.Sprintf("%s=%q", flag, s.Style.Name))
 	}
 	if err := HighlightWriter(w, string(out), "json", s.Style.Name, true); err != nil {
 		// cannot use the logs package as it causes an import cycle error
-		log.Fatalln(fmt.Errorf("json example highlight syntax error: %w", err))
+		return "", fmt.Errorf("json example highlight syntax error: %w", err)
 	}
-	return w.String()
+	return w.String(), nil
 }
 
 // Border wraps the string around a single line border.
@@ -87,27 +88,26 @@ func Border(s string) *bytes.Buffer {
 	maxLen += split
 	scanner = bufio.NewScanner(strings.NewReader(s))
 	scanner.Split(bufio.ScanLines)
-	var b bytes.Buffer
-	fmt.Fprintln(&b, ("┌" + strings.Repeat("─", maxLen) + "┐"))
+	w := new(bytes.Buffer)
+	fmt.Fprintln(w, ("┌" + strings.Repeat("─", maxLen) + "┐"))
 	for scanner.Scan() {
 		l := utf8.RuneCountInString(scanner.Text())
-		lp := ((maxLen - l) / 2)
+		lp := ((maxLen - l) / split)
 		rp := lp
 		// if lp/rp are X.5 decimal values, add 1 right padd to account for the uneven split
 		if float32((maxLen-l)/split) != float32(maxLen-l)/split {
 			rp++
 		}
-		fmt.Fprintf(&b, "│%s%s%s│\n", strings.Repeat(" ", lp), scanner.Text(), strings.Repeat(" ", rp))
+		fmt.Fprintf(w, "│%s%s%s│\n", strings.Repeat(" ", lp), scanner.Text(), strings.Repeat(" ", rp))
 	}
-	fmt.Fprintln(&b, "└"+strings.Repeat("─", maxLen)+"┘")
-	return &b
+	fmt.Fprintln(w, "└"+strings.Repeat("─", maxLen)+"┘")
+	return w
 }
 
 // Center align text to a the width of an area.
 func Center(width int, s string) string {
 	const split, space = 2, "\u0020"
-	w := (width - len(s)) / split
-	if w > 0 {
+	if w := (width - len(s)) / split; w > 0 {
 		return strings.Repeat(space, w) + s
 	}
 	return s
@@ -152,7 +152,11 @@ func HighlightWriter(w io.Writer, source, lexer, style string, ansi bool) error 
 // Provide a fixed width value for the underline border or set to zero.
 func Head(width int, s string) string {
 	const div, padding = 2, 4
-	h, r, p := ColPri(s), "", ""
+	var (
+		h string
+		p string
+		r string
+	)
 	if width == 0 {
 		r = strings.Repeat(HBar, len(s)+padding)
 		p = strings.Repeat(" ", padding/div)
@@ -184,11 +188,11 @@ func NumberizeKeys(keys ...string) string {
 		return ""
 	}
 	const nbsp = "\u00A0"
-	var s = make([]string, len(keys))
+	s := make([]string, len(keys))
 	sort.Strings(keys)
 	for i, key := range keys {
 		if i == 0 {
-			s[i] = fmt.Sprintf("  Use %s for%s%s", Example(strconv.Itoa(i)), nbsp, key)
+			s[i] = fmt.Sprintf("Use %s for%s%s", Example(strconv.Itoa(i)), nbsp, key)
 			continue
 		}
 		s[i] = fmt.Sprintf("      %s for%s%s", Example(strconv.Itoa(i)), nbsp, key)
@@ -238,16 +242,19 @@ func UnderlineChar(c string) (string, error) {
 	if !utf8.ValidString(c) {
 		return "", fmt.Errorf("underlinechar %q: %w", c, ErrRune)
 	}
-	var buf bytes.Buffer
+	if !color.Enable {
+		return c, nil
+	}
+	w := new(bytes.Buffer)
 	r, _ := utf8.DecodeRuneInString(c)
 	t, err := template.New("underline").Parse("{{define \"TEXT\"}}\033[0m\033[4m{{.}}\033[0m{{end}}")
 	if err != nil {
 		return "", fmt.Errorf("underlinechar new template: %w", err)
 	}
-	if err = t.ExecuteTemplate(&buf, "TEXT", string(r)); err != nil {
+	if err = t.ExecuteTemplate(w, "TEXT", string(r)); err != nil {
 		return "", fmt.Errorf("underlinechar execute template: %w", err)
 	}
-	return buf.String(), nil
+	return w.String(), nil
 }
 
 // UnderlineKeys uses ANSI to underline the first letter of each key.
@@ -287,18 +294,21 @@ func UnderlineKeys(keys ...string) string {
 }
 
 // JSONStyles prints out a list of available YAML color styles.
-func JSONStyles(cmd string) string {
-	w := new(bytes.Buffer)
+func JSONStyles(w io.Writer, cmd string) error {
 	for i, s := range styles.Names() {
 		var example JSONExample
 		example.Style.Name, example.Style.Count = s, i
 		if s == "dracula" {
 			example.Style.Default = true
 		}
-		fmt.Fprint(w, example.String(cmd))
+		es, err := example.String(cmd)
+		if err != nil {
+			return err
+		}
+		fmt.Fprint(w, es)
 	}
 	fmt.Fprintln(w)
-	return w.String()
+	return nil
 }
 
 // Valid checks style name validity.

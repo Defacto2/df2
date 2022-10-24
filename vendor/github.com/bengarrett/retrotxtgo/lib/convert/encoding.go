@@ -185,7 +185,7 @@ func Encoder(name string) (encoding.Encoding, error) {
 		// ISO-8859-11 uses the same characters as Windows 847
 		// except for 9 characters in rows 8 and 9.
 		// https://en.wikipedia.org/wiki/ISO/IEC_8859-11#Code_page_874_(IBM)_/_9066
-		return charmap.Windows874, nil
+		return charmap.XUserDefined, nil
 	}
 	if e := encodeUTF32(a); e != nil {
 		return e, nil
@@ -229,7 +229,7 @@ func Humanize(name string) string {
 }
 
 // shorten the name to a custom name, a common name or an alias.
-func shorten(name string) string { // nolint:gocyclo
+func shorten(name string) string { // nolint:gocognit,cyclop
 	n, l := strings.ToLower(name), len(name)
 	switch {
 	case l > 3 && n[:3] == "cp-":
@@ -626,12 +626,14 @@ func (c *Convert) RunesDOS() {
 		return
 	}
 	// ASCII C0 = row 1, C1 = row 2
-	var ctrls = [32]string{string(picture(row8 + byte(0))),
+	ctrls := [32]string{
+		string(picture(row8 + byte(0))),
 		"\u263A", "\u263B", "\u2665", "\u2666", "\u2663", "\u2660",
 		"\u2022", "\u25D8", "\u25CB", "\u25D9", "\u2642", "\u2640",
 		"\u266A", "\u266B", "\u263C", "\u25BA", "\u25C4", "\u2195",
 		"\u203C", "\u00B6", "\u00A7", "\u25AC", "\u21A8", "\u2191",
-		"\u2193", "\u2192", "\u2190", "\u221F", "\u2194", "\u25B2", "\u25BC"}
+		"\u2193", "\u2192", "\u2190", "\u221F", "\u2194", "\u25B2", "\u25BC",
+	}
 	for i := 0; i < len(c.Output); i++ {
 		r := c.Output[i]
 		if c.skipIgnores(i) {
@@ -675,7 +677,7 @@ func (c *Convert) RunesEBCDIC() {
 }
 
 // control switches out an EBCDIC IBM mainframe control with Unicode picture representation.
-func (c *Convert) control(i int, r rune) (skip bool) { // nolint:gocyclo
+func (c *Convert) control(i int, r rune) (skip bool) { //nolint:funlen,cyclop
 	if i > len(c.Output) {
 		return false
 	}
@@ -700,39 +702,53 @@ func (c *Convert) control(i int, r rune) (skip bool) { // nolint:gocyclo
 	switch r {
 	case HT:
 		c.Output[i] = picture(ht)
+		return false
 	case DEL:
 		c.Output[i] = picture(del)
+		return false
 	case nel:
 		if c.lineBreaks {
-			// Go will automatically convert this to CRLF on Windows
-			c.Output[i] = LF
+			c.Output[i] = LF // Go will automatically convert this to CRLF on Windows
 			return true
 		}
 		c.Output[i] = picture(nl)
+		return false
 	case BS:
 		c.Output[i] = picture(bs)
+		return false
 	case LF:
 		c.Output[i] = picture(lf)
+		return false
 	case ETB:
 		c.Output[i] = picture(etb)
+		return false
 	case ESC:
 		c.Output[i] = picture(esc)
+		return false
 	case ENQ:
 		c.Output[i] = picture(enq)
+		return false
 	case ACK:
 		c.Output[i] = picture(ack)
+		return false
 	case BEL:
 		c.Output[i] = picture(bel)
+		return false
 	case SYN:
 		c.Output[i] = picture(syn)
+		return false
 	case Dash:
 		c.Output[i] = picture(eot)
+		return false
 	case DC4:
 		c.Output[i] = picture(dc4)
+		return false
 	case NAK:
 		c.Output[i] = picture(nak)
+		return false
 	case SUB:
 		c.Output[i] = picture(sub)
+		return false
 	default:
 		c.miscCtrls(i, r)
 	}
@@ -930,7 +946,7 @@ func (c *Convert) skipLineBreaks(i int) bool {
 	if !c.lineBreaks {
 		return false
 	}
-	var l, r0, r1 = len(c.Output) - 1, c.Output[i], rune(0)
+	l, r0, r1 := len(c.Output)-1, c.Output[i], rune(0)
 	if i < l {
 		// check for multi-byte line breaks
 		r1 = c.Output[i+1]

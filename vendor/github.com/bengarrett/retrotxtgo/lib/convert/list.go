@@ -2,6 +2,7 @@ package convert
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -20,26 +21,34 @@ import (
 	"golang.org/x/text/encoding/unicode/utf32"
 )
 
-type cell struct {
-	name    string
-	value   string
-	numeric string
-	alias   string
+type Cell struct {
+	Name    string
+	Value   string
+	Numeric string
+	Alias   string
 }
+
+var (
+	ErrNilEncoding = errors.New("character encoding cannot be a nil value")
+)
 
 const latin = "isolatin"
 
 // Encodings returns all the supported legacy text encodings.
 func Encodings() []encoding.Encoding {
-	a, e := charmap.All, []encoding.Encoding{}
+	e := []encoding.Encoding{}
+	// create a collection of all the encodings
+	a := charmap.All
 	a = append(a, japanese.All...)
 	a = append(a, unicode.All...)
 	a = append(a, utf32.All...)
+	// iterate the collection and skip the unwanted and duplicate encodings
 	for _, m := range a {
 		switch m {
 		case japanese.EUCJP,
 			japanese.ISO2022JP,
 			charmap.MacintoshCyrillic:
+			//charmap.XUserDefined: // XUserDefined creates a duplicate of Windows 874.
 			continue
 		}
 		e = append(e, m)
@@ -48,7 +57,7 @@ func Encodings() []encoding.Encoding {
 }
 
 // List returns a tabled list of supported IANA character set encodings.
-func List() *bytes.Buffer {
+func List() *bytes.Buffer { //nolint:funlen
 	const header, title = " Formal name\t Named value\t Numeric value\t Alias value\t",
 		" Supported legacy code pages and character encodings "
 	var buf bytes.Buffer
@@ -63,24 +72,48 @@ func List() *bytes.Buffer {
 		if e == charmap.XUserDefined {
 			continue
 		}
-		c := cells(e)
+		c, err := Cells(e)
+		if err != nil {
+			log.Fatal(err)
+		}
 		switch e {
 		case charmap.ISO8859_10:
-			fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
-			fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n", "ISO 8895-11", "iso-8895-11", "11", "iso889511")
+			fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n",
+				c.Name, c.Value, c.Numeric, c.Alias)
+			// intentionally insert ISO-8895-11 after 10.
+			fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n",
+				"ISO 8895-11", "iso-8895-11", "11", "iso889511")
 			continue
 		case charmap.CodePage037, charmap.CodePage1047, charmap.CodePage1140:
-			fmt.Fprintf(w, " *%s\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
+			fmt.Fprintf(w, " * %s\t %s\t %s\t %s\t\n",
+				c.Name, c.Value, c.Numeric, c.Alias)
+			continue
+		case
+			unicode.UTF16(unicode.BigEndian, unicode.UseBOM),
+			unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM),
+			unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM),
+			utf32.UTF32(utf32.BigEndian, utf32.UseBOM),
+			utf32.UTF32(utf32.BigEndian, utf32.IgnoreBOM),
+			utf32.UTF32(utf32.LittleEndian, utf32.IgnoreBOM):
+			fmt.Fprintf(w, " † %s\t %s\t %s\t %s\t\n",
+				c.Name, c.Value, c.Numeric, c.Alias)
 			continue
 		case AsaX34_1963, AsaX34_1965, AnsiX34_1967:
-			fmt.Fprintf(w, " **%s\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
+			fmt.Fprintf(w, " ⁑ %s\t %s\t %s\t %s\t\n",
+				c.Name, c.Value, c.Numeric, c.Alias)
 			continue
 		}
 		// do not use ANSI colors in cells as it will break the table layout
-		fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n", c.name, c.value, c.numeric, c.alias)
+		fmt.Fprintf(w, " %s\t %s\t %s\t %s\t\n",
+			c.Name, c.Value, c.Numeric, c.Alias)
 	}
-	fmt.Fprintln(w, "\n "+str.ColInf("*")+" EBCDIC encoding, is in use on IBM mainframes and not ASCII compatible.")
-	fmt.Fprintln(w, str.ColInf("**")+" ANSI X3.2 encodings are only usable with the "+str.Example("list table")+" command.")
+	fmt.Fprintln(w, "\n "+str.ColInf("*")+
+		" A EBCDIC encoding in use on IBM mainframes but is not ASCII compatible.")
+	fmt.Fprintln(w, " "+str.ColInf("†")+
+		" UTF-16/32 encodings are NOT usable with the "+str.Example("list table")+" command.")
+	fmt.Fprintln(w, " "+str.ColInf("⁑")+
+		" ANSI X3.4 encodings are only usable with the "+str.Example("list table")+" command."+
+		"\n   You can use the "+str.Example("list table ascii")+" command to list all three X3.4 tables.")
 	fmt.Fprintln(w, "\nEither named, numeric or alias values are valid codepage arguments.")
 	fmt.Fprintln(w, "  These values all match ISO 8859-1.")
 	cmds := fmt.Sprintf("%s list table ", meta.Bin)
@@ -106,83 +139,105 @@ func List() *bytes.Buffer {
 	return &buf
 }
 
-// cells return character encoding details for use in a text table.
-func cells(e encoding.Encoding) cell {
+// Cells return character encoding details for use in a text table.
+func Cells(e encoding.Encoding) (Cell, error) {
 	if e == nil {
-		return cell{}
+		return Cell{}, ErrNilEncoding
 	}
-	c := cell{
-		name: fmt.Sprint(e),
+	c := Cell{
+		Name: fmt.Sprint(e),
 	}
 	switch e {
 	case AsaX34_1963, AsaX34_1965, AnsiX34_1967:
-		c.value = x34(e)
-		return c
+		c.Value = AsaX34(e)
+		return c, nil
 	}
+
 	var err error
-	if c.value, err = htmlindex.Name(e); err == nil {
-		c.alias, err = ianaindex.MIME.Name(e)
+	if c.Value, err = htmlindex.Name(e); err == nil {
+		c.Alias, err = ianaindex.MIME.Name(e)
 		if err != nil {
-			log.Fatal(fmt.Errorf("list cells html index mime name: %w", err))
+			return Cell{}, err
 		}
 	} else {
-		c.value, err = ianaindex.MIME.Name(e)
+		c.Value, err = ianaindex.MIME.Name(e)
 		if err != nil {
-			log.Fatal(fmt.Errorf("list cells mime name: %w", err))
+			return Cell{}, err
 		}
 	}
-	c.value = strings.ToLower(uniform(c.value))
-	s1, s2 := strings.Split(c.name, " "), strings.Split(c.name, "-")
-	if i, err := strconv.Atoi(s1[len(s1)-1]); err == nil {
-		c.numeric = fmt.Sprint(i)
-	} else if i, err := strconv.Atoi(s2[len(s2)-1]); err == nil {
-		c.numeric = fmt.Sprint(i)
+	c.Value = strings.ToLower(Uniform(c.Value))
+
+	if i := Numeric(c.Name); i > -1 {
+		c.Numeric = fmt.Sprint(i)
 	}
-	c.alias = alias(c.alias, c.value, e)
-	return c
+
+	c.Alias, err = AliasFmt(c.Alias, c.Value, e)
+	if err != nil {
+		return Cell{}, err
+	}
+	return c, nil
 }
 
-// alias return character encoding aliases.
-func alias(s, val string, e encoding.Encoding) string {
-	a := strings.ToLower(s)
-	if a == val {
+// Numeric returns a numeric alias for a character encoding.
+// A -1 int is returned whenever an alias could not be generated.
+// Unicode based encodings always return -1.
+func Numeric(name string) int {
+	name = strings.ToLower(name)
+	if strings.Contains(name, "utf") {
+		return -1
+	}
+	s1, s2 := strings.Split(name, " "), strings.Split(name, "-")
+	if i, err := strconv.Atoi(s1[len(s1)-1]); err == nil {
+		return i
+	}
+	if i, err := strconv.Atoi(s2[len(s2)-1]); err == nil {
+		return i
+	}
+	return -1
+}
+
+// AliasFmt return character encoding aliases.
+func AliasFmt(alias, value string, e encoding.Encoding) (string, error) {
+	a := strings.ToLower(alias)
+	if a == value {
 		a = ""
 	}
-	if a == "" {
-		switch val {
-		case "cp437":
-			return "msdos"
-		case "cp850":
-			return "latinI"
-		case "cp852":
-			return "latinII"
-		case "macintosh":
-			return "mac"
-		}
-		var err error
-		a, err = ianaindex.MIB.Name(e)
-		if err != nil {
-			return ""
-		}
-		a = strings.ToLower(a)
-		if a == val {
-			return ""
-		}
-		if len(a) > 2 && a[:2] == "pc" {
-			return ""
-		}
-		if len(a) == 9 && a[:8] == latin {
-			return "latin" + a[8:]
-		}
-		if len(a) > 9 && a[:8] == latin {
-			return a[8:]
-		}
+	if a != "" {
+		return a, nil
 	}
-	return a
+	switch value {
+	case "cp437":
+		return "msdos", nil
+	case "cp850":
+		return "latinI", nil
+	case "cp852":
+		return "latinII", nil
+	case "macintosh":
+		return "mac", nil
+	}
+	var err error
+	a, err = ianaindex.MIB.Name(e)
+	if err != nil {
+		return "", err
+	}
+	a = strings.ToLower(a)
+	if a == value {
+		return "", nil
+	}
+	if len(a) > 2 && a[:2] == "pc" {
+		return "", nil
+	}
+	if len(a) == 9 && a[:8] == latin {
+		return "latin" + a[8:], nil
+	}
+	if len(a) > 9 && a[:8] == latin {
+		return a[8:], nil
+	}
+	return a, nil
 }
 
-// uniform formats MIME values.
-func uniform(mime string) string {
+// Uniform formats MIME values.
+func Uniform(mime string) string {
 	const limit = 1
 	s := mime
 	s = strings.Replace(s, "IBM00", "CP", limit)
