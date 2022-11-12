@@ -3,3 +3,4 @@ df2.exe
 internal/dist/
 UPDATES.md
 .bin
+.DS_Store
