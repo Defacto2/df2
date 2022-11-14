@@ -12,7 +12,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/uuid v1.3.0
-	github.com/gookit/color v1.5.1
+	github.com/gookit/color v1.5.2
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/muesli/go-app-paths v0.2.2
