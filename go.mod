@@ -2,7 +2,7 @@ module github.com/Defacto2/df2
 
 // do not forget to update .github/workflows/release.yml
 // run go mod vendor if package syncs fail
-go 1.18
+go 1.19
 
 require (
 	github.com/bengarrett/retrotxtgo v0.0.37
@@ -18,11 +18,11 @@ require (
 	github.com/muesli/go-app-paths v0.2.2
 	github.com/nickalie/go-webpbin v0.0.0-20220110095747-f10016bf2dc1
 	github.com/nwaples/rardecode v1.1.3
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
-	golang.org/x/image v0.0.0-20220617043117-41969df76e82
-	golang.org/x/sys v0.0.0-20220908164124-27713097b956
+	golang.org/x/image v0.1.0
+	golang.org/x/sys v0.2.0
 	golang.org/x/text v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -34,7 +34,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
