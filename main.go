@@ -119,6 +119,7 @@ func exeTmp() string {
  │  webp lib:     {{.Webp}}  │
  │  imagemagick:  {{.Magick}}  │
  │  netpbm:       {{.Netpbm}}  │
+ │  pngquant:     {{.PngQuant}}  │
  │ ─────────────────────────── │
  │  arj:          {{.Arj}}  │
  │  lhasa:        {{.Lha}}  │
@@ -171,6 +172,7 @@ func checks() looks {
 		"cwebp":    miss,
 		"convert":  miss,
 		"pnmtopng": miss,
+		"pngquant": miss,
 		"arj":      miss,
 		"lha":      miss,
 		"unrar":    miss,
@@ -198,6 +200,7 @@ func info() string {
 		Webp     string
 		Magick   string
 		Netpbm   string
+		PngQuant string
 		Arj      string
 		Lha      string
 		UnRar    string
@@ -221,6 +224,7 @@ func info() string {
 		Webp:     check(l["cwebp"]),
 		Magick:   check(l["convert"]),
 		Netpbm:   check(l["pnmtopng"]),
+		PngQuant: check(l["pngquant"]),
 		Arj:      check(l["arj"]),
 		Lha:      check(l["lha"]),
 		UnRar:    check(l["unrar"]),
