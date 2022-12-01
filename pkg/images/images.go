@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/png" //nolint:gci
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,6 +48,7 @@ const (
 	fperm       os.FileMode = 0o666
 	fmode                   = os.O_RDWR | os.O_CREATE
 
+	gif  = ".gif"
 	jpg  = ".jpg"
 	jpeg = ".jpeg"
 	_png = ".png"
@@ -326,7 +328,7 @@ func ToThumb(src, dest string, sizeSquared int) (string, error) {
 }
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
-// Input format can be either PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
+// Input format can be either GIF, PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
 func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 	valid := func(a []string, x string) bool {
 		for _, n := range a {
@@ -336,32 +338,47 @@ func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 		}
 		return false
 	}
+	input := src
 	v := []string{_png, jpg, jpeg, tif, tiff, webp}
 	// skip if already a webp image, or handle all other errors
-	m, err := mimetype.DetectFile(src)
-	if m.Extension() == webp {
+	m, err := mimetype.DetectFile(input)
+	switch {
+	case m.Extension() == gif:
+		// Dec 2022, https://github.com/nickalie/go-webpbin
+		// currently does not support the library,
+		// gif2webp -- Tool for converting GIF images to WebP
+		f, err := os.CreateTemp("", "df2-gifToWebp.png")
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = ToPng(input, f.Name(), 0, 0)
+		if err != nil {
+			return "", fmt.Errorf("to webp gif-topng: %w", err)
+		}
+		defer os.Remove(f.Name())
+		input = f.Name()
+	case m.Extension() == webp:
 		return "", nil
-	} else if err != nil {
+	case err != nil:
 		return "", fmt.Errorf("to webp mimetype detect: %w", err)
-	}
-	if !valid(v, m.Extension()) {
+	case !valid(v, m.Extension()):
 		return "", fmt.Errorf("to webp mimetype %q != %s: %w",
 			m.Extension(), strings.Join(v, " "), ErrFormat)
 	}
-	src, err = cropWebP(src)
+	input, err = cropWebP(input)
 	if err != nil {
 		return "", fmt.Errorf("to webp crop: %w", err)
 	}
 	const percent = 70
 	webp := webpbin.NewCWebP().
 		Quality(percent).
-		InputFile(src).
+		InputFile(input).
 		OutputFile(dest)
 	if vendorTempDir {
 		webp.Dest(file.Vendor())
 	}
-	if strings.HasSuffix(src, "-cropped.png") {
-		defer os.Remove(src)
+	if strings.HasSuffix(input, "-cropped.png") {
+		defer os.Remove(input)
 	}
 	if err = webp.Run(); err != nil {
 		if err1 := file.RemoveWebP(dest); err1 != nil {

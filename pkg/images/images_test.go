@@ -298,7 +298,7 @@ func TestToWebp(t *testing.T) {
 	}{
 		{"empty", args{"", ""}, "", true},
 		{"invalid src", args{"blahblahblah", ""}, "", true},
-		{g, args{testImg(g), testDest(w)}, "", true},
+		{g, args{testImg(g), testDest(w)}, "»webp", false},
 		{j, args{testImg(j), testDest(w)}, "»webp", false},
 	}
 	for _, tt := range tests {
