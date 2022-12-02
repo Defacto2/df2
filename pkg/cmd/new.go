@@ -11,6 +11,7 @@ var newCmd = &cobra.Command{
 	Use:     "new",
 	Short:   "Manage files marked as waiting to go live (default).",
 	Aliases: []string{"n"},
+	GroupID: "group1",
 	Long: `Runs a sequence of commands to handle the files waiting to go live.
 This is the default df2 command when used without any flags or arguments.
 

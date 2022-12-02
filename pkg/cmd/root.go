@@ -61,6 +61,9 @@ func Execute() error {
 func init() { // nolint:gochecknoinits
 	cobra.OnInitialize()
 	readIn()
+	rootCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Admin:"})
+	rootCmd.AddGroup(&cobra.Group{ID: "group2", Title: "Drive:"})
+	rootCmd.AddGroup(&cobra.Group{ID: "group3", Title: "Remote:"})
 	rootCmd.PersistentFlags().BoolVar(&gf.ASCII, "ascii", false,
 		"suppress all ANSI color feedback")
 	rootCmd.PersistentFlags().BoolVar(&gf.Quiet, "quiet", false,

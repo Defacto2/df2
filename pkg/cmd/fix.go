@@ -27,6 +27,7 @@ var fixCmd = &cobra.Command{
 	Short:   "Fixes database entries and records.",
 	Long:    "Repair broken or invalid formatting for the database records and entries.",
 	Aliases: []string{"f"},
+	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			if err := cmd.Usage(); err != nil {

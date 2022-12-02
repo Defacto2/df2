@@ -18,6 +18,7 @@ var proofCmd = &cobra.Command{
 for scene releases. These proofs often come in archives containing
 photos and text NFO files.`,
 	Aliases: []string{"p"},
+	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
 		r := proof.Request{
 			Overwrite:   proofs.Overwrite,

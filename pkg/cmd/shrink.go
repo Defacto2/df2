@@ -17,6 +17,7 @@ var shrinkCmd = &cobra.Command{
 the website. This command will only work when no records in the database
 are 'waiting for approval.'`,
 	Aliases: []string{"s"},
+	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
 		const delta = 3
 		var wg sync.WaitGroup

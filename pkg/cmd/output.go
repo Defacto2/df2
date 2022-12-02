@@ -36,6 +36,7 @@ var outputCmd = &cobra.Command{
 	Use:     "output",
 	Short:   "Generators for JSON, HTML, SQL and sitemap documents.",
 	Aliases: []string{"o"},
+	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			logs.Println(ErrNoOutput)

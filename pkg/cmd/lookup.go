@@ -14,6 +14,7 @@ var lookupCmd = &cobra.Command{
 	Use:     "lookup (ids|uuids)",
 	Short:   "Lookup the file URL of a record's ID or UUID.",
 	Aliases: []string{"l"},
+	GroupID: "group3",
 	Example: `  id is a a unique numeric identifier
   uuid is a unique 35-character hexadecimal string representation of a 128-bit integer
   uuid character groups are 8-4-4-16 (xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxxxxxx)`,

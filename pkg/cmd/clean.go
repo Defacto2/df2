@@ -20,6 +20,7 @@ var cleanCmd = &cobra.Command{
 Files are considered orphan when they do not match to a correlating record in the
 database. These can include UUID named thumbnails, previews, textfile previews.`,
 	Aliases: []string{"c"},
+	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
 		directories.Init(clf.MakeDirs)
 		if err := assets.Clean(clf.Target, clf.Delete, clf.Humanise); err != nil {

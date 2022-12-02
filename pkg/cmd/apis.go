@@ -20,6 +20,7 @@ var apisCmd = &cobra.Command{
 on demozoo.org and pouet.net. All these commands are SLOW and
 require the parsing of 10,000s of records.`,
 	Aliases: []string{"api"},
+	GroupID: "group3",
 	Example: `  df2 apis [--refresh|--pouet|--msdos|--windows]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := run.Apis(apis)

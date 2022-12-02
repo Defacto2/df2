@@ -19,6 +19,7 @@ var demozooCmd = &cobra.Command{
 	Long: `Manage upload submissions that rely on the API hosted on demozoo.org.
 There are additional Demozoo commands found under the api command.`,
 	Aliases: []string{"d", "dz"},
+	GroupID: "group3",
 	Example: `  df2 demozoo [--new|--all|--releases|--id] (--overwrite)
   df2 demozoo [--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {

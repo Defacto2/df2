@@ -17,6 +17,7 @@ var approveCmd = &cobra.Command{
 	Use:     "approve",
 	Short:   "Approve the records that are ready to go live.",
 	Aliases: []string{"a"},
+	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := database.Approve(appr.Verbose); err != nil {
 			log.Print(err)
