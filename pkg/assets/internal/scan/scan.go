@@ -24,6 +24,8 @@ import (
 )
 
 var (
+	ErrDir       = errors.New("directory to backup is missing")
+	ErrDirBck    = errors.New("directory to save tar backup files is missing")
 	ErrStructNil = errors.New("structure cannot be nil")
 	ErrPathEmpty = errors.New("path cannot be empty")
 	ErrTarget    = errors.New("unknown target")
@@ -166,11 +168,19 @@ func backupParts(d *directories.Dir) (*directories.Dir, part) {
 
 func (s *Scan) backupPart(f Files, d *directories.Dir, p part, test bool) error {
 	t := time.Now().Format("2006-Jan-2-150405") // Mon Jan 2 15:04:05 MST 2006
-	name, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", p[s.Path], t)), s.Path
+	tarName, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", p[s.Path], t)), s.Path
+	_, err := os.Stat(basepath)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("create %q: %w", basepath, ErrDir)
+	}
+	_, err = os.Stat(d.Backup)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("create %q: %w", d.Backup, ErrDirBck)
+	}
 	// create tar archive
-	newTar, err := os.Create(name)
+	newTar, err := os.Create(tarName)
 	if err != nil {
-		return fmt.Errorf("create %q: %w", name, err)
+		return fmt.Errorf("create %q: %w", tarName, err)
 	}
 	tw := tar.NewWriter(newTar)
 	defer tw.Close()
@@ -181,16 +191,16 @@ func (s *Scan) backupPart(f Files, d *directories.Dir, p part, test bool) error 
 		if err != nil {
 			return fmt.Errorf("walk %q: %w", path, err)
 		}
-		name, err = file.WalkName(basepath, path)
+		wlkname, err := file.WalkName(basepath, path)
 		if err != nil {
 			return fmt.Errorf("walk name %q: %w", path, err)
 		}
-		if _, ok := f[name]; ok || test {
+		if _, ok := f[wlkname]; ok || test {
 			c++
 			if c == 1 {
 				logs.Print("archiving these files before deletion\n\n")
 			}
-			if err := file.WriteTar(path, name, tw); err != nil {
+			if err := file.WriteTar(path, tarName, tw); err != nil {
 				return fmt.Errorf("write tar %q: %w", path, err)
 			}
 		}
@@ -200,8 +210,8 @@ func (s *Scan) backupPart(f Files, d *directories.Dir, p part, test bool) error 
 	if err != nil || c == 0 {
 		// clean up any loose archives
 		newTar.Close()
-		if err := os.Remove(name); err != nil {
-			return fmt.Errorf("remove %q: %w", name, err)
+		if err := os.Remove(tarName); err != nil {
+			return fmt.Errorf("cleanup remove %q: %w", tarName, err)
 		}
 	}
 	return nil
@@ -244,7 +254,7 @@ func parse(s *Scan, ignore Files, list *[]os.FileInfo) (Results, error) {
 			i.mod(file)
 			i.size(file)
 			i.bits(file)
-			fmt.Fprintf(w, "%v\t%v%v\t%v\t%v\t%v\n", i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
+			fmt.Fprintf(w, "%v\t%v %v\t%v\t%v\t%v\n", i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
 		}
 		if err := w.Flush(); err != nil {
 			return stat, fmt.Errorf("parse tabwriter flush: %w", err)
