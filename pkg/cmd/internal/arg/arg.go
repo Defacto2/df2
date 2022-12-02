@@ -117,6 +117,10 @@ func FilterFlag(t any, flag, val string) {
 }
 
 func CleanOpts(a ...string) string {
+	const opts = "\noptions: "
+	if len(a) == 0 {
+		return opts + "MISSING"
+	}
 	sort.Strings(a)
-	return "\noptions: " + strings.Join(a, ",")
+	return opts + strings.Join(a, ", ")
 }

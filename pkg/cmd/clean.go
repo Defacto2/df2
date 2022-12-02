@@ -31,7 +31,7 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(cleanCmd)
 	cleanCmd.Flags().StringVarP(&clf.Target, "target", "t", "all",
-		"what file section to clean"+arg.CleanOpts())
+		"which file section to clean"+arg.CleanOpts(arg.Targets()...))
 	cleanCmd.Flags().BoolVarP(&clf.Delete, "delete", "x", false,
 		"erase all discovered files to free up drive space")
 	cleanCmd.Flags().BoolVar(&clf.Humanise, "humanise", true,
