@@ -49,6 +49,7 @@ var fixArchivesCmd = &cobra.Command{
 their file content added to the database. This command finds and repair
 records that do not have this expected context.`,
 	Aliases: []string{"a"},
+	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := zipcontent.Fix(true); err != nil {
 			log.Print(fmt.Errorf("archives fix: %w", err))
@@ -62,6 +63,7 @@ var fixDatabaseCmd = &cobra.Command{
 	Long: `Repair malformed records and entries in the database.
 This includes the formatting and trimming of groups, people, platforms and sections.`,
 	Aliases: []string{"d", "db"},
+	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := database.Fix(); err != nil {
 			log.Print(err)
@@ -79,6 +81,7 @@ var fixDemozooCmd = &cobra.Command{
 	Use:     "demozoo",
 	Short:   "Repair imported Demozoo data conflicts.",
 	Aliases: []string{"dz"},
+	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := demozoo.Fix(); err != nil {
 			log.Print(fmt.Errorf("demozoo fix: %w", err))
@@ -92,6 +95,7 @@ var fixImagesCmd = &cobra.Command{
 	Long: `Create missing previews, thumbnails and optimised formats for records
 that are raster images.`,
 	Aliases: []string{"i"},
+	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := images.Fix(); err != nil {
 			log.Print(err)
@@ -105,6 +109,7 @@ var fixTextCmd = &cobra.Command{
 	Long: `Create missing previews, thumbnails and optimised formats for records
 that are plain text files.`,
 	Aliases: []string{"t", "txt"},
+	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := text.Fix(); err != nil {
 			log.Print(err)
@@ -119,6 +124,7 @@ var fixZipCmmtCmd = &cobra.Command{
 
 "A comment is optional text information that is embedded in a Zip file."`,
 	Aliases: []string{"z"},
+	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := zipcmmt.Fix(zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
 			log.Print(err)
@@ -128,6 +134,8 @@ var fixZipCmmtCmd = &cobra.Command{
 
 func init() { // nolint:gochecknoinits
 	rootCmd.AddCommand(fixCmd)
+	fixCmd.AddGroup(&cobra.Group{ID: "groupU", Title: "Update:"})
+	fixCmd.AddGroup(&cobra.Group{ID: "groupG", Title: "Create:"})
 	fixCmd.AddCommand(fixArchivesCmd)
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
