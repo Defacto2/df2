@@ -70,6 +70,7 @@ var configInfoCmd = &cobra.Command{
 	Use:     "info",
 	Short:   "View settings configured by the config.",
 	Aliases: []string{"i"},
+	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := config.Info(conf.InfoSize); err != nil {
 			log.Print(fmt.Errorf("config info: %w", err))
@@ -85,6 +86,7 @@ a setting change you will be prompted for a new value which will be validated.
 See the examples for usage syntax and also see the --name flag description for
 the command to list the available seettings.`,
 	Aliases: []string{"s"},
+	GroupID: "group1",
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -101,6 +103,7 @@ func init() { // nolint:gochecknoinits
 	database.Init()
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)
+	configCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Settings:"})
 	configCmd.AddCommand(configCreateCmd)
 	configCreateCmd.Flags().BoolVarP(&conf.Overwrite, "overwrite", "y", false,
 		"overwrite any existing config file")
