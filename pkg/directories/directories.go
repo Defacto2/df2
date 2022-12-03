@@ -49,7 +49,7 @@ func Init(create bool) Dir {
 		viper.SetDefault("directory.400", "/opt/assets/400")
 		viper.SetDefault("directory.backup", "/opt/assets/backups")
 		viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
-		viper.SetDefault("directory.html", "/opt/assets/html")
+		viper.SetDefault("directory.html", "")
 		viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
 		viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
 		viper.SetDefault("directory.root", "/opt/assets")
