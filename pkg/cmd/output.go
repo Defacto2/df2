@@ -83,7 +83,7 @@ func init() { // nolint:gochecknoinits
 		"show a progress indicator while fetching a large number of records")
 	groupCmd.Flags().BoolVarP(&gpf.Cronjob, "cronjob", "j", false,
 		"run in cronjob automated mode, ignores all other arguments")
-	groupCmd.Flags().BoolVar(&gpf.Forcejob, "forcejob", false,
+	groupCmd.Flags().BoolVar(&gpf.Forcejob, "cronjob-force", false,
 		"force the running of the cronjob automated mode")
 	groupCmd.Flags().StringVarP(&gpf.Format, "format", "t", "",
 		"output format (default html)\noptions: datalist,html,text")
@@ -97,7 +97,7 @@ func init() { // nolint:gochecknoinits
 
 	peopleCmd.Flags().BoolVarP(&ppf.Cronjob, "cronjob", "j", false,
 		"run in cronjob automated mode, ignores all other arguments")
-	peopleCmd.Flags().BoolVar(&ppf.Forcejob, "forcejob", false,
+	peopleCmd.Flags().BoolVar(&ppf.Forcejob, "cronjob-force", false,
 		"force the running of the cronjob automated mode")
 
 	outputCmd.AddCommand(recentCmd)
@@ -113,9 +113,8 @@ var dataCmd = &cobra.Command{
 	Aliases: []string{"d", "sql"},
 	Short:   "Generate SQL data dump export files.",
 	Long: `Generate a logical backup of the MySQL database. It produces
-SQL statements that can be used to recreate the database objects and data.
-The dumps can be used with mysqldump or Adminer to manage content in the
-MySQL databases. `,
+	SQL statements that can recreate the database objects and data. These can be
+	used with mysqldump or Adminer to manage content in the MySQL databases.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := run.Data(dbf); err != nil {
 			log.Print(err)
@@ -128,9 +127,11 @@ var groupCmd = &cobra.Command{
 	Use:     "groups",
 	Aliases: []string{"g", "group"},
 	Short:   "HTML snippet generator to list groups.",
-	Long: `A HTML snippet generate to list groups. Each group will be wrapped with
-a heading 2 element containing a relative anchor link to the group's page
-and the name of the group.`,
+	Long: `An HTML snippet generator to list groups. Each group is wrapped with a
+heading-2 element containing a relative anchor link to the group's page and name.
+
+The HTML output returned by the cronjob flag includes additional elements for
+the website stylization.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := run.Groups(gpf); err != nil {
 			log.Print(err)
@@ -143,9 +144,11 @@ var peopleCmd = &cobra.Command{
 	Use:     "people",
 	Aliases: []string{"p", "ppl"},
 	Short:   "HTML snippet generator to list people.",
-	Long: `A HTML snippet generate to list people. Each person will be wrapped with
-a heading 2 element containing a relative anchor link to the person's page
-and their name.` + notUsed,
+	Long: `An HTML snippet generator to list people. Each person is wrapped with a
+heading-2 element containing a relative anchor link to the person's page and name.
+
+The HTML output returned by the cronjob flag includes additional elements for
+the website stylization.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := run.People(ppf); err != nil {
 			log.Print(err)
@@ -171,15 +174,13 @@ var sitemapCmd = &cobra.Command{
 	Short:   "Sitemap generator.",
 	Long: `A sitemap generator to help search engines index the website.
 
-"A sitemap is a file where you provide information about the pages, videos,
-and other files on your site,  and the relationships  between them.  Search
-engines like  Google read  this file  to crawl  your site more efficiently.
-A sitemap  tells Google  which pages and  files you think are  important in
-your site,  and also  provides  valuable  information  about these  files."
-
-"If your site's pages are properly linked, Google can usually discover most
-of your site.  Proper linking means that all pages that you deem  important
-can be reached through some form of navigation."
+"A sitemap is a file where you provide information about the pages,
+videos, and other files on your site and the relationships between them.
+Search engines like Google use this file to help crawl the site more
+efficiently. A sitemap tells Google which pages and files you think are
+essential to the site and provides valuable information about these
+files. If the site's pages are correctly linked, Google can usually
+discover most of the site."
 
 See: https://developers.google.com/search/docs/advanced/sitemaps/overview`,
 	Run: func(cmd *cobra.Command, args []string) {
