@@ -3,9 +3,9 @@ package prods
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/Defacto2/df2/pkg/download"
@@ -92,7 +92,7 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 	if err != nil {
 		return fmt.Errorf("download off demozoo: %w", err)
 	}
-	temp, err := ioutil.TempDir("", "demozoo-download")
+	temp, err := os.MkdirTemp("", "demozoo-download")
 	if err != nil {
 		return fmt.Errorf("download off demozoo temp dir: %w", err)
 	}

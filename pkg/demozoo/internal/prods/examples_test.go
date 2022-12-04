@@ -3,8 +3,8 @@ package prods_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
@@ -46,7 +46,7 @@ func loadExample(r int, c chan prods.ProductionsAPIv1) {
 	if err != nil {
 		log.Print(fmt.Errorf("path %q: %w", path, err))
 	}
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Print(err)
 	}

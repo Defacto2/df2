@@ -2,7 +2,7 @@ package logs_test
 
 import (
 	"errors"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -99,7 +99,7 @@ func printer(test, text string) (output string) {
 		logs.Printcrf("%s", text)
 	}
 	w.Close()
-	bytes, _ := ioutil.ReadAll(r)
+	bytes, _ := io.ReadAll(r)
 	os.Stdout = rescueStdout
 	return strings.TrimSpace(string(bytes))
 }

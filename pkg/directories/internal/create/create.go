@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	m "math/rand"
 	"os"
 	"path/filepath"
@@ -61,7 +60,7 @@ func Holder(path string, size int, prefix uint) error {
 		return fmt.Errorf("create holder file: %w", err)
 	}
 	text := []byte(r)
-	if err := ioutil.WriteFile(fn, text, fileMode); err != nil {
+	if err := os.WriteFile(fn, text, fileMode); err != nil {
 		return fmt.Errorf("write create holder file %q: %w", fn, err)
 	}
 	return nil

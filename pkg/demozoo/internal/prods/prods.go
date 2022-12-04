@@ -3,7 +3,6 @@ package prods
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -205,15 +204,14 @@ func Parse(rawURL string) (id int, err error) {
 
 // RandomName generates a random temporary filename.
 func RandomName() (string, error) {
-	tmp, err := ioutil.TempFile("", "df2-download")
+	s, err := os.MkdirTemp("", "df2-download")
 	if err != nil {
 		return "", fmt.Errorf("random name tempfile: %w", err)
 	}
-	defer tmp.Close()
-	if err := os.Remove(tmp.Name()); err != nil {
-		logs.Log(fmt.Errorf("random name remove tempfile %q: %w", tmp.Name(), err))
+	if err := os.Remove(s); err != nil {
+		logs.Log(fmt.Errorf("random name remove tempfile %q: %w", s, err))
 	}
-	return tmp.Name(), nil
+	return s, nil
 }
 
 // SaveName gets a filename from the URL or generates a random filename.

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -59,7 +58,7 @@ func (r *Request) Body() error {
 	defer res.Body.Close()
 	r.Status = res.Status
 	r.StatusCode = res.StatusCode
-	r.Read, err = ioutil.ReadAll(res.Body)
+	r.Read, err = io.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("body readall: %w", err)
 	}

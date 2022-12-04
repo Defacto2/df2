@@ -1,7 +1,6 @@
 package create_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -9,7 +8,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "test-create-dir")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "test-create-dir")
 	if err != nil {
 		t.Error(err)
 	}
@@ -65,7 +64,7 @@ func TestRandString(t *testing.T) {
 }
 
 func TestHolders(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "test-create-holders")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "test-create-holders")
 	if err != nil {
 		t.Error(err)
 	}

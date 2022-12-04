@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -79,7 +78,7 @@ func write(update bool) error {
 	if err != nil {
 		return fmt.Errorf("write config yaml marshal: %w", err)
 	}
-	err = ioutil.WriteFile(Filepath(), bs, file) // owner+wr
+	err = os.WriteFile(Filepath(), bs, file) // owner+wr
 	if err != nil {
 		return fmt.Errorf("write config file %s: %w", file, err)
 	}

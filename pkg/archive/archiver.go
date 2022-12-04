@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"unicode/utf8"
 
@@ -94,7 +94,7 @@ func readr(src, filename string) ([]string, error) {
 		}
 		// handle cheeky DOS era filenames with CP437 extended characters.
 		r := transform.NewReader(bytes.NewReader(b), charmap.CodePage437.NewDecoder())
-		result, err := ioutil.ReadAll(r)
+		result, err := io.ReadAll(r)
 		if err != nil {
 			return err
 		}

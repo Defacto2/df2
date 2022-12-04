@@ -101,7 +101,7 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
 	}
 	// create temp dir
-	tempDir, err := ioutil.TempDir("", "extarc-")
+	tempDir, err := os.MkdirTemp("", "extarc-")
 	if err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo tempdir %q: %w", tempDir, err)
 	}
@@ -184,7 +184,7 @@ func Proof(src, filename, uuid string) error {
 		return fmt.Errorf("archive uuid %q: %w", uuid, err)
 	}
 	// create temp dir
-	tempDir, err := ioutil.TempDir("", "proofextract-")
+	tempDir, err := os.MkdirTemp("", "proofextract-")
 	if err != nil {
 		return fmt.Errorf("archive tempdir %q: %w", tempDir, err)
 	}

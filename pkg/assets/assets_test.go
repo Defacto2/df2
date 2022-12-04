@@ -21,7 +21,7 @@ const empty = "empty"
 // dir is the absolute directory path while sum is the sum total of bytes copied.
 func createTempDir() (sum int64, dir string, err error) {
 	// make dir
-	dir, err = ioutil.TempDir(os.TempDir(), "test-addtardir")
+	dir, err = os.MkdirTemp(os.TempDir(), "test-addtardir")
 	if err != nil {
 		return 0, "", err
 	}

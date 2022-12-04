@@ -1,7 +1,6 @@
 package archive_test
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -39,7 +38,7 @@ func TestReadr(t *testing.T) {
 }
 
 func TestUnarchiver(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "unarchiver")
+	dir, err := os.MkdirTemp(os.TempDir(), "unarchiver")
 	var (
 		src = testDir("demozoo/test.zip")
 		fn  = "test.zip"
@@ -60,11 +59,11 @@ func TestUnarchiver(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty", args{}, true},
-		{"missing src", args{"", fn, tempDir}, true},
-		{"missing fn", args{src, "", tempDir}, true},
+		{"missing src", args{"", fn, dir}, true},
+		{"missing fn", args{src, "", dir}, true},
 		{"missing dest", args{src, fn, ""}, true},
-		{"okay", args{src, fn, tempDir}, false},
-		{"7z", args{z7, zfn, tempDir}, true},
+		{"okay", args{src, fn, dir}, false},
+		{"7z", args{z7, zfn, dir}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -73,7 +72,7 @@ func TestUnarchiver(t *testing.T) {
 			}
 		})
 	}
-	if err := os.RemoveAll(tempDir); err != nil {
+	if err := os.RemoveAll(dir); err != nil {
 		log.Print(err)
 	}
 }

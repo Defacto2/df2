@@ -1,7 +1,6 @@
 package file_test
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,7 +16,7 @@ func join(s string) string {
 const dir = "../../../../tests/text"
 
 func TestDir(t *testing.T) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "test-dir")
+	tempDir, err := os.MkdirTemp(os.TempDir(), "test-dir")
 	if err != nil {
 		t.Error(err)
 	}
