@@ -13,6 +13,7 @@ linters:
     - maligned
     - nosnakecase
     - varcheck
+    - structcheck
 
     # disabled
     - cyclop
@@ -26,17 +27,12 @@ linters:
     - wrapcheck # wrapping 3rd party errors such as those from bolt are unnecessary
     - wsl # whitespace linter, slow, aggressive and opinionated
 
-    # disabled in go v1.18
-    - bodyclose
-    - contextcheck
-    - nilerr
-    - noctx
+    # generics
     - rowserrcheck
     - sqlclosecheck
     - structcheck
-    - tparallel
-    - unparam
     - wastedassign
+#
 # Fixes
 # gofumpt -l -w <file> || <dir>/*
 # gci write <dir>/*
