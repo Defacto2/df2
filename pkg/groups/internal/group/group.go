@@ -180,17 +180,19 @@ type Request struct {
 
 // Clean a malformed group name and save the fix to the database.
 func Clean(name string) (ok bool) {
-	f := CleanS(name)
-	if f == name {
+	fix := CleanS(name)
+	if fix == name {
 		return false
 	}
-	s := str.Y()
+	count, status := int64(0), str.Y()
 	ok = true
-	if _, err := rename(f, name); err != nil {
-		s = str.X()
+	count, err := rename(fix, name)
+	if err != nil {
+		status = str.X()
 		ok = false
 	}
-	logs.Printf("\n%s %q %s %s", s, name, color.Question.Sprint("⟫"), color.Info.Sprint(f))
+	logs.Printf("%s %q %s %s (%d)\n",
+		status, name, color.Question.Sprint("⟫"), color.Info.Sprint(fix), count)
 	return ok
 }
 
@@ -213,7 +215,7 @@ func fmtGroup(g string) string {
 		"3wa bbs", "acb bbs", "bcp bbs", "cwl bbs", "es bbs", "dv8 bbs", "fic bbs",
 		"lms bbs", "lta bbs", "ls bbs", "lpc bbs", "og bbs", "okc bbs", "uct bbs", "tsi bbs",
 		"tsc bbs", "trt 2001 bbs", "tiw bbs", "tfz 2 bbs", "ppps bbs", "pp bbs", "pmc bbs",
-		"crsiso", "lsdiso", "tus fx":
+		"crsiso", "tus fx", "lsdiso":
 		return strings.ToUpper(g)
 	}
 	// reformat group
@@ -299,6 +301,9 @@ func fmtSuffix(w string, title cases.Caser) string {
 	case strings.HasPrefix(w, "pc-"):
 		val := strings.TrimPrefix(w, "pc-")
 		return fmt.Sprintf("PC-%s", title.String(val))
+	case strings.HasPrefix(w, "lsd"):
+		val := strings.TrimPrefix(w, "lsd")
+		return fmt.Sprintf("LSD%s", title.String(val))
 	}
 	return ""
 }
