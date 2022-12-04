@@ -140,6 +140,8 @@ func TestFormat(t *testing.T) {
 		{"pc-crew", "PC-Crew"},
 		{"inc utils", "INC Utils"},
 		{"inc", "INC"},
+		{"razor 1911,inc", "Razor 1911,INC"},
+		{"raZor 1911,the system", "Razor 1911,The System"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {

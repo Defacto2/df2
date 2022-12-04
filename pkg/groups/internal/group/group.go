@@ -209,14 +209,17 @@ func CleanS(s string) string {
 }
 
 func fmtGroup(g string) string {
+	// all uppercase group
 	switch g {
 	case "anz ftp", "mor ftp", "msv ftp", "nos ftp", "pox ftp", "scf ftp", "scsi ftp",
 		"tbb ftp", "tog ftp", "top ftp", "tph-qqt", "tpw ftp", "u4ea ftp", "zoo ftp",
 		"3wa bbs", "acb bbs", "bcp bbs", "cwl bbs", "es bbs", "dv8 bbs", "fic bbs",
 		"lms bbs", "lta bbs", "ls bbs", "lpc bbs", "og bbs", "okc bbs", "uct bbs", "tsi bbs",
 		"tsc bbs", "trt 2001 bbs", "tiw bbs", "tfz 2 bbs", "ppps bbs", "pp bbs", "pmc bbs":
-		fmt.Println(strings.ToUpper(g))
 		return strings.ToUpper(g)
+	}
+	// reformat group
+	switch g {
 	case "drm ftp":
 		return "dRM FTP"
 	case "dst ftp":
@@ -233,9 +236,13 @@ func fmtGroup(g string) string {
 		return "XquiziT FTP"
 	case "vdr lake ftp":
 		return "VDR Lake FTP"
-	default:
-		return ""
 	}
+	// rename group (demozoo vs defacto2 formatting etc.)
+	switch g {
+	case "2000 ad":
+		return "2000AD"
+	}
+	return ""
 }
 
 func fmtWord(w string) string {
@@ -313,7 +320,6 @@ func Format(s string) string {
 		words := strings.Split(g, space)
 		last := len(words) - 1
 		for i, w := range words {
-			fmt.Println(w)
 			w = TrimDot(w)
 			if i > 0 && i < last {
 				switch w {
