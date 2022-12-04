@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
@@ -207,32 +208,131 @@ func CleanS(s string) string {
 	return f
 }
 
+func fmtGroup(g string) string {
+	switch g {
+	case "anz ftp", "mor ftp", "msv ftp", "nos ftp", "pox ftp", "scf ftp", "scsi ftp",
+		"tbb ftp", "tog ftp", "top ftp", "tph-qqt", "tpw ftp", "u4ea ftp", "zoo ftp",
+		"3wa bbs", "acb bbs", "bcp bbs", "cwl bbs", "es bbs", "dv8 bbs", "fic bbs",
+		"lms bbs", "lta bbs", "ls bbs", "lpc bbs", "og bbs", "okc bbs", "uct bbs", "tsi bbs",
+		"tsc bbs", "trt 2001 bbs", "tiw bbs", "tfz 2 bbs", "ppps bbs", "pp bbs", "pmc bbs":
+		fmt.Println(strings.ToUpper(g))
+		return strings.ToUpper(g)
+	case "drm ftp":
+		return "dRM FTP"
+	case "dst ftp":
+		return "dst FTP"
+	case "nofx bbs":
+		return "NoFX BBS"
+	case "noclass":
+		return "NoClass"
+	case "pjs tower":
+		return "PJs Tower BBS"
+	case "tsg ftp":
+		return "tSG FTP"
+	case "xquizit ftp":
+		return "XquiziT FTP"
+	case "vdr lake ftp":
+		return "VDR Lake FTP"
+	default:
+		return ""
+	}
+}
+
+func fmtWord(w string) string {
+	switch w {
+	case "3d", "abc", "acdc", "ad", "amf", "ansi", "asm", "au", "bbc", bbs, "bc", "cd",
+		"cgi", "diz", "dox", "eu", "faq", "fbi", ftp, "fr", "fx", "fxp", "hq", "id", "ii",
+		"iii", "iso", "kgb", "pc", "pcb", "pcp", "pda", "psx", "pwa", "ssd", "st", "tnt",
+		"tsr", "ufo", "uk", "us", "usa", "uss", "ussr", "vcd", "whq", "mp3", "rom":
+		return strings.ToUpper(w)
+	case "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
+		"10th", "11th", "12th", "13th":
+		return strings.ToLower(w)
+	case "7of9":
+		return strings.ToLower(w)
+	default:
+		return ""
+	}
+}
+
+func fmtSuffix(w string, title cases.Caser) string {
+	switch {
+	case strings.HasSuffix(w, "ad"):
+		x := strings.TrimSuffix(w, "ad")
+		if val, err := strconv.Atoi(x); err == nil {
+			return fmt.Sprintf("%dAD", val)
+		}
+	case strings.HasSuffix(w, "bc"):
+		x := strings.TrimSuffix(w, "bc")
+		if val, err := strconv.Atoi(x); err == nil {
+			return fmt.Sprintf("%dBC", val)
+		}
+	case strings.HasSuffix(w, "fxp"):
+		val := strings.TrimSuffix(w, "fxp")
+		return fmt.Sprintf("%sFXP", title.String(val))
+	case strings.HasSuffix(w, "iso"):
+		val := strings.TrimSuffix(w, "iso")
+		return fmt.Sprintf("%sISO", title.String(val))
+	case strings.HasSuffix(w, "nfo"):
+		val := strings.TrimSuffix(w, "nfo")
+		return fmt.Sprintf("%sNFO", title.String(val))
+	case strings.HasPrefix(w, "pc-"):
+		val := strings.TrimPrefix(w, "pc-")
+		return fmt.Sprintf("PC-%s", title.String(val))
+	}
+	return ""
+}
+
+func fmtSequence(w string, i int) string {
+	if i != 0 {
+		return ""
+	}
+	switch w { //nolint:gocritic
+	case "inc":
+		// note: Format() applies UPPER to all 3 letter or smaller words
+		return strings.ToUpper(w)
+	}
+	return ""
+}
+
 // Format returns a copy of s with custom formatting.
 func Format(s string) string {
 	const acronym = 3
 	if len(s) <= acronym {
 		return strings.ToUpper(s)
 	}
+
 	title := cases.Title(language.English, cases.NoLower)
 	groups := strings.Split(s, ",")
-	for j, g := range groups {
+	for j, group := range groups {
+		g := strings.ToLower(group)
+		if fix := fmtGroup(g); fix != "" {
+			groups[j] = fix
+			continue
+		}
 		words := strings.Split(g, space)
 		last := len(words) - 1
 		for i, w := range words {
-			w = strings.ToLower(w)
+			fmt.Println(w)
 			w = TrimDot(w)
 			if i > 0 && i < last {
 				switch w {
-				case "a", "and", "by", "of", "for", "from", "in", "is", "or", "the", "to":
+				case "a", "as", "and", "at", "by", "el", "of", "for", "from", "in", "is", "or", "tha",
+					"the", "to", "with":
 					words[i] = strings.ToLower(w)
 					continue
 				}
 			}
-			switch w {
-			case "3d", "ansi", bbs, "cd", "cgi", "dox", "eu", ftp, "fx", "hq",
-				"id", "ii", "iii", "iso", "pc", "pcb", "pda", "st", "uk", "us",
-				"uss", "ussr", "vcd", "whq":
-				words[i] = strings.ToUpper(w)
+			if fix := fmtWord(w); fix != "" {
+				words[i] = fix
+				continue
+			}
+			if fix := fmtSuffix(w, title); fix != "" {
+				words[i] = fix
+				continue
+			}
+			if fix := fmtSequence(w, i); fix != "" {
+				words[i] = fix
 				continue
 			}
 			words[i] = title.String(w)

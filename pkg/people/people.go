@@ -2,7 +2,10 @@
 package people
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"path"
 	"sort"
 	"strings"
@@ -18,6 +21,12 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+)
+
+var (
+	ErrCJDir  = errors.New("cronjob directory does not exist")
+	ErrCJFile = errors.New("cronjob file to save html does not exist")
+	ErrCfg    = errors.New("the directory.html setting is empty")
 )
 
 const htm = ".htm"
@@ -36,6 +45,21 @@ func (r Request) HTML(name string) error {
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
 func Cronjob(force bool) error {
+	// as the jobs take time, check the locations before querying the database
+	for _, tag := range Wheres() {
+		f := tag + htm
+		d := viper.GetString("directory.html")
+		n := path.Join((d), f)
+		if d == "" {
+			return fmt.Errorf("cronjob: %w", ErrCfg)
+		}
+		if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("cronjob: %w: %s", ErrCJDir, d)
+		}
+		if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("cronjob: %w: %s", ErrCJFile, n)
+		}
+	}
 	for _, tag := range Wheres() {
 		last, err := database.LastUpdate()
 		if err != nil {
@@ -57,6 +81,9 @@ func Cronjob(force bool) error {
 				Filter:   tag,
 				Counts:   true,
 				Progress: false,
+			}
+			if force {
+				r.Progress = true
 			}
 			if err := r.HTML(f); err != nil {
 				return fmt.Errorf("group cronjob html: %w", err)
@@ -102,7 +129,7 @@ func Print(r Request) error {
 	if err != nil {
 		return fmt.Errorf("print request: %w", err)
 	}
-	logs.Println(total, "matching", r.Filter, "records found")
+	logs.Printf("%d matching %s records found\n", total, r.Filter)
 	var a []string
 	//	a := make([]string, total)
 	for i, p := range ppl {
@@ -147,7 +174,7 @@ func parse(filename, tpl string, r Request) error {
 		f = "all"
 	}
 	if !str.Piped() {
-		logs.Println(x, "matching", f, "records found")
+		logs.Printf("%d matching %s records found\n", x, f)
 	}
 	data, s, hr := make(person.Persons, len(grp)), "", false
 	total := len(grp)

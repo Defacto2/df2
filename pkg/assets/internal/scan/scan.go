@@ -108,7 +108,7 @@ func (s Scan) scanPath(d *directories.Dir) (Results, error) {
 		}
 		list[i], err = entry.Info()
 		if err != nil {
-			return Results{}, fmt.Errorf("x")
+			return Results{}, fmt.Errorf("entry info: %w", err)
 		}
 	}
 	// files to ignore

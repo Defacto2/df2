@@ -2,7 +2,10 @@
 package groups
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -13,6 +16,12 @@ import (
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/viper"
+)
+
+var (
+	ErrCJDir  = errors.New("cronjob directory does not exist")
+	ErrCJFile = errors.New("cronjob file to save html does not exist")
+	ErrCfg    = errors.New("the directory.html setting is empty")
 )
 
 const htm = ".htm"
@@ -37,13 +46,29 @@ func (r Request) Print() (total int, err error) {
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
 func Cronjob(force bool) error {
+	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
+		f := tag + htm
+		d := viper.GetString("directory.html")
+		n := path.Join((d), f)
+		if d == "" {
+			return fmt.Errorf("cronjob: %w", ErrCfg)
+		}
+		if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("cronjob: %w: %s", ErrCJDir, d)
+		}
+		if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("cronjob: %w: %s", ErrCJFile, n)
+		}
+	}
+	for _, tag := range Wheres() {
+		f := tag + htm
+		d := viper.GetString("directory.html")
+		n := path.Join((d), f)
 		last, err := database.LastUpdate()
 		if err != nil {
 			return fmt.Errorf("cronjob lastupdate: %w", err)
 		}
-		f := tag + htm
-		n := path.Join(viper.GetString("directory.html"), f)
 		update := true
 		if !force {
 			update, err = database.FileUpdate(n, last)
@@ -59,6 +84,9 @@ func Cronjob(force bool) error {
 				Counts:      true,
 				Initialisms: true,
 				Progress:    false,
+			}
+			if force {
+				r.Progress = true
 			}
 			if err := r.HTML(f); err != nil {
 				return fmt.Errorf("group cronjob html: %w", err)
