@@ -3,12 +3,18 @@
 linters:
   enable-all: true
   disable:
-    - exhaustivestruct # Deprecated
-    - interfacer # Deprecated
-    - scopelint # Deprecated
-    - golint # Deprecated
-    - maligned # Deprecated
+    # deprecated
+    - deadcode
+    - exhaustivestruct
+    - ifshort
+    - interfacer
+    - scopelint
+    - golint
+    - maligned
+    - nosnakecase
+    - varcheck
 
+    # disabled
     - cyclop
     - exhaustruct # extract code bload
     - forbidigo # forbids the use for fmt.Print(f|ln)
@@ -31,7 +37,10 @@ linters:
     - tparallel
     - unparam
     - wastedassign
-
 # Fixes
 # gofumpt -l -w <file> || <dir>/*
-# gci -w <dir>/*
+# gci write <dir>/*
+
+# install tools
+# gofumpt: go install mvdan.cc/gofumpt@latest
+# gci: go install github.com/daixiang0/gci@latest

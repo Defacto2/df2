@@ -107,31 +107,28 @@ func (cmd Approvals) Approve() error {
 }
 
 // Init SQL directory.
-func Init() error {
+func Init() error { //nolint:funlen
 	const (
 		layout   = "2-1-2006"
 		minDash  = 2
 		oneMonth = 730
 	)
-
 	s := viper.GetString("directory.sql")
 	color.Primary.Printf("SQL directory: %s\n", s)
 	entries, err := os.ReadDir(s)
 	if err != nil {
 		return fmt.Errorf("sql read directory: %w", err)
 	}
-
 	cnt, freed, inUse := 0, 0, 0
 	files := []string{}
 	var create time.Time
-
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
 		f, err := entry.Info()
 		if err != nil {
-			logs.Printf("error with file info: %w\n", err)
+			logs.Printf("error with file info: %s\n", err)
 			continue
 		}
 		exts := strings.Split(f.Name(), ".")
@@ -160,7 +157,6 @@ func Init() error {
 			freed += int(f.Size())
 		}
 	}
-
 	logs.Printf("SQL found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
 	if len(files) == 0 {
 		logs.Println(", but there is nothing to do.")
@@ -169,7 +165,6 @@ func Init() error {
 	logs.Println(".")
 	logs.Printf("SQL will move %d items totaling %s, leaving %s used.\n",
 		len(files), humanize.Bytes(uint64(freed)), humanize.Bytes(uint64(inUse-freed)))
-
 	return sqlProcess(files)
 }
 
