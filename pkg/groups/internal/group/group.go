@@ -106,40 +106,37 @@ func List(s string) (groups []string, total int, err error) {
 
 // SQLSelect returns a complete SQL WHERE statement where the groups are filtered.
 func SQLSelect(f Filter, includeSoftDeletes bool) (string, error) {
-	inc, skip := includeSoftDeletes, false
-	if f > -1 {
-		skip = true
-	}
-	where, err := SQLWhere(f, inc)
+	where, err := SQLWhere(f, includeSoftDeletes)
 	if err != nil {
 		return "", fmt.Errorf("sql select %q: %w", f.String(), err)
 	}
-	var s string
-	switch skip {
-	case true: // disable group_brand_by listings for BBS, FTP, group, magazine filters
+	s := "(SELECT DISTINCT group_brand_for AS pubCombined " +
+		"FROM files WHERE Length(group_brand_for) <> 0 " + where + ")" +
+		" UNION " +
+		"(SELECT DISTINCT group_brand_by AS pubCombined " +
+		"FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
+	switch f {
+	case BBS, FTP, Group, Magazine:
 		s = "SELECT DISTINCT group_brand_for AS pubCombined " +
 			"FROM files WHERE Length(group_brand_for) <> 0 " + where
+	case None:
 	default:
-		s = "(SELECT DISTINCT group_brand_for AS pubCombined " +
-			"FROM files WHERE Length(group_brand_for) <> 0 " + where + ")" +
-			" UNION " +
-			"(SELECT DISTINCT group_brand_by AS pubCombined " +
-			"FROM files WHERE Length(group_brand_by) <> 0 " + where + ")"
 	}
 	return s + " ORDER BY pubCombined", nil
 }
 
 // SQLWhere returns a partial SQL WHERE statement where groups are filtered.
-func SQLWhere(f Filter, softDel bool) (string, error) {
+func SQLWhere(f Filter, includeSoftDeletes bool) (string, error) {
+	deleted := includeSoftDeletes
 	s, err := SQLFilter(f)
 	if err != nil {
 		return "", fmt.Errorf("sql where: %w", err)
 	}
 	switch {
-	case s != "" && softDel:
+	case s != "" && deleted:
 		s = "AND " + s
-	case s == "" && softDel: // do nothing
-	case s != "" && !softDel:
+	case s == "" && deleted: // do nothing
+	case s != "" && !deleted:
 		s = "AND " + s + " `deletedat` IS NULL"
 	default:
 		s = "AND `deletedat` IS NULL"
@@ -215,7 +212,8 @@ func fmtGroup(g string) string {
 		"tbb ftp", "tog ftp", "top ftp", "tph-qqt", "tpw ftp", "u4ea ftp", "zoo ftp",
 		"3wa bbs", "acb bbs", "bcp bbs", "cwl bbs", "es bbs", "dv8 bbs", "fic bbs",
 		"lms bbs", "lta bbs", "ls bbs", "lpc bbs", "og bbs", "okc bbs", "uct bbs", "tsi bbs",
-		"tsc bbs", "trt 2001 bbs", "tiw bbs", "tfz 2 bbs", "ppps bbs", "pp bbs", "pmc bbs":
+		"tsc bbs", "trt 2001 bbs", "tiw bbs", "tfz 2 bbs", "ppps bbs", "pp bbs", "pmc bbs",
+		"crsiso", "lsdiso", "tus fx":
 		return strings.ToUpper(g)
 	}
 	// reformat group
@@ -236,11 +234,23 @@ func fmtGroup(g string) string {
 		return "XquiziT FTP"
 	case "vdr lake ftp":
 		return "VDR Lake FTP"
+	case "ptl club":
+		return "PTL Club"
+	case "dvtiso":
+		return "DVTiSO"
+	case "rhvid":
+		return "RHViD"
+	case "trsi":
+		return "TRSi"
 	}
 	// rename group (demozoo vs defacto2 formatting etc.)
 	switch g {
 	case "2000 ad":
 		return "2000AD"
+	case "hashx":
+		return "Hash X"
+	case "phoenixbbs":
+		return "Phoenix BBS"
 	}
 	return ""
 }
@@ -274,6 +284,9 @@ func fmtSuffix(w string, title cases.Caser) string {
 		if val, err := strconv.Atoi(x); err == nil {
 			return fmt.Sprintf("%dBC", val)
 		}
+	case strings.HasSuffix(w, "dox"):
+		val := strings.TrimSuffix(w, "dox")
+		return fmt.Sprintf("%sDox", title.String(val))
 	case strings.HasSuffix(w, "fxp"):
 		val := strings.TrimSuffix(w, "fxp")
 		return fmt.Sprintf("%sFXP", title.String(val))
@@ -304,15 +317,17 @@ func fmtSequence(w string, i int) string {
 
 // Format returns a copy of s with custom formatting.
 func Format(s string) string {
-	const acronym = 3
+	const (
+		acronym   = 3
+		separator = ", "
+	)
 	if len(s) <= acronym {
 		return strings.ToUpper(s)
 	}
-
 	title := cases.Title(language.English, cases.NoLower)
-	groups := strings.Split(s, ",")
+	groups := strings.Split(s, separator)
 	for j, group := range groups {
-		g := strings.ToLower(group)
+		g := strings.ToLower(strings.TrimSpace(group))
 		if fix := fmtGroup(g); fix != "" {
 			groups[j] = fix
 			continue
@@ -345,7 +360,7 @@ func Format(s string) string {
 		}
 		groups[j] = strings.Join(words, space)
 	}
-	return strings.Join(groups, ",")
+	return strings.Join(groups, separator)
 }
 
 // rename replaces all instances of the group name with a new group name.
