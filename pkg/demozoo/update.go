@@ -137,7 +137,7 @@ func (r *Record) FileMeta() error {
 		return fmt.Errorf("record file meta open: %w", err)
 	}
 	defer f.Close()
-	h1 := md5.New() // nolint: gosec
+	h1 := md5.New() //nolint: gosec
 	if _, err := io.Copy(h1, f); err != nil {
 		return fmt.Errorf("record file meta io copy for the md5 hash: %w", err)
 	}

@@ -184,7 +184,7 @@ func (f *Formatter) Format(w io.Writer, style *chroma.Style, iterator chroma.Ite
 // We deliberately don't use html/template here because it is two orders of magnitude slower (benchmarked).
 //
 // OTOH we need to be super careful about correct escaping...
-func (f *Formatter) writeHTML(w io.Writer, style *chroma.Style, tokens []chroma.Token) (err error) { // nolint: gocyclo
+func (f *Formatter) writeHTML(w io.Writer, style *chroma.Style, tokens []chroma.Token) (err error) { //nolint: gocyclo
 	css := f.styleToCSS(style)
 	if !f.Classes {
 		for t, style := range css {

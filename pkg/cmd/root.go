@@ -1,5 +1,6 @@
 // Package cmd handles the commandline user interface and interactions.
-// nolint:gochecknoglobals
+//
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -58,7 +59,7 @@ func Execute() error {
 	return nil
 }
 
-func init() { // nolint:gochecknoinits
+func init() { //nolint:gochecknoinits
 	cobra.OnInitialize()
 	readIn()
 	rootCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Admin:"})

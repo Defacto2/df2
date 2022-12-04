@@ -1,4 +1,4 @@
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -19,6 +19,6 @@ var logCmd = &cobra.Command{
 	},
 }
 
-func init() { // nolint:gochecknoinits
+func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(logCmd)
 }

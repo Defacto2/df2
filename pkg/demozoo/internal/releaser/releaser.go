@@ -30,7 +30,7 @@ type Releaser struct {
 // ReleaserV1 releasers API v1.
 // This can be dynamically generated at https://mholt.github.io/json-to-go/
 // Get the Demozoo JSON output from https://demozoo.org/api/v1/releasers/{{.ID}}/?format=json
-type ReleaserV1 struct { // nolint:revive
+type ReleaserV1 struct { //nolint:revive
 	URL        string `json:"url"`
 	DemozooURL string `json:"demozoo_url"`
 	ID         int    `json:"id"`

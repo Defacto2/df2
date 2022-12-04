@@ -1,4 +1,4 @@
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -28,6 +28,6 @@ This is the default df2 command when used without any flags or arguments.
 	},
 }
 
-func init() { // nolint:gochecknoinits
+func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(newCmd)
 }

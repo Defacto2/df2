@@ -48,8 +48,7 @@ func bar(r float64) string {
 	switch {
 	case pos == start:
 		return fmt.Sprintf("(%s%s)", c, strings.Repeat(pad, max))
-	case r == end,
-		pos > float64(max):
+	case r == end, pos > float64(max):
 		return fmt.Sprintf("(%s☺)", strings.Repeat(pad, max))
 	default:
 		return fmt.Sprintf("(%s%s%s)",

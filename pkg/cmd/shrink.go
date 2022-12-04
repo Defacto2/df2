@@ -1,4 +1,4 @@
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -44,6 +44,6 @@ are 'waiting for approval.'`,
 	},
 }
 
-func init() { // nolint:gochecknoinits
+func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(shrinkCmd)
 }

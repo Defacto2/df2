@@ -229,7 +229,7 @@ func Humanize(name string) string {
 }
 
 // shorten the name to a custom name, a common name or an alias.
-func shorten(name string) string { // nolint:gocyclo
+func shorten(name string) string { //nolint:gocyclo
 	n, l := strings.ToLower(name), len(name)
 	switch {
 	case l > 3 && n[:3] == "cp-":
@@ -675,7 +675,7 @@ func (c *Convert) RunesEBCDIC() {
 }
 
 // control switches out an EBCDIC IBM mainframe control with Unicode picture representation.
-func (c *Convert) control(i int, r rune) (skip bool) { // nolint:gocyclo
+func (c *Convert) control(i int, r rune) (skip bool) { //nolint:gocyclo
 	if i > len(c.Output) {
 		return false
 	}

@@ -1,4 +1,4 @@
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -38,7 +38,7 @@ photos and text NFO files.`,
 	},
 }
 
-func init() { // nolint:gochecknoinits
+func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(proofCmd)
 	proofCmd.Flags().StringVarP(&proofs.ID, "id", "i", "",
 		"ID or UUID to handle only one proof")

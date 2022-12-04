@@ -1,4 +1,4 @@
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -35,7 +35,7 @@ require the parsing of 10,000s of records.`,
 	},
 }
 
-func init() { // nolint:gochecknoinits
+func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(apisCmd)
 	apisCmd.Flags().BoolVarP(&apis.Refresh, "refresh", "r", false,
 		"replace any empty data cells with fetched demozoo data\n"+

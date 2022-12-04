@@ -28,7 +28,7 @@ type Request struct {
 
 const (
 	// UserAgent is the value of User-Agent request HEADER
-	// that that lets servers identify this application.
+	// that lets servers identify this application.
 	UserAgent = "defacto2 cli"
 	// RFC5322 is a HTTP-date value.
 	RFC5322 = "Mon, 2 Jan 2006 15:04:05 MST"
@@ -92,7 +92,7 @@ func Get(name, url string) (http.Header, error) {
 	defer out.Close()
 	// request remote file
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func Silent(name, url string) (http.Header, error) {
 	}
 	defer out.Close()
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func Ping(url string) (*http.Response, error) {
 	const seconds = 5 * time.Second
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, seconds)
-	req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
 	defer cancel()
 	if err != nil {
 		return nil, err

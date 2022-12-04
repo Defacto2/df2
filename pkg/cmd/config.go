@@ -1,4 +1,4 @@
-// nolint:gochecknoglobals
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -99,7 +99,7 @@ the command to list the available seettings.`,
 	},
 }
 
-func init() { // nolint:gochecknoinits
+func init() { //nolint:gochecknoinits
 	database.Init()
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)

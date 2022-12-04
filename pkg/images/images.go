@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/png" //nolint:gci
+	_ "image/gif"  // register GIF decoding.
+	_ "image/jpeg" // register Jpeg decoding.
+	"image/png"
 	"io"
 	"log"
 	"os"
@@ -25,15 +27,8 @@ import (
 	"github.com/nickalie/go-webpbin"
 	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
-
-	_ "image/gif" // register GIF decoding.
-
-	_ "image/jpeg" // register Jpeg decoding.
-
-	_ "golang.org/x/image/bmp" // register BMP decoding.
-
+	_ "golang.org/x/image/bmp"  // register BMP decoding.
 	_ "golang.org/x/image/tiff" // register TIFF decoding.
-
 	_ "golang.org/x/image/webp" // register WebP decoding.
 )
 

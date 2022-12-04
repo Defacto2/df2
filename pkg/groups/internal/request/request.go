@@ -114,6 +114,8 @@ func (r Flags) iterate(groups ...string) (*[]Result, error) {
 
 // Parse the group template and save it to the named file.
 // If the named file is empty, the results will be sent to stdout.
+// The HTML returned to stdout is different to the markup saved
+// to a file.
 func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 	groups, total, err := group.List(r.Filter)
 	if err != nil {
@@ -185,7 +187,7 @@ func Print(r Flags) (total int, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("print groups: %w", err)
 	}
-	logs.Println(total, "matching", r.Filter, "records found")
+	fmt.Printf("\n\n%d matching %q records found\n", total, r.Filter)
 	a := make([]string, total)
 	for i, g := range grp {
 		if r.Progress {
