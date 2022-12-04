@@ -266,7 +266,7 @@ func TestToWebxp(t *testing.T) {
 	}{
 		{"empty", args{"", ""}, true},
 		{"invalid src", args{"blahblahblah", ""}, true},
-		{g, args{testImg(g), testDest(w)}, true},
+		{g, args{testImg(g), testDest(w)}, false},
 		{j, args{testImg(j), testDest(w)}, false},
 	}
 	for _, tt := range tests {

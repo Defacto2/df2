@@ -119,22 +119,16 @@ func TestBackup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	files := 0
+	var list []fs.FileInfo
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		files++
-	}
-	list := make([]fs.FileInfo, files)
-	for i, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		list[i], err = entry.Info()
+		info, err := entry.Info()
 		if err != nil {
 			t.Error(err)
 		}
+		list = append(list, info)
 	}
 	s := scan.Scan{
 		Path:   dir,

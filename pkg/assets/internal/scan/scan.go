@@ -94,22 +94,16 @@ func (s Scan) scanPath(d *directories.Dir) (Results, error) {
 		}
 		logs.Println(color.Warn.Sprint("assets scanpath: no such directory"))
 	}
-	files := 0
+	var list []fs.FileInfo
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		files++
-	}
-	list := make([]fs.FileInfo, files)
-	for i, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		list[i], err = entry.Info()
+		info, err := entry.Info()
 		if err != nil {
 			return Results{}, fmt.Errorf("entry info: %w", err)
 		}
+		list = append(list, info)
 	}
 	// files to ignore
 	ignore := IgnoreList(s.Path, d)

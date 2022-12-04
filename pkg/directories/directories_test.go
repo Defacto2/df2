@@ -1,6 +1,7 @@
 package directories_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/directories"
@@ -54,6 +55,7 @@ func TestFiles(t *testing.T) {
 }
 
 func TestSize(t *testing.T) {
+	const emptyDir = "../../tests/empty"
 	tests := []struct {
 		name      string
 		root      string
@@ -63,8 +65,12 @@ func TestSize(t *testing.T) {
 	}{
 		{"empty", "", 0, 0, true}, // empty contains a .gitignore file
 		{"nul", "/dev/null/no-such-dir", 0, 0, true},
-		{"empty", "../../tests/empty", 0, 0, false},
+		{"empty", emptyDir, 0, 0, false},
 		{"valid", "../../tests/demozoo", 18, 9602, false},
+	}
+	if _, err := os.Stat(emptyDir); os.IsNotExist(err) {
+		os.Mkdir(emptyDir, 0755)
+		defer os.Remove(emptyDir)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

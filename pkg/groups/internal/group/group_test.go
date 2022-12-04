@@ -56,9 +56,9 @@ func TestCleanS(t *testing.T) {
 			"This is the Group,The Group is This",
 		},
 		{"ordinal", args{"4TH dimension"}, "4th Dimension"},
-		{"ordinals", args{"4TH dimension,5Th Dynasty"}, "4th Dimension,5th Dynasty"},
-		{"abbreviation", args{"2000 ad"}, "2000 AD"},
-		{"abbreviations", args{"2000ad,500bc"}, "2000AD,500BC"},
+		{"ordinals", args{"4TH dimension, 5Th Dynasty"}, "4th Dimension, 5th Dynasty"},
+		{"abbreviation", args{"2000 ad"}, "2000AD"},
+		{"abbreviations", args{"2000ad, 500bc"}, "2000AD, 500BC"},
 		{
 			"mega-group",
 			args{"Lightforce,Pact,TRSi,Venom,Razor 1911,the System"},
@@ -140,8 +140,8 @@ func TestFormat(t *testing.T) {
 		{"pc-crew", "PC-Crew"},
 		{"inc utils", "INC Utils"},
 		{"inc", "INC"},
-		{"razor 1911,inc", "Razor 1911,INC"},
-		{"raZor 1911,the system", "Razor 1911,The System"},
+		{"razor 1911, inc", "Razor 1911, INC"},
+		{"raZor 1911, the system", "Razor 1911, The System"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
@@ -152,7 +152,7 @@ func TestFormat(t *testing.T) {
 	}
 }
 
-func TesSQLWhere(t *testing.T) {
+func TestSQLWhere(t *testing.T) {
 	t.Helper()
 	type args struct {
 		f              group.Filter

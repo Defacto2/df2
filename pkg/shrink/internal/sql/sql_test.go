@@ -91,6 +91,10 @@ func TestApprovals_Store(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	if _, err := os.Stat(d); os.IsNotExist(err) {
+		os.Mkdir(d, 0755)
+		defer os.Remove(d)
+	}
 	if err := touch(); err != nil {
 		t.Error(err)
 	}
@@ -124,6 +128,10 @@ func TestCompress(t *testing.T) {
 	d, err := filepath.Abs(path)
 	if err != nil {
 		t.Error(err)
+	}
+	if _, err := os.Stat(d); os.IsNotExist(err) {
+		os.Mkdir(d, 0755)
+		defer os.Remove(d)
 	}
 	tgz := filepath.Join(d, uuid)
 	// use images as the content of the archive

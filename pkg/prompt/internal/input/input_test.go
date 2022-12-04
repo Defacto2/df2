@@ -3,6 +3,7 @@ package input_test
 import (
 	"bytes"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -26,6 +27,10 @@ func TestDir(t *testing.T) {
 		{"enter key", strings.NewReader(""), "", false},
 		{"skip", strings.NewReader("-"), "", true},
 		{"okay", strings.NewReader(d), d, false},
+	}
+	if _, err := os.Stat(d); os.IsNotExist(err) {
+		os.Mkdir(d, 0755)
+		defer os.Remove(d)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

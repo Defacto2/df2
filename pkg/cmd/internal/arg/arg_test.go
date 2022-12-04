@@ -15,8 +15,8 @@ func Test_options(t *testing.T) {
 		args args
 		want string
 	}{
-		{"empty", args{}, "\noptions: "},
-		{"targets", args{arg.Targets()}, "\noptions: all,download,emulation,image"},
+		{"empty", args{}, "\noptions: MISSING"},
+		{"targets", args{arg.Targets()}, "\noptions: all, download, emulation, image"},
 		{"test", args{[]string{"test"}}, "\noptions: test"},
 	}
 	for _, tt := range tests {
