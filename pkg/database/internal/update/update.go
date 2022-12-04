@@ -96,6 +96,9 @@ func Sections(sections *[]string) {
 		if err != nil {
 			logs.Log(err)
 		}
+		if c == 0 {
+			continue
+		}
 		str := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
 		printcr(c, &str)
@@ -107,6 +110,9 @@ func Sections(sections *[]string) {
 	c, err := u.Execute()
 	if err != nil {
 		logs.Log(err)
+	}
+	if c == 0 {
+		return
 	}
 	str := fmt.Sprintf("%s %s \"%s\"",
 		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
@@ -121,6 +127,9 @@ func Platforms(platforms *[]string) {
 		c, err := u.Execute()
 		if err != nil {
 			logs.Log(err)
+		}
+		if c == 0 {
+			continue
 		}
 		s := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
