@@ -2,7 +2,7 @@ package task
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/gabriel-vasile/mimetype"
@@ -36,16 +36,24 @@ func Init() Task {
 
 // Run a scan for proofs in the provided temp directory.
 func Run(tempDir string) (th, tx Task, err error) {
-	files, err := ioutil.ReadDir(tempDir)
+	entries, err := os.ReadDir(tempDir)
 	if err != nil {
 		return th, tx, fmt.Errorf("extract archive read tempdir %q: %w", tempDir, err)
 	}
 	th, tx = Init(), Init()
-	for _, file := range files {
+	for _, entry := range entries {
 		if th.Cont && tx.Cont {
 			break
 		}
-		fn := path.Join(tempDir, file.Name())
+		if entry.IsDir() {
+			continue
+		}
+		file, err := entry.Info()
+		if err != nil {
+			fmt.Printf("extract archive entry error: %s\n", err)
+			continue
+		}
+		fn := path.Join(tempDir, entry.Name())
 		fmime, err := mimetype.DetectFile(fn)
 		if err != nil {
 			return th, tx, fmt.Errorf("extract archive detect mime %q: %w", fn, err)

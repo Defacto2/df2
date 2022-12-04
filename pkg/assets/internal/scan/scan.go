@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -86,13 +86,30 @@ func (s *Scan) archive(list []os.FileInfo, ignore Files) Files {
 func (s Scan) scanPath(d *directories.Dir) (Results, error) {
 	logs.Println(color.Primary.Sprintf("\nResults from %v", s.Path))
 	// query file system
-	list, err := ioutil.ReadDir(s.Path)
+	entries, err := os.ReadDir(s.Path)
 	if err != nil {
 		var e *os.PathError
 		if !errors.As(err, &e) {
 			return Results{}, fmt.Errorf("scan path readdir %q: %w", s.Path, err)
 		}
 		logs.Println(color.Warn.Sprint("assets scanpath: no such directory"))
+	}
+	files := 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		files++
+	}
+	list := make([]fs.FileInfo, files)
+	for i, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		list[i], err = entry.Info()
+		if err != nil {
+			return Results{}, fmt.Errorf("x")
+		}
 	}
 	// files to ignore
 	ignore := IgnoreList(s.Path, d)

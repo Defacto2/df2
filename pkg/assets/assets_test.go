@@ -1,7 +1,7 @@
 package assets_test
 
 import (
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -115,9 +115,26 @@ func TestBackup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	list, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Error(err)
+	}
+	files := 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		files++
+	}
+	list := make([]fs.FileInfo, files)
+	for i, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		list[i], err = entry.Info()
+		if err != nil {
+			t.Error(err)
+		}
 	}
 	s := scan.Scan{
 		Path:   dir,

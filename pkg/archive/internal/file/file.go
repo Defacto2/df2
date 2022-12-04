@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/Defacto2/df2/pkg/logs"
@@ -70,11 +69,15 @@ func Copy(name, dest string) (written int64, err error) {
 
 // Dir lists the content of a directory.
 func Dir(name string) error {
-	files, err := ioutil.ReadDir(name)
+	files, err := os.ReadDir(name)
 	if err != nil {
 		return fmt.Errorf("dir read name %q: %w", name, err)
 	}
-	for _, f := range files {
+	for _, file := range files {
+		f, err := file.Info()
+		if err != nil {
+			return fmt.Errorf("dir failure with %q: %w", f, err)
+		}
 		mime, err := mimetype.DetectFile(name + "/" + f.Name())
 		if err != nil {
 			return fmt.Errorf("dir mime failure on %q: %w", f, err)

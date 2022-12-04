@@ -3,7 +3,6 @@ package sql
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -117,7 +116,7 @@ func Init() error {
 
 	s := viper.GetString("directory.sql")
 	color.Primary.Printf("SQL directory: %s\n", s)
-	c, err := ioutil.ReadDir(s)
+	entries, err := os.ReadDir(s)
 	if err != nil {
 		return fmt.Errorf("sql read directory: %w", err)
 	}
@@ -126,8 +125,13 @@ func Init() error {
 	files := []string{}
 	var create time.Time
 
-	for _, f := range c {
-		if f.IsDir() {
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		f, err := entry.Info()
+		if err != nil {
+			logs.Printf("error with file info: %w\n", err)
 			continue
 		}
 		exts := strings.Split(f.Name(), ".")
@@ -192,7 +196,7 @@ func (cmd Approvals) Store(path, partial string) error {
 		return ErrUnknown
 	}
 
-	c, err := ioutil.ReadDir(path)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("store read: %w", err)
 	}
@@ -200,9 +204,13 @@ func (cmd Approvals) Store(path, partial string) error {
 	cnt, inUse := 0, 0
 	files := []string{}
 
-	for _, f := range c {
-		if f.IsDir() {
+	for _, entry := range entries {
+		if entry.IsDir() {
 			continue
+		}
+		f, err := entry.Info()
+		if err != nil {
+			return fmt.Errorf("store entry info: %w", err)
 		}
 		files = append(files, filepath.Join(path, f.Name()))
 		cnt++

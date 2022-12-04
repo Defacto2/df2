@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -113,12 +112,16 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 	if _, err = Restore(src, filename, tempDir); err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo restore %q: %w", filename, err)
 	}
-	files, err := ioutil.ReadDir(tempDir)
+	files, err := os.ReadDir(tempDir)
 	if err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo readdir %q: %w", tempDir, err)
 	}
 	zips := make(content.Contents)
-	for i, f := range files {
+	for i, file := range files {
+		f, err := file.Info()
+		if err != nil {
+			fmt.Printf("extract demozoo file info error: %s\n", err)
+		}
 		var zip content.File
 		zip.Path = tempDir // filename gets appended by z.scan()
 		zip.Scan(f)
