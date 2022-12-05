@@ -165,7 +165,7 @@ func (s *StyleBuilder) Get(ttype TokenType) StyleEntry {
 // Add an entry to the Style map.
 //
 // See http://pygments.org/docs/styles/#style-rules for details.
-func (s *StyleBuilder) Add(ttype TokenType, entry string) *StyleBuilder { //nolint: gocyclo
+func (s *StyleBuilder) Add(ttype TokenType, entry string) *StyleBuilder { // nolint: gocyclo
 	s.entries[ttype] = entry
 	return s
 }
@@ -298,7 +298,7 @@ func (s *Style) synthesisable(ttype TokenType) bool {
 }
 
 // ParseStyleEntry parses a Pygments style entry.
-func ParseStyleEntry(entry string) (StyleEntry, error) { //nolint: gocyclo
+func ParseStyleEntry(entry string) (StyleEntry, error) { // nolint: gocyclo
 	out := StyleEntry{}
 	parts := strings.Fields(entry)
 	for _, part := range parts {

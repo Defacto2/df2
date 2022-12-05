@@ -2,7 +2,7 @@ package convert
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"strings"
 	"unicode/utf8"
 
@@ -14,9 +14,9 @@ import (
 func DString(s string, c *charmap.Charmap) ([]byte, error) {
 	decoder := c.NewDecoder()
 	reader := transform.NewReader(strings.NewReader(s), decoder)
-	b, err := io.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, fmt.Errorf("dstring io readall error: %w", err)
+		return nil, fmt.Errorf("dstring ioutil readall error: %w", err)
 	}
 	return b, nil
 }
@@ -28,9 +28,9 @@ func EString(s string, c *charmap.Charmap) ([]byte, error) {
 	}
 	encoder := c.NewEncoder()
 	reader := transform.NewReader(strings.NewReader(s), encoder)
-	b, err := io.ReadAll(reader)
+	b, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return nil, fmt.Errorf("estring io readall error: %w", err)
+		return nil, fmt.Errorf("estring ioutil readall error: %w", err)
 	}
 	return b, nil
 }

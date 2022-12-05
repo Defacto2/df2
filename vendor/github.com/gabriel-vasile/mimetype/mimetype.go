@@ -7,6 +7,7 @@ package mimetype
 
 import (
 	"io"
+	"io/ioutil"
 	"mime"
 	"os"
 	"sync/atomic"
@@ -38,8 +39,7 @@ func Detect(in []byte) *MIME {
 //
 // DetectReader assumes the reader offset is at the start. If the input is an
 // io.ReadSeeker you previously read from, it should be rewinded before detection:
-//
-//	reader.Seek(0, io.SeekStart)
+//  reader.Seek(0, io.SeekStart)
 func DetectReader(r io.Reader) (*MIME, error) {
 	var in []byte
 	var err error
@@ -47,7 +47,7 @@ func DetectReader(r io.Reader) (*MIME, error) {
 	// Using atomic because readLimit can be written at the same time in other goroutine.
 	l := atomic.LoadUint32(&readLimit)
 	if l == 0 {
-		in, err = io.ReadAll(r)
+		in, err = ioutil.ReadAll(r)
 		if err != nil {
 			return errMIME, err
 		}

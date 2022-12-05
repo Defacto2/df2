@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.14.0
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.1.0
-	golang.org/x/sys v0.2.0
+	golang.org/x/sys v0.3.0
 	golang.org/x/text v0.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
