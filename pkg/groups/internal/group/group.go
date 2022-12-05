@@ -220,6 +220,10 @@ func fmtGroup(g string) string {
 		"2nd2none bbs", "ckc bbs":
 		return strings.ToUpper(g)
 	}
+	return fmtByName(g)
+}
+
+func fmtByName(g string) string {
 	// reformat groups
 	switch g {
 	case "drm ftp":
@@ -385,23 +389,22 @@ func fixHyphens(w string) string {
 // FmtSyntax formats the special ampersand (&) character
 // to be usable with the URL in use by the group.
 func FmtSyntax(w string) string {
-	switch {
-	case strings.Contains(w, "&"):
-		s := w
-		trimDupes := regexp.MustCompile(`\&+`)
-		s = trimDupes.ReplaceAllString(s, "&")
-
-		trimPrefix := regexp.MustCompile(`^\&+`)
-		s = trimPrefix.ReplaceAllString(s, "")
-
-		trimSuffix := regexp.MustCompile(`\&+$`)
-		s = trimSuffix.ReplaceAllString(s, "")
-
-		addWhitespace := regexp.MustCompile(`(\S)\&(\S)`) // \S matches any character that's not whitespace
-		s = addWhitespace.ReplaceAllString(s, "$1 & $2")
-		return s
+	if !strings.Contains(w, "&") {
+		return w
 	}
-	return w
+	s := w
+	trimDupes := regexp.MustCompile(`\&+`)
+	s = trimDupes.ReplaceAllString(s, "&")
+
+	trimPrefix := regexp.MustCompile(`^\&+`)
+	s = trimPrefix.ReplaceAllString(s, "")
+
+	trimSuffix := regexp.MustCompile(`\&+$`)
+	s = trimSuffix.ReplaceAllString(s, "")
+
+	addWhitespace := regexp.MustCompile(`(\S)\&(\S)`) // \S matches any character that's not whitespace
+	s = addWhitespace.ReplaceAllString(s, "$1 & $2")
+	return s
 }
 
 // Format returns a copy of s with custom formatting.

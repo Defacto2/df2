@@ -29,7 +29,9 @@ func TestDir(t *testing.T) {
 		{"okay", strings.NewReader(d), d, false},
 	}
 	if _, err := os.Stat(d); os.IsNotExist(err) {
-		os.Mkdir(d, 0755)
+		if err := os.Mkdir(d, 0o755); err != nil {
+			t.Error(err)
+		}
 		defer os.Remove(d)
 	}
 	for _, tt := range tests {

@@ -92,7 +92,9 @@ func TestApprovals_Store(t *testing.T) {
 		t.Error(err)
 	}
 	if _, err := os.Stat(d); os.IsNotExist(err) {
-		os.Mkdir(d, 0755)
+		if err := os.Mkdir(d, 0o755); err != nil {
+			t.Error(err)
+		}
 		defer os.Remove(d)
 	}
 	if err := touch(); err != nil {
@@ -130,7 +132,9 @@ func TestCompress(t *testing.T) {
 		t.Error(err)
 	}
 	if _, err := os.Stat(d); os.IsNotExist(err) {
-		os.Mkdir(d, 0755)
+		if err := os.Mkdir(d, 0o755); err != nil {
+			t.Error(err)
+		}
 		defer os.Remove(d)
 	}
 	tgz := filepath.Join(d, uuid)

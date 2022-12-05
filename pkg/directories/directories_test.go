@@ -69,7 +69,9 @@ func TestSize(t *testing.T) {
 		{"valid", "../../tests/demozoo", 18, 9602, false},
 	}
 	if _, err := os.Stat(emptyDir); os.IsNotExist(err) {
-		os.Mkdir(emptyDir, 0755)
+		if err := os.Mkdir(emptyDir, 0o755); err != nil {
+			t.Error(err)
+		}
 		defer os.Remove(emptyDir)
 	}
 	for _, tt := range tests {

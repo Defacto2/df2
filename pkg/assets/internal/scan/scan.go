@@ -94,7 +94,7 @@ func (s Scan) scanPath(d *directories.Dir) (Results, error) {
 		}
 		logs.Println(color.Warn.Sprint("assets scanpath: no such directory"))
 	}
-	var list []fs.FileInfo
+	list := make([]fs.FileInfo, 0, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
