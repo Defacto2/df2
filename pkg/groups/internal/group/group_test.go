@@ -44,7 +44,7 @@ func TestCleanS(t *testing.T) {
 		{"elite fmt", args{"MiRROR now"}, "Mirror Now"},
 		{"roman numbers", args{"In the row now ii"}, "In the Row Now II"},
 		{"BBS", args{"MiRROR now bbS"}, "Mirror Now BBS"},
-		{"slug", args{"this-is-a-slug-string"}, "This-Is-A-Slug-String"},
+		{"slug", args{"this-is-a-slug-string"}, "This-is-a-Slug-String"},
 		{
 			"pair of groups",
 			args{"Group inc.,RAZOR TO 1911"},
@@ -142,6 +142,14 @@ func TestFormat(t *testing.T) {
 		{"inc", "INC"},
 		{"razor 1911, inc", "Razor 1911, INC"},
 		{"raZor 1911, the system", "Razor 1911, The System"},
+		{"tristar&red sector inc", "Tristar & Red Sector Inc"},
+		{"tristar & red sector inc", "Tristar & Red Sector Inc"},
+		{"ab&c, xy&z", "Ab & C, Xy & Z"},
+		{"&broken&&&name&&&&", "Broken & Name"},
+		{"hello-world", "Hello-World"},
+		{"2nd-hello-world", "2nd-Hello-World"},
+		{"1st-the-hello-world", "1st-the-Hello-World"},
+		{"4-am bbs", "4-AM BBS"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
@@ -309,6 +317,33 @@ func TestCount(t *testing.T) {
 			}
 			if (gotCount > 0) != tt.wantCount {
 				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
+			}
+		})
+	}
+}
+
+func Test_FmtSyntax(t *testing.T) {
+	const ok = "hello & world"
+	tests := []struct {
+		name string
+		w    string
+		want string
+	}{
+		{"word", "hello", "hello"},
+		{"words", "hello world", "hello world"},
+		{"amp", "hello&world", ok},
+		{"multiple", "hello&world&example", "hello & world & example"},
+		{"prefix", "&&hello&world", ok},
+		{"suffix", "hello&world&&&&&", ok},
+		{"malformed", "&&&hello&&&world&&&", ok},
+		{"malformed 2", "hello&&world", ok},
+		{"malformed 3", "hello&&&world", ok},
+		{"ok", ok, ok},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := group.FmtSyntax(tt.w); got != tt.want {
+				t.Errorf("FmtSyntax() = %v, want %v", got, tt.want)
 			}
 		})
 	}

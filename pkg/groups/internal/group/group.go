@@ -208,17 +208,19 @@ func CleanS(s string) string {
 }
 
 func fmtGroup(g string) string {
-	// all uppercase group
+	// all uppercase groups
 	switch g {
 	case "anz ftp", "mor ftp", "msv ftp", "nos ftp", "pox ftp", "scf ftp", "scsi ftp",
 		"tbb ftp", "tog ftp", "top ftp", "tph-qqt", "tpw ftp", "u4ea ftp", "zoo ftp",
 		"3wa bbs", "acb bbs", "bcp bbs", "cwl bbs", "es bbs", "dv8 bbs", "fic bbs",
 		"lms bbs", "lta bbs", "ls bbs", "lpc bbs", "og bbs", "okc bbs", "uct bbs", "tsi bbs",
 		"tsc bbs", "trt 2001 bbs", "tiw bbs", "tfz 2 bbs", "ppps bbs", "pp bbs", "pmc bbs",
-		"crsiso", "tus fx", "lsdiso":
+		"crsiso", "tus fx", "lsdiso", "cnx ftp", "tph-qqt ftp", "swat", "psxdox", "nsdap",
+		"new dtl", "lkcc", "core", "gif", "xxx", "rpm", "qed bbs", "psi bbs", "tcsm bbs",
+		"2nd2none bbs", "ckc bbs":
 		return strings.ToUpper(g)
 	}
-	// reformat group
+	// reformat groups
 	switch g {
 	case "drm ftp":
 		return "dRM FTP"
@@ -244,8 +246,14 @@ func fmtGroup(g string) string {
 		return "RHViD"
 	case "trsi":
 		return "TRSi"
+	case "htbzine":
+		return "HTBZine"
+	case "mci escapes":
+		return "mci escapes"
+	case "79th trac":
+		return "79th TRAC"
 	}
-	// rename group (demozoo vs defacto2 formatting etc.)
+	// rename groups (demozoo vs defacto2 formatting etc.)
 	switch g {
 	case "2000 ad":
 		return "2000AD"
@@ -262,7 +270,8 @@ func fmtWord(w string) string {
 	case "3d", "abc", "acdc", "ad", "amf", "ansi", "asm", "au", "bbc", bbs, "bc", "cd",
 		"cgi", "diz", "dox", "eu", "faq", "fbi", ftp, "fr", "fx", "fxp", "hq", "id", "ii",
 		"iii", "iso", "kgb", "pc", "pcb", "pcp", "pda", "psx", "pwa", "ssd", "st", "tnt",
-		"tsr", "ufo", "uk", "us", "usa", "uss", "ussr", "vcd", "whq", "mp3", "rom":
+		"tsr", "ufo", "uk", "us", "usa", "uss", "ussr", "vcd", "whq", "mp3", "rom", "fm",
+		"am", "pm":
 		return strings.ToUpper(w)
 	case "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
 		"10th", "11th", "12th", "13th":
@@ -285,6 +294,16 @@ func fmtSuffix(w string, title cases.Caser) string {
 		x := strings.TrimSuffix(w, "bc")
 		if val, err := strconv.Atoi(x); err == nil {
 			return fmt.Sprintf("%dBC", val)
+		}
+	case strings.HasSuffix(w, "am"):
+		x := strings.TrimSuffix(w, "am")
+		if val, err := strconv.Atoi(x); err == nil {
+			return fmt.Sprintf("%dAM", val)
+		}
+	case strings.HasSuffix(w, "pm"):
+		x := strings.TrimSuffix(w, "pm")
+		if val, err := strconv.Atoi(x); err == nil {
+			return fmt.Sprintf("%dPM", val)
 		}
 	case strings.HasSuffix(w, "dox"):
 		val := strings.TrimSuffix(w, "dox")
@@ -320,6 +339,71 @@ func fmtSequence(w string, i int) string {
 	return ""
 }
 
+func fmtConnect(w string, position, last int) string {
+	const first = 0
+	if position == first || position == last {
+		return ""
+	}
+	switch w {
+	case "a", "as", "and", "at", "by", "el", "of", "for", "from", "in", "is", "or", "tha",
+		"the", "to", "with":
+		return strings.ToLower(w)
+	}
+	return ""
+}
+
+func fixWord(w string, position, last int) string {
+	if fix := fmtConnect(w, position, last); fix != "" {
+		return fix
+	}
+	if fix := fmtWord(w); fix != "" {
+		return fix
+	}
+	title := cases.Title(language.English, cases.NoLower)
+	if fix := fmtSuffix(w, title); fix != "" {
+		return fix
+	}
+	if fix := fmtSequence(w, position); fix != "" {
+		return fix
+	}
+	return title.String(w)
+}
+
+func fixHyphens(w string) string {
+	const hyphen = "-"
+	if !strings.Contains(w, hyphen) {
+		return ""
+	}
+	compounds := strings.Split(w, hyphen)
+	last := len(compounds) - 1
+	for i, word := range compounds {
+		compounds[i] = fixWord(word, i, last)
+	}
+	return strings.Join(compounds, hyphen)
+}
+
+// FmtSyntax formats the special ampersand (&) character
+// to be usable with the URL in use by the group.
+func FmtSyntax(w string) string {
+	switch {
+	case strings.Contains(w, "&"):
+		s := w
+		trimDupes := regexp.MustCompile(`\&+`)
+		s = trimDupes.ReplaceAllString(s, "&")
+
+		trimPrefix := regexp.MustCompile(`^\&+`)
+		s = trimPrefix.ReplaceAllString(s, "")
+
+		trimSuffix := regexp.MustCompile(`\&+$`)
+		s = trimSuffix.ReplaceAllString(s, "")
+
+		addWhitespace := regexp.MustCompile(`(\S)\&(\S)`) // \S matches any character that's not whitespace
+		s = addWhitespace.ReplaceAllString(s, "$1 & $2")
+		return s
+	}
+	return w
+}
+
 // Format returns a copy of s with custom formatting.
 func Format(s string) string {
 	const (
@@ -329,39 +413,24 @@ func Format(s string) string {
 	if len(s) <= acronym {
 		return strings.ToUpper(s)
 	}
-	title := cases.Title(language.English, cases.NoLower)
 	groups := strings.Split(s, separator)
 	for j, group := range groups {
 		g := strings.ToLower(strings.TrimSpace(group))
+		g = FmtSyntax(g)
 		if fix := fmtGroup(g); fix != "" {
 			groups[j] = fix
 			continue
 		}
+
 		words := strings.Split(g, space)
 		last := len(words) - 1
-		for i, w := range words {
-			w = TrimDot(w)
-			if i > 0 && i < last {
-				switch w {
-				case "a", "as", "and", "at", "by", "el", "of", "for", "from", "in", "is", "or", "tha",
-					"the", "to", "with":
-					words[i] = strings.ToLower(w)
-					continue
-				}
-			}
-			if fix := fmtWord(w); fix != "" {
+		for i, word := range words {
+			word = TrimDot(word)
+			if fix := fixHyphens(word); fix != "" {
 				words[i] = fix
 				continue
 			}
-			if fix := fmtSuffix(w, title); fix != "" {
-				words[i] = fix
-				continue
-			}
-			if fix := fmtSequence(w, i); fix != "" {
-				words[i] = fix
-				continue
-			}
-			words[i] = title.String(w)
+			words[i] = fixWord(word, i, last)
 		}
 		groups[j] = strings.Join(words, space)
 	}
