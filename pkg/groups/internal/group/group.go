@@ -275,7 +275,7 @@ func fmtWord(w string) string {
 		"cgi", "diz", "dox", "eu", "faq", "fbi", ftp, "fr", "fx", "fxp", "hq", "id", "ii",
 		"iii", "iso", "kgb", "pc", "pcb", "pcp", "pda", "psx", "pwa", "ssd", "st", "tnt",
 		"tsr", "ufo", "uk", "us", "usa", "uss", "ussr", "vcd", "whq", "mp3", "rom", "fm",
-		"am", "pm":
+		"am", "pm", "gbc":
 		return strings.ToUpper(w)
 	case "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
 		"10th", "11th", "12th", "13th":

@@ -96,26 +96,26 @@ func ByGroupNames(emitters map[string]Emitter) Emitter {
 //
 // Example:
 //
-//	var Markdown = internal.Register(MustNewLexer(
-//		&Config{
-//			Name:      "markdown",
-//			Aliases:   []string{"md", "mkd"},
-//			Filenames: []string{"*.md", "*.mkd", "*.markdown"},
-//			MimeTypes: []string{"text/x-markdown"},
-//		},
-//		Rules{
-//			"root": {
-//				{"^(```)(\\w+)(\\n)([\\w\\W]*?)(^```$)",
-//					UsingByGroup(
-//						internal.Get,
-//						2, 4,
-//						String, String, String, Text, String,
-//					),
-//					nil,
-//				},
-//			},
-//		},
-//	))
+// 	var Markdown = internal.Register(MustNewLexer(
+// 		&Config{
+// 			Name:      "markdown",
+// 			Aliases:   []string{"md", "mkd"},
+// 			Filenames: []string{"*.md", "*.mkd", "*.markdown"},
+// 			MimeTypes: []string{"text/x-markdown"},
+// 		},
+// 		Rules{
+// 			"root": {
+// 				{"^(```)(\\w+)(\\n)([\\w\\W]*?)(^```$)",
+// 					UsingByGroup(
+// 						internal.Get,
+// 						2, 4,
+// 						String, String, String, Text, String,
+// 					),
+// 					nil,
+// 				},
+// 			},
+// 		},
+// 	))
 //
 // See the lexers/m/markdown.go for the complete example.
 //
@@ -254,8 +254,8 @@ func NewLazyLexer(config *Config, rulesFunc func() Rules) (*RegexLexer, error) {
 // MustNewLexer creates a new Lexer or panics.
 //
 // Deprecated: Use MustNewLazyLexer instead.
-func MustNewLexer(config *Config, rules Rules) *RegexLexer { //nolint: forbidigo
-	lexer, err := NewLexer(config, rules) //nolint: forbidigo
+func MustNewLexer(config *Config, rules Rules) *RegexLexer { // nolint: forbidigo
+	lexer, err := NewLexer(config, rules) // nolint: forbidigo
 	if err != nil {
 		panic(err)
 	}
@@ -268,7 +268,7 @@ func MustNewLexer(config *Config, rules Rules) *RegexLexer { //nolint: forbidigo
 // that match input, optionally modify lexer state, and output tokens.
 //
 // Deprecated: Use NewLazyLexer instead.
-func NewLexer(config *Config, rules Rules) (*RegexLexer, error) { //nolint: forbidigo
+func NewLexer(config *Config, rules Rules) (*RegexLexer, error) { // nolint: forbidigo
 	return NewLazyLexer(config, func() Rules { return rules })
 }
 
@@ -321,7 +321,7 @@ func (l *LexerState) Get(key interface{}) interface{} {
 }
 
 // Iterator returns the next Token from the lexer.
-func (l *LexerState) Iterator() Token { //nolint: gocognit
+func (l *LexerState) Iterator() Token { // nolint: gocognit
 	end := len(l.Text)
 	if l.newlineAdded {
 		end--

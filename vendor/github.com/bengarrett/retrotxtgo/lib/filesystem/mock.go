@@ -110,7 +110,7 @@ func filler(sizeMB float64) (length int, random string) {
 	s := make([]rune, int(f))
 	// generate random string
 	for i := range s {
-		s[i] = chars[rand.Intn(charsLen)] //nolint:gosec
+		s[i] = chars[rand.Intn(charsLen)] // nolint:gosec
 	}
 	return len(s), string(s)
 }
@@ -120,7 +120,7 @@ type dirTests []struct {
 	wantDir string
 }
 
-//nolint:dupl
+// nolint:dupl
 func windowsTests(h, hp, s, w, wp string) dirTests {
 	return dirTests{
 		{fmt.Sprintf("C:%shome%suser", s, s), fmt.Sprintf("C:%shome%suser", s, s)},
@@ -135,7 +135,7 @@ func windowsTests(h, hp, s, w, wp string) dirTests {
 	}
 }
 
-//nolint:dupl
+// nolint:dupl
 func nixTests(h, hp, s, w, wp string) dirTests {
 	return dirTests{
 		{fmt.Sprintf("%shome%suser", s, s), fmt.Sprintf("%shome%suser", s, s)},

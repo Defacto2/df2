@@ -10,7 +10,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gabriel-vasile/mimetype v1.4.1
-	github.com/go-sql-driver/mysql v1.6.0
+	github.com/go-sql-driver/mysql v1.7.0
 	github.com/google/uuid v1.3.0
 	github.com/gookit/color v1.5.2
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
@@ -21,9 +21,9 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
-	golang.org/x/image v0.1.0
-	golang.org/x/sys v0.2.0
-	golang.org/x/text v0.4.0
+	golang.org/x/image v0.2.0
+	golang.org/x/sys v0.3.0
+	golang.org/x/text v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

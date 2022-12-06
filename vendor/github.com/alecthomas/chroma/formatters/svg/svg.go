@@ -80,7 +80,7 @@ func escapeString(s string) string {
 	return svgEscaper.Replace(s)
 }
 
-func (f *Formatter) writeSVG(w io.Writer, style *chroma.Style, tokens []chroma.Token) { //nolint: gocyclo
+func (f *Formatter) writeSVG(w io.Writer, style *chroma.Style, tokens []chroma.Token) { // nolint: gocyclo
 	svgStyles := f.styleToSVG(style)
 	lines := chroma.SplitTokensIntoLines(tokens)
 
