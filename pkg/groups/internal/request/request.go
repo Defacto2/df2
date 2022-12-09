@@ -9,6 +9,7 @@ import (
 	"path"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
@@ -160,10 +161,13 @@ func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 			return fmt.Errorf("parse create: %w", err)
 		}
 		defer f.Close()
+		now := time.Now()
 		// prepend html
 		s := "<div class=\"pagination-statistics\"><span class=\"label label-default\">"
-		s += fmt.Sprintf("%d %s sites</span></div><div class=\"columns-list\" id=\"organisation-drill-down\">",
+		s += fmt.Sprintf("%d %s sites</span>",
 			total, r.Filter)
+		s += fmt.Sprintf("&nbsp; <span class=\"label label-default\">updated, %s</span>", now.Format("2006 Jan 2"))
+		s += "</div><div class=\"columns-list\" id=\"organisation-drill-down\">"
 		if _, err = f.WriteString(s); err != nil {
 			return fmt.Errorf("prepend writestring: %w", err)
 		}

@@ -180,7 +180,7 @@ type Request struct {
 
 // Clean a malformed group name and save the fix to the database.
 func Clean(name string) (ok bool) {
-	fix := CleanS(name)
+	fix := CleanStr(name)
 	if fix == name {
 		return false
 	}
@@ -196,8 +196,8 @@ func Clean(name string) (ok bool) {
 	return ok
 }
 
-// CleanS fixes the malformed string.
-func CleanS(s string) string {
+// CleanStr fixes the malformed string.
+func CleanStr(s string) string {
 	f := database.TrimSP(s)
 	f = database.StripChars(f)
 	f = database.StripStart(f)
@@ -207,18 +207,22 @@ func CleanS(s string) string {
 	return f
 }
 
-func fmtGroup(g string) string {
-	// all uppercase groups
+// fmtExact matches the exact group name to apply a format.
+func fmtExact(g string) string {
 	switch g {
+	// all uppercase full groups
 	case "anz ftp", "mor ftp", "msv ftp", "nos ftp", "pox ftp", "scf ftp", "scsi ftp",
 		"tbb ftp", "tog ftp", "top ftp", "tph-qqt", "tpw ftp", "u4ea ftp", "zoo ftp",
 		"3wa bbs", "acb bbs", "bcp bbs", "cwl bbs", "es bbs", "dv8 bbs", "fic bbs",
 		"lms bbs", "lta bbs", "ls bbs", "lpc bbs", "og bbs", "okc bbs", "uct bbs", "tsi bbs",
 		"tsc bbs", "trt 2001 bbs", "tiw bbs", "tfz 2 bbs", "ppps bbs", "pp bbs", "pmc bbs",
 		"crsiso", "tus fx", "lsdiso", "cnx ftp", "tph-qqt ftp", "swat", "psxdox", "nsdap",
-		"new dtl", "lkcc", "core", "gif", "xxx", "rpm", "qed bbs", "psi bbs", "tcsm bbs",
-		"2nd2none bbs", "ckc bbs":
+		"new dtl", "lkcc", "core", "qed bbs", "psi bbs", "tcsm bbs",
+		"2nd2none bbs", "ckc bbs", "beer":
 		return strings.ToUpper(g)
+	case "scenet":
+		// all lowercase full groups
+		return strings.ToLower(g)
 	}
 	return fmtByName(g)
 }
@@ -256,6 +260,22 @@ func fmtByName(g string) string {
 		return "mci escapes"
 	case "79th trac":
 		return "79th TRAC"
+	case "unreal magazine":
+		return "UnReal Magazine"
+	case "ice weekly newsletter":
+		return "iCE Weekly Newsletter"
+	case "biased":
+		return "bIASED"
+	case "dreadloc":
+		return "DREADLoC"
+	case "cybermail":
+		return "CyberMail"
+	case "excretion anarchy":
+		return "eXCReTION Anarchy"
+	case "pocketheaven":
+		return "PocketHeaven"
+	case "rzsoft ftp":
+		return "RZSoft FTP"
 	}
 	// rename groups (demozoo vs defacto2 formatting etc.)
 	switch g {
@@ -275,7 +295,7 @@ func fmtWord(w string) string {
 		"cgi", "diz", "dox", "eu", "faq", "fbi", ftp, "fr", "fx", "fxp", "hq", "id", "ii",
 		"iii", "iso", "kgb", "pc", "pcb", "pcp", "pda", "psx", "pwa", "ssd", "st", "tnt",
 		"tsr", "ufo", "uk", "us", "usa", "uss", "ussr", "vcd", "whq", "mp3", "rom", "fm",
-		"am", "pm", "gbc":
+		"am", "pm", "gbc", "gif", "xxx", "rpm":
 		return strings.ToUpper(w)
 	case "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th",
 		"10th", "11th", "12th", "13th":
@@ -420,7 +440,7 @@ func Format(s string) string {
 	for j, group := range groups {
 		g := strings.ToLower(strings.TrimSpace(group))
 		g = FmtSyntax(g)
-		if fix := fmtGroup(g); fix != "" {
+		if fix := fmtExact(g); fix != "" {
 			groups[j] = fix
 			continue
 		}

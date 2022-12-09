@@ -28,7 +28,7 @@ func TestClean(t *testing.T) {
 	}
 }
 
-func TestCleanS(t *testing.T) {
+func TestCleanStr(t *testing.T) {
 	type args struct {
 		s string
 	}
@@ -67,8 +67,8 @@ func TestCleanS(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := group.CleanS(tt.args.s); got != tt.want {
-				t.Errorf("CleanS() = %v, want %v", got, tt.want)
+			if got := group.CleanStr(tt.args.s); got != tt.want {
+				t.Errorf("CleanStr() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -150,6 +150,7 @@ func TestFormat(t *testing.T) {
 		{"2nd-hello-world", "2nd-Hello-World"},
 		{"1st-the-hello-world", "1st-the-Hello-World"},
 		{"4-am bbs", "4-AM BBS"},
+		{"dimention xxx bbs", "Dimention XXX BBS"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
