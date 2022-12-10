@@ -105,6 +105,27 @@ that are raster images.`,
 	},
 }
 
+var fixRenGroup = &cobra.Command{
+	Use:     "rename group replacement",
+	Short:   "Rename all instances of a group.",
+	Aliases: []string{"ren", "r"},
+	GroupID: "groupR",
+	Example: `  df2 fix rename "The Group" "New Group Name"`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// in the future this command could be adapted to use a --person flag
+		err := run.Rename(args...)
+		if errors.Is(err, run.ErrFewArgs) {
+			if err := cmd.Usage(); err != nil {
+				logs.Fatal(err)
+			}
+			os.Exit(0)
+		}
+		if err != nil {
+			log.Print(err)
+		}
+	},
+}
+
 var fixTextCmd = &cobra.Command{
 	Use:   "text",
 	Short: "Generate missing text previews.",
@@ -134,29 +155,11 @@ var fixZipCmmtCmd = &cobra.Command{
 	},
 }
 
-var fixRenGroup = &cobra.Command{
-	Use:     "rename group replacement",
-	Short:   "Rename all instances of a group.",
-	Aliases: []string{"ren", "r"},
-	Example: `  df2 fix rename "The Group" "New Group Name"`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := run.Rename(args...)
-		if errors.Is(err, run.ErrFewArgs) {
-			if err := cmd.Usage(); err != nil {
-				logs.Fatal(err)
-			}
-			os.Exit(0)
-		}
-		if err != nil {
-			log.Print(err)
-		}
-	},
-}
-
 func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(fixCmd)
-	fixCmd.AddGroup(&cobra.Group{ID: "groupU", Title: "Update:"})
+	fixCmd.AddGroup(&cobra.Group{ID: "groupU", Title: "Repair:"})
 	fixCmd.AddGroup(&cobra.Group{ID: "groupG", Title: "Create:"})
+	fixCmd.AddGroup(&cobra.Group{ID: "groupR", Title: "Update:"})
 	fixCmd.AddCommand(fixArchivesCmd)
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
