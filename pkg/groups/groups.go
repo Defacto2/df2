@@ -13,6 +13,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
+	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/viper"
@@ -96,6 +97,25 @@ func Cronjob(force bool) error {
 	return nil
 }
 
+// Exact returns the number of file entries that match an exact named group.
+// The casing is ignored, but comma seperated multi-groups are not matched to their parents.
+// The name "tristar" will match "Tristar" but will not match records using
+// "Tristar, Red Sector Inc".
+func Exact(name string) (int, error) {
+	if name == "" {
+		return 0, nil
+	}
+	db := database.Connect()
+	defer db.Close()
+	n, count := name, 0
+	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
+		"group_brand_by=?", n, n)
+	if err := row.Scan(&count); err != nil {
+		return 0, fmt.Errorf("count: %w", err)
+	}
+	return count, db.Close()
+}
+
 // Fix any malformed group names found in the database.
 func Fix() error {
 	// fix group names stored in the files table
@@ -105,7 +125,7 @@ func Fix() error {
 	}
 	c, start := 0, time.Now()
 	for _, name := range names {
-		if r := group.Clean(name); r {
+		if r := rename.Clean(name); r {
 			c++
 		}
 	}
@@ -137,6 +157,11 @@ func Fix() error {
 	return nil
 }
 
+// Format returns a copy of name with custom formatting.
+func Format(name string) string {
+	return rename.Format(name)
+}
+
 // Initialism returns a named group initialism or acronym.
 func Initialism(name string) (string, error) {
 	g := acronym.Group{Name: name}
@@ -149,6 +174,11 @@ func Initialism(name string) (string, error) {
 // Slug takes a string and makes it into a URL friendly slug.
 func Slug(s string) string {
 	return group.Slug(s)
+}
+
+// Update replaces all instances of the group name with the new group name.
+func Update(newName, group string) (count int64, err error) {
+	return rename.Update(newName, group)
 }
 
 // Variations creates format variations for a named group.

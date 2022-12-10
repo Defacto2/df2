@@ -2,11 +2,13 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
+	"github.com/Defacto2/df2/pkg/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/groups"
@@ -132,6 +134,25 @@ var fixZipCmmtCmd = &cobra.Command{
 	},
 }
 
+var fixRenGroup = &cobra.Command{
+	Use:     "rename group replacement",
+	Short:   "Rename all instances of a group.",
+	Aliases: []string{"ren", "r"},
+	Example: `  df2 fix rename "The Group" "New Group Name"`,
+	Run: func(cmd *cobra.Command, args []string) {
+		err := run.Rename(args...)
+		if errors.Is(err, run.ErrFewArgs) {
+			if err := cmd.Usage(); err != nil {
+				logs.Fatal(err)
+			}
+			os.Exit(0)
+		}
+		if err != nil {
+			log.Print(err)
+		}
+	},
+}
+
 func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(fixCmd)
 	fixCmd.AddGroup(&cobra.Group{ID: "groupU", Title: "Update:"})
@@ -140,6 +161,7 @@ func init() { //nolint:gochecknoinits
 	fixCmd.AddCommand(fixDatabaseCmd)
 	fixCmd.AddCommand(fixDemozooCmd)
 	fixCmd.AddCommand(fixImagesCmd)
+	fixCmd.AddCommand(fixRenGroup)
 	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.AddCommand(fixZipCmmtCmd)
 	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.ASCII, "print", "p", false,
