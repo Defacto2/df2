@@ -1,4 +1,4 @@
-package url_test
+package urlset_test
 
 import (
 	"encoding/xml"
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/sitemap/internal/url"
+	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
 )
 
 type mockedFileInfo struct {
@@ -24,13 +24,13 @@ func TestLastmod(t *testing.T) {
 	mfi := mockedFileInfo{
 		modtime: nyd,
 	}
-	if got := url.Lastmod(mfi); got != want {
+	if got := urlset.Lastmod(mfi); got != want {
 		t.Errorf("Lastmod() = %v, want %v", got, want)
 	}
 }
 
 func TestPaths(t *testing.T) {
-	got := url.Paths()
+	got := urlset.Paths()
 	const expected = 28
 	if l := len(got); l != expected {
 		t.Errorf("len(Paths()) = %v, want %v", l, expected)
@@ -45,10 +45,10 @@ func TestPaths(t *testing.T) {
 	}
 }
 
-func tags() []url.Tag {
-	l := len(url.Paths())
-	urls := make([]url.Tag, l)
-	tag := url.Tag{Location: "/url-path-"}
+func tags() []urlset.Tag {
+	l := len(urlset.Paths())
+	urls := make([]urlset.Tag, l)
+	tag := urlset.Tag{Location: "/url-path-"}
 	for i := 1; i < l; i++ {
 		urls[i] = tag
 		urls[i].Location += fmt.Sprint(i)
@@ -57,11 +57,11 @@ func tags() []url.Tag {
 }
 
 func TestSet_StaticURLs(t *testing.T) {
-	tag := url.Tag{Location: "/url-path-1"}
+	tag := urlset.Tag{Location: "/url-path-1"}
 	type fields struct {
 		XMLName xml.Name
 		XMLNS   string
-		Urls    []url.Tag
+		Urls    []urlset.Tag
 	}
 	tests := []struct {
 		name   string
@@ -73,7 +73,7 @@ func TestSet_StaticURLs(t *testing.T) {
 		{"too small", fields{
 			XMLName: xml.Name{Space: " ", Local: "set.Urls"},
 			XMLNS:   "pretend namespace",
-			Urls:    []url.Tag{tag},
+			Urls:    []urlset.Tag{tag},
 		}, 0, 0},
 		{"okay", fields{
 			XMLName: xml.Name{Space: " ", Local: "set.Urls"},
@@ -83,7 +83,7 @@ func TestSet_StaticURLs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			set := &url.Set{
+			set := &urlset.Set{
 				XMLName: tt.fields.XMLName,
 				XMLNS:   tt.fields.XMLNS,
 				Urls:    tt.fields.Urls,

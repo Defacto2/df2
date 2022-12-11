@@ -1,4 +1,4 @@
-package url
+package urlset
 
 import (
 	"encoding/xml"
@@ -61,6 +61,19 @@ func Paths() [28]string {
 		"help/allowed-uploads",
 		"help/categories",
 		"link/list",
+	}
+}
+
+func Html3Paths() [7]string {
+	const s = "html3/"
+	return [...]string{
+		s,
+		s + "art",
+		s + "documents",
+		s + "software",
+		s + "groups",
+		s + "platforms",
+		s + "categories",
 	}
 }
 

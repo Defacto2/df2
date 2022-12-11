@@ -10,10 +10,12 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/sitemap/internal/url"
+	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
 )
 
 const (
+	// Base URL.
+	Base = "https://defacto2.net"
 	// Resource of the sitemap.
 	Resource = "https://defacto2.net/f/"
 	// limit the number of urls as permitted by Bing and Google search engines.
@@ -23,7 +25,7 @@ const (
 // Create generates and prints the sitemap.
 func Create() error {
 	// query
-	id, v := "", &url.Set{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
+	id, v := "", &urlset.Set{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	var createdat, updatedat sql.NullString
 	count, err := nullsDeleteAt()
 	if err != nil {
@@ -40,7 +42,7 @@ func Create() error {
 	}
 	defer rows.Close()
 	// handle static urls
-	v.Urls = make([]url.Tag, len(url.Paths())+count)
+	v.Urls = make([]urlset.Tag, len(urlset.Paths())+count)
 	c, i := v.StaticURLs()
 	// handle query results.
 	for rows.Next() {
@@ -55,7 +57,7 @@ func Create() error {
 		if _, err = createdat.Value(); err != nil {
 			continue
 		}
-		v.Urls[i] = url.Tag{
+		v.Urls[i] = urlset.Tag{
 			Location:     Resource,
 			LastModified: database.ObfuscateParam(id),
 			ChangeFreq:   lastmodValue(createdat, updatedat),
@@ -72,8 +74,8 @@ func Create() error {
 	return db.Close()
 }
 
-func createOutput(v *url.Set) error {
-	empty, trimmed := url.Tag{}, []url.Tag{}
+func createOutput(v *urlset.Set) error {
+	empty, trimmed := urlset.Tag{}, []urlset.Tag{}
 	for i, x := range v.Urls {
 		if x == empty {
 			trimmed = v.Urls[0:i]
