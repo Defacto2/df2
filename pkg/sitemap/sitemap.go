@@ -97,21 +97,12 @@ func createOutput(v *urlset.Set) error {
 	return nil
 }
 
-func nullsDeleteAt() (count int, err error) {
-	dbc := database.Connect()
-	defer dbc.Close()
-	rowCnt, err := dbc.Query("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL")
-	if err != nil {
-		return count, fmt.Errorf("create count query: %w", err)
-	}
-	if rowCnt.Err() != nil {
-		return count, fmt.Errorf("create count rows: %w", rowCnt.Err())
-	}
-	defer rowCnt.Close()
-	for rowCnt.Next() {
-		if err = rowCnt.Scan(&count); err != nil {
-			return count, fmt.Errorf("create count scan: %w", err)
-		}
+func nullsDeleteAt() (int, error) {
+	db := database.Connect()
+	defer db.Close()
+	var count int
+	if err := db.QueryRow("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL").Scan(&count); err != nil {
+		return 0, err
 	}
 	return count, nil
 }
