@@ -1,4 +1,4 @@
-// Package database interacts with the MySQL 5.7 datastore of Defacto2.
+// Package database interacts with the MySQL datastore of Defacto2.
 package database
 
 import (
@@ -15,8 +15,8 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/export"
-	"github.com/Defacto2/df2/pkg/database/internal/my57"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
 	"github.com/Defacto2/df2/pkg/database/internal/update"
 	"github.com/Defacto2/df2/pkg/logs"
@@ -36,7 +36,7 @@ var (
 )
 
 const (
-	// Datetime MySQL 5.7 format.
+	// Datetime MySQL format.
 	Datetime = "2006-01-02T15:04:05Z"
 
 	// UpdateID is a user id to use with the updatedby column.
@@ -44,6 +44,10 @@ const (
 
 	hide = "****"
 	Null = "NULL"
+
+	WhereDownloadBlock = "WHERE `file_security_alert_url` IS NOT NULL AND `file_security_alert_url` != ''"
+	WhereAvailable     = "WHERE `deletedat` IS NULL OR `deletedat` = ''"
+	WhereHidden        = "WHERE `deletedat` IS NOT NULL AND `deletedat` != ''"
 )
 
 // Empty is used as a blank value for search maps.
@@ -71,18 +75,18 @@ func (t Table) String() string {
 }
 
 // Init initialises the database connection using stored settings.
-func Init() my57.Connection {
-	return my57.Init()
+func Init() connect.Connection {
+	return connect.Init()
 }
 
 // Connect will connect to the database and handle any errors.
 func Connect() *sql.DB {
-	return my57.Connect()
+	return connect.Connect()
 }
 
 // ConnErr will connect to the database or return any errors.
 func ConnErr() (*sql.DB, error) {
-	c := my57.Init()
+	c := connect.Init()
 	db, err := sql.Open("mysql", c.String())
 	if err != nil {
 		e := strings.Replace(err.Error(), c.Pass, hide, 1)
@@ -96,7 +100,7 @@ func ConnErr() (*sql.DB, error) {
 
 // ConnInfo will connect to the database and return any errors.
 func ConnInfo() string {
-	c := my57.Init()
+	c := connect.Init()
 	db, err := sql.Open("mysql", c.String())
 	defer func() {
 		db.Close()
@@ -150,7 +154,7 @@ func CheckUUID(s string) error {
 
 // ColTypes details the columns used by the table.
 func ColTypes(t Table) (string, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
 	var query string
@@ -218,6 +222,30 @@ func DateTime(raw sql.RawBytes) string {
 	return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 15:04")))
 }
 
+// Distinct returns a unique list of values from the table column.
+func Distinct(value string) ([]string, error) {
+	db := connect.Connect()
+	defer db.Close()
+	stmt := fmt.Sprintf("SELECT DISTINCT `%s` FROM `files`", value)
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, fmt.Errorf("distinct query: %w", err)
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("distinct rows: %w", rows.Err())
+	}
+	defer rows.Close()
+	res := []string{}
+	dest := ""
+	for rows.Next() {
+		if err = rows.Scan(&dest); err != nil {
+			return nil, fmt.Errorf("distinct scan: %w", err)
+		}
+		res = append(res, strings.ToLower(dest))
+	}
+	return res, nil
+}
+
 // FileUpdate reports if the named file is newer than the database time.
 // True is always returned when the named file does not exist.
 func FileUpdate(name string, db time.Time) (bool, error) {
@@ -241,7 +269,9 @@ func Execute(u Update) (int64, error) {
 // Fix any malformed section and platforms found in the database.
 func Fix() error {
 	start := time.Now()
-	update.NamedTitles()
+	update.Filename.NamedTitles()
+	update.GroupFor.NamedTitles()
+	update.GroupBy.NamedTitles()
 	elapsed := time.Since(start).Seconds()
 	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
 
@@ -260,7 +290,7 @@ func Fix() error {
 
 // DemozooID finds a record ID by the saved Demozoo production ID. If no production exists a zero is returned.
 func DemozooID(id uint) (uint, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	var dz uint
 	// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
@@ -272,7 +302,7 @@ func DemozooID(id uint) (uint, error) {
 
 // GetID returns a numeric Id from a UUID or database id s value.
 func GetID(s string) (uint, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	// auto increment numeric ids
 	var id uint
@@ -294,9 +324,59 @@ func GetID(s string) (uint, error) {
 	return id, db.Close()
 }
 
+// GetKeys returns all the primary keys used by the files table.
+// The integer keys are sorted incrementally.
+// An SQL WHERE statement can be provided to filter the results.
+func GetKeys(whereStmt string) ([]int, error) {
+	const (
+		countStmt  = "SELECT COUNT(*) FROM `files`"
+		selectStmt = "SELECT `id` FROM `files`"
+	)
+	db := connect.Connect()
+	defer db.Close()
+
+	whereStmt = strings.TrimSpace(whereStmt)
+	cs := countStmt
+	if whereStmt != "" {
+		cs = fmt.Sprintf("%s %s", cs, whereStmt)
+	}
+	var count int
+	if err := db.QueryRow(cs).Scan(&count); err != nil {
+		return nil, err
+	}
+
+	ss := selectStmt
+	if whereStmt != "" {
+		ss = fmt.Sprintf("%s %s", ss, whereStmt)
+	}
+	rows, err := db.Query(ss)
+	if err != nil {
+		return nil, fmt.Errorf("getkeys query: %w", err)
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("getkeys rows: %w", rows.Err())
+	}
+	defer rows.Close()
+
+	id, i := "", -1
+	keys := make([]int, 0, count)
+	for rows.Next() {
+		i++
+		if err = rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("getkeys scan: %w", err)
+		}
+		val, err := strconv.Atoi(id)
+		if err != nil {
+			continue
+		}
+		keys = append(keys, val)
+	}
+	return keys, nil
+}
+
 // GetFile returns the filename from a supplied UUID or database ID value.
 func GetFile(s string) (string, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	var n sql.NullString
 	if v, err := strconv.Atoi(s); err == nil {
@@ -360,7 +440,7 @@ func IsUUID(s string) bool {
 
 // LastUpdate reports the time when the files database was last modified.
 func LastUpdate() (time.Time, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat`" +
 		" ORDER BY `updatedat` DESC LIMIT 1")
@@ -433,7 +513,7 @@ func Tbls() string {
 
 // Total reports the number of records fetched by the supplied SQL query.
 func Total(s *string) (int, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	rows, err := db.Query(*s)
 	switch {
@@ -472,7 +552,7 @@ func Waiting() (uint, error) {
 	const countWaiting = "SELECT COUNT(*)\nFROM `files`\n" +
 		"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 	var count uint
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	if err := db.QueryRow(countWaiting).Scan(&count); err != nil {
 		return 0, err

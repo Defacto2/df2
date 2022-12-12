@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/database/internal/my57"
+	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/templ"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
@@ -130,7 +130,7 @@ func (f *Flags) Run() error {
 	return nil
 }
 
-// DB saves or prints a MySQL 5.7 compatible SQL import database statement.
+// DB saves or prints a MySQL compatible SQL import database statement.
 func (f *Flags) DB() error {
 	start := time.Now()
 	if err := f.method(); err != nil {
@@ -148,7 +148,7 @@ func (f *Flags) DB() error {
 	return nil
 }
 
-// ExportTable saves or prints a MySQL 5.7 compatible SQL import table statement.
+// ExportTable saves or prints a MySQL compatible SQL import table statement.
 func (f *Flags) ExportTable() error {
 	if err := f.method(); err != nil {
 		return fmt.Errorf("table: %w", err)
@@ -499,7 +499,7 @@ func columns(t Table) ([]string, error) {
 		columns []string
 		err     error
 		rows    *sql.Rows
-		db      = my57.Connect()
+		db      = connect.Connect()
 	)
 	defer db.Close()
 	switch t {
@@ -545,7 +545,7 @@ func columns(t Table) ([]string, error) {
 
 // rows returns the values of table.
 func rows(t Table, limit int) ([]string, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	var rows *sql.Rows
 	const listAll = 0

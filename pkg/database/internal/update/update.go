@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/database/internal/my57"
+	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/gookit/color"
 )
@@ -19,7 +19,7 @@ type Update struct {
 
 // Execute Query and Args to update the database and returns the total number of changes.
 func (u Update) Execute() (int64, error) {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	update, err := db.Prepare(u.Query)
 	if err != nil {
@@ -37,9 +37,47 @@ func (u Update) Execute() (int64, error) {
 	return count, db.Close()
 }
 
+type Column string
+
+const (
+	Filename Column = "files.filename"
+	GroupBy  Column = "files.group_brand_by"
+	GroupFor Column = "files.group_brand_for"
+)
+
+// NamedTitles remove record titles that match the filename.
+func (col Column) NamedTitles() {
+	ctx := context.Background()
+	db := connect.Connect()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Print(err)
+	}
+	result, err := tx.ExecContext(ctx, "UPDATE files SET record_title=\"\" WHERE files.record_title="+string(col))
+	if err != nil {
+		if err1 := tx.Rollback(); err1 != nil {
+			log.Print(err1)
+		}
+		log.Print(err)
+	}
+	if err = tx.Commit(); err != nil {
+		log.Print(err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		log.Print(err)
+	}
+	if rows == 0 {
+		logs.Printcrf("no named title fixes needed")
+		return
+	}
+	logs.Printcrf("%d named title fixes applied", rows)
+}
+
+// Distinct returns a unique list of values from the table column.
 func Distinct(column string) ([]string, error) {
 	var result string
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	rows, err := db.Query("SELECT DISTINCT ? AS `result` FROM `files` WHERE ? != \"\"", column, column)
 	if err != nil {
@@ -57,34 +95,6 @@ func Distinct(column string) ([]string, error) {
 		values = append(values, result)
 	}
 	return values, db.Close()
-}
-
-func NamedTitles() {
-	ctx := context.Background()
-	db := my57.Connect()
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		log.Print(err)
-	}
-	result, err := tx.ExecContext(ctx, "UPDATE files SET record_title=\"\" WHERE files.record_title=files.filename")
-	if err != nil {
-		if err1 := tx.Rollback(); err1 != nil {
-			log.Print(err1)
-		}
-		log.Print(err)
-	}
-	if err = tx.Commit(); err != nil {
-		log.Print(err)
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		log.Print(err)
-	}
-	if rows == 0 {
-		logs.Print("no named title fixes needed")
-		return
-	}
-	logs.Printcrf("%d named title fixes applied", rows)
 }
 
 func Sections(sections *[]string) {

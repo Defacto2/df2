@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/database/internal/my57"
+	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	// Datetime MySQL 5.7 format.
+	// Datetime MySQL format.
 	Datetime = "2006-01-02T15:04:05Z"
 	// UpdateID is a user id to use with the updatedby column.
 	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
@@ -74,7 +74,7 @@ func (r *Record) String() string {
 
 // approve sets the record to be publically viewable.
 func (r *Record) Approve() error {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	if err != nil {
@@ -383,7 +383,7 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
 func Queries(v bool) error {
-	db := my57.Connect()
+	db := connect.Connect()
 	defer db.Close()
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {

@@ -1,4 +1,4 @@
-package my57
+package connect
 
 import (
 	"database/sql"
@@ -17,7 +17,7 @@ import (
 var ErrConnect = errors.New("could not connect to the mysql database server")
 
 const (
-	// Datetime MySQL 5.7 format.
+	// Datetime MySQL format.
 	Datetime = "2006-01-02T15:04:05Z"
 	// UpdateID is a user id to use with the updatedby column.
 	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
