@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/download/internal/cnter"
@@ -31,6 +33,11 @@ const (
 	UserAgent = "defacto2 cli"
 	// RFC5322 is a HTTP-date value.
 	RFC5322 = "Mon, 2 Jan 2006 15:04:05 MST"
+	// DownloadPrefix header filename attachment.
+	DownloadPrefix = "attachment; filename="
+
+	ContentDisposition = "Content-Disposition"
+	ContentLength      = "Content-Length"
 
 	ua = "User-Agent"
 )
@@ -156,6 +163,22 @@ func Ping(url string) (*http.Response, error) {
 		return nil, err
 	}
 	return resp, nil
+}
+
+// PingFile connects to a URL file down and returns its status code, filename and file size.
+func PingFile(link string) (code int, name string, size string, err error) {
+	res, err := Ping(link)
+	if err != nil {
+		return res.StatusCode, "", "", err
+	}
+	cd, cl := res.Header.Get(ContentDisposition), res.Header.Get(ContentLength)
+	name = strings.TrimPrefix(cd, DownloadPrefix)
+
+	i, err := strconv.Atoi(cl)
+	if err == nil {
+		size = humanize.Bytes(uint64(i))
+	}
+	return res.StatusCode, name, size, nil
 }
 
 // StatusColor colours the HTTP status based on its severity.
