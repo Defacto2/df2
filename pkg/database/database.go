@@ -45,6 +45,14 @@ const (
 	hide = "****"
 	Null = "NULL"
 
+	CountFiles   = "SELECT COUNT(*) FROM `files`"
+	CountWaiting = CountFiles + " WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
+
+	SelKeys   = "SELECT `id` FROM `files`"
+	SelNames  = "SELECT `filename` FROM `files`"
+	SelUpdate = "SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat`" +
+		" ORDER BY `updatedat` DESC LIMIT 1"
+
 	WhereDownloadBlock = "WHERE `file_security_alert_url` IS NOT NULL AND `file_security_alert_url` != ''"
 	WhereAvailable     = "WHERE `deletedat` IS NULL OR `deletedat` = ''"
 	WhereHidden        = "WHERE `deletedat` IS NOT NULL AND `deletedat` != ''"
@@ -328,15 +336,11 @@ func GetID(s string) (uint, error) {
 // The integer keys are sorted incrementally.
 // An SQL WHERE statement can be provided to filter the results.
 func GetKeys(whereStmt string) ([]int, error) {
-	const (
-		countStmt  = "SELECT COUNT(*) FROM `files`"
-		selectStmt = "SELECT `id` FROM `files`"
-	)
 	db := connect.Connect()
 	defer db.Close()
 
 	whereStmt = strings.TrimSpace(whereStmt)
-	cs := countStmt
+	cs := CountFiles
 	if whereStmt != "" {
 		cs = fmt.Sprintf("%s %s", cs, whereStmt)
 	}
@@ -345,7 +349,7 @@ func GetKeys(whereStmt string) ([]int, error) {
 		return nil, err
 	}
 
-	ss := selectStmt
+	ss := SelKeys
 	if whereStmt != "" {
 		ss = fmt.Sprintf("%s %s", ss, whereStmt)
 	}
@@ -380,14 +384,14 @@ func GetFile(s string) (string, error) {
 	defer db.Close()
 	var n sql.NullString
 	if v, err := strconv.Atoi(s); err == nil {
-		err = db.QueryRow("SELECT filename FROM files WHERE id=?", v).Scan(&n)
+		err = db.QueryRow(SelNames+" WHERE id=?", v).Scan(&n)
 		if err != nil {
 			return "", fmt.Errorf("lookup file by id queryrow %q: %w", s, err)
 		}
 		return n.String, nil
 	}
 	s = strings.ToLower(s)
-	err := db.QueryRow("SELECT filename FROM files WHERE uuid=?", s).Scan(&n)
+	err := db.QueryRow(SelNames+" WHERE uuid=?", s).Scan(&n)
 	if err != nil {
 		return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", s, err)
 	}
@@ -442,8 +446,7 @@ func IsUUID(s string) bool {
 func LastUpdate() (time.Time, error) {
 	db := connect.Connect()
 	defer db.Close()
-	row := db.QueryRow("SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat`" +
-		" ORDER BY `updatedat` DESC LIMIT 1")
+	row := db.QueryRow(SelUpdate)
 	t := time.Time{}
 	if err := row.Scan(&t); err != nil {
 		return t, fmt.Errorf("last update: %w", err)
@@ -549,12 +552,10 @@ func Val(col sql.RawBytes) string {
 
 // Waiting returns the number of files requiring approval for public display.
 func Waiting() (uint, error) {
-	const countWaiting = "SELECT COUNT(*)\nFROM `files`\n" +
-		"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 	var count uint
 	db := connect.Connect()
 	defer db.Close()
-	if err := db.QueryRow(countWaiting).Scan(&count); err != nil {
+	if err := db.QueryRow(CountWaiting).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
