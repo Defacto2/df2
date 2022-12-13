@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/Defacto2/df2/pkg/people"
 	"github.com/Defacto2/df2/pkg/prompt"
 	"github.com/Defacto2/df2/pkg/proof"
+	"github.com/Defacto2/df2/pkg/sitemap"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/text"
 	"github.com/Defacto2/df2/pkg/zipcontent"
@@ -416,5 +418,83 @@ func Rename(args ...string) error {
 		return err
 	}
 	fmt.Printf("%d records updated to use %q\n", i, newName)
+	return nil
+}
+
+func TestSite(base string) error {
+	urls, err := sitemap.FileList(base)
+	if err != nil {
+		return err
+	}
+	color.Primary.Printf("\nRequesting %d various query-string options of the list of files\n", len(urls))
+	sitemap.Success.Range(urls[:])
+
+	const pingCount = 10
+	total, ids, err := sitemap.RandIDs(pingCount)
+	if err != nil {
+		return err
+	}
+	urls = ids.JoinPaths(base, sitemap.File)
+	color.Primary.Printf("\nRequesting the <title> of %d random files from %d public records\n", pingCount, total)
+	sitemap.LinkSuccess.Range(urls[:])
+
+	total, ids, err = sitemap.RandIDs(pingCount)
+	if err != nil {
+		return err
+	}
+	urls = ids.JoinPaths(base, sitemap.Download)
+	color.Primary.Printf("\nRequesting the content disposition of %d random file download from %d public records\n",
+		pingCount, total)
+	sitemap.Success.RangeFiles(urls[:])
+
+	const hideCount = 2
+	total, ids, err = sitemap.RandDeleted(hideCount)
+	if err != nil {
+		return err
+	}
+	urls = ids.JoinPaths(base, sitemap.File)
+	color.Primary.Printf("\nRequesting the <title> of %d random files from %d disabled records\n", hideCount, total)
+	sitemap.LinkNotFound.Range(urls[:])
+
+	total, ids, err = sitemap.RandBlocked(hideCount)
+	if err != nil {
+		return err
+	}
+	urls = ids.JoinPaths(base, sitemap.Download)
+	color.Primary.Printf("\nRequesting the content disposition of %d random file download from %d disabled records\n", hideCount, total)
+	sitemap.NotFound.RangeFiles(urls[:])
+
+	invalidIDs := []int{-99999999, -1, 0, 99999999}
+	urls = sitemap.IDs(invalidIDs).JoinPaths(base, sitemap.File)
+	invalidElms := []string{"-", "womble-bomble", "<script>", "1+%48*1"}
+	for _, elm := range invalidElms {
+		r, err := url.JoinPath(base, sitemap.File.String(), elm)
+		if err != nil {
+			return err
+		}
+		urls = append(urls, r)
+	}
+	loc, err := url.JoinPath(base, sitemap.File.String())
+	if err != nil {
+		return err
+	}
+	urls = append(urls, loc)
+	color.Primary.Printf("\nRequesting the <title> of %d invalid file URLs\n", len(urls))
+	sitemap.NotFound.Range(urls[:])
+
+	paths, err := sitemap.AbsPaths(base)
+	if err != nil {
+		return err
+	}
+	color.Primary.Printf("\nRequesting %d static URLs used in the sitemap.xml\n", len(paths))
+	sitemap.Success.Range(paths[:])
+
+	html3s, err := sitemap.AbsPathsH3(base)
+	if err != nil {
+		return err
+	}
+	color.Primary.Printf("\nRequesting %d static URLs used by the HTML3 text mode\n", len(html3s))
+	sitemap.Success.Range(html3s[:])
+
 	return nil
 }

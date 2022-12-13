@@ -114,7 +114,7 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
 			return 0, 0, fmt.Errorf("pouet id parse: %w", err)
 		}
 		if ping {
-			resp, err := download.Ping(l.URL)
+			resp, err := download.PingHead(l.URL)
 			if err != nil {
 				return 0, 0, fmt.Errorf("pouet id ping: %w", err)
 			}

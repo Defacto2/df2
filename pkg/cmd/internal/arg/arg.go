@@ -87,6 +87,10 @@ type Recent struct {
 	Limit    uint
 }
 
+type TestSite struct {
+	LocalHost bool
+}
+
 type ZipCmmt struct {
 	ASCII   bool
 	Unicode bool

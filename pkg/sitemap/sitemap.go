@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -14,10 +15,10 @@ import (
 )
 
 const (
-	// Base URL.
+	// Base URL of the website.
 	Base = "https://defacto2.net"
-	// Resource of the sitemap.
-	Resource = "https://defacto2.net/f/"
+	// Local base URL for the websote hosted on a Docker container.
+	LocalBase = "http://localhost:8560"
 	// limit the number of urls as permitted by Bing and Google search engines.
 	Limit = 50000
 )
@@ -57,8 +58,12 @@ func Create() error {
 		if _, err = createdat.Value(); err != nil {
 			continue
 		}
+		loc, err := url.JoinPath(Base, "f")
+		if err != nil {
+			return err
+		}
 		v.Urls[i] = urlset.Tag{
-			Location:     Resource,
+			Location:     loc,
 			LastModified: database.ObfuscateParam(id),
 			ChangeFreq:   lastmodValue(createdat, updatedat),
 			Priority:     "",

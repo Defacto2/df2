@@ -96,7 +96,7 @@ func TestGetPing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := download.Get(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
+			if _, err := download.GetSave(tt.args.name, tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -108,7 +108,7 @@ func TestGetPing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := download.Ping(tt.args.url)
+			p, err := download.PingHead(tt.args.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ping() error = %v, wantErr %v", err, tt.wantErr)
 				return

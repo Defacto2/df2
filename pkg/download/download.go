@@ -88,8 +88,8 @@ func progressDone(name string, written int64) {
 	logs.Printcrf("%v download saved to: %v", humanize.Bytes(uint64(written)), name)
 }
 
-// Get downloads the url and saves it as the named file.
-func Get(name, url string) (http.Header, error) {
+// GetSave downloads the url and saves it as the named file.
+func GetSave(name, url string) (http.Header, error) {
 	// open local target file
 	out, err := os.Create(name)
 	if err != nil {
@@ -146,12 +146,11 @@ func Silent(name, url string) (http.Header, error) {
 	return resp.Header, nil
 }
 
-// Ping connects to a URL and returns its HTTP status code and status text.
-func Ping(url string) (*http.Response, error) {
-	const seconds = 5 * time.Second
+func ping(url, method string, t time.Duration) (*http.Response, error) {
+	seconds := t * time.Second
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, seconds)
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	defer cancel()
 	if err != nil {
 		return nil, err
@@ -165,9 +164,39 @@ func Ping(url string) (*http.Response, error) {
 	return resp, nil
 }
 
+// PingGet connects to a URL and returns its response.
+func Get(url string) ([]byte, int, error) {
+	//return ping(url, http.MethodGet, 60)
+	seconds := 30 * time.Second
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, seconds)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	defer cancel()
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set(ua, UserAgent)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("%w: %s", err, url)
+	}
+	return body, resp.StatusCode, nil
+}
+
+// PingHead connects to a URL and returns its HTTP status code and status text.
+func PingHead(url string) (*http.Response, error) {
+	return ping(url, http.MethodHead, 5)
+}
+
 // PingFile connects to a URL file down and returns its status code, filename and file size.
 func PingFile(link string) (code int, name string, size string, err error) {
-	res, err := Ping(link)
+	res, err := PingHead(link)
 	if err != nil {
 		return res.StatusCode, "", "", err
 	}

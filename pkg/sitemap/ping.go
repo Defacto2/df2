@@ -3,7 +3,6 @@ package sitemap
 import (
 	"errors"
 	"fmt"
-	"io"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -17,6 +16,8 @@ import (
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
 	"github.com/gookit/color"
+
+	"github.com/google/go-querystring/query"
 )
 
 // Root URL element.
@@ -28,13 +29,48 @@ const (
 )
 
 func (r Root) String() string {
-	switch r {
-	case File:
-		return "f"
-	case Download:
-		return "d"
+	return [...]string{"f", "d"}[r]
+}
+
+func Outputs() []string {
+	return []string{
+		"card", "text", "thumb-"}
+}
+
+func Sorts() []string {
+	return []string{
+		"date_asc", "date_desc",
+		"posted_asc", "posted_desc",
+		"size_asc", "size_desc"}
+}
+
+type Options struct {
+	Output   string `url:"output"`
+	Platform string `url:"platform"`
+	Section  string `url:"section"`
+	Sort     string `url:"sort"`
+}
+
+// FileList returns a complete list of URL query strings for the file lists.
+func FileList(base string) ([]string, error) {
+	const all = "-"
+	urls := []string{}
+	base, err := url.JoinPath(base, "file", "list", all)
+	if err != nil {
+		return nil, err
 	}
-	return ""
+	for _, output := range Outputs() {
+		for _, sort := range Sorts() {
+			opt := Options{output, all, all, sort}
+			v, err := query.Values(opt)
+			if err != nil {
+				return nil, err
+			}
+			link := fmt.Sprintf("%s?%s", base, v.Encode())
+			urls = append(urls, link)
+		}
+	}
+	return urls, nil
 }
 
 const (
@@ -94,11 +130,11 @@ func (a IDs) Randomize(x int) (IDs, error) {
 }
 
 // JoinPaths return the URL strings of the IDs.
-func (a IDs) JoinPaths(r Root) []string {
+func (a IDs) JoinPaths(base string, r Root) []string {
 	urls := make([]string, 0, len(a))
 	for _, id := range a {
 		obfus := database.ObfuscateParam(fmt.Sprint(id))
-		link, err := url.JoinPath(Base, r.String(), obfus)
+		link, err := url.JoinPath(base, r.String(), obfus)
 		if err != nil {
 			continue
 		}
@@ -178,11 +214,11 @@ func (p Style) Range(urls []string) {
 }
 
 // AbsPaths returns all the static URLs used by the sitemap.
-func AbsPaths() ([28]string, error) {
+func AbsPaths(base string) ([28]string, error) {
 	var paths [28]string
 	var err error
 	for i, path := range urlset.Paths() {
-		paths[i], err = url.JoinPath(Base, path)
+		paths[i], err = url.JoinPath(base, path)
 		if err != nil {
 			return [28]string{}, err
 		}
@@ -191,12 +227,12 @@ func AbsPaths() ([28]string, error) {
 }
 
 // AbsPaths returns all the HTML3 static URLs used by the sitemap.
-func AbsPathsH3() ([]string, error) {
+func AbsPathsH3(base string) ([]string, error) {
 	const root = "html3"
 	urls := urlset.Html3Paths()
 	paths := make([]string, 0, len(urls))
 	for _, elem := range urls {
-		path, err := url.JoinPath(Base, elem)
+		path, err := url.JoinPath(base, elem)
 		if err != nil {
 			return nil, err
 		}
@@ -208,7 +244,7 @@ func AbsPathsH3() ([]string, error) {
 		return nil, err
 	}
 	for _, plat := range plats {
-		path, err := url.JoinPath(Base, root, "platform", plat)
+		path, err := url.JoinPath(base, root, "platform", plat)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +256,7 @@ func AbsPathsH3() ([]string, error) {
 		return nil, err
 	}
 	for _, sect := range sects {
-		path, err := url.JoinPath(Base, root, "category", sect)
+		path, err := url.JoinPath(base, root, "category", sect)
 		if err != nil {
 			return nil, err
 		}
@@ -284,20 +320,15 @@ func GetSoftDeleteKeys() (IDs, error) {
 
 // GetTitle returns the string value of the HTML <title> element and status code of a URL.
 func GetTitle(trimSuffix bool, url string) (string, int, error) {
-	res, err := download.Ping(url)
+	b, status, err := download.Get(url)
 	if err != nil {
-		return "", res.StatusCode, nil
-	}
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return "", 0, fmt.Errorf("%w: %s", err, url)
+		return "", status, err
 	}
 	if !trimSuffix {
-		return FindTitle(body), res.StatusCode, nil
+		return FindTitle(b), status, nil
 	}
-	s := FindTitle(body)
-	return strings.TrimSuffix(s, TitleSuffix), res.StatusCode, nil
+	s := FindTitle(b)
+	return strings.TrimSuffix(s, TitleSuffix), status, nil
 }
 
 // FindTitle returns the string value of the HTML <title> element.

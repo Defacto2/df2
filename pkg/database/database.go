@@ -236,12 +236,12 @@ func Distinct(value string) ([]string, error) {
 	}
 	defer rows.Close()
 	res := []string{}
-	dest := ""
+	var dest sql.NullString
 	for rows.Next() {
 		if err = rows.Scan(&dest); err != nil {
 			return nil, fmt.Errorf("distinct scan: %w", err)
 		}
-		res = append(res, strings.ToLower(dest))
+		res = append(res, strings.ToLower(dest.String))
 	}
 	return res, nil
 }

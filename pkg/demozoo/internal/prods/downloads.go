@@ -48,7 +48,7 @@ func (p *ProductionsAPIv1) DownloadLink() (name, link string) {
 			}
 			continue
 		}
-		ping, err := download.Ping(l.URL)
+		ping, err := download.PingHead(l.URL)
 		if err != nil || ping.StatusCode != found {
 			if flag.Lookup("test.v") != nil {
 				if err != nil {
@@ -79,7 +79,7 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 		logs.Print(" not usable\n")
 		return nil
 	}
-	ping, err := download.Ping(l.URL)
+	ping, err := download.PingHead(l.URL)
 	if err != nil {
 		return fmt.Errorf("download off demozoo ping: %w", err)
 	}
@@ -100,7 +100,7 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 	if err != nil {
 		return fmt.Errorf("download off demozoo abs filepath: %w", err)
 	}
-	_, err = download.Get(dest, l.URL)
+	_, err = download.GetSave(dest, l.URL)
 	if err != nil {
 		return fmt.Errorf("download off demozoo download: %w", err)
 	}
