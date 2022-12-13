@@ -15,7 +15,7 @@ var tests arg.TestSite
 
 var testCmd = &cobra.Command{
 	Use:     "test",
-	Short:   "Test by pinging select URLs of the website.",
+	Short:   "Test the website by pinging or downloading a large, select number of URLs.",
 	Aliases: []string{"t"},
 	GroupID: "group3",
 	Run: func(cmd *cobra.Command, args []string) {
