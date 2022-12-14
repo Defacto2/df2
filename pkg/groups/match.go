@@ -5,17 +5,20 @@ import (
 	"log"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	approx = "≈"
-	bbs    = " BBS"
-	ftp    = " FTP"
+	approx     = "≈"
+	bbs        = " BBS"
+	ftp        = " FTP"
+	ignoreCase = "(?i)"
 )
 
 // Contains returns true whenever sorted contains x.
+// The slice value must be stored in increasing order.
 func Contains(x string, sorted []string) bool {
 	l := len(sorted)
 	if l == 0 {
@@ -28,14 +31,9 @@ func Contains(x string, sorted []string) bool {
 	return sorted[o] == x
 }
 
-func MatchStd() error {
-	// defer profile.Start(
-	// 	profile.CPUProfile,
-	// 	//profile.GoroutineProfile,
-	// 	//profile.MemProfileHeap,
-	// 	//profile.MemProfileAllocs,
-	// 	profile.ProfilePath(".")).Stop()
-
+// MatchStdOut scans over the groups and attempts to match possible misnamed duplicates.
+// The results are printed to stdout in realtime.
+func MatchStdOut() error {
 	tick := time.Now()
 
 	list, total, err := List()
@@ -48,7 +46,14 @@ func MatchStd() error {
 	var matches []string
 	a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 :=
 		"", "", "", "", "", "", "", "", "", "", "", "", ""
-
+	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 :=
+		"", "", "", "", "", "", "", "", "", "", "", "", ""
+	f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 :=
+		"", "", "", "", "", "", "", "", "", "", "", ""
+	g0, g1, g2, g3, g4, g5, g6, g7, g8 :=
+		"", "", "", "", "", "", "", "", ""
+	h0, h1, h2, h3, h4, h5, h6, h7, h8 :=
+		"", "", "", "", "", "", "", "", ""
 	for _, group := range list {
 		l = len(group)
 		if l == 0 {
@@ -61,11 +66,54 @@ func MatchStd() error {
 		b0, b1, b2 = TrimSP(group)
 		c0 = SwapSuffix(group, "er", "a")
 		c1 = SwapPrefix(group, "th", "da")
-		d0 = SwapPhonetic(group, "ph", "f")
-		d1 = SwapPhonetic(group, "ight", "ite")
-		d2 = SwapPhonetic(group, "oul", "ul")
-		d3 = SwapPhonetic(group, "ool", "ewl")
-		d4 = SwapPhonetic(group, "culd", "suld")
+		d0 = SwapOne(group, "ph", "f")
+		d1 = SwapOne(group, "ight", "ite")
+		d2 = SwapOne(group, "oul", "ul")
+		d3 = SwapOne(group, "ool", "ewl")
+		d4 = SwapOne(group, "culd", "suld")
+		e0 = SwapNumeral(group, 0)
+		e1 = SwapNumeral(group, 1)
+		e2 = SwapNumeral(group, 2)
+		e3 = SwapNumeral(group, 3)
+		e4 = SwapNumeral(group, 4)
+		e5 = SwapNumeral(group, 5)
+		e6 = SwapNumeral(group, 6)
+		e7 = SwapNumeral(group, 7)
+		e8 = SwapNumeral(group, 8)
+		e9 = SwapNumeral(group, 9)
+		e10 = SwapNumeral(group, 10)
+		e11 = SwapNumeral(group, 11)
+		e12 = SwapNumeral(group, 12)
+		f1 = SwapNumeral(group, 1)
+		f2 = SwapNumeral(group, 2)
+		f3 = SwapNumeral(group, 3)
+		f4 = SwapNumeral(group, 4)
+		f5 = SwapNumeral(group, 5)
+		f6 = SwapNumeral(group, 6)
+		f7 = SwapNumeral(group, 7)
+		f8 = SwapNumeral(group, 8)
+		f9 = SwapNumeral(group, 9)
+		f10 = SwapNumeral(group, 10)
+		f11 = SwapNumeral(group, 11)
+		f12 = SwapNumeral(group, 12)
+		g0 = SwapAll(group, "0", "o")
+		h0 = SwapAll(group, "o", "0")
+		g1 = SwapAll(group, "1", "l")
+		h1 = SwapAll(group, "l", "1")
+		g2 = SwapAll(group, "1", "i")
+		h2 = SwapAll(group, "i", "q")
+		g3 = SwapAll(group, "i", "l")
+		h3 = SwapAll(group, "l", "i")
+		g4 = SwapAll(group, "3", "e")
+		h4 = SwapAll(group, "e", "3")
+		g5 = SwapAll(group, "4", "a")
+		h5 = SwapAll(group, "a", "4")
+		g6 = SwapAll(group, "6", "g")
+		h6 = SwapAll(group, "g", "6")
+		g7 = SwapAll(group, "8", "b")
+		h7 = SwapAll(group, "b", "8")
+		g8 = SwapAll(group, "9", "g")
+		h8 = SwapAll(group, "g", "9")
 
 		for _, match := range list {
 			if Contains(match, matches) {
@@ -74,7 +122,11 @@ func MatchStd() error {
 			switch match {
 			case group, "":
 				continue
-			case a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4:
+			case a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4,
+				e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12,
+				f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12,
+				g0, g1, g2, g3, g4, g5, g6, g7, g8,
+				h0, h1, h2, h3, h4, h5, h6, h7, h8:
 				fmt.Printf("%q %s %q\n", group, approx, match)
 				matches = append(matches, match)
 				sort.Strings(matches)
@@ -95,55 +147,109 @@ func MatchStd() error {
 	return nil
 }
 
-func SwapPhonetic(group, phonetic, swap string) string {
-	re := regexp.MustCompile(phonetic)
+// SwapNumeral finds any occurrences of i within a group name and swaps it for a cardinal number.
+func SwapNumeral(group string, i int) string {
+	num := []string{"zero", "one", "two", "three", "four", "five",
+		"six", "seven", "eight", "nine", "ten", "eleven", "twelve"}
+	if i > len(num) {
+		return ""
+	}
+	re := regexp.MustCompile(strconv.Itoa(i))
+	s := re.ReplaceAllString(group, num[i])
+	return Format(s)
+}
+
+// SwapOrdinal finds any occurrences of i within a group name and swaps it for a ordinal number.
+func SwapOrdinal(group string, i int) string {
+	num := []string{"0", "1st", "2nd", "3rd", "4th", "5th",
+		"6th", "7th", "8th", "9th", "10th", "11th", "12th"}
+	if i > len(num) {
+		return ""
+	}
+	re := regexp.MustCompile(strconv.Itoa(i))
+	s := re.ReplaceAllString(group, num[i])
+	return Format(s)
+}
+
+func replaceOne(str string) string {
+	// regex source: https://stackoverflow.com/questions/16703501/replace-one-occurrence-with-regexp
+	return ignoreCase + "^(.*?)" + str + "(.*)$"
+}
+
+func replOne(swap string) string {
+	return "${1}" + swap + "$2"
+}
+
+// SwapOne finds the first occurrence of str within a group name and replaces it with swap.
+func SwapOne(group, str, swap string) string {
+	re := regexp.MustCompile(replaceOne(str))
+	s := re.ReplaceAllString(group, replOne(swap))
+	return Format(s)
+}
+
+// SwapAll finds all occurrences of str within a group name and replaces it with swap.
+func SwapAll(group, str, swap string) string {
+	re := regexp.MustCompile(ignoreCase + str)
 	s := re.ReplaceAllString(group, swap)
 	return Format(s)
 }
 
+// SwapPrefix replaces the prefix value at the start of a group name and replaces it with swap.
+// An empty string is returned if the prefix does not exist in the name.
 func SwapPrefix(group, prefix, swap string) string {
-	prefix = Format(prefix)
+	s := ""
+	prefix = strings.ToLower(prefix)
+	group = strings.ToLower(group)
 	if strings.HasPrefix(group, prefix) {
-		return strings.TrimPrefix(group, prefix) + swap
-	}
-	if strings.HasPrefix(group, prefix+bbs) {
-		return strings.TrimPrefix(group, prefix+bbs) + swap + bbs
-	}
-	if strings.HasPrefix(group, prefix+ftp) {
-		return strings.TrimPrefix(group, prefix+ftp) + swap + ftp
+		s = swap + strings.TrimPrefix(group, prefix)
+		return Format(s)
 	}
 	return ""
 }
 
+// SwapSuffix replaces the suffix value at the end of a group name and replaces it with swap.
+// An empty string is returned if the suffix does not exist in the name.
 func SwapSuffix(group, suffix, swap string) string {
+	s := ""
+	suffix = strings.ToLower(suffix)
+	group = strings.ToLower(group)
 	if strings.HasSuffix(group, suffix) {
-		return strings.TrimSuffix(group, suffix) + swap
+		s = strings.TrimSuffix(group, suffix) + swap
+		return Format(s)
 	}
-	if strings.HasSuffix(group, suffix+bbs) {
-		return strings.TrimSuffix(group, suffix+bbs) + swap + bbs
+	suf := strings.ToLower(suffix + bbs)
+	if strings.HasSuffix(group, suf) {
+		s = strings.TrimSuffix(group, suf) + swap + bbs
+		return Format(s)
 	}
-	if strings.HasSuffix(group, suffix+ftp) {
-		return strings.TrimSuffix(group, suffix+ftp) + swap + ftp
+	suf = strings.ToLower(suffix + ftp)
+	if strings.HasSuffix(group, suf) {
+		s = strings.TrimSuffix(group, suf) + swap + ftp
+		return Format(s)
 	}
 	return ""
 }
 
-func TrimSP(group string) (string, string, string) {
-	if strings.HasSuffix(group, bbs) {
-		s := strings.TrimSuffix(group, bbs)
+// TrimSP removes all spaces from a named group, BBS or FTP site.
+// The first string returns the spaceless name.
+// The second string returns a spaceless name appended with the plural "s".
+// The third string is spaceless name appended with the plural "z".
+func TrimSP(name string) (string, string, string) {
+	if strings.HasSuffix(name, bbs) {
+		s := strings.TrimSuffix(name, bbs)
 		s = strings.ReplaceAll(s, " ", "")
 		s = Format(s)
 		x, y, z := s+bbs, s+"s"+bbs, s+"z"+bbs
 		return x, y, z
 	}
-	if strings.HasSuffix(group, ftp) {
-		s := strings.TrimSuffix(group, ftp)
+	if strings.HasSuffix(name, ftp) {
+		s := strings.TrimSuffix(name, ftp)
 		s = strings.ReplaceAll(s, " ", "")
 		s = Format(s)
 		x, y, z := s+ftp, s+"s"+ftp, s+"z"+ftp
 		return x, y, z
 	}
-	s := strings.ReplaceAll(group, " ", "")
+	s := strings.ReplaceAll(name, " ", "")
 	s = Format(s)
 	x, y, z := s, s+"s", s+"z"
 	return x, y, z

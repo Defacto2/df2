@@ -29,7 +29,7 @@ var testGroupNames = &cobra.Command{
 	Short:   "Scans over the various group names and attempts to match possible misnamed duplicates.",
 	Aliases: []string{"n"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := groups.MatchStd(); err != nil {
+		if err := groups.MatchStdOut(); err != nil {
 			log.Fatal(err)
 		}
 	}}
