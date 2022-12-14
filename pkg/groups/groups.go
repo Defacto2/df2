@@ -171,6 +171,11 @@ func Initialism(name string) (string, error) {
 	return g.Initialism, nil
 }
 
+// List returns all the distinct groups.
+func List() ([]string, int, error) {
+	return group.List("")
+}
+
 // Slug takes a string and makes it into a URL friendly slug.
 func Slug(s string) string {
 	return group.Slug(s)
