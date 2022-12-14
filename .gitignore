@@ -4,3 +4,4 @@ internal/dist/
 UPDATES.md
 .bin
 .DS_Store
+*.pprof
