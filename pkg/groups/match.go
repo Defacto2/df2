@@ -2,12 +2,13 @@ package groups
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gookit/color"
 )
 
 const (
@@ -136,14 +137,16 @@ func MatchStdOut() error {
 	}
 	list = nil
 	l = len(matches)
+	elapsed := time.Since(tick)
+	fmt.Printf("\nProcessing time %s\n", elapsed)
 	switch l {
 	case 0:
 		fmt.Printf("\nGreat, there are no known duplicate names from %d groups\n", total)
 	default:
-		fmt.Printf("\n%d matches from %d groups\n", l, total)
+		color.Primary.Printf("\n%d matches from %d groups\n", l, total)
+		fmt.Printf("To rename groups: df2 fix rename \"group name\" \"replacement name\"\n")
+		fmt.Printf("Example: df2 fix rename %q %q\n", "defacto ii", "defacto2")
 	}
-	elapsed := time.Since(tick)
-	log.Printf("taking %s", elapsed)
 	return nil
 }
 
