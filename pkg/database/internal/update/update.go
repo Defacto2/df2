@@ -3,7 +3,6 @@ package update
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database/internal/connect"
@@ -46,32 +45,33 @@ const (
 )
 
 // NamedTitles remove record titles that match the filename.
-func (col Column) NamedTitles() {
+func (col Column) NamedTitles() error {
 	ctx := context.Background()
 	db := connect.Connect()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		log.Print(err)
+		return err
 	}
-	result, err := tx.ExecContext(ctx, "UPDATE files SET record_title=\"\" WHERE files.record_title="+string(col))
+	result, err := tx.ExecContext(ctx, "UPDATE files SET record_title = \"\" WHERE files.record_title = ?", string(col))
 	if err != nil {
 		if err1 := tx.Rollback(); err1 != nil {
-			log.Print(err1)
+			return err1
 		}
-		log.Print(err)
+		return err
 	}
 	if err = tx.Commit(); err != nil {
-		log.Print(err)
+		return err
 	}
 	rows, err := result.RowsAffected()
 	if err != nil {
-		log.Print(err)
+		return err
 	}
 	if rows == 0 {
 		logs.Printcrf("no named title fixes needed")
-		return
+		return nil
 	}
 	logs.Printcrf("%d named title fixes applied", rows)
+	return nil
 }
 
 // Distinct returns a unique list of values from the table column.

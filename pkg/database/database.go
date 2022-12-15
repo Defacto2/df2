@@ -277,9 +277,15 @@ func Execute(u Update) (int64, error) {
 // Fix any malformed section and platforms found in the database.
 func Fix() error {
 	start := time.Now()
-	update.Filename.NamedTitles()
-	update.GroupFor.NamedTitles()
-	update.GroupBy.NamedTitles()
+	if err := update.Filename.NamedTitles(); err != nil {
+		return fmt.Errorf("update filenames: %w", err)
+	}
+	if err := update.GroupFor.NamedTitles(); err != nil {
+		return fmt.Errorf("update groups for: %w", err)
+	}
+	if err := update.GroupBy.NamedTitles(); err != nil {
+		return fmt.Errorf("update groups by: %w", err)
+	}
 	elapsed := time.Since(start).Seconds()
 	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
 
