@@ -2,7 +2,7 @@
 
 ![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg)
 
-df2 is a command-line tool for managing plus optimising the files and database of defacto2.net. 
+df2 is a terminal tool for managing plus optimising the files and database of [defacto2.net](https://defacto2.net). 
 It is broken down into multiple parts.
 
 ```
@@ -46,7 +46,7 @@ Use "df2 [command] --help" for more information about a command.
 
 ## Install
 
-df2 is built on [Go](https://golang.org/doc/install) and is packaged for Debian Linux.
+df2 is built on [Go](https://golang.org/doc/install) and is packaged for [Debian](https://www.debian.org/intro/index) Linux.
 
 ```bash
 wget https://github.com/Defacto2/df2/releases/latest/download/df2.deb
@@ -82,9 +82,20 @@ To change the configuration.
 df2 config edit
 ```
 
-## Builds
+## Docker container
 
-Github Actions combined with GoReleaser handles the building process when new release tags are created.
+The Docker container runs on a [Go container](https://hub.docker.com/_/golang) built in Debian Linux. 
+It's main purpose is for Go unit testing.
+
+```sh
+cd df2
+docker build -t df2 .
+docker run -it --rm --name df2-run df2
+```
+
+## Source code and building
+
+[GitHub Actions](https://github.com/features/actions) combined with [GoReleaser](https://goreleaser.com/) handles the building process when new release tags are created.
 
 All changes should be tested with the `golangci-lint` [Go linters aggregator](https://golangci-lint.run/).
 
@@ -96,15 +107,5 @@ docker compose up
 # term #2
 cd /df2
 go test ./...
-```
-
-## Docker container
-
-The Docker container runs on a Go contain built in Debian Linux. It's main purpose is for Go unit testing.
-
-```sh
-cd df2
-docker build -t df2 .
-docker run -it --rm --name df2-run df2
 ```
 
