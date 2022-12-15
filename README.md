@@ -2,29 +2,8 @@
 
 ![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg)
 
-df2 is a command-line tool for managing plus optimising the files and database of defacto2.net. It is broken down into multiple parts.
-
-**apis** Batch data synchronization with remote Demozoo and Pouet APIs.
-
-**approve** all validated file records that are ready to go live.
-
-**clean** discover and remove orphan files that exist on the server but have no matching database entries.
-
-**config** adjust the default settings for this `df2` tool.
-
-**demozoo** interacts with the [Demozoo.org API](http://demozoo.org/api/v1/) to synchronise data and fetch linked download files.
-
-**fix** malformed data and generates missing assets from distinct sources.
-
-**lookup** a website record URL by its database ID or UUID.
-
-**new** checks Demozoo and _#releaseproof_ submissions, fetches downloads, generate previews and repairs any malformed data.
-
-**output** generates webpages for groups, peoples and the site map.
-
-**proof** automates the parsing of files tagged as _#releaseproof_.
-
-**shrink** moves old SQL backups and incoming uploads to the user home directory ready for download and removal.
+df2 is a command-line tool for managing plus optimising the files and database of defacto2.net. 
+It is broken down into multiple parts.
 
 ```
 The tool to optimise and manage defacto2.net
@@ -35,19 +14,26 @@ Usage:
   df2 [flags]
   df2 [command]
 
-Available Commands:
-  apis        Batch data synchronization with remote APIs.
+Admin:
   approve     Approve the records that are ready to go live.
-  clean       Discover or clean orphan files.
-  config      Configure the settings for this tool.
-  demozoo     Interact with Demozoo submissions.
   fix         Fixes database entries and records.
-  help        Help about any command
-  lookup      Lookup the file URL of a record's ID or UUID.
   new         Manage files marked as waiting to go live (default).
   output      Generators for JSON, HTML, SQL and sitemap documents.
   proof       Manage records tagged as #releaseproof.
+
+Drive:
+  clean       Discover or clean orphan files.
   shrink      Reduces the space used in directories.
+
+Remote:
+  apis        Batch data synchronization with remote APIs.
+  demozoo     Interact with Demozoo submissions.
+  lookup      Lookup the file URL of a record's ID or UUID.
+  test        Test various features of the website or database that cannot be fixed with automation.
+
+Additional Commands:
+  config      Configure the settings for this tool.
+  help        Help about any command
 
 Flags:
       --ascii     suppress all ANSI color feedback
@@ -103,11 +89,22 @@ Github Actions combined with GoReleaser handles the building process when new re
 All changes should be tested with the `golangci-lint` [Go linters aggregator](https://golangci-lint.run/).
 
 ```sh
-# Tests on Linux
-# term 1
-cd /defacto2-dev
+# Tests only work with Linux
+# term #1
+cd /defacto2-localbuild
 docker compose up
-# term 2
+# term #2
 cd /df2
 go test ./...
 ```
+
+## Docker container
+
+The Docker container runs on a Go contain built in Debian Linux. It's main purpose is for Go unit testing.
+
+```sh
+cd df2
+docker build -t df2 .
+docker run -it --rm --name df2-run df2
+```
+
