@@ -1,0 +1,13 @@
+df2
+df2.exe
+dist/
+internal/dist/
+UPDATES.md
+.bin
+.DS_Store
+*.pprof
+.github
+.vscode
+.gitignore
+.golangci.yml
+.goreleaser.yml

@@ -66,7 +66,7 @@ func TestSize(t *testing.T) {
 		{"empty", "", 0, 0, true}, // empty contains a .gitignore file
 		{"nul", "/dev/null/no-such-dir", 0, 0, true},
 		{"empty", emptyDir, 0, 0, false},
-		{"valid", "../../tests/demozoo", 18, 9602, false},
+		{"valid", "../../tests/demozoo", 19, 15750, false},
 	}
 	if _, err := os.Stat(emptyDir); os.IsNotExist(err) {
 		if err := os.Mkdir(emptyDir, 0o755); err != nil {

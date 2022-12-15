@@ -268,7 +268,8 @@ func dirtybuild() string {
 		return ""
 	}
 	if versioninfo.DirtyBuild {
-		return color.Danger.Sprint(" [this app has been modified]")
+		const spaces = 11
+		return strings.Repeat(" ", spaces) + color.Danger.Sprint("but this app has been modified")
 	}
 	return ""
 }

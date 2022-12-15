@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/logs"
@@ -101,10 +102,14 @@ func Connect() *sql.DB {
 
 // defaults initialises default connection settings.
 func defaults() {
+	if val, ok := os.LookupEnv("DF2_HOST"); ok && val != "" {
+		viper.SetDefault("connection.server.host", val)
+	} else {
+		viper.SetDefault("connection.server.host", "localhost")
+	}
 	viper.SetDefault("connection.name", "defacto2-inno")
 	viper.SetDefault("connection.user", "root")
 	viper.SetDefault("connection.password", "password")
 	viper.SetDefault("connection.server.protocol", "tcp")
-	viper.SetDefault("connection.server.host", "localhost")
 	viper.SetDefault("connection.server.port", "3306")
 }
