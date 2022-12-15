@@ -38,9 +38,7 @@ const (
 	statusOk = 200
 )
 
-var (
-	ErrFewArgs = errors.New("too few arguments given")
-)
+var ErrFewArgs = errors.New("too few arguments given")
 
 // Copyright returns a © Copyright year, or a range of years.
 func Copyright() string {
@@ -380,40 +378,42 @@ func People(pf arg.People) error {
 }
 
 func Rename(args ...string) error {
+	const wantedCount = 2
 	switch len(args) {
 	case 0, 1:
 		return ErrFewArgs
-	case 2: // wanted
+	case wantedCount:
+		// do nothing
 	default:
 		fmt.Println("The renaming of groups only supports two arguments, names with spaces should be quoted, for example:")
 		fmt.Printf("df2 fix rename %s %q\n", args[0], strings.Join(args[1:], " "))
 		return nil
 	}
-	old, new := args[0], args[1]
-	src, err := groups.Exact(old)
+	oldArg, newArg := args[0], args[1]
+	src, err := groups.Exact(oldArg)
 	if err != nil {
 		return err
 	}
 	if src < 1 {
-		fmt.Printf("no group matches found for %q\n", old)
+		fmt.Printf("no group matches found for %q\n", oldArg)
 		return nil
 	}
-	newName := groups.Format(new)
+	newName := groups.Format(newArg)
 	dest, err := groups.Exact(newName)
 	if err != nil {
 		logs.Fatal(err)
 	}
 	switch dest {
 	case 0:
-		fmt.Printf("Will rename the %d records of %q to the new group name, %q\n", src, old, newName)
+		fmt.Printf("Will rename the %d records of %q to the new group name, %q\n", src, oldArg, newName)
 	default:
-		fmt.Printf("Will merge the %d records of %q into the group %q to total %d records\n", src, old, newName, src+dest)
+		fmt.Printf("Will merge the %d records of %q into the group %q to total %d records\n", src, oldArg, newName, src+dest)
 		color.Danger.Println("This cannot be undone")
 	}
 	if b := prompt.YN("Rename the group", false); !b {
 		return nil
 	}
-	i, err := groups.Update(newName, old)
+	i, err := groups.Update(newName, oldArg)
 	if err != nil {
 		return err
 	}
@@ -421,7 +421,7 @@ func Rename(args ...string) error {
 	return nil
 }
 
-func TestSite(base string) error {
+func TestSite(base string) error { //nolint:funlen
 	urls, err := sitemap.FileList(base)
 	if err != nil {
 		return err
@@ -453,7 +453,8 @@ func TestSite(base string) error {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
-	color.Primary.Printf("\nRequesting the <title> of %d random files from %d disabled records\n", hideCount, total)
+	color.Primary.Printf("\nRequesting the <title> of %d "+
+		"random files from %d disabled records\n", hideCount, total)
 	sitemap.LinkNotFound.Range(urls)
 
 	total, ids, err = sitemap.RandBlocked(hideCount)
@@ -461,7 +462,8 @@ func TestSite(base string) error {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.Download)
-	color.Primary.Printf("\nRequesting the content disposition of %d random file download from %d disabled records\n", hideCount, total)
+	color.Primary.Printf("\nRequesting the content disposition of %d "+
+		"random file download from %d disabled records\n", hideCount, total)
 	sitemap.NotFound.RangeFiles(urls)
 
 	invalidIDs := []int{-99999999, -1, 0, 99999999}
@@ -494,7 +496,7 @@ func TestSite(base string) error {
 		return err
 	}
 	color.Primary.Printf("\nRequesting %d static URLs used by the HTML3 text mode\n", len(html3s))
-	sitemap.Success.Range(html3s[:])
+	sitemap.Success.Range(html3s)
 
 	return nil
 }

@@ -166,7 +166,7 @@ func fmtExact(g string) string {
 	return fmtByName(g)
 }
 
-func fmtByName(g string) string {
+func fmtByName(g string) string { //nolint:funlen
 	// reformat groups
 	switch g {
 	case "drm ftp":

@@ -15,10 +15,11 @@ import (
 	"github.com/Defacto2/df2/pkg/download"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
-	"github.com/gookit/color"
-
 	"github.com/google/go-querystring/query"
+	"github.com/gookit/color"
 )
+
+var ErrNoIDs = errors.New("no ids to randomise")
 
 // Root URL element.
 type Root int
@@ -34,14 +35,16 @@ func (r Root) String() string {
 
 func Outputs() []string {
 	return []string{
-		"card", "text", "thumb-"}
+		"card", "text", "thumb-",
+	}
 }
 
 func Sorts() []string {
 	return []string{
 		"date_asc", "date_desc",
 		"posted_asc", "posted_desc",
-		"size_asc", "size_desc"}
+		"size_asc", "size_desc",
+	}
 }
 
 type Options struct {
@@ -102,7 +105,7 @@ func (a *IDs) Contains(x int) bool {
 func (a IDs) Randomize(x int) (IDs, error) {
 	l := len(a)
 	if l < 1 {
-		return nil, errors.New("no ids to randomise")
+		return nil, ErrNoIDs
 	}
 	if x > l {
 		x = l
@@ -113,15 +116,15 @@ func (a IDs) Randomize(x int) (IDs, error) {
 		seed := time.Now().UnixNano()
 		if seed == seeded {
 			// avoid duplicates
-			i -= 1
+			i--
 			continue
 		}
 		seeded = seed
 		rand.Seed(seed)
-		randomIndex := rand.Intn(l)
+		randomIndex := rand.Intn(l) //nolint:gosec
 		id := a[randomIndex]
 		if randoms.Contains(id) {
-			i -= 1
+			i--
 			continue
 		}
 		randoms = append(randoms, id)
@@ -167,6 +170,8 @@ func (p Style) RangeFiles(urls []string) {
 				fmt.Printf("%s\t%s  ↳ %s - %s\n", link, Color404(code), size, name)
 			case Success:
 				fmt.Printf("%s\t%s  ↳ %s - %s\n", link, ColorCode(code), size, name)
+			case LinkNotFound, LinkSuccess:
+				fmt.Printf("%q formatting is unused in RangeFiles", p)
 			}
 			wg.Done()
 		}(link)
@@ -229,7 +234,7 @@ func AbsPaths(base string) ([28]string, error) {
 // AbsPaths returns all the HTML3 static URLs used by the sitemap.
 func AbsPathsH3(base string) ([]string, error) {
 	const root = "html3"
-	urls := urlset.Html3Paths()
+	urls := urlset.HTML3Path()
 	paths := make([]string, 0, len(urls))
 	for _, elem := range urls {
 		path, err := url.JoinPath(base, elem)

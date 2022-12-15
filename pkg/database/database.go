@@ -234,8 +234,7 @@ func DateTime(raw sql.RawBytes) string {
 func Distinct(value string) ([]string, error) {
 	db := connect.Connect()
 	defer db.Close()
-	stmt := fmt.Sprintf("SELECT DISTINCT `%s` FROM `files`", value)
-	rows, err := db.Query(stmt)
+	rows, err := db.Query("SELECT DISTINCT ? FROM `files`", value)
 	if err != nil {
 		return nil, fmt.Errorf("distinct query: %w", err)
 	}

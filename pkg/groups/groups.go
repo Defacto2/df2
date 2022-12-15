@@ -98,7 +98,7 @@ func Cronjob(force bool) error {
 }
 
 // Exact returns the number of file entries that match an exact named group.
-// The casing is ignored, but comma seperated multi-groups are not matched to their parents.
+// The casing is ignored, but comma separated multi-groups are not matched to their parents.
 // The name "tristar" will match "Tristar" but will not match records using
 // "Tristar, Red Sector Inc".
 func Exact(name string) (int, error) {

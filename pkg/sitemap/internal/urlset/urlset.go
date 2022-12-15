@@ -64,7 +64,7 @@ func Paths() [28]string {
 	}
 }
 
-func Html3Paths() [7]string {
+func HTML3Path() [7]string {
 	const s = "html3/"
 	return [...]string{
 		s,

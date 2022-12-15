@@ -34,8 +34,12 @@ func Contains(x string, sorted []string) bool {
 
 // MatchStdOut scans over the groups and attempts to match possible misnamed duplicates.
 // The results are printed to stdout in realtime.
-func MatchStdOut() error {
+func MatchStdOut() error { //nolint:funlen
 	tick := time.Now()
+
+	const (
+		n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12 = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+	)
 
 	list, total, err := List()
 	if err != nil {
@@ -45,16 +49,11 @@ func MatchStdOut() error {
 
 	l := 0
 	var matches []string
-	a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 :=
-		"", "", "", "", "", "", "", "", "", "", "", "", ""
-	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 :=
-		"", "", "", "", "", "", "", "", "", "", "", "", ""
-	f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 :=
-		"", "", "", "", "", "", "", "", "", "", "", ""
-	g0, g1, g2, g3, g4, g5, g6, g7, g8 :=
-		"", "", "", "", "", "", "", "", ""
-	h0, h1, h2, h3, h4, h5, h6, h7, h8 :=
-		"", "", "", "", "", "", "", "", ""
+	a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 := "", "", "", "", "", "", "", "", "", "", "", "", ""
+	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 := "", "", "", "", "", "", "", "", "", "", "", "", ""
+	f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 := "", "", "", "", "", "", "", "", "", "", "", ""
+	g0, g1, g2, g3, g4, g5, g6, g7, g8 := "", "", "", "", "", "", "", "", ""
+	h0, h1, h2, h3, h4, h5, h6, h7, h8 := "", "", "", "", "", "", "", "", ""
 	for _, group := range list {
 		l = len(group)
 		if l == 0 {
@@ -72,31 +71,31 @@ func MatchStdOut() error {
 		d2 = SwapOne(group, "oul", "ul")
 		d3 = SwapOne(group, "ool", "ewl")
 		d4 = SwapOne(group, "culd", "suld")
-		e0 = SwapNumeral(group, 0)
-		e1 = SwapNumeral(group, 1)
-		e2 = SwapNumeral(group, 2)
-		e3 = SwapNumeral(group, 3)
-		e4 = SwapNumeral(group, 4)
-		e5 = SwapNumeral(group, 5)
-		e6 = SwapNumeral(group, 6)
-		e7 = SwapNumeral(group, 7)
-		e8 = SwapNumeral(group, 8)
-		e9 = SwapNumeral(group, 9)
-		e10 = SwapNumeral(group, 10)
-		e11 = SwapNumeral(group, 11)
-		e12 = SwapNumeral(group, 12)
-		f1 = SwapNumeral(group, 1)
-		f2 = SwapNumeral(group, 2)
-		f3 = SwapNumeral(group, 3)
-		f4 = SwapNumeral(group, 4)
-		f5 = SwapNumeral(group, 5)
-		f6 = SwapNumeral(group, 6)
-		f7 = SwapNumeral(group, 7)
-		f8 = SwapNumeral(group, 8)
-		f9 = SwapNumeral(group, 9)
-		f10 = SwapNumeral(group, 10)
-		f11 = SwapNumeral(group, 11)
-		f12 = SwapNumeral(group, 12)
+		e0 = SwapNumeral(group, n0)
+		e1 = SwapNumeral(group, n1)
+		e2 = SwapNumeral(group, n2)
+		e3 = SwapNumeral(group, n3)
+		e4 = SwapNumeral(group, n4)
+		e5 = SwapNumeral(group, n5)
+		e6 = SwapNumeral(group, n6)
+		e7 = SwapNumeral(group, n7)
+		e8 = SwapNumeral(group, n8)
+		e9 = SwapNumeral(group, n9)
+		e10 = SwapNumeral(group, n10)
+		e11 = SwapNumeral(group, n11)
+		e12 = SwapNumeral(group, n12)
+		f1 = SwapNumeral(group, n1)
+		f2 = SwapNumeral(group, n2)
+		f3 = SwapNumeral(group, n3)
+		f4 = SwapNumeral(group, n4)
+		f5 = SwapNumeral(group, n5)
+		f6 = SwapNumeral(group, n6)
+		f7 = SwapNumeral(group, n7)
+		f8 = SwapNumeral(group, n8)
+		f9 = SwapNumeral(group, n9)
+		f10 = SwapNumeral(group, n10)
+		f11 = SwapNumeral(group, n11)
+		f12 = SwapNumeral(group, n12)
 		g0 = SwapAll(group, "0", "o")
 		h0 = SwapAll(group, "o", "0")
 		g1 = SwapAll(group, "1", "l")
@@ -135,7 +134,6 @@ func MatchStdOut() error {
 			}
 		}
 	}
-	list = nil
 	l = len(matches)
 	elapsed := time.Since(tick)
 	fmt.Printf("\nProcessing time %s\n", elapsed)
@@ -152,8 +150,10 @@ func MatchStdOut() error {
 
 // SwapNumeral finds any occurrences of i within a group name and swaps it for a cardinal number.
 func SwapNumeral(group string, i int) string {
-	num := []string{"zero", "one", "two", "three", "four", "five",
-		"six", "seven", "eight", "nine", "ten", "eleven", "twelve"}
+	num := []string{
+		"zero", "one", "two", "three", "four", "five",
+		"six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+	}
 	if i > len(num) {
 		return ""
 	}
@@ -164,8 +164,10 @@ func SwapNumeral(group string, i int) string {
 
 // SwapOrdinal finds any occurrences of i within a group name and swaps it for a ordinal number.
 func SwapOrdinal(group string, i int) string {
-	num := []string{"0", "1st", "2nd", "3rd", "4th", "5th",
-		"6th", "7th", "8th", "9th", "10th", "11th", "12th"}
+	num := []string{
+		"0", "1st", "2nd", "3rd", "4th", "5th",
+		"6th", "7th", "8th", "9th", "10th", "11th", "12th",
+	}
 	if i > len(num) {
 		return ""
 	}

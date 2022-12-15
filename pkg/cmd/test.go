@@ -1,3 +1,4 @@
+//nolint:gochecknoglobals
 package cmd
 
 import (
@@ -22,7 +23,8 @@ var testCmd = &cobra.Command{
 		if err := cmd.Usage(); err != nil {
 			logs.Fatal(err)
 		}
-	}}
+	},
+}
 
 var testGroupNames = &cobra.Command{
 	Use:     "names",
@@ -32,7 +34,8 @@ var testGroupNames = &cobra.Command{
 		if err := groups.MatchStdOut(); err != nil {
 			log.Fatal(err)
 		}
-	}}
+	},
+}
 
 var testURLsCmd = &cobra.Command{
 	Use:     "urls",

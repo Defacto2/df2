@@ -146,10 +146,9 @@ func Silent(name, url string) (http.Header, error) {
 	return resp.Header, nil
 }
 
-func ping(url, method string, t time.Duration) (*http.Response, error) {
-	seconds := t * time.Second
+func ping(url, method string, timeout time.Duration) (*http.Response, error) {
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, seconds)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	defer cancel()
 	if err != nil {
@@ -166,10 +165,9 @@ func ping(url, method string, t time.Duration) (*http.Response, error) {
 
 // PingGet connects to a URL and returns its response.
 func Get(url string) ([]byte, int, error) {
-	//return ping(url, http.MethodGet, 60)
-	seconds := 30 * time.Second
+	const timeout = 30 * time.Second
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, seconds)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	defer cancel()
 	if err != nil {
@@ -191,7 +189,8 @@ func Get(url string) ([]byte, int, error) {
 
 // PingHead connects to a URL and returns its HTTP status code and status text.
 func PingHead(url string) (*http.Response, error) {
-	return ping(url, http.MethodHead, 5)
+	const timeout = 5 * time.Second
+	return ping(url, http.MethodHead, timeout)
 }
 
 // PingFile connects to a URL file down and returns its status code, filename and file size.
@@ -202,6 +201,7 @@ func PingFile(link string) (code int, name string, size string, err error) {
 	}
 	cd, cl := res.Header.Get(ContentDisposition), res.Header.Get(ContentLength)
 	name = strings.TrimPrefix(cd, DownloadPrefix)
+	res.Body.Close()
 
 	i, err := strconv.Atoi(cl)
 	if err == nil {
