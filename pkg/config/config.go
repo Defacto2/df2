@@ -14,7 +14,7 @@ import (
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var ErrSaveType = errors.New("unsupported value interface type")

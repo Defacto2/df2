@@ -7,6 +7,7 @@ go 1.19
 require (
 	github.com/bengarrett/retrotxtgo v0.0.37
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
+	github.com/carlmjohnson/versioninfo v0.22.4
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gabriel-vasile/mimetype v1.4.1
@@ -25,7 +26,7 @@ require (
 	golang.org/x/image v0.2.0
 	golang.org/x/sys v0.3.0
 	golang.org/x/text v0.5.0
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -53,5 +54,5 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/net v0.3.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

@@ -45,6 +45,9 @@ github.com/bengarrett/retrotxtgo/meta
 # github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 ## explicit
 github.com/campoy/unique
+# github.com/carlmjohnson/versioninfo v0.22.4
+## explicit; go 1.16
+github.com/carlmjohnson/versioninfo
 # github.com/disintegration/imaging v1.6.2
 ## explicit
 github.com/disintegration/imaging

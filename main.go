@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -29,15 +30,12 @@ import (
 
 	"github.com/Defacto2/df2/pkg/cmd"
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/carlmjohnson/versioninfo"
 	"github.com/gookit/color"
 )
 
-// goreleaser generated ldflags containers.
-var (
-	version = "0.0.0"
-	commit  = "unset" //nolint: gochecknoglobals
-	date    = "unset" //nolint: gochecknoglobals
-)
+//go:embed .version
+var version string
 
 func main() {
 	// terminal stderr and stdout configurations
@@ -113,7 +111,8 @@ func rmLogTimestamp() {
 func exeTmp() string {
 	const tmp = `
  ┌──── Defacto2 tool (df2) ────┐
- │  requirements               │
+ │                             │
+ │ requirements                │
  │  database:     {{.Database}}  │
  │  ansilove:     {{.Ansilove}}  │
  │  webp lib:     {{.Webp}}  │
@@ -122,17 +121,19 @@ func exeTmp() string {
  │  pngquant:     {{.PngQuant}}  │
  │ ─────────────────────────── │
  │  arj:          {{.Arj}}  │
+ │  file magic:   {{.File}}  │
  │  lhasa:        {{.Lha}}  │
  │  unrar:        {{.UnRar}}  │
  │  unzip:        {{.UnZip}}  │
  │  zipinfo:      {{.ZipInfo}}  │
+ │                             │
  └─────────────────────────────┘
 
-  version: {{.Version}}
-     path: {{.Path}}
-   commit: {{.Commit}}
-     date: {{.Date}}
-       go: v{{.GoVer}} {{.GoOS}}
+  version  {{.Version}}{{.DirtyBuild}}
+     path  {{.Path}}
+   commit  {{.Revision}}
+     date  {{.LastCommit}}
+       go  v{{.GoVer}} {{.GoOS}}{{.Docker}}
 `
 	return tmp
 }
@@ -174,6 +175,7 @@ func checks() looks {
 		"pnmtopng": miss,
 		"pngquant": miss,
 		"arj":      miss,
+		"file":     miss,
 		"lha":      miss,
 		"unrar":    miss,
 		"unzip":    miss,
@@ -195,47 +197,53 @@ func checks() looks {
 
 func info() string {
 	type Data struct {
-		Database string
-		Ansilove string
-		Webp     string
-		Magick   string
-		Netpbm   string
-		PngQuant string
-		Arj      string
-		Lha      string
-		UnRar    string
-		UnZip    string
-		ZipInfo  string
-		Version  string
-		Commit   string
-		Date     string
-		Path     string
-		GoVer    string
-		GoOS     string
+		Database   string
+		Ansilove   string
+		Webp       string
+		Magick     string
+		Netpbm     string
+		PngQuant   string
+		Arj        string
+		File       string
+		Lha        string
+		UnRar      string
+		UnZip      string
+		ZipInfo    string
+		Version    string
+		Revision   string
+		DirtyBuild string
+		LastCommit string
+		Path       string
+		GoVer      string
+		GoOS       string
+		Docker     string
 	}
-	bin, err := self()
+	bin, err := selfBuild()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
 	l := checks()
 	data := Data{
-		Database: check(l["db"]),
-		Ansilove: check(l["ansilove"]),
-		Webp:     check(l["cwebp"]),
-		Magick:   check(l["convert"]),
-		Netpbm:   check(l["pnmtopng"]),
-		PngQuant: check(l["pngquant"]),
-		Arj:      check(l["arj"]),
-		Lha:      check(l["lha"]),
-		UnRar:    check(l["unrar"]),
-		UnZip:    check(l["unzip"]),
-		ZipInfo:  check(l["zipinfo"]),
-		Version:  color.Style{color.FgCyan, color.OpBold}.Sprint(version),
-		Commit:   commit,
-		Date:     localBuild(date),
-		Path:     bin,
-		GoVer:    strings.Replace(runtime.Version(), "go", "", 1),
-		GoOS:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		Database:   check(l["db"]),
+		Ansilove:   check(l["ansilove"]),
+		Webp:       check(l["cwebp"]),
+		Magick:     check(l["convert"]),
+		Netpbm:     check(l["pnmtopng"]),
+		PngQuant:   check(l["pngquant"]),
+		Arj:        check(l["arj"]),
+		File:       check(l["file"]),
+		Lha:        check(l["lha"]),
+		UnRar:      check(l["unrar"]),
+		UnZip:      check(l["unzip"]),
+		ZipInfo:    check(l["zipinfo"]),
+		Version:    tagVersion(),
+		Revision:   versioninfo.Revision,
+		DirtyBuild: dirtybuild(),
+		LastCommit: localBuild(versioninfo.LastCommit),
+		Path:       bin,
+		GoVer:      strings.Replace(runtime.Version(), "go", "", 1),
+		GoOS:       fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		Docker:     dockerBuild(),
 	}
 	tmpl, err := template.New("checks").Parse(exeTmp())
 	if err != nil {
@@ -248,18 +256,43 @@ func info() string {
 	return b.String()
 }
 
-func localBuild(date string) string {
-	t, err := time.Parse(time.RFC3339, date)
-	if err != nil {
-		return date
+func dockerBuild() string {
+	if _, ok := os.LookupEnv("DF2_HOST"); ok {
+		return " in a Docker container"
+	}
+	return ""
+}
+
+func dirtybuild() string {
+	if versioninfo.Revision == "unknown" {
+		return ""
+	}
+	if versioninfo.DirtyBuild {
+		return color.Danger.Sprint(" [this app has been modified]")
+	}
+	return ""
+}
+
+func localBuild(t time.Time) string {
+	const unknown = 1
+	if t.Local().Year() <= unknown {
+		return "unknown"
 	}
 	return t.Local().Format("2006 Jan 2, 15:04 MST")
 }
 
-func self() (string, error) {
+func selfBuild() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("self error: %w", err)
 	}
 	return exe, nil
+}
+
+func tagVersion() string {
+	s := color.Style{color.FgCyan, color.OpBold}.Sprint(version)
+	if version == "0.0.0" {
+		s += " (developer build)"
+	}
+	return s
 }
