@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/Defacto2/df2/pkg/logs"
@@ -78,9 +79,15 @@ func write(update bool) error {
 	if err != nil {
 		return fmt.Errorf("write config yaml marshal: %w", err)
 	}
+	root := path.Dir(Filepath())
+	if _, err = os.Stat(root); os.IsNotExist(err) {
+		if err1 := os.MkdirAll(root, file); err1 != nil {
+			return fmt.Errorf("create parent dir for config file %s: %w", root, err)
+		}
+	}
 	err = os.WriteFile(Filepath(), bs, file) // owner+wr
 	if err != nil {
-		return fmt.Errorf("write config file %s: %w", file, err)
+		return fmt.Errorf("write config file %s: %w", Filepath(), err)
 	}
 	s := "created a new"
 	if update {
