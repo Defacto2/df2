@@ -427,7 +427,7 @@ func TestSite(base string) error {
 		return err
 	}
 	color.Primary.Printf("\nRequesting %d various query-string options of the list of files\n", len(urls))
-	sitemap.Success.Range(urls[:])
+	sitemap.Success.Range(urls)
 
 	const pingCount = 10
 	total, ids, err := sitemap.RandIDs(pingCount)
@@ -436,7 +436,7 @@ func TestSite(base string) error {
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
 	color.Primary.Printf("\nRequesting the <title> of %d random files from %d public records\n", pingCount, total)
-	sitemap.LinkSuccess.Range(urls[:])
+	sitemap.LinkSuccess.Range(urls)
 
 	total, ids, err = sitemap.RandIDs(pingCount)
 	if err != nil {
@@ -445,7 +445,7 @@ func TestSite(base string) error {
 	urls = ids.JoinPaths(base, sitemap.Download)
 	color.Primary.Printf("\nRequesting the content disposition of %d random file download from %d public records\n",
 		pingCount, total)
-	sitemap.Success.RangeFiles(urls[:])
+	sitemap.Success.RangeFiles(urls)
 
 	const hideCount = 2
 	total, ids, err = sitemap.RandDeleted(hideCount)
@@ -454,7 +454,7 @@ func TestSite(base string) error {
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
 	color.Primary.Printf("\nRequesting the <title> of %d random files from %d disabled records\n", hideCount, total)
-	sitemap.LinkNotFound.Range(urls[:])
+	sitemap.LinkNotFound.Range(urls)
 
 	total, ids, err = sitemap.RandBlocked(hideCount)
 	if err != nil {
@@ -462,7 +462,7 @@ func TestSite(base string) error {
 	}
 	urls = ids.JoinPaths(base, sitemap.Download)
 	color.Primary.Printf("\nRequesting the content disposition of %d random file download from %d disabled records\n", hideCount, total)
-	sitemap.NotFound.RangeFiles(urls[:])
+	sitemap.NotFound.RangeFiles(urls)
 
 	invalidIDs := []int{-99999999, -1, 0, 99999999}
 	urls = sitemap.IDs(invalidIDs).JoinPaths(base, sitemap.File)
@@ -480,7 +480,7 @@ func TestSite(base string) error {
 	}
 	urls = append(urls, loc)
 	color.Primary.Printf("\nRequesting the <title> of %d invalid file URLs\n", len(urls))
-	sitemap.NotFound.Range(urls[:])
+	sitemap.NotFound.Range(urls)
 
 	paths, err := sitemap.AbsPaths(base)
 	if err != nil {
