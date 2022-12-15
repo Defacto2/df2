@@ -36,6 +36,14 @@ func Port() int64 {
 	return i
 }
 
+// IsPort reports if the port is usable.
+func IsPort(port int) bool {
+	if port < PortMin || port > PortMax {
+		return false
+	}
+	return true
+}
+
 // String asks the user for a string configuration value and saves it.
 func String(keep string) string {
 	fmt.Println(keep)

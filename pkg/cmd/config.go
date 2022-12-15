@@ -15,7 +15,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var conf arg.Config
+var (
+	conf arg.Config
+	csf  config.SetFlags
+)
 
 // configCmd represents the config command.
 var configCmd = &cobra.Command{
@@ -31,6 +34,20 @@ var configCmd = &cobra.Command{
 			if err := logs.Arg("config", true, args...); err != nil {
 				log.Print(err)
 			}
+		}
+	},
+}
+
+var configSetConnCmd = &cobra.Command{
+	Use:   "setdb",
+	Short: "Set a database connection configuration using flags.",
+	Long: `Setup a database connection configuration using flag values.
+This command is intended for scripts and Docker containers.`,
+	Aliases: []string{"db"},
+	GroupID: "group1",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := csf.Set(); err != nil {
+			log.Print(fmt.Errorf("config setdb: %w", err))
 		}
 	},
 }
@@ -119,4 +136,10 @@ func init() { //nolint:gochecknoinits
 	if err := configSetCmd.MarkFlagRequired("name"); err != nil {
 		log.Print(err)
 	}
+	configCmd.AddCommand(configSetConnCmd)
+	configSetConnCmd.Flags().StringVarP(&csf.Host, "host", "t", "",
+		"Set a new MySQL hostname, it defines the location of your MySQL server (localhost)")
+	configSetConnCmd.Flags().StringVarP(&csf.Protocol, "protocol", "l", "",
+		"Set a new protocol to connect to the MySQL server (tcp|udp)")
+	configSetConnCmd.Flags().IntVarP(&csf.Port, "port", "p", -1, "Set a new MySQL port")
 }

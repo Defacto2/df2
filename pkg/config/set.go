@@ -13,7 +13,50 @@ import (
 	"github.com/spf13/viper"
 )
 
-var ErrSetName = errors.New("invalid flag name")
+var (
+	ErrSetName = errors.New("invalid flag name")
+	ErrPort    = errors.New("value is not a valid port")
+)
+
+type SetFlags struct {
+	Host     string
+	Protocol string
+	Port     int
+}
+
+func (flag SetFlags) Set() error {
+	const (
+		host = "connection.server.host"
+		prot = "connection.server.protocol"
+		port = "connection.server.port"
+	)
+	if viper.ConfigFileUsed() == "" {
+		missing("set")
+	}
+	if flag.Host != "" {
+		viper.Set(host, flag.Host)
+		logs.Printf("%s %s is now set to \"%v\"\n", str.Y(),
+			color.Primary.Sprint(host), color.Info.Sprint(flag.Host))
+	}
+	if i := flag.Port; i >= prompt.PortMin {
+		if ok := prompt.IsPort(i); !ok {
+			return fmt.Errorf("%w (%d-%d): %d",
+				ErrPort, prompt.PortMin, prompt.PortMax, i)
+		}
+		viper.Set(port, i)
+		logs.Printf("%s %s is now set to \"%v\"\n", str.Y(),
+			color.Primary.Sprint(port), color.Info.Sprint(i))
+	}
+	if flag.Protocol != "" {
+		viper.Set(prot, flag.Protocol)
+		logs.Printf("%s %s is now set to \"%v\"\n", str.Y(),
+			color.Primary.Sprint(prot), color.Info.Sprint(flag.Protocol))
+	}
+	if err := write(true); err != nil {
+		return fmt.Errorf("save: %w", err)
+	}
+	return nil
+}
 
 // Set edits and saves a setting within a configuration file.
 func Set(name string) error {
