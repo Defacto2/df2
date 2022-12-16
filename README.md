@@ -85,12 +85,17 @@ df2 config edit
 ## Docker container
 
 The Docker container runs on a [Go container](https://hub.docker.com/_/golang) built in Debian Linux. 
-It's main purpose is for Go unit testing.
+The main purpose is unit testing and compiling of the Go source code in a Linux environment.
 
 ```sh
+# change directory to the local repository
 cd df2
-docker build -t df2 .
-docker run -it --rm --name df2-run df2
+# synchronize any remote repository tags
+git pull 
+# build the current directory as an image tagged as 'df2'
+docker build --tag df2 . 
+# run the image tagged as 'df2' with the container name 'df2-test'
+docker run -it --name df2-test df2
 ```
 
 ## Source code and building
@@ -99,13 +104,4 @@ docker run -it --rm --name df2-run df2
 
 All changes should be tested with the `golangci-lint` [Go linters aggregator](https://golangci-lint.run/).
 
-```sh
-# Tests only work with Linux
-# term #1
-cd /defacto2-localbuild
-docker compose up
-# term #2
-cd /df2
-go test ./...
-```
 
