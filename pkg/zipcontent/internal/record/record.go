@@ -185,16 +185,29 @@ func (r *Record) Save() (int64, error) {
 	}
 	defer update.Close()
 	content := strings.Join(r.Files, "\n")
-	if r.NFO == "" {
-		a, err := update.Exec(r.Name, content, database.UpdateID, r.ID)
-		if err != nil {
-			return 0, fmt.Errorf("%s db exec: %w", errPrefix, err)
-		}
-		return a.RowsAffected()
+	var args []any
+	switch r.NFO {
+	case "":
+		args = []any{r.Name, content, database.UpdateID, r.ID}
+	default:
+		args = []any{r.Name, content, database.UpdateID, r.NFO, 0, r.ID}
 	}
-	a, err := update.Exec(r.Name, content, database.UpdateID, r.NFO, 0, r.ID)
+	res, err := update.Exec(args...)
 	if err != nil {
 		return 0, fmt.Errorf("%s db exec: %w", errPrefix, err)
 	}
-	return a.RowsAffected()
+	// RowsAffected & LastInsertId behaves differently depending on the database server.
+	// On MariaDB DB, RowsAffected returns a 1 value for an invalid record primary key.
+	// But LastInsertId returns an expected 0 value.
+	if rows, err := res.RowsAffected(); err != nil {
+		return 0, err
+	} else if rows > 0 {
+		return rows, nil
+	}
+	if id, err := res.LastInsertId(); err != nil {
+		return 0, fmt.Errorf("%s db last insert: %w", errPrefix, err)
+	} else if id == 0 {
+		return 0, ErrID
+	}
+	return 1, nil
 }
