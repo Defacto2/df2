@@ -129,7 +129,7 @@ func exeTmp() string {
  │                             │
  └─────────────────────────────┘
 
-  version  {{.Version}}{{.DirtyBuild}}
+  version  {{.Version}}
      path  {{.Path}}
    commit  {{.Revision}}
      date  {{.LastCommit}}
@@ -211,7 +211,6 @@ func info() string {
 		ZipInfo    string
 		Version    string
 		Revision   string
-		DirtyBuild string
 		LastCommit string
 		Path       string
 		GoVer      string
@@ -238,7 +237,6 @@ func info() string {
 		ZipInfo:    check(l["zipinfo"]),
 		Version:    tagVersion(),
 		Revision:   versioninfo.Revision,
-		DirtyBuild: dirtybuild(),
 		LastCommit: localBuild(versioninfo.LastCommit),
 		Path:       bin,
 		GoVer:      strings.Replace(runtime.Version(), "go", "", 1),
@@ -259,17 +257,6 @@ func info() string {
 func dockerBuild() string {
 	if _, ok := os.LookupEnv("DF2_HOST"); ok {
 		return " in a Docker container"
-	}
-	return ""
-}
-
-func dirtybuild() string {
-	if versioninfo.Revision == "unknown" {
-		return ""
-	}
-	if versioninfo.DirtyBuild {
-		const spaces = 11
-		return strings.Repeat(" ", spaces) + color.Danger.Sprint("but this app has been modified")
 	}
 	return ""
 }
