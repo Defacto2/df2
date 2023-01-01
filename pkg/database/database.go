@@ -50,7 +50,8 @@ const (
 
 	SelKeys   = "SELECT `id` FROM `files`"
 	SelNames  = "SELECT `filename` FROM `files`"
-	SelUpdate = "SELECT `updatedat` FROM `files` WHERE `deletedat` <> `updatedat`" +
+	SelUpdate = "SELECT `updatedat` FROM `files`" +
+		" WHERE `createdat` <> `updatedat` AND `deletedby` IS NULL" +
 		" ORDER BY `updatedat` DESC LIMIT 1"
 
 	WhereDownloadBlock = "WHERE `file_security_alert_url` IS NOT NULL AND `file_security_alert_url` != ''"
