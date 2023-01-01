@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
@@ -59,7 +60,9 @@ func Cronjob(force bool) error {
 			return fmt.Errorf("cronjob: %w: %s", ErrCJDir, d)
 		}
 		if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("cronjob: %w: %s", ErrCJFile, n)
+			if err1 := directories.Touch(n); err1 != nil {
+				return fmt.Errorf("cronjob: %w: %s", err1, n)
+			}
 		}
 	}
 	for _, tag := range Wheres() {

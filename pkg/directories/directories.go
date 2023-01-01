@@ -143,3 +143,13 @@ func Size(root string) (count int64, bytes uint64, err error) {
 	})
 	return count, bytes, err
 }
+
+// Touch creates the named file.
+func Touch(name string) error {
+	file, err := os.Create(name)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return nil
+}
