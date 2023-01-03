@@ -127,7 +127,16 @@ func MatchStdOut() error { //nolint:funlen
 				f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12,
 				g0, g1, g2, g3, g4, g5, g6, g7, g8,
 				h0, h1, h2, h3, h4, h5, h6, h7, h8:
-				fmt.Printf("%q %s %q\n", group, approx, match)
+				g, err1 := Count(group)
+				m, err2 := Count(match)
+				fmt.Printf("%s %s %s (%d%s%d)\n", group, approx, match,
+					g, approx, m)
+				if err1 != nil {
+					fmt.Println(err1)
+				}
+				if err2 != nil {
+					fmt.Println(err2)
+				}
 				matches = append(matches, match)
 				sort.Strings(matches)
 				continue

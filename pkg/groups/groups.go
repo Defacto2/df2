@@ -46,6 +46,11 @@ func (r Request) Print() (total int, err error) {
 	return request.Print(request.Flags(r))
 }
 
+// Count returns the number of file entries associated with a named group.
+func Count(name string) (int, error) {
+	return group.Count(name)
+}
+
 // Cronjob is used for system automation to generate dynamic HTML pages.
 func Cronjob(force bool) error {
 	// as the jobs take time, check the locations before querying the database
