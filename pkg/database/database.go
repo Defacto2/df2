@@ -55,8 +55,8 @@ const (
 		" ORDER BY `updatedat` DESC LIMIT 1"
 
 	WhereDownloadBlock = "WHERE `file_security_alert_url` IS NOT NULL AND `file_security_alert_url` != ''"
-	WhereAvailable     = "WHERE `deletedat` IS NULL OR `deletedat` = ''"
-	WhereHidden        = "WHERE `deletedat` IS NOT NULL AND `deletedat` != ''"
+	WhereAvailable     = "WHERE `deletedat` IS NULL"
+	WhereHidden        = "WHERE `deletedat` IS NOT NULL"
 )
 
 // Empty is used as a blank value for search maps.
