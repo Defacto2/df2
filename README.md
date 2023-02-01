@@ -1,13 +1,13 @@
 # df2
 
-![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg)
+![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/Defacto2/df2)](https://goreportcard.com/report/github.com/Defacto2/df2)
 
-df2 is a terminal tool for managing plus optimising the files and database of [defacto2.net](https://defacto2.net). 
+The df2 program is a terminal tool for managing plus optimising the files and database of [defacto2.net](https://defacto2.net). 
 It is broken down into multiple parts.
 
 ```
 The tool to optimise and manage defacto2.net
-Copyright © 2020-22 Ben Garrett
+Copyright © 2020-23 Ben Garrett
 https://github.com/Defacto2/df2
 
 Usage:
@@ -44,9 +44,9 @@ Flags:
 Use "df2 [command] --help" for more information about a command.
 ```
 
-## Install
+## Install or update
 
-df2 is built on [Go](https://golang.org/doc/install) and is packaged for [Debian](https://www.debian.org/intro/index) Linux.
+df2 is built on [Go](https://golang.org/doc/install) and is packaged for [Debian Linux](https://www.debian.org/intro/index).
 
 ```bash
 wget https://github.com/Defacto2/df2/releases/latest/download/df2.deb
@@ -56,11 +56,12 @@ df2 --version
 
 ### Dependencies
 
-The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) in the system `PATH`.
+- The `df2 fix text` command requires the installation of [AnsiLove/C](https://github.com/ansilove/ansilove) in the system `PATH`.
+- [WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). 
+- PNG image compression relies on [pngquant](https://pngquant.org). 
+- Image conversion needs both [imagemagick](https://imagemagick.org) and [netpbm](http://netpbm.sourceforge.net/).
 
-[WebP support](https://en.wikipedia.org/wiki/WebP) image conversion needs [libwebp](https://storage.googleapis.com/downloads.webmproject.org/releases/webp/index.html). PNG image compression relies on [pngquant](https://pngquant.org). Image conversion needs both [imagemagick](https://imagemagick.org) and [netpbm](http://netpbm.sourceforge.net/).
-
-#### Ubuntu installation
+#### Dependency installation on Ubuntu
 
 ```bash
 sudo apt install -y ansilove imagemagick netpbm pngquant webp
@@ -68,9 +69,13 @@ sudo apt install -y ansilove imagemagick netpbm pngquant webp
 sudo apt install -y arj lhasa unrar unzip
 ```
 
+### Database dependancy
+
+The df2 program expects local access to the [Defacto2 database](https://github.com/Defacto2/database).
+
 ## Configuration
 
-To view and test the database and directory configurations.
+To view and test the [database](https://github.com/Defacto2/database) and directory configurations.
 
 ```bash
 df2 config info
@@ -98,10 +103,53 @@ docker build --tag df2 .
 docker run -it --name df2-test df2
 ```
 
-## Source code and building
+## Use the code on your own system
+
+Confirm the installation of [Go](https://golang.org/doc/install) on Linux, WSL or macOS.
+
+```sh
+$ go version
+
+go version go1.19.5 linux/amd64
+```
+
+Clone the `Defacto2/df2` repository.
+
+```sh
+$ git clone git@github.com:Defacto2/df2.git
+
+Cloning into 'df2'...
+```
+
+Run the `df2` tool. It may take a moment on the first run as it downloads dependencies.
+
+```sh
+$ cd df2
+$ go run . --version
+
+  version  0.0.0 (developer build)
+     path  /tmp/go-build3011510136/b001/exe/df2
+   commit  unknown
+     date  unknown
+       go  v1.19.5 linux/amd64
+```
+
+Build the `df2` tool (not usually required).
+
+```sh
+$ cd df2
+$ go build
+$ ./df2 --version
+
+  version  0.0.0 (developer build)
+     path  /home/ben/df2/df2
+   commit  3352b5393353d4e09cf19f636d4be593d961cece
+     date  2023 Jan 3, 02:01 UTC
+       go  v1.19.5 linux/amd64
+```
+
+## Releasing
 
 [GitHub Actions](https://github.com/features/actions) combined with [GoReleaser](https://goreleaser.com/) handles the building process when new release tags are created.
 
 All changes should be tested with the `golangci-lint` [Go linters aggregator](https://golangci-lint.run/).
-
-
