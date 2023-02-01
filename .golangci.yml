@@ -13,7 +13,6 @@ linters:
     - maligned
     - nosnakecase
     - varcheck
-    - structcheck
 
     # disabled
     - cyclop
