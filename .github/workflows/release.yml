@@ -1,4 +1,4 @@
-name: goreleaser
+name: GoReleaser
 
 on:
   pull_request:
@@ -14,20 +14,17 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Set up Go
+      - name: Git fetch
+        run: git fetch --force --tags
+      - name: Setup Go with cache
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19
-      - name: Cache Go modules
-        uses: actions/cache@v3
+          go-version: '>=1.19.5'
+          cache: true
+      - name: GoReleaser run
+        uses: goreleaser/goreleaser-action@v4
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
-        with:
+          distribution: goreleaser
           version: latest
           args: release --rm-dist
         env:
