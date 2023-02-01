@@ -110,30 +110,24 @@ func rmLogTimestamp() {
 
 func exeTmp() string {
 	const tmp = `
- ┌──── Defacto2 tool (df2) ────┐
- │                             │
- │ requirements                │
- │  database:     {{.Database}}  │
- │  ansilove:     {{.Ansilove}}  │
- │  webp lib:     {{.Webp}}  │
- │  imagemagick:  {{.Magick}}  │
- │  netpbm:       {{.Netpbm}}  │
- │  pngquant:     {{.PngQuant}}  │
- │ ─────────────────────────── │
- │  arj:          {{.Arj}}  │
- │  file magic:   {{.File}}  │
- │  lhasa:        {{.Lha}}  │
- │  unrar:        {{.UnRar}}  │
- │  unzip:        {{.UnZip}}  │
- │  zipinfo:      {{.ZipInfo}}  │
- │                             │
- └─────────────────────────────┘
-
-  version  {{.Version}}
-     path  {{.Path}}
-   commit  {{.Revision}}
-     date  {{.LastCommit}}
-       go  v{{.GoVer}} {{.GoOS}}{{.Docker}}
+ ┬───── {{.Title}} ─────┬─────────────────────────────┬
+ │                             │                             │
+ │  requirements               │   recommended               │
+ │                             │                             │
+ │      database  {{.Database}}  │           arj  {{.Arj}}  │
+ │                             │    file magic  {{.File}}  │
+ │      ansilove  {{.Ansilove}}  │         lhasa  {{.Lha}}  │
+ │      webp lib  {{.Webp}}  │         unrar  {{.UnRar}}  │
+ │   imagemagick  {{.Magick}}  │         unzip  {{.UnZip}}  │
+ │        netpbm  {{.Netpbm}}  │       zipinfo  {{.ZipInfo}}  │
+ │      pngquant  {{.PngQuant}}  │                             │
+ │                             │                             │
+ ┴─────────────────────────────┴─────────────────── {{.Cmd}} ─────┴
+         version  {{.Version}}
+            path  {{.Path}}
+          commit  {{.Revision}}
+            date  {{.LastCommit}}
+              go  v{{.GoVer}} {{.GoOS}}{{.Docker}}
 `
 	return tmp
 }
@@ -216,6 +210,8 @@ func info() string {
 		GoVer      string
 		GoOS       string
 		Docker     string
+		Title      string
+		Cmd        string
 	}
 	bin, err := selfBuild()
 	if err != nil {
@@ -242,6 +238,8 @@ func info() string {
 		GoVer:      strings.Replace(runtime.Version(), "go", "", 1),
 		GoOS:       fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 		Docker:     dockerBuild(),
+		Title:      color.Bold.Sprint(color.Primary.Sprint("The Defacto2 tool")),
+		Cmd:        color.Primary.Sprint("df2"),
 	}
 	tmpl, err := template.New("checks").Parse(exeTmp())
 	if err != nil {
