@@ -189,7 +189,7 @@ github.com/xo/terminfo
 # github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 ## explicit
 github.com/yusukebe/go-pngquant
-# golang.org/x/image v0.3.0
+# golang.org/x/image v0.5.0
 ## explicit; go 1.12
 golang.org/x/image/bmp
 golang.org/x/image/ccitt
@@ -208,7 +208,7 @@ golang.org/x/net/html/atom
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.6.0
+# golang.org/x/text v0.7.0
 ## explicit; go 1.17
 golang.org/x/text/cases
 golang.org/x/text/encoding
