@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestClean(t *testing.T) {
@@ -120,4 +121,15 @@ func TestTrimDot(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFmtByName(t *testing.T) {
+	s := rename.FmtByName("")
+	assert.Equal(t, "", s)
+	s = rename.FmtByName("abc")
+	assert.Equal(t, "", s)
+	s = rename.FmtByName("rzsoft ftp")
+	assert.Equal(t, "RZSoft FTP", s)
+	s = rename.FmtByName("Hashx")
+	assert.Equal(t, "Hash X", s)
 }

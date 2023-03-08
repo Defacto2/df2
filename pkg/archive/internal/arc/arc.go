@@ -18,7 +18,7 @@ var (
 // Configure interface for the archiver,
 // a cross-platform, multi-format archive utility and Go library.
 func Configure(f any) error {
-	cfg := &archiver.Tar{
+	tarCfg := &archiver.Tar{
 		OverwriteExisting:      true,
 		MkdirAll:               true,
 		ImplicitTopLevelFolder: false,
@@ -38,15 +38,15 @@ func Configure(f any) error {
 		v.ImplicitTopLevelFolder = false
 		v.ContinueOnError = false
 	case *archiver.TarBz2:
-		v.Tar = cfg
+		v.Tar = tarCfg
 	case *archiver.TarGz:
-		v.Tar = cfg
+		v.Tar = tarCfg
 	case *archiver.TarLz4:
-		v.Tar = cfg
+		v.Tar = tarCfg
 	case *archiver.TarSz:
-		v.Tar = cfg
+		v.Tar = tarCfg
 	case *archiver.TarXz:
-		v.Tar = cfg
+		v.Tar = tarCfg
 	case *archiver.Zip:
 		// options: https://pkg.go.dev/github.com/mholt/archiver?tab=doc#Zip
 		v.OverwriteExisting = true
@@ -59,7 +59,7 @@ func Configure(f any) error {
 		*archiver.Lz4,
 		*archiver.Snappy,
 		*archiver.Xz:
-		// nothing to customise
+		return nil
 	default:
 		return fmt.Errorf("configure %v: %w", f, ErrNoCustom)
 	}

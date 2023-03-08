@@ -145,7 +145,6 @@ func Tags(platforms, types, title string) (string, string) {
 	case "Music", "Musicdisk", "Tracked Music":
 		section = "demo"
 		platform = "audio"
-	default:
 	}
 	if strings.Contains(strings.ToLower(title), "application generator") {
 		section = "groupapplication"

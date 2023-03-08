@@ -16,8 +16,7 @@ linters:
     - varcheck
 
     # disabled
-    - cyclop
-    - exhaustruct     # extract code bload
+    - exhaustruct     # conflicts with Cobra pkg
     - nlreturn        # opinionated
     - paralleltest    # causes tests to randomly fail
     - tagliatelle     # naming suggestions interfere with external APIs
@@ -30,3 +29,9 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - wastedassign
+
+linters-settings:
+  cyclop:
+    # The maximal code complexity to report.
+    # Default: 10
+    max-complexity: 15

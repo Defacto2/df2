@@ -117,7 +117,7 @@ func (r Flags) iterate(groups ...string) (*[]Result, error) {
 // If the named file is empty, the results will be sent to stdout.
 // The HTML returned to stdout is different to the markup saved
 // to a file.
-func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
+func (r Flags) Parse(name, tmpl string) error {
 	groups, total, err := group.List(r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
@@ -139,16 +139,7 @@ func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 		return fmt.Errorf("parse template: %w", err)
 	}
 	if name == "" {
-		var buf bytes.Buffer
-		wr := bufio.NewWriter(&buf)
-		if err = t.Execute(wr, &data); err != nil {
-			return fmt.Errorf("parse execute: %w", err)
-		}
-		if err := wr.Flush(); err != nil {
-			return fmt.Errorf("parse flush: %w", err)
-		}
-		logs.Println(buf.String())
-		return nil
+		return noname(t, data)
 	}
 	switch group.Get(r.Filter) {
 	case group.BBS, group.FTP, group.Group, group.Magazine:
@@ -161,14 +152,7 @@ func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 			return fmt.Errorf("parse create: %w", err)
 		}
 		defer f.Close()
-		now := time.Now()
-		// prepend html
-		s := "<div class=\"pagination-statistics\"><span class=\"label label-default\">"
-		s += fmt.Sprintf("%d %s sites</span>",
-			total, r.Filter)
-		s += fmt.Sprintf("&nbsp; <span class=\"label label-default\">updated, %s</span>", now.Format("2006 Jan 2"))
-		s += "</div><div class=\"columns-list\" id=\"organisation-drill-down\">"
-		if _, err = f.WriteString(s); err != nil {
+		if _, err = f.WriteString(r.prependHTML(total)); err != nil {
 			return fmt.Errorf("prepend writestring: %w", err)
 		}
 		// html template
@@ -182,6 +166,29 @@ func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 	case group.None:
 		return fmt.Errorf("parse %q: %w", r.Filter, group.ErrFilter)
 	}
+	return nil
+}
+
+func (r Flags) prependHTML(total int) string {
+	now := time.Now()
+	s := "<div class=\"pagination-statistics\"><span class=\"label label-default\">"
+	s += fmt.Sprintf("%d %s sites</span>",
+		total, r.Filter)
+	s += fmt.Sprintf("&nbsp; <span class=\"label label-default\">updated, %s</span>", now.Format("2006 Jan 2"))
+	s += "</div><div class=\"columns-list\" id=\"organisation-drill-down\">"
+	return s
+}
+
+func noname(t *template.Template, data *[]Result) error {
+	var buf bytes.Buffer
+	wr := bufio.NewWriter(&buf)
+	if err := t.Execute(wr, &data); err != nil {
+		return fmt.Errorf("parse execute: %w", err)
+	}
+	if err := wr.Flush(); err != nil {
+		return fmt.Errorf("parse flush: %w", err)
+	}
+	logs.Println(buf.String())
 	return nil
 }
 

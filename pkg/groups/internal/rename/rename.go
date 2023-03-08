@@ -58,7 +58,7 @@ func Format(s string) string {
 	for j, group := range groups {
 		g := strings.ToLower(strings.TrimSpace(group))
 		g = FmtSyntax(g)
-		if fix := fmtExact(g); fix != "" {
+		if fix := FmtExact(g); fix != "" {
 			groups[j] = fix
 			continue
 		}
@@ -146,8 +146,8 @@ func Update(newName, group string) (int64, error) {
 	return count, db.Close()
 }
 
-// fmtExact matches the exact group name to apply a format.
-func fmtExact(g string) string {
+// FmtExact matches the exact group name to apply a format.
+func FmtExact(g string) string {
 	switch g {
 	// all uppercase full groups
 	case "anz ftp", "mor ftp", "msv ftp", "nos ftp", "pox ftp", "scf ftp", "scsi ftp",
@@ -163,67 +163,51 @@ func fmtExact(g string) string {
 		// all lowercase full groups
 		return strings.ToLower(g)
 	}
-	return fmtByName(g)
+	return FmtByName(g)
 }
 
-func fmtByName(g string) string { //nolint:funlen
-	// reformat groups
-	switch g {
-	case "drm ftp":
-		return "dRM FTP"
-	case "dst ftp":
-		return "dst FTP"
-	case "nofx bbs":
-		return "NoFX BBS"
-	case "noclass":
-		return "NoClass"
-	case "pjs tower":
-		return "PJs Tower BBS"
-	case "tsg ftp":
-		return "tSG FTP"
-	case "xquizit ftp":
-		return "XquiziT FTP"
-	case "vdr lake ftp":
-		return "VDR Lake FTP"
-	case "ptl club":
-		return "PTL Club"
-	case "dvtiso":
-		return "DVTiSO"
-	case "rhvid":
-		return "RHViD"
-	case "trsi":
-		return "TRSi"
-	case "htbzine":
-		return "HTBZine"
-	case "mci escapes":
-		return "mci escapes"
-	case "79th trac":
-		return "79th TRAC"
-	case "unreal magazine":
-		return "UnReal Magazine"
-	case "ice weekly newsletter":
-		return "iCE Weekly Newsletter"
-	case "biased":
-		return "bIASED"
-	case "dreadloc":
-		return "DREADLoC"
-	case "cybermail":
-		return "CyberMail"
-	case "excretion anarchy":
-		return "eXCReTION Anarchy"
-	case "pocketheaven":
-		return "PocketHeaven"
-	case "rzsoft ftp":
-		return "RZSoft FTP"
+// FmtByName formats the group name using stylized casing.
+func FmtByName(s string) string {
+	name := strings.ToLower(s)
+	fmtGroups := map[string]string{
+		"drm ftp":               "dRM FTP",
+		"dst ftp":               "dst FTP",
+		"nofx bbs":              "NoFX BBS",
+		"noclass":               "NoClass",
+		"pjs tower":             "PJs Tower BBS",
+		"tsg ftp":               "tSG FTP",
+		"xquizit ftp":           "XquiziT FTP",
+		"vdr lake ftp":          "VDR Lake FTP",
+		"ptl club":              "PTL Club",
+		"dvtiso":                "DVTiSO",
+		"rhvid":                 "RHViD",
+		"trsi":                  "TRSi",
+		"htbzine":               "HTBZine",
+		"mci escapes":           "mci escapes",
+		"79th trac":             "79th TRAC",
+		"unreal magazine":       "UnReal Magazine",
+		"ice weekly newsletter": "iCE Weekly Newsletter",
+		"biased":                "bIASED",
+		"dreadloc":              "DREADLoC",
+		"cybermail":             "CyberMail",
+		"excretion anarchy":     "eXCReTION Anarchy",
+		"pocketheaven":          "PocketHeaven",
+		"rzsoft ftp":            "RZSoft FTP",
 	}
-	// rename groups (demozoo vs defacto2 formatting etc.)
-	switch g {
-	case "2000 ad":
-		return "2000AD"
-	case "hashx":
-		return "Hash X"
-	case "phoenixbbs":
-		return "Phoenix BBS"
+	for group, replace := range fmtGroups {
+		if name == group {
+			return replace
+		}
+	}
+	renGroups := map[string]string{
+		"2000 ad":    "2000AD",
+		"hashx":      "Hash X",
+		"phoenixbbs": "Phoenix BBS",
+	}
+	for group, replace := range renGroups {
+		if name == group {
+			return replace
+		}
 	}
 	return ""
 }
