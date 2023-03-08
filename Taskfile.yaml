@@ -1,0 +1,31 @@
+# https://taskfile.dev
+
+# This Task file uses relative paths and expects to be located in the root of the dupers repository.
+version: '3'
+
+tasks:
+  default:
+    silent: true
+    desc: this task, list all available tasks
+    cmds:
+     - task --list-all
+  lint:
+    silent: false
+    desc: runs a formatter and linter over the source code
+    cmds:
+      - cmd: clear
+      - cmd: gofumpt -w .
+      - cmd: golangci-lint run
+  race:
+    silent: false
+    desc: build a binary of this program with the race detection configuration
+    cmds:
+      - go build -v -race -o df2 main.go
+      - ./df2 --version
+  releases:
+    silent: false
+    desc: build the multiple distribution packages for this program by simulating a release
+    cmds:
+      - goreleaser release --clean --snapshot
+      - cmd: ./dist/df2_linux_amd64_v1/df2 --version
+        platforms: [linux/amd64]
