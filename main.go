@@ -39,13 +39,17 @@ var version string
 
 func main() {
 	// terminal stderr and stdout configurations
-	rmLogTimestamp()
+	logFmter()
 	if ascii() {
 		color.Enable = false
 	}
 	// print the compile and version details
 	if ver() {
-		fmt.Println(info())
+		inf, err := progInfo()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Fprintln(os.Stdout, inf)
 		return
 	}
 	// suppress stdout except when requesting help
@@ -55,6 +59,7 @@ func main() {
 	}
 	// cobra flag library
 	if err := cmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		defer os.Exit(1)
 	}
 }
@@ -62,6 +67,7 @@ func main() {
 // global flags that should not be handled by the Cobra library
 // to keep things simple, avoid using the flag standard library
 
+// ascii returns true if the -ascii flag is in use.
 func ascii() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -72,6 +78,7 @@ func ascii() bool {
 	return false
 }
 
+// help returns true if the -help flag or alias is in use.
 func help() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -82,6 +89,7 @@ func help() bool {
 	return false
 }
 
+// quiet returns true if the -quiet flag is in use.
 func quiet() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -92,6 +100,7 @@ func quiet() bool {
 	return false
 }
 
+// ver returns true if the -version flag or alias is in use.
 func ver() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -102,14 +111,15 @@ func ver() bool {
 	return false
 }
 
-// rmLogTimestamp removes the timestamp prefixed to the print functions of the log lib.
-func rmLogTimestamp() {
+// logFmter removes the timestamp prefixed to the print functions of the log lib.
+func logFmter() {
 	// source: https://stackoverflow.com/questions/48629988/remove-timestamp-prefix-from-go-logger
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 }
 
-func exeTmp() string {
-	const tmp = `
+// exeTmpl returns the template for the -version flag.
+func exeTmpl() string {
+	const tmpl = `
  ┬───── {{.Title}} ─────┬─────────────────────────────┬
  │                             │                             │
  │  requirements               │   recommended               │
@@ -129,24 +139,24 @@ func exeTmp() string {
             date  {{.LastCommit}}
               go  v{{.GoVer}} {{.GoOS}}{{.Docker}}
 `
-	return tmp
+	return tmpl
 }
 
-func check(s string) string {
+// colorize applies color to s.
+func colorize(s string) string {
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
 		miss       = "missing"
 	)
+	padding := 11
 	switch s {
 	case ok:
-		const padding = 9
+		padding = 9
 		return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
 	case miss:
-		const padding = 11
 		return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
 	case disconnect:
-		const padding = 11
 		return color.Error.Sprint("disconnect") + strings.Repeat(" ", padding-len(s))
 	}
 	return ""
@@ -154,6 +164,7 @@ func check(s string) string {
 
 type looks = map[string]string
 
+// checks looks up the collection of dependencies and database connection.
 func checks() looks {
 	const (
 		disconnect = "disconnect"
@@ -189,7 +200,8 @@ func checks() looks {
 	return l
 }
 
-func info() string {
+// progInfo returns the response for the -version flag.
+func progInfo() (string, error) {
 	type Data struct {
 		Database   string
 		Ansilove   string
@@ -219,18 +231,18 @@ func info() string {
 	}
 	l := checks()
 	data := Data{
-		Database:   check(l["db"]),
-		Ansilove:   check(l["ansilove"]),
-		Webp:       check(l["cwebp"]),
-		Magick:     check(l["convert"]),
-		Netpbm:     check(l["pnmtopng"]),
-		PngQuant:   check(l["pngquant"]),
-		Arj:        check(l["arj"]),
-		File:       check(l["file"]),
-		Lha:        check(l["lha"]),
-		UnRar:      check(l["unrar"]),
-		UnZip:      check(l["unzip"]),
-		ZipInfo:    check(l["zipinfo"]),
+		Database:   colorize(l["db"]),
+		Ansilove:   colorize(l["ansilove"]),
+		Webp:       colorize(l["cwebp"]),
+		Magick:     colorize(l["convert"]),
+		Netpbm:     colorize(l["pnmtopng"]),
+		PngQuant:   colorize(l["pngquant"]),
+		Arj:        colorize(l["arj"]),
+		File:       colorize(l["file"]),
+		Lha:        colorize(l["lha"]),
+		UnRar:      colorize(l["unrar"]),
+		UnZip:      colorize(l["unzip"]),
+		ZipInfo:    colorize(l["zipinfo"]),
 		Version:    tagVersion(),
 		Revision:   versioninfo.Revision,
 		LastCommit: localBuild(versioninfo.LastCommit),
@@ -241,15 +253,15 @@ func info() string {
 		Title:      color.Bold.Sprint(color.Primary.Sprint("The Defacto2 tool")),
 		Cmd:        color.Primary.Sprint("df2"),
 	}
-	tmpl, err := template.New("checks").Parse(exeTmp())
+	tmpl, err := template.New("checks").Parse(exeTmpl())
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	var b bytes.Buffer
 	if err := tmpl.Execute(&b, data); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
-	return b.String()
+	return b.String(), nil
 }
 
 func dockerBuild() string {
