@@ -31,7 +31,7 @@ type Zipfile struct {
 	Overwrite bool           // Overwrite a preexisting zip comment?
 }
 
-func (z *Zipfile) CheckDownload(path string) (ok bool) {
+func (z *Zipfile) CheckDownload(path string) bool {
 	file := filepath.Join(fmt.Sprint(path), z.UUID)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return false
@@ -39,7 +39,7 @@ func (z *Zipfile) CheckDownload(path string) (ok bool) {
 	return true
 }
 
-func (z *Zipfile) CheckCmmtFile(path string) (ok bool) {
+func (z *Zipfile) CheckCmmtFile(path string) bool {
 	if z.Overwrite {
 		return true
 	}

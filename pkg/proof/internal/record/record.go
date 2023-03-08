@@ -157,7 +157,7 @@ func (r Record) Zip(col sql.RawBytes, s *stat.Proof) error {
 	return nil
 }
 
-func (r Record) fileZipContent() (ok bool, err error) {
+func (r Record) fileZipContent() (bool, error) {
 	if reflect.DeepEqual(r, Record{}) {
 		return false, ErrNoRec
 	}
@@ -172,7 +172,7 @@ func (r Record) fileZipContent() (ok bool, err error) {
 }
 
 // Skip checks if the file of the proof exists.
-func Skip(s stat.Proof, r Record, hide bool) (skip bool, err error) {
+func Skip(s stat.Proof, r Record, hide bool) (bool, error) {
 	if reflect.DeepEqual(r, Record{}) {
 		return false, ErrNoRec
 	}

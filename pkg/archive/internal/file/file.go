@@ -50,7 +50,7 @@ func Add(tw *tar.Writer, src string) error {
 }
 
 // Copy copies a file to the destination.
-func Copy(name, dest string) (written int64, err error) {
+func Copy(name, dest string) (int64, error) {
 	src, err := os.Open(name)
 	if err != nil {
 		return 0, fmt.Errorf("filecopy open %q: %w", name, err)
@@ -61,7 +61,8 @@ func Copy(name, dest string) (written int64, err error) {
 		return 0, fmt.Errorf("filecopy dest %q: %w", dest, err)
 	}
 	defer dst.Close()
-	if written, err = io.Copy(dst, src); err != nil {
+	written, err := io.Copy(dst, src)
+	if err != nil {
 		return 0, fmt.Errorf("filecopy io.copy: %w", err)
 	}
 	return written, dst.Close()
@@ -88,11 +89,12 @@ func Dir(name string) error {
 }
 
 // Move copies a file to the destination and then deletes the source.
-func Move(name, dest string) (written int64, err error) {
+func Move(name, dest string) (int64, error) {
 	if name == dest {
 		return 0, fmt.Errorf("filemove: %w", ErrSameArgs)
 	}
-	if written, err = Copy(name, dest); err != nil {
+	written, err := Copy(name, dest)
+	if err != nil {
 		return 0, fmt.Errorf("filemove: %w", err)
 	}
 	if _, err = os.Stat(dest); os.IsNotExist(err) {

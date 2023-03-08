@@ -108,8 +108,10 @@ type Type struct {
 	Name string `json:"name"`
 }
 
-func Tags(platforms, types, title string) (platform, section string) {
+// Tags returns the platform and section.
+func Tags(platforms, types, title string) (string, string) {
 	const logo = "logo"
+	platform, section := "", ""
 	switch types {
 	case "Diskmag", "Textmag":
 		section = "magazine"
@@ -172,7 +174,7 @@ func tagPlatform(platforms string) string {
 }
 
 // Released returns the production's release date as date_issued_ year, month, day values.
-func (p ProductionV1) Released() (year, month, day int) {
+func (p ProductionV1) Released() (year, month, day int) { //nolint:nonamedreturns
 	dates := strings.Split(p.ReleaseDate, "-")
 	const (
 		y    = 0
@@ -200,7 +202,7 @@ func (p ProductionV1) Released() (year, month, day int) {
 // Groups returns the first two names in the production that have is_group as true.
 // The one exception is if the production title contains a reference to a BBS or FTP site name.
 // Then that title will be used as the first group returned.
-func (p ProductionV1) Groups() (a string, b string) {
+func (p ProductionV1) Groups() (a string, b string) { //nolint:nonamedreturns
 	// find any reference to BBS or FTP in the production title to
 	// obtain a possible site name.
 	if s := Site(p.Title); s != "" {

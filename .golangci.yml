@@ -19,22 +19,14 @@ linters:
     - cyclop
     - exhaustruct     # extract code bload
     - nlreturn        # opinionated
-    - nonamedreturns  # opinionated
     - paralleltest    # causes tests to randomly fail
-    - tagliatelle     # my interfere with external apis?
+    - tagliatelle     # naming suggestions interfere with external APIs
     - varnamelen      # too many false-pos.
-    #- wrapcheck       # wrapping 3rd party errors such as those from bolt are unnecessary
+    - wrapcheck       # wrapping 3rd party errors is unnecessary
     - wsl             # whitespace linter, slow, aggressive and opinionated
+    - musttag         # causes a false-pos with the std lib?
 
     # generics
     - rowserrcheck
     - sqlclosecheck
     - wastedassign
-#
-# Fixes
-# gofumpt -l -w <file> || <dir>/*
-# gci write <dir>/*
-
-# install tools
-# gofumpt: go install mvdan.cc/gofumpt@latest
-# gci: go install github.com/daixiang0/gci@latest

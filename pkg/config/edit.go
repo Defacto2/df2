@@ -36,19 +36,20 @@ func Edit() {
 	}
 }
 
-func fallback(editors ...string) (edit string) {
+func fallback(editors ...string) string {
+	path := ""
 	for _, app := range editors {
 		if path, err := exec.LookPath(app); err == nil && path != "" {
 			return app
 		}
 	}
-	if edit != "" {
-		log.Printf("there is no $EDITOR environment variable set so using %s\n", edit)
-		return
+	if path != "" {
+		log.Printf("there is no $EDITOR environment variable set so using %s\n", path)
+		return ""
 	}
 	log.Print(ErrNoEditor)
 	os.Exit(1)
-	return
+	return ""
 }
 
 func saved() string {

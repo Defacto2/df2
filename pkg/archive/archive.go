@@ -34,12 +34,12 @@ var (
 )
 
 // Copy copies a file to the destination.
-func Copy(name, dest string) (written int64, err error) {
+func Copy(name, dest string) (int64, error) {
 	return file.Copy(name, dest)
 }
 
 // Move copies a file to the destination and then deletes the source.
-func Move(name, dest string) (written int64, err error) {
+func Move(name, dest string) (int64, error) {
 	return file.Move(name, dest)
 }
 

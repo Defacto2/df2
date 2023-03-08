@@ -94,12 +94,13 @@ func Cleaner(t Target, d *directories.Dir, remove, human bool) error {
 }
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
-func CreateUUIDMap() (total int, uuids database.IDs, err error) {
+// Returns the total number of UUID and a collection of UUIDs.
+func CreateUUIDMap() (int, database.IDs, error) {
 	db := database.Connect()
 	defer db.Close()
 	// count rows
 	count := 0
-	if err = db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
+	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
 		return 0, nil, fmt.Errorf("create uuid map query row: %w", err)
 	}
 	// query database
@@ -112,7 +113,8 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 	if rows.Err() != nil {
 		return 0, nil, rows.Err()
 	}
-	uuids = make(database.IDs, count)
+	total := 0
+	uuids := make(database.IDs, count)
 	for rows.Next() {
 		if err = rows.Scan(&id, &uuid); err != nil {
 			return 0, nil, fmt.Errorf("create uuid map row: %w", err)

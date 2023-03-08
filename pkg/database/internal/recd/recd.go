@@ -87,17 +87,17 @@ func (r *Record) Approve() error {
 	return nil
 }
 
-func (r *Record) AutoID(data string) (id uint) {
+func (r *Record) AutoID(data string) uint {
 	i, err := strconv.Atoi(data)
 	if err != nil {
 		return 0
 	}
-	id = uint(i)
+	id := uint(i)
 	r.ID = id
 	return id
 }
 
-func (r *Record) Check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
+func (r *Record) Check(values []sql.RawBytes, dir *directories.Dir) bool {
 	v := r.Verbose
 	if !r.checkFileName(string(values[filename])) {
 		verbose(v, "!filename")
@@ -140,7 +140,7 @@ func (r *Record) Check(values []sql.RawBytes, dir *directories.Dir) (ok bool) {
 	return true
 }
 
-func (r *Record) checkDownload(path string) (ok bool) {
+func (r *Record) checkDownload(path string) bool {
 	file := filepath.Join(fmt.Sprint(path), r.UUID)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return r.recoverDownload(path)
@@ -148,7 +148,7 @@ func (r *Record) checkDownload(path string) (ok bool) {
 	return true
 }
 
-func (r *Record) checkFileContent(fc string) (ok bool) {
+func (r *Record) checkFileContent(fc string) bool {
 	r.zipContent = fc
 	switch filepath.Ext(r.Filename) {
 	case z7, arj, rar, zip:
@@ -159,14 +159,14 @@ func (r *Record) checkFileContent(fc string) (ok bool) {
 	return true
 }
 
-func (r *Record) checkFileName(fn string) (ok bool) {
+func (r *Record) checkFileName(fn string) bool {
 	if r.Filename = fn; r.Filename == "" {
 		return false
 	}
 	return true
 }
 
-func (r *Record) checkFileSize(fs string) (ok bool) {
+func (r *Record) checkFileSize(fs string) bool {
 	i, err := strconv.Atoi(fs)
 	if err != nil {
 		return false
@@ -175,7 +175,7 @@ func (r *Record) checkFileSize(fs string) (ok bool) {
 	return true
 }
 
-func (r *Record) CheckGroups(g1, g2 string) (ok bool) {
+func (r *Record) CheckGroups(g1, g2 string) bool {
 	r.groupBy, r.groupFor = g1, g2
 	if r.groupBy == "" && r.groupFor == "" {
 		return false
@@ -186,7 +186,7 @@ func (r *Record) CheckGroups(g1, g2 string) (ok bool) {
 	return true
 }
 
-func (r *Record) checkHash(h1, h2 string) (ok bool) {
+func (r *Record) checkHash(h1, h2 string) bool {
 	if r.hashStrong = h1; r.hashStrong == "" {
 		return false
 	}
@@ -196,14 +196,14 @@ func (r *Record) checkHash(h1, h2 string) (ok bool) {
 	return true
 }
 
-func (r *Record) checkImage(path string) (ok bool) {
+func (r *Record) checkImage(path string) bool {
 	if _, err := os.Stat(r.ImagePath(path)); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-func (r *Record) checkTags(t1, t2 string) (ok bool) {
+func (r *Record) checkTags(t1, t2 string) bool {
 	if r.platform = t1; r.platform == "" {
 		return false
 	}
@@ -217,7 +217,7 @@ func (r *Record) ImagePath(path string) string {
 	return filepath.Join(fmt.Sprint(path), r.UUID+png)
 }
 
-func (r *Record) recoverDownload(path string) (ok bool) {
+func (r *Record) recoverDownload(path string) bool {
 	src, v := viper.GetString("directory.incoming.files"), r.Verbose
 	if src == "" {
 		return false
@@ -278,7 +278,8 @@ func verbose(v bool, i any) {
 }
 
 // duplicate or copy a file to the destination.
-func dupe(name, dest string) (written int64, err error) {
+// returns the number of bytes written.
+func dupe(name, dest string) (int64, error) {
 	src, err := os.Open(name)
 	if err != nil {
 		return 0, fmt.Errorf("dupe open %s: %w", name, err)
@@ -289,7 +290,7 @@ func dupe(name, dest string) (written int64, err error) {
 		return 0, fmt.Errorf("dupe open new %s: %w", dest, err)
 	}
 	defer dst.Close()
-	written, err = io.Copy(dst, src)
+	written, err := io.Copy(dst, src)
 	if err != nil {
 		return 0, fmt.Errorf("dupe io: %w", err)
 	}

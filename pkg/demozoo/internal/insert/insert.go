@@ -150,7 +150,8 @@ func Prod(prod releases.ProductionV1) Record {
 }
 
 // stmt creates the SQL prepare statement and values to insert a new Demozoo releaser production.
-func (r *Record) stmt(id uuid.UUID) (query string, args []any, err error) {
+func (r *Record) stmt(id uuid.UUID) (string, []any, error) {
+	var args []any
 	set, args := inserts(r)
 	if len(set) == 0 {
 		return "", args, ErrNoQuery
@@ -169,11 +170,13 @@ func (r *Record) stmt(id uuid.UUID) (query string, args []any, err error) {
 	args = append(args, []any{now}...)
 
 	vals := strings.Split(strings.TrimSpace(strings.Repeat("? ", len(args))), " ")
-	query = "INSERT INTO files (" + strings.Join(set, sep) + ") VALUES (" + strings.Join(vals, sep) + ")"
+	query := "INSERT INTO files (" + strings.Join(set, sep) + ") VALUES (" + strings.Join(vals, sep) + ")"
 	return query, args, nil
 }
 
-func inserts(r *Record) (set []string, args []any) {
+func inserts(r *Record) ([]string, []any) {
+	var args []any
+	set := []string{}
 	if r.WebIDDemozoo != 0 {
 		set = append(set, "web_id_demozoo")
 		args = append(args, []any{r.WebIDDemozoo}...)
@@ -216,7 +219,9 @@ func inserts(r *Record) (set []string, args []any) {
 	return set, args
 }
 
-func credits(r *Record) (set []string, args []any) {
+func credits(r *Record) ([]string, []any) {
+	var args []any
+	set := []string{}
 	if len(r.CreditText) > 0 {
 		set = append(set, "credit_text")
 		j := strings.Join(r.CreditText, sep)

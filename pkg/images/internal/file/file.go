@@ -39,7 +39,7 @@ func (i Image) String() string {
 		color.Info.Sprint(humanize.Bytes(uint64(i.Size))))
 }
 
-func (i Image) IsExt() (ok bool) {
+func (i Image) IsExt() bool {
 	switch filepath.Ext(strings.ToLower(i.Name)) {
 	case gif, jpg, jpeg, _png, tif, tiff:
 		return true
@@ -47,7 +47,7 @@ func (i Image) IsExt() (ok bool) {
 	return false
 }
 
-func (i Image) IsDir(dir *directories.Dir) (ok bool) {
+func (i Image) IsDir(dir *directories.Dir) bool {
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
 		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {

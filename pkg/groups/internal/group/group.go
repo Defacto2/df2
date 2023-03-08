@@ -84,14 +84,14 @@ func Count(name string) (int, error) {
 }
 
 // List all organisations or groups filtered by s.
-func List(s string) (groups []string, total int, err error) {
+func List(s string) ([]string, int, error) {
 	db := database.Connect()
 	defer db.Close()
 	r, err := SQLSelect(Get(s), false)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list statement: %w", err)
 	}
-	total, err = database.Total(&r)
+	total, err := database.Total(&r)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list total: %w", err)
 	}
@@ -104,6 +104,7 @@ func List(s string) (groups []string, total int, err error) {
 	}
 	defer rows.Close()
 	var grp sql.NullString
+	groups := []string{}
 	for rows.Next() {
 		if err = rows.Scan(&grp); err != nil {
 			return nil, 0, fmt.Errorf("list rows scan: %w", err)

@@ -11,15 +11,15 @@ import (
 
 var ErrPathEmpty = errors.New("path cannot be empty")
 
-func WalkName(basepath, path string) (name string, err error) {
+func WalkName(basepath, path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("walkname: %w", ErrPathEmpty)
 	}
+	s := filepath.Dir(basepath)
 	if os.IsPathSeparator(path[len(path)-1]) {
-		name, err = filepath.Rel(basepath, path)
-	} else {
-		name, err = filepath.Rel(filepath.Dir(basepath), path)
+		s = basepath
 	}
+	name, err := filepath.Rel(s, path)
 	if err != nil {
 		return "", fmt.Errorf("walkname rel-path: %w", err)
 	}
@@ -47,12 +47,12 @@ func WriteTar(absPath, filename string, tw *tar.Writer) error {
 	if stat.IsDir() && !os.IsPathSeparator(filename[len(filename)-1]) {
 		filename += "/"
 	}
+	name := filepath.ToSlash(filename)
 	if head.Typeflag == tar.TypeReg && filename == "." {
 		// archiving a single file
-		head.Name = filepath.ToSlash(filepath.Base(absPath))
-	} else {
-		head.Name = filepath.ToSlash(filename)
+		name = filepath.ToSlash(filepath.Base(absPath))
 	}
+	head.Name = name
 	if err := tw.WriteHeader(head); err != nil {
 		return fmt.Errorf("writetar write header:%w", err)
 	}

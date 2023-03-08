@@ -331,7 +331,7 @@ func (f *Flags) queryTables() (*bytes.Buffer, error) {
 	return &b, nil
 }
 
-func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) {
+func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
 	const delta = 4
 	var wg sync.WaitGroup
 	var e1, e2, e3, e4 error
@@ -361,7 +361,7 @@ func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error
 	return buf1, buf2, buf3, buf4, nil
 }
 
-func (f *Flags) queryTablesSeq() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) {
+func (f *Flags) queryTablesSeq() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
 	buf1, err = f.reqDB(Files)
 	if err != nil {
 		return nil, nil, nil, nil, qttErr(Files.String(), err)

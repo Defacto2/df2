@@ -19,7 +19,7 @@ type DownloadsAPIv1 struct {
 }
 
 // parse corrects any known errors with a Downloads API link.
-func (dl *DownloadsAPIv1) parse() (ok bool) {
+func (dl *DownloadsAPIv1) parse() bool {
 	u, err := url.Parse(dl.URL) // validate url
 	if err != nil {
 		return false
@@ -30,11 +30,12 @@ func (dl *DownloadsAPIv1) parse() (ok bool) {
 }
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink() (name, link string) {
+func (p *ProductionsAPIv1) DownloadLink() (string, string) {
 	const (
 		found       = 200
 		internalErr = 500
 	)
+	link, name := "", ""
 	total := len(p.DownloadLinks)
 	for _, l := range p.DownloadLinks {
 		var l DownloadsAPIv1 = l // apply type so we can use it with methods

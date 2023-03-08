@@ -9,9 +9,9 @@ import (
 )
 
 // Size returns the character width of the terminal.
-func Size() (columns uint16) {
+func Size() uint16 {
 	const falback = 80
-	columns = uint16(falback)
+	columns := uint16(falback)
 	ws, err := unix.IoctlGetWinsize(int(os.Stdout.Fd()), unix.TIOCGWINSZ)
 	if err != nil {
 		return columns

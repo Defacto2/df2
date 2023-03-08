@@ -17,13 +17,13 @@ import (
 const space = " "
 
 // Clean a malformed group name and save the fix to the database.
-func Clean(name string) (ok bool) {
+func Clean(name string) bool {
 	fix := CleanStr(name)
 	if fix == name {
 		return false
 	}
 	count, status := int64(0), str.Y()
-	ok = true
+	ok := true
 	count, err := Update(fix, name)
 	if err != nil {
 		status = str.X()
@@ -126,7 +126,7 @@ func TrimThe(s string) string {
 }
 
 // Update replaces all instances of the group name with a new group name.
-func Update(newName, group string) (count int64, err error) {
+func Update(newName, group string) (int64, error) {
 	db := database.Connect()
 	defer db.Close()
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?," +
@@ -139,7 +139,7 @@ func Update(newName, group string) (count int64, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("rename exec: %w", err)
 	}
-	count, err = res.RowsAffected()
+	count, err := res.RowsAffected()
 	if err != nil {
 		return 0, fmt.Errorf("rename rows affected: %w", err)
 	}

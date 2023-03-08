@@ -63,8 +63,9 @@ func Test_filename(t *testing.T) {
 	}
 }
 
-func mockHeader(add string) (header http.Header, err error) {
+func mockHeader(add string) (http.Header, error) {
 	// source: https://blog.questionable.services/article/testing-http-handlers-go/
+	var header http.Header
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "/mock-header", nil)

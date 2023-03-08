@@ -214,7 +214,7 @@ func Move(src, dest string) error {
 }
 
 // Info returns the image metadata.
-func Info(name string) (width, height int, format string, err error) {
+func Info(name string) (width, height int, format string, err error) { //nolint:nonamedreturns
 	file, err := os.Open(name)
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("info open %q: %w", name, err)
@@ -406,7 +406,7 @@ func cropWebP(name string) (string, error) {
 }
 
 // WebPCalc calculates the largest permitted sizes for a valid WebP crop.
-func WebPCalc(width, height int) (w, h int) {
+func WebPCalc(width, height int) (w, h int) { //nolint:nonamedreturns
 	if width+height <= WebpMaxSize {
 		return width, height
 	}

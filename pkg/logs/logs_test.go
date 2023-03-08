@@ -82,7 +82,7 @@ func TestFilepath(t *testing.T) {
 	})
 }
 
-func printer(test, text string) (output string) {
+func printer(test, text string) string {
 	rescueStdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w

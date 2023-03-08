@@ -56,14 +56,15 @@ func (r Role) String() string {
 }
 
 // List people filtered by a role.
-func List(role Role) (people []string, total int, err error) {
+func List(role Role) ([]string, int, error) {
 	db := database.Connect()
 	defer db.Close()
 	s := PeopleStmt(role, false)
 	if s == "" {
 		return nil, 0, fmt.Errorf("list statement %v: %w", role, ErrRole)
 	}
-	if total, err = database.Total(&s); err != nil {
+	total, err := database.Total(&s)
+	if err != nil {
 		return nil, 0, fmt.Errorf("list totals: %w", err)
 	}
 	// interate through records
@@ -75,6 +76,7 @@ func List(role Role) (people []string, total int, err error) {
 	}
 	defer rows.Close()
 	var p sql.NullString
+	people := []string{}
 	i := 0
 	for rows.Next() {
 		if err = rows.Scan(&p); err != nil {
@@ -143,7 +145,7 @@ func Roles(r string) Role {
 
 // Rename replaces the persons using name with the replacement.
 // The task must be limited names associated to a Role.
-func Rename(replacement, name string, r Role) (count int64, err error) {
+func Rename(replacement, name string, r Role) (int64, error) {
 	if replacement == "" {
 		return 0, ErrNoReplace
 	}
@@ -174,7 +176,7 @@ func Rename(replacement, name string, r Role) (count int64, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("rename people exec: %w", err)
 	}
-	count, err = res.RowsAffected()
+	count, err := res.RowsAffected()
 	if err != nil {
 		return 0, fmt.Errorf("rename people rows affected: %w", err)
 	}
@@ -182,13 +184,13 @@ func Rename(replacement, name string, r Role) (count int64, err error) {
 }
 
 // Clean fixes and saves a malformed name.
-func Clean(name string, r Role) (ok bool) {
+func Clean(name string, r Role) bool {
 	rep := CleanS(Trim(name))
 	if rep == name {
 		return false
 	}
 	s := str.Y()
-	ok = true
+	ok := true
 	c, err := Rename(rep, name, r)
 	if err != nil {
 		s = str.X()

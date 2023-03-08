@@ -77,7 +77,7 @@ func HTML3Path() [7]string {
 	}
 }
 
-func (set *Set) StaticURLs() (c, i int) {
+func (set *Set) StaticURLs() (c, i int) { //nolint:nonamedreturns
 	paths := Paths()
 	if set == nil || len(set.Urls) < len(paths) {
 		return 0, 0

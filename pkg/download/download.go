@@ -194,15 +194,16 @@ func PingHead(url string) (*http.Response, error) {
 }
 
 // PingFile connects to a URL file down and returns its status code, filename and file size.
-func PingFile(link string) (code int, name string, size string, err error) {
+func PingFile(link string) (int, string, string, error) {
 	res, err := PingHead(link)
 	if err != nil {
 		return res.StatusCode, "", "", err
 	}
 	cd, cl := res.Header.Get(ContentDisposition), res.Header.Get(ContentLength)
-	name = strings.TrimPrefix(cd, DownloadPrefix)
+	name := strings.TrimPrefix(cd, DownloadPrefix)
 	res.Body.Close()
 
+	size := ""
 	i, err := strconv.Atoi(cl)
 	if err == nil {
 		size = humanize.Bytes(uint64(i))

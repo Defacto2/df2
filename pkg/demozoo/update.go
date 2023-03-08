@@ -170,7 +170,7 @@ func (r *Record) Save() error {
 }
 
 // Stmt creates the SQL prepare statement and values to update a Demozoo production.
-func (r *Record) Stmt() (query string, args []any) {
+func (r *Record) Stmt() (string, []any) {
 	// a range map iternation is not used due to the varied comparisons
 	set, args := updates(r)
 	if len(set) == 0 {
@@ -180,13 +180,13 @@ func (r *Record) Stmt() (query string, args []any) {
 	args = append(args, []any{time.Now()}...)
 	set = append(set, "updatedby=?")
 	args = append(args, []any{database.UpdateID}...)
-	query = "UPDATE files SET " + strings.Join(set, sep) + " WHERE id=?"
+	query := "UPDATE files SET " + strings.Join(set, sep) + " WHERE id=?"
 	args = append(args, []any{r.ID}...)
 	return query, args
 }
 
 // ZipContent reads an archive and saves its content to the database.
-func (r *Record) ZipContent() (ok bool, err error) {
+func (r *Record) ZipContent() (bool, error) {
 	if r.FilePath == "" {
 		return false, fmt.Errorf("zipcontent: %w", ErrFilePath)
 	} else if r.Filename == "" {
@@ -207,7 +207,9 @@ func InsertProds(p *releases.Productions) error {
 }
 
 //nolint:funlen
-func updates(r *Record) (set []string, args []any) {
+func updates(r *Record) ([]string, []any) {
+	var args []any
+	set := []string{}
 	if r.Filename != "" {
 		set = append(set, "filename=?")
 		args = append(args, []any{r.Filename}...)
@@ -263,7 +265,9 @@ func updates(r *Record) (set []string, args []any) {
 	return set, args
 }
 
-func credits(r *Record) (set []string, args []any) {
+func credits(r *Record) ([]string, []any) {
+	var args []any
+	set := []string{}
 	if len(r.CreditText) > 0 {
 		set = append(set, "credit_text=?")
 		j := strings.Join(r.CreditText, sep)
@@ -325,7 +329,7 @@ func (r *Record) authors(a *prods.Authors) {
 }
 
 // check record to see if it needs updating.
-func (r *Record) check() (update bool) {
+func (r *Record) check() bool {
 	switch {
 	case
 		r.Filename == "",
@@ -341,7 +345,7 @@ func (r *Record) check() (update bool) {
 	}
 }
 
-func (r *Record) confirm(code int, status string) (ok bool, err error) {
+func (r *Record) confirm(code int, status string) (bool, error) {
 	const nofound, found, problems = 404, 200, 300
 	if code == nofound {
 		r.WebIDDemozoo = 0
@@ -413,15 +417,14 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (skip bool, err error) {
+func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (bool, error) {
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
 		logs.Println("Clearing filename which is incorrectly set as", r.Filename)
 		r.Filename = ""
 	}
 	var f Product
-	err = f.Get(r.WebIDDemozoo)
-	if err != nil {
+	if err := f.Get(r.WebIDDemozoo); err != nil {
 		return true, fmt.Errorf("parse api fetch: %w", err)
 	}
 	code, status, api := f.Code, f.Status, f.API

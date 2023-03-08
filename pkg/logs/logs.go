@@ -171,7 +171,7 @@ func fatalLog(err error) {
 
 // Save an error to the logs.
 // path is available for unit tests.
-func Save(filename string, err error) (ok bool) {
+func Save(filename string, err error) bool {
 	if err == nil {
 		return false
 	}

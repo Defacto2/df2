@@ -19,9 +19,10 @@ const empty = "empty"
 
 // createTempDir creates a temporary directory and copies some test images into it.
 // dir is the absolute directory path while sum is the sum total of bytes copied.
-func createTempDir() (sum int64, dir string, err error) {
+// Returns the sum of bytes written and the created directory path.
+func createTempDir() (int64, string, error) {
 	// make dir
-	dir, err = os.MkdirTemp(os.TempDir(), "test-addtardir")
+	dir, err := os.MkdirTemp(os.TempDir(), "test-addtardir")
 	if err != nil {
 		return 0, "", err
 	}

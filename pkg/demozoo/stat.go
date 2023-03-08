@@ -135,7 +135,7 @@ func (st *Stat) NextPouet(rec Records) error {
 }
 
 // nextResult checks for the next new record.
-func (st *Stat) nextResult(rec Records, req Request) (skip bool, err error) {
+func (st *Stat) nextResult(rec Records, req Request) (bool, error) {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
@@ -183,7 +183,7 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 }
 
 // Download the first available remote file linked in the Demozoo production record.
-func (r *Record) Download(overwrite bool, api *prods.ProductionsAPIv1, st Stat) (skip bool) {
+func (r *Record) Download(overwrite bool, api *prods.ProductionsAPIv1, st Stat) bool {
 	if st.FileExist(r) || overwrite {
 		if r.UUID == "" {
 			log.Print(color.Error.Sprint("UUID is empty, cannot continue"))

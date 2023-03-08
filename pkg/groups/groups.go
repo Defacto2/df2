@@ -42,7 +42,7 @@ func (r Request) HTML(name string) error {
 }
 
 // Print a list of organisations or groups filtered by a name and summarizes the results.
-func (r Request) Print() (total int, err error) {
+func (r Request) Print() (int, error) {
 	return request.Print(request.Flags(r))
 }
 
@@ -190,7 +190,7 @@ func Slug(s string) string {
 }
 
 // Update replaces all instances of the group name with the new group name.
-func Update(newName, group string) (count int64, err error) {
+func Update(newName, group string) (int64, error) {
 	return rename.Update(newName, group)
 }
 

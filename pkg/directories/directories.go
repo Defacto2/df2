@@ -130,8 +130,10 @@ func PlaceHolders(dir *Dir) error {
 }
 
 // Size returns the number of counted files and their summed size as bytes.
-func Size(root string) (count int64, bytes uint64, err error) {
-	err = filepath.Walk(root, func(_ string, info os.FileInfo, err error) error {
+func Size(root string) (int64, uint64, error) {
+	var count int64
+	var bytes uint64
+	err := filepath.Walk(root, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

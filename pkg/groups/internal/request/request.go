@@ -186,7 +186,7 @@ func (r Flags) Parse(name, tmpl string) error { //nolint:funlen
 }
 
 // Print list organisations or groups filtered by a name and summaries the results.
-func Print(r Flags) (total int, err error) {
+func Print(r Flags) (int, error) {
 	grp, total, err := group.List(r.Filter)
 	if err != nil {
 		return 0, fmt.Errorf("print groups: %w", err)

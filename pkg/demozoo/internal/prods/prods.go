@@ -104,7 +104,7 @@ func (p *ProductionsAPIv1) JSON() ([]byte, error) {
 // PouetID returns the ID value used by Pouet's which prod URL syntax
 // and its HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
+func (p *ProductionsAPIv1) PouetID(ping bool) (int, int, error) {
 	for _, l := range p.ExternalLinks {
 		if l.LinkClass != cls {
 			continue
@@ -182,7 +182,7 @@ func Mutate(u *url.URL) *url.URL {
 }
 
 // Parse takes a Pouet prod URL and extracts the ID.
-func Parse(rawURL string) (id int, err error) {
+func Parse(rawURL string) (int, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return 0, fmt.Errorf(" url parse: %w", err)
@@ -192,7 +192,7 @@ func Parse(rawURL string) (id int, err error) {
 	if w == "" {
 		return 0, fmt.Errorf("parse pouet production &which=%v: %w", w, err)
 	}
-	id, err = strconv.Atoi(w)
+	id, err := strconv.Atoi(w)
 	if err != nil {
 		return 0, fmt.Errorf("parse pouet production &which=%v: %w", w, err)
 	}
