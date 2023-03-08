@@ -2,6 +2,7 @@ package groups
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -129,13 +130,13 @@ func MatchStdOut() error { //nolint:funlen
 				h0, h1, h2, h3, h4, h5, h6, h7, h8:
 				g, err1 := Count(group)
 				m, err2 := Count(match)
-				fmt.Printf("%s %s %s (%d%s%d)\n", group, approx, match,
+				fmt.Fprintf(os.Stdout, "%s %s %s (%d%s%d)\n", group, approx, match,
 					g, approx, m)
 				if err1 != nil {
-					fmt.Println(err1)
+					fmt.Fprintln(os.Stdout, err1)
 				}
 				if err2 != nil {
-					fmt.Println(err2)
+					fmt.Fprintln(os.Stdout, err2)
 				}
 				matches = append(matches, match)
 				sort.Strings(matches)
@@ -145,14 +146,15 @@ func MatchStdOut() error { //nolint:funlen
 	}
 	l = len(matches)
 	elapsed := time.Since(tick)
-	fmt.Printf("\nProcessing time %s\n", elapsed)
+	w := os.Stdout
+	fmt.Fprintf(w, "\nProcessing time %s\n", elapsed)
 	switch l {
 	case 0:
-		fmt.Printf("\nGreat, there are no known duplicate names from %d groups\n", total)
+		fmt.Fprintf(w, "\nGreat, there are no known duplicate names from %d groups\n", total)
 	default:
 		color.Primary.Printf("\n%d matches from %d groups\n", l, total)
-		fmt.Printf("To rename groups: df2 fix rename \"group name\" \"replacement name\"\n")
-		fmt.Printf("Example: df2 fix rename %q %q\n", "defacto ii", "defacto2")
+		fmt.Fprintf(w, "To rename groups: df2 fix rename \"group name\" \"replacement name\"\n")
+		fmt.Fprintf(w, "Example: df2 fix rename %q %q\n", "defacto ii", "defacto2")
 	}
 	return nil
 }

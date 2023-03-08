@@ -191,7 +191,7 @@ func Print(r Flags) (total int, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("print groups: %w", err)
 	}
-	fmt.Printf("\n\n%d matching %q records found\n", total, r.Filter)
+	fmt.Fprintf(os.Stdout, "\n\n%d matching %q records found\n", total, r.Filter)
 	a := make([]string, total)
 	for i, g := range grp {
 		if r.Progress {

@@ -146,7 +146,7 @@ func (st *Stat) nextResult(rec Records, req Request) (skip bool, err error) {
 	return false, nil
 }
 
-func (st Stat) print() {
+func (st Stat) printer() {
 	if st.Count == 0 {
 		if st.Fetched == 0 {
 			log.Printf("id %q does not have an associated Demozoo link\n", st.ByID)

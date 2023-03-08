@@ -73,7 +73,7 @@ func Port(r io.Reader) (int64, error) {
 		}
 		i, err := strconv.ParseInt(txt, decimal, 0)
 		if err != nil && txt != "" {
-			fmt.Printf("%s %v\n", str.X(), txt)
+			fmt.Fprintf(os.Stdout, "%s %v\n", str.X(), txt)
 			if err := check(cnt); errors.Is(err, ErrTooMany) {
 				return 0, err
 			}
@@ -81,7 +81,7 @@ func Port(r io.Reader) (int64, error) {
 		}
 		// check that the input a valid port
 		if ok := IsPort(int(i)); !ok {
-			fmt.Printf("%s %q is out of range\n", str.X(), txt)
+			fmt.Fprintf(os.Stdout, "%s %q is out of range\n", str.X(), txt)
 			if err := check(cnt); errors.Is(err, ErrTooMany) {
 				return 0, err
 			}
@@ -97,7 +97,7 @@ func check(cnt int) error {
 	const help, max = 2, 4
 	switch {
 	case cnt == help:
-		fmt.Println("Ctrl+C to keep the existing port")
+		fmt.Fprintln(os.Stdout, "Ctrl+C to keep the existing port")
 	case cnt >= max:
 		return ErrTooMany
 	}

@@ -50,7 +50,7 @@ func Run(tempDir string) (th, tx Task, err error) {
 		}
 		file, err := entry.Info()
 		if err != nil {
-			fmt.Printf("extract archive entry error: %s\n", err)
+			fmt.Fprintf(os.Stdout, "extract archive entry error: %s\n", err)
 			continue
 		}
 		fn := path.Join(tempDir, entry.Name())

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -265,7 +266,7 @@ func Test_randomName(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		fmt.Println(r)
+		fmt.Fprintln(os.Stdout, r)
 		return strings.Contains(r, "df2-download")
 	}
 	tests := []struct {

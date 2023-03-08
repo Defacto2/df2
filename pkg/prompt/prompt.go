@@ -20,7 +20,8 @@ func Dir() string {
 	s, err := input.Dir(os.Stdin)
 	if errors.Is(err, input.ErrEmpty) {
 		os.Exit(0)
-	} else if err != nil {
+	}
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -46,11 +47,12 @@ func IsPort(port int) bool {
 
 // String asks the user for a string configuration value and saves it.
 func String(keep string) string {
-	fmt.Println(keep)
+	fmt.Fprintln(os.Stdout, keep)
 	s, err := input.String(os.Stdin)
 	if errors.Is(err, input.ErrEmpty) {
 		os.Exit(0)
-	} else if err != nil {
+	}
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -63,7 +65,7 @@ func YN(query string, yes bool) bool {
 	if !yes {
 		y, n = "y", "N"
 	}
-	fmt.Printf("%s? [%s/%s] ", query, y, n)
+	fmt.Fprintf(os.Stdout, "%s? [%s/%s] ", query, y, n)
 	in, err := input.Read(os.Stdin)
 	if err != nil {
 		log.Print(fmt.Errorf("prompt yn input: %w", err))

@@ -97,7 +97,7 @@ func (r Request) Queries() error { //nolint: funlen
 	}
 	if r.ByID != "" {
 		st.ByID = r.ByID
-		st.print()
+		st.printer()
 		return nil
 	}
 	if st.Total > 0 {

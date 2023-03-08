@@ -334,14 +334,16 @@ func People(pf arg.People) error {
 
 func Rename(args ...string) error {
 	const wantedCount = 2
+	w := os.Stdout
 	switch len(args) {
 	case 0, 1:
 		return ErrToFew
 	case wantedCount:
 		// do nothing
 	default:
-		fmt.Println("The renaming of groups only supports two arguments, names with spaces should be quoted, for example:")
-		fmt.Printf("df2 fix rename %s %q\n", args[0], strings.Join(args[1:], " "))
+		fmt.Fprintln(w, "The renaming of groups only supports two arguments, "+
+			"names with spaces should be quoted, for example:")
+		fmt.Fprintf(w, "df2 fix rename %s %q\n", args[0], strings.Join(args[1:], " "))
 		return nil
 	}
 	oldArg, newArg := args[0], args[1]
@@ -350,7 +352,7 @@ func Rename(args ...string) error {
 		return err
 	}
 	if src < 1 {
-		fmt.Printf("no group matches found for %q\n", oldArg)
+		fmt.Fprintf(w, "no group matches found for %q\n", oldArg)
 		return nil
 	}
 	newName := groups.Format(newArg)
@@ -360,9 +362,10 @@ func Rename(args ...string) error {
 	}
 	switch dest {
 	case 0:
-		fmt.Printf("Will rename the %d records of %q to the new group name, %q\n", src, oldArg, newName)
+		fmt.Fprintf(w, "Will rename the %d records of %q to the new group name, %q\n", src, oldArg, newName)
 	default:
-		fmt.Printf("Will merge the %d records of %q into the group %q to total %d records\n", src, oldArg, newName, src+dest)
+		fmt.Fprintf(w, "Will merge the %d records of %q into the group %q to total %d records\n",
+			src, oldArg, newName, src+dest)
 		color.Danger.Println("This cannot be undone")
 	}
 	if b := prompt.YN("Rename the group", false); !b {
@@ -372,7 +375,7 @@ func Rename(args ...string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%d records updated to use %q\n", i, newName)
+	fmt.Fprintf(w, "%d records updated to use %q\n", i, newName)
 	return nil
 }
 

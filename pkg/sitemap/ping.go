@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -167,11 +168,11 @@ func (p Style) RangeFiles(urls []string) {
 			}
 			switch p {
 			case NotFound:
-				fmt.Printf("%s\t%s  ↳ %s - %s\n", link, Color404(code), size, name)
+				fmt.Fprintf(os.Stdout, "%s\t%s  ↳ %s - %s\n", link, Color404(code), size, name)
 			case Success:
-				fmt.Printf("%s\t%s  ↳ %s - %s\n", link, ColorCode(code), size, name)
+				fmt.Fprintf(os.Stdout, "%s\t%s  ↳ %s - %s\n", link, ColorCode(code), size, name)
 			case LinkNotFound, LinkSuccess:
-				fmt.Printf("%q formatting is unused in RangeFiles", p)
+				fmt.Fprintf(os.Stdout, "%q formatting is unused in RangeFiles", p)
 			}
 			wg.Done()
 		}(link)
@@ -202,15 +203,16 @@ func (p Style) Range(urls []string) {
 				wg.Done()
 				return
 			}
+			w := os.Stdout
 			switch p {
 			case LinkNotFound:
-				fmt.Printf("%s\t%s  ↳ %s\n", link, Color404(code), s)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s\n", link, Color404(code), s)
 			case LinkSuccess:
-				fmt.Printf("%s\t%s  ↳ %s\n", link, ColorCode(code), s)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s\n", link, ColorCode(code), s)
 			case NotFound:
-				fmt.Printf("%s\t%s  -  %s\n", Color404(code), link, s)
+				fmt.Fprintf(w, "%s\t%s  -  %s\n", Color404(code), link, s)
 			case Success:
-				fmt.Printf("%s\t%s  -  %s\n", ColorCode(code), link, s)
+				fmt.Fprintf(w, "%s\t%s  -  %s\n", ColorCode(code), link, s)
 			}
 			wg.Done()
 		}(link)

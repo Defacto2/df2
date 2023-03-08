@@ -121,38 +121,38 @@ func Path(name string) string {
 
 // Print formats using the default formats for its operands and writes to standard output.
 func Print(a ...any) {
-	if _, err := fmt.Print(a...); err != nil {
+	if _, err := fmt.Fprint(os.Stdout, a...); err != nil {
 		fatalLog(err)
 	}
 }
 
 // Printcr otherwise erases the current line and writes to standard output.
 func Printcr(a ...any) {
-	if _, err := fmt.Printf("\r%s\r", strings.Repeat(" ", int(terminal.Size()))); err != nil {
+	if _, err := fmt.Fprintf(os.Stdout, "\r%s\r", strings.Repeat(" ", int(terminal.Size()))); err != nil {
 		fatalLog(err)
 	}
-	if _, err := fmt.Print(a...); err != nil {
+	if _, err := fmt.Fprint(os.Stdout, a...); err != nil {
 		fatalLog(err)
 	}
 }
 
 // Printf formats according to a format specifier and writes to standard output.
 func Printf(format string, a ...any) {
-	if _, err := fmt.Printf(format, a...); err != nil {
+	if _, err := fmt.Fprintf(os.Stdout, format, a...); err != nil {
 		fatalLog(err)
 	}
 }
 
 // Println formats using the default formats for its operands and writes to standard output.
 func Println(a ...any) {
-	if _, err := fmt.Println(a...); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, a...); err != nil {
 		fatalLog(err)
 	}
 }
 
 // Printcrf erases the current line and formats according to a format specifier.
 func Printcrf(format string, a ...any) {
-	if _, err := fmt.Printf("\r%s\r%s",
+	if _, err := fmt.Fprintf(os.Stdout, "\r%s\r%s",
 		strings.Repeat(" ", int(terminal.Size())),
 		fmt.Sprintf(format, a...)); err != nil {
 		fatalLog(err)

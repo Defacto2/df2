@@ -120,7 +120,7 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 	for i, file := range files {
 		f, err := file.Info()
 		if err != nil {
-			fmt.Printf("extract demozoo file info error: %s\n", err)
+			fmt.Fprintf(os.Stdout, "extract demozoo file info error: %s\n", err)
 		}
 		var zip content.File
 		zip.Path = tempDir // filename gets appended by z.scan()

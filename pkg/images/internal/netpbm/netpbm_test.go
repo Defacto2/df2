@@ -13,7 +13,7 @@ func TestConvert(t *testing.T) {
 	const gif = "../../../../tests/images/test.gif"
 	const iff = "../../../../tests/images/test.iff"
 	dest := filepath.Join(os.TempDir(), "test_netpbm.png")
-	fmt.Println(dest)
+	fmt.Fprintln(os.Stdout, dest)
 	type args struct {
 		src  string
 		dest string
