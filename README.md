@@ -1,9 +1,10 @@
 # df2
 
-![Go](https://github.com/Defacto2/df2/workflows/Go/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/Defacto2/df2)](https://goreportcard.com/report/github.com/Defacto2/df2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Defacto2/df2)](https://goreportcard.com/report/github.com/Defacto2/df2)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Defacto2/df2)](https://github.com/Defacto2/df2/releases)
+![GitHub](https://img.shields.io/github/license/Defacto2/df2?style=flat)
 
-The df2 program is a terminal tool for managing plus optimising the files and database of [defacto2.net](https://defacto2.net). 
-It is broken down into multiple parts.
+The `df2` program is a terminal tool for managing plus optimising the files and database of [defacto2.net](https://defacto2.net) that is broken down into multiple parts.
 
 ```
 The tool to optimise and manage defacto2.net
@@ -46,11 +47,16 @@ Use "df2 [command] --help" for more information about a command.
 
 ## Install or update
 
-df2 is built on [Go](https://golang.org/doc/install) and is packaged for [Debian Linux](https://www.debian.org/intro/index).
+`df2` is built on [Go](https://golang.org/doc/install) and is packaged for [Debian Linux](https://www.debian.org/intro/index).
 
 ```bash
+# download the package
 wget https://github.com/Defacto2/df2/releases/latest/download/df2.deb
-dpkg -i df2.deb # also works for updating
+
+# install or update the package
+dpkg -i df2.deb
+
+# test the new install
 df2 --version
 ```
 
@@ -64,14 +70,16 @@ df2 --version
 #### Dependency installation on Ubuntu
 
 ```bash
+# required dependencies
 sudo apt install -y ansilove imagemagick netpbm pngquant webp
+
 # optional file archivers
 sudo apt install -y arj lhasa unrar unzip
 ```
 
 ### Database dependancy
 
-The df2 program expects local access to the [Defacto2 database](https://github.com/Defacto2/database).
+The `df2` program expects local access to the [Defacto2 database](https://github.com/Defacto2/database).
 
 ## Configuration
 
