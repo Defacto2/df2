@@ -52,34 +52,26 @@ func Month(s string) Months {
 	if len(s) < monthPrefix {
 		return non
 	}
-	switch strings.ToLower(s)[:monthPrefix] {
-	case "jan":
-		return jan
-	case "feb":
-		return feb
-	case "mar":
-		return mar
-	case "apr":
-		return apr
-	case "may":
-		return may
-	case "jun":
-		return jun
-	case "jul":
-		return jul
-	case "aug":
-		return aug
-	case "sep":
-		return sep
-	case "oct":
-		return oct
-	case "nov":
-		return nov
-	case "dec":
-		return dec
-	default:
-		return non
+	months := map[string]Months{
+		"jan": jan,
+		"feb": feb,
+		"mar": mar,
+		"apr": apr,
+		"may": may,
+		"jun": jun,
+		"jul": jul,
+		"aug": aug,
+		"sep": sep,
+		"oct": oct,
+		"nov": nov,
+		"dec": dec,
 	}
+	for prefix, val := range months {
+		if strings.ToLower(s)[:monthPrefix] == prefix {
+			return val
+		}
+	}
+	return non
 }
 
 type Approvals string

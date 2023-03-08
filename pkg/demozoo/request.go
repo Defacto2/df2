@@ -33,26 +33,14 @@ func (r *Request) Query(id string) error {
 // Queries parses all new proofs.
 // Overwrite will replace existing assets such as images.
 // All parses every Demozoo entry, not just records waiting for approval.
-func (r Request) Queries() error { //nolint: funlen
+func (r Request) Queries() error { //nolint:cyclop,funlen
 	var st Stat
 	stmt, start := selectByID(r.ByID), time.Now()
 	db := database.Connect()
 	defer db.Close()
-	rows, err := db.Query(stmt)
+	values, scanArgs, rows, err := values(db, stmt)
 	if err != nil {
-		return fmt.Errorf("queries query 1: %w", err)
-	} else if err = rows.Err(); err != nil {
-		return fmt.Errorf("queries rows 1: %w", rows.Err())
-	}
-	defer rows.Close()
-	columns, err := rows.Columns()
-	if err != nil {
-		return fmt.Errorf("queries columns: %w", err)
-	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]any, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
+		return err
 	}
 	storage := directories.Init(false).UUID
 	if err = st.sumTotal(Records{rows, scanArgs, values}, r); err != nil {
@@ -105,6 +93,26 @@ func (r Request) Queries() error { //nolint: funlen
 	}
 	st.summary(time.Since(start))
 	return nil
+}
+
+func values(db *sql.DB, stmt string) ([]sql.RawBytes, []any, *sql.Rows, error) {
+	rows, err := db.Query(stmt)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("queries query 1: %w", err)
+	} else if err = rows.Err(); err != nil {
+		return nil, nil, nil, fmt.Errorf("queries rows 1: %w", rows.Err())
+	}
+	defer rows.Close()
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("queries columns: %w", err)
+	}
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]any, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+	return values, scanArgs, rows, nil
 }
 
 func queriesTotal(total int) {

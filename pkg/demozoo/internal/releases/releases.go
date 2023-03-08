@@ -108,16 +108,28 @@ type Type struct {
 	Name string `json:"name"`
 }
 
-// Tags returns the platform and section.
-func Tags(platforms, types, title string) (string, string) {
+func isDemo(types string) bool {
+	switch types {
+	case "Game", "Intro", "Demo",
+		"96K Intro", "64K Intro",
+		"40k Intro", "32K Intro",
+		"16K Intro", "8K Intro",
+		"4K Intro", "1K Intro",
+		"256b Intro":
+		return true
+	}
+	return false
+}
+
+func typeTags(types string) (string, string) {
 	const logo = "logo"
+	if isDemo(types) {
+		return "demo", ""
+	}
 	platform, section := "", ""
 	switch types {
 	case "Diskmag", "Textmag":
 		section = "magazine"
-	case "Game", "Intro", "Demo",
-		"96K Intro", "64K Intro", "40k Intro", "32K Intro", "16K Intro", "8K Intro", "4K Intro", "1K Intro", "256b Intro":
-		section = "demo"
 	case "BBStro":
 		section = "bbs"
 	case "Cracktro":
@@ -146,6 +158,12 @@ func Tags(platforms, types, title string) (string, string) {
 		section = "demo"
 		platform = "audio"
 	}
+	return section, platform
+}
+
+// Tags returns the platform and section.
+func Tags(platforms, types, title string) (string, string) {
+	section, platform := typeTags(types)
 	if strings.Contains(strings.ToLower(title), "application generator") {
 		section = "groupapplication"
 	}

@@ -231,27 +231,13 @@ func fmtWord(w string) string {
 }
 
 func fmtSuffix(w string, title cases.Caser) string {
+	uppers := []string{"ad", "bc", "am", "pm"}
+	for _, x := range uppers {
+		if val := upperSuffix(w, x); val != "" {
+			return val
+		}
+	}
 	switch {
-	case strings.HasSuffix(w, "ad"):
-		x := strings.TrimSuffix(w, "ad")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dAD", val)
-		}
-	case strings.HasSuffix(w, "bc"):
-		x := strings.TrimSuffix(w, "bc")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dBC", val)
-		}
-	case strings.HasSuffix(w, "am"):
-		x := strings.TrimSuffix(w, "am")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dAM", val)
-		}
-	case strings.HasSuffix(w, "pm"):
-		x := strings.TrimSuffix(w, "pm")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dPM", val)
-		}
 	case strings.HasSuffix(w, "dox"):
 		val := strings.TrimSuffix(w, "dox")
 		return fmt.Sprintf("%sDox", title.String(val))
@@ -270,6 +256,17 @@ func fmtSuffix(w string, title cases.Caser) string {
 	case strings.HasPrefix(w, "lsd"):
 		val := strings.TrimPrefix(w, "lsd")
 		return fmt.Sprintf("LSD%s", title.String(val))
+	}
+	return ""
+}
+
+func upperSuffix(s, suffix string) string {
+	if !strings.HasSuffix(s, suffix) {
+		return ""
+	}
+	x := strings.TrimSuffix(s, suffix)
+	if val, err := strconv.Atoi(x); err == nil {
+		return fmt.Sprintf("%d%s", val, strings.ToUpper(suffix))
 	}
 	return ""
 }

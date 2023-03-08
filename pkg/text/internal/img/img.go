@@ -149,24 +149,30 @@ func MakePng(src, dest string, amiga bool) (string, error) {
 	} else if err != nil {
 		return "", fmt.Errorf("make ansilove %q: %q %w", args, out, err)
 	}
-
-	_, err = os.Getwd()
+	size, err := checkSize(img)
 	if err != nil {
-		return "", fmt.Errorf("makepng working directory: %w", err)
+		return "", err
+	}
+	return fmt.Sprintf("✓ text » png %v\n%s",
+		humanize.Bytes(size), color.Secondary.Sprintf("%s", out)), nil
+}
+
+func checkSize(img string) (uint64, error) {
+	_, err := os.Getwd()
+	if err != nil {
+		return 0, fmt.Errorf("makepng working directory: %w", err)
 	}
 
 	_, err = os.Executable()
 	if err != nil {
-		return "", fmt.Errorf("makepng failed to obtain exe: %w", err)
+		return 0, fmt.Errorf("makepng failed to obtain exe: %w", err)
 	}
 
 	stat, err := os.Stat(img)
 	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("makepng stat %q: %w", img, err)
+		return 0, fmt.Errorf("makepng stat %q: %w", img, err)
 	} else if err != nil {
-		return "", fmt.Errorf("makepng stat: %w", err)
+		return 0, fmt.Errorf("makepng stat: %w", err)
 	}
-
-	return fmt.Sprintf("✓ text » png %v\n%s",
-		humanize.Bytes(uint64(stat.Size())), color.Secondary.Sprintf("%s", out)), nil
+	return uint64(stat.Size()), nil
 }
