@@ -12,6 +12,7 @@ linters:
     - golint
     - maligned
     - nosnakecase
+    - structcheck
     - varcheck
 
     # disabled
@@ -29,7 +30,6 @@ linters:
     # generics
     - rowserrcheck
     - sqlclosecheck
-    - structcheck
     - wastedassign
 #
 # Fixes

@@ -43,7 +43,8 @@ func Create() error {
 	}
 	defer rows.Close()
 	// handle static urls
-	v.Urls = make([]urlset.Tag, len(urlset.Paths())+count)
+	const paths = 29
+	v.Urls = make([]urlset.Tag, paths+count)
 	c, i := v.StaticURLs()
 	// handle query results.
 	for rows.Next() {

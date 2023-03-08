@@ -78,7 +78,8 @@ func HTML3Path() [7]string {
 }
 
 func (set *Set) StaticURLs() (c, i int) {
-	if set == nil || len(set.Urls) < len(Paths()) {
+	paths := Paths()
+	if set == nil || len(set.Urls) < len(paths) {
 		return 0, 0
 	}
 	// sitemap priorities
@@ -87,7 +88,7 @@ func (set *Set) StaticURLs() (c, i int) {
 		return static + path
 	}
 	c, i, view := 0, 0, viper.GetString("directory.views")
-	for i, path := range Paths() {
+	for i, path := range paths {
 		file := filepath.Join(view, path, index)
 		if s, err := os.Stat(file); !os.IsNotExist(err) {
 			set.Urls[i] = Tag{uri(path), Lastmod(s), "", veryHigh}

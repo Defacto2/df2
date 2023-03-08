@@ -46,10 +46,10 @@ func TestPaths(t *testing.T) {
 }
 
 func tags() []urlset.Tag {
-	l := len(urlset.Paths())
-	urls := make([]urlset.Tag, l)
+	size := 29
+	urls := make([]urlset.Tag, size)
 	tag := urlset.Tag{Location: "/url-path-"}
-	for i := 1; i < l; i++ {
+	for i := 1; i < size; i++ {
 		urls[i] = tag
 		urls[i].Location += fmt.Sprint(i)
 	}

@@ -24,6 +24,7 @@ func TestParse(t *testing.T) {
 		{"empty", request.Flags{Filter: "bbs"}, args{tmp, ""}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			// note: this test is slow
 			t.Parallel()
@@ -47,6 +48,7 @@ func TestPrintr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt := tt
 			t.Parallel()
 			gotTotal, err := request.Print(tt.r)
 			if (err != nil) != tt.wantErr {
