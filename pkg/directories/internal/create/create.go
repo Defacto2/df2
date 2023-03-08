@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	m "math/rand"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 var (
@@ -54,7 +52,6 @@ func Holder(path string, size int, prefix uint) error {
 	if _, err := os.Stat(fn); err == nil {
 		return nil // don't overwrite existing files
 	}
-	m.Seed(time.Now().UnixNano())
 	r, err := RandString(size)
 	if err != nil {
 		return fmt.Errorf("create holder file: %w", err)

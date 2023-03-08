@@ -120,8 +120,8 @@ func (a IDs) Randomize(x int) (IDs, error) {
 			continue
 		}
 		seeded = seed
-		rand.Seed(seed)
-		randomIndex := rand.Intn(l) //nolint:gosec
+		r := rand.New(rand.NewSource(seed)) //nolint:gosec
+		randomIndex := r.Intn(l)
 		id := a[randomIndex]
 		if randoms.Contains(id) {
 			i--

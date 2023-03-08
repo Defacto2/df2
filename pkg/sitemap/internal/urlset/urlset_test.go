@@ -59,9 +59,9 @@ func tags() []urlset.Tag {
 func TestSet_StaticURLs(t *testing.T) {
 	tag := urlset.Tag{Location: "/url-path-1"}
 	type fields struct {
-		XMLName xml.Name
-		XMLNS   string
-		Urls    []urlset.Tag
+		XMLName xml.Name     `xml:"urlset,omitempty"`
+		XMLNS   string       `xml:"xmlns,attr,omitempty"`
+		Urls    []urlset.Tag `xml:"url,omitempty"`
 	}
 	tests := []struct {
 		name   string
