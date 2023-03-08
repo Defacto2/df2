@@ -38,8 +38,6 @@ const (
 	statusOk = 200
 )
 
-var ErrFewArgs = errors.New("too few arguments given")
-
 // Copyright returns a © Copyright year, or a range of years.
 func Copyright() string {
 	const initYear = 2020
@@ -51,50 +49,35 @@ func Copyright() string {
 }
 
 var (
-	ErrArgFlag = errors.New("unknown args flag")
-	ErrDZFlag  = errors.New("unknown demozoo flag")
+	ErrToFew  = errors.New("too few arguments given")
+	ErrUnkArg = errors.New("unknown args flag")
+	ErrDZFlag = errors.New("unknown demozoo flag")
 )
 
-func Data(dbf database.Flags) error {
+func Data(d database.Flags) error {
 	switch {
-	case dbf.CronJob:
-		if err := dbf.Run(); err != nil {
-			return err
-		}
-	case dbf.Tables == "all":
-		if err := dbf.DB(); err != nil {
-			return err
-		}
+	case d.CronJob:
+		return d.Run()
+	case d.Tables == "all":
+		return d.DB()
 	default:
-		if err := dbf.ExportTable(); err != nil {
-			return err
-		}
+		return d.ExportTable()
 	}
-	return nil
 }
 
 func Apis(a arg.Apis) error {
 	switch {
 	case a.Refresh:
-		if err := demozoo.RefreshMeta(); err != nil {
-			return err
-		}
+		return demozoo.RefreshMeta()
 	case a.Pouet:
-		if err := demozoo.RefreshPouet(); err != nil {
-			return err
-		}
+		return demozoo.RefreshPouet()
 	case a.SyncDos:
-		if err := syncdos(); err != nil {
-			return err
-		}
+		return syncdos()
 	case a.SyncWin:
-		if err := syncwin(); err != nil {
-			return err
-		}
+		return syncwin()
 	default:
-		return ErrArgFlag
+		return ErrUnkArg
 	}
-	return nil
 }
 
 func Demozoo(dzf arg.Demozoo) error {
@@ -105,39 +88,27 @@ func Demozoo(dzf arg.Demozoo) error {
 	}
 	switch {
 	case dzf.New, dzf.All:
-		if err := r.Queries(); err != nil {
-			return err
-		}
+		return r.Queries()
 	case dzf.ID != "":
-		if err := r.Query(dzf.ID); err != nil {
-			return err
-		}
+		return r.Query(dzf.ID)
 	case dzf.Releaser != 0:
-		if err := releaser(dzf.Releaser); err != nil {
-			return err
-		}
+		return releaser(dzf.Releaser)
 	case dzf.Ping != 0:
-		if err := ping(dzf.Ping); err != nil {
-			return err
-		}
+		return ping(dzf.Ping)
 	case dzf.Download != 0:
-		if err := download(dzf.Download); err != nil {
-			return err
-		}
+		return download(dzf.Download)
 	case len(dzf.Extract) == 1:
-		if err := extract(dzf.Extract[0]); err != nil {
-			return err
-		}
+		return extract(dzf.Extract[0])
 	case len(dzf.Extract) > 1: // limit to the first 2 flags
 		d, err := archive.Demozoo(dzf.Extract[0], dzf.Extract[1], &empty)
 		if err != nil {
 			return err
 		}
 		logs.Println(d.String())
+		return nil
 	default:
 		return ErrDZFlag
 	}
-	return nil
 }
 
 func syncdos() error {
@@ -183,10 +154,7 @@ func releaser(id uint) error {
 	if !prompt.YN(s, true) {
 		return nil
 	}
-	if err := demozoo.InsertProds(&p.API); err != nil {
-		return err
-	}
-	return nil
+	return demozoo.InsertProds(&p.API)
 }
 
 func ping(id uint) error {
@@ -198,10 +166,7 @@ func ping(id uint) error {
 	if !str.Piped() {
 		logs.Printf("Demozoo ID %v, HTTP status %v\n", id, f.Status)
 	}
-	if err := f.API.Print(); err != nil {
-		return err
-	}
-	return nil
+	return f.API.Print()
 }
 
 func download(id uint) error {
@@ -245,13 +210,9 @@ func Groups(gpf arg.Group) error {
 	req := groups.Request{Filter: gpf.Filter, Counts: gpf.Counts, Initialisms: gpf.Init, Progress: gpf.Progress}
 	switch gpf.Format {
 	case datal, dl, "d":
-		if err := req.DataList(""); err != nil {
-			return err
-		}
+		return req.DataList("")
 	case htm, "h", "":
-		if err := req.HTML(""); err != nil {
-			return err
-		}
+		return req.HTML("")
 	case txt, "t":
 		if _, err := req.Print(); err != nil {
 			return err
@@ -362,17 +323,11 @@ func People(pf arg.People) error {
 	}
 	switch pf.Format {
 	case datal, dl, "d":
-		if err := people.DataList("", req); err != nil {
-			return err
-		}
+		return people.DataList("", req)
 	case htm, "h", "":
-		if err := people.HTML("", req); err != nil {
-			return err
-		}
+		return people.HTML("", req)
 	case txt, "t":
-		if err := people.Print(req); err != nil {
-			return err
-		}
+		return people.Print(req)
 	}
 	return nil
 }
@@ -381,7 +336,7 @@ func Rename(args ...string) error {
 	const wantedCount = 2
 	switch len(args) {
 	case 0, 1:
-		return ErrFewArgs
+		return ErrToFew
 	case wantedCount:
 		// do nothing
 	default:

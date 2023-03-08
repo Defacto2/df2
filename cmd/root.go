@@ -81,14 +81,16 @@ func init() { //nolint:gochecknoinits
 // readIn the config file and any set ENV variables.
 func readIn() {
 	logs.Panic(gf.Panic)
-	if cf := config.Filepath(); cf == "" {
+	cf := config.Filepath()
+	switch cf {
+	case "":
 		home, err := os.UserHomeDir()
 		if err != nil {
 			logs.Fatal(err)
 		}
 		viper.AddConfigPath(home)
 		viper.SetConfigName(config.Config.Name)
-	} else {
+	default:
 		viper.SetConfigFile(cf)
 	}
 	// read in environment variables that match

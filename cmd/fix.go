@@ -114,7 +114,7 @@ var fixRenGroup = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// in the future this command could be adapted to use a --person flag
 		err := run.Rename(args...)
-		if errors.Is(err, run.ErrFewArgs) {
+		if errors.Is(err, run.ErrToFew) {
 			if err := cmd.Usage(); err != nil {
 				logs.Fatal(err)
 			}

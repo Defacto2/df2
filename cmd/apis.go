@@ -25,7 +25,7 @@ require the parsing of 10,000s of records.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := run.Apis(apis)
 		switch {
-		case errors.Is(err, run.ErrArgFlag):
+		case errors.Is(err, run.ErrUnkArg):
 			if err := cmd.Usage(); err != nil {
 				logs.Fatal(err)
 			}
