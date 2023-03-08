@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
+	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/proof"
 	"github.com/spf13/cobra"

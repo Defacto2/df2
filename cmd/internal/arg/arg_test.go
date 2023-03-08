@@ -3,7 +3,7 @@ package arg_test
 import (
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
+	"github.com/Defacto2/df2/cmd/internal/arg"
 )
 
 func Test_options(t *testing.T) {

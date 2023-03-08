@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
-	"github.com/Defacto2/df2/pkg/cmd/internal/run"
+	"github.com/Defacto2/df2/cmd/internal/arg"
+	"github.com/Defacto2/df2/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/logs"

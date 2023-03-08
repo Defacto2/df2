@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/archive"
-	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/config"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"

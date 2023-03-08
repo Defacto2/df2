@@ -4,8 +4,8 @@ package cmd
 import (
 	"log"
 
+	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/assets"
-	"github.com/Defacto2/df2/pkg/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/spf13/cobra"
 )
