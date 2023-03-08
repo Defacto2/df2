@@ -1,11 +1,11 @@
-// Package humanize parses data to a human readable format.
-package humanize
-
 // The code on this page is derived from labstack/gommon, Common packages for Go
 // https://github.com/labstack/gommon.
 //
 // The MIT License (MIT) Copyright (c) 2018 labstack
 // https://github.com/labstack/gommon/blob/master/LICENSE
+
+// Package humanize parses data to a human readable format.
+package humanize
 
 import (
 	"golang.org/x/text/language"
@@ -18,6 +18,7 @@ const (
 	mib
 	gib
 	tib
+	pib
 
 	oneDecimalPoint  = "%.1f %s"
 	twoDecimalPoints = "%.2f %s"
@@ -26,13 +27,18 @@ const (
 	mb               = kb * kb
 	gb               = mb * kb
 	tb               = gb * kb
+	pb               = tb * kb
 )
 
 // Binary formats bytes integer to localized readable string.
-func binary(b int64, t language.Tag) string {
+func Binary(b int64, t language.Tag) string {
 	p := message.NewPrinter(t)
-	multiple, value := "", float64(b)
+	value := float64(b)
+	var multiple string
 	switch {
+	case b >= pib:
+		value /= pib
+		multiple = "PiB"
 	case b >= tib:
 		value /= tib
 		multiple = "TiB"
@@ -54,10 +60,14 @@ func binary(b int64, t language.Tag) string {
 }
 
 // Decimal formats bytes integer to localized readable string.
-func decimal(b int64, t language.Tag) string {
+func Decimal(b int64, t language.Tag) string {
 	p := message.NewPrinter(t)
-	multiple, value := "", float64(b)
+	value := float64(b)
+	var multiple string
 	switch {
+	case b >= pb:
+		value /= pb
+		multiple = "PB"
 	case b >= tb:
 		value /= tb
 		multiple = "TB"
@@ -76,14 +86,4 @@ func decimal(b int64, t language.Tag) string {
 		return p.Sprintf("%dB", b)
 	}
 	return p.Sprintf(twoDecimalPoints, value, multiple)
-}
-
-// Binary formats bytes integer to localized readable string.
-func Binary(b int64, t language.Tag) string {
-	return binary(b, t)
-}
-
-// Decimal formats bytes integer to localized readable string.
-func Decimal(b int64, t language.Tag) string {
-	return decimal(b, t)
 }

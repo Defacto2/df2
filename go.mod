@@ -2,10 +2,10 @@ module github.com/Defacto2/df2
 
 // do not forget to update .github/workflows/release.yml
 // run go mod vendor if package syncs fail
-go 1.19
+go 1.20
 
 require (
-	github.com/bengarrett/retrotxtgo v0.0.37
+	github.com/bengarrett/retrotxtgo v0.0.38
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/carlmjohnson/versioninfo v0.22.4
 	github.com/disintegration/imaging v1.6.2
@@ -23,15 +23,16 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
-	golang.org/x/image v0.3.0
-	golang.org/x/sys v0.4.0
-	golang.org/x/text v0.6.0
+	golang.org/x/image v0.6.0
+	golang.org/x/sys v0.6.0
+	golang.org/x/text v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/dlclark/regexp2 v1.8.0 // indirect
+	github.com/bengarrett/sauce v1.1.0 // indirect
+	github.com/dlclark/regexp2 v1.8.1 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -41,9 +42,9 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
-	github.com/spf13/afero v1.9.3 // indirect
+	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -51,6 +52,6 @@ require (
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )

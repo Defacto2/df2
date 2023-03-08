@@ -17,6 +17,8 @@ import (
 	"golang.org/x/text/transform"
 )
 
+var ErrLB = errors.New("linebreak runes cannot be empty")
+
 // LB is the text line break control represented as 2 runes.
 type LB [2]rune
 
@@ -62,14 +64,12 @@ func NEL() LB {
 	return LB{NextLine}
 }
 
-var ErrLB = errors.New("linebreak runes cannot be empty")
-
 // Columns counts the number of characters used per line in the reader interface.
 func Columns(r io.Reader, lb LB) (int, error) {
 	if reflect.DeepEqual(lb, LB{}) {
 		return 0, ErrLB
 	}
-	var lineBreak = []byte{byte(lb[0]), byte(lb[1])}
+	lineBreak := []byte{byte(lb[0]), byte(lb[1])}
 	if lb[1] == 0 {
 		lineBreak = []byte{byte(lb[0])}
 	}
@@ -322,7 +322,7 @@ func Words(r io.Reader) (int, error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
-		var t = scanner.Text()
+		t := scanner.Text()
 		r, _ := utf8.DecodeRuneInString(t)
 		const max = 65533
 		if r >= max {
@@ -336,7 +336,7 @@ func Words(r io.Reader) (int, error) {
 			continue
 		}
 		// scan chars within each word
-		if word(t) {
+		if Word(t) {
 			count++
 		}
 	}
@@ -353,10 +353,10 @@ func WordsEBCDIC(r io.Reader) (int, error) {
 	return Words(c)
 }
 
-// IsWord scans the content of a word for characters that are not digits,
+// Word scans the content of a word for characters that are not digits,
 // letters or punctuation and if discovered returns false.
 // If a space or line break is encountered the scan will end.
-func word(s string) bool {
+func Word(s string) bool {
 	if s == "" {
 		return false
 	}

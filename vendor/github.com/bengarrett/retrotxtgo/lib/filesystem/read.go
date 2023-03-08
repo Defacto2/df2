@@ -8,21 +8,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/bengarrett/retrotxtgo/lib/filesystem/internal/util"
+	"github.com/bengarrett/retrotxtgo/lib/internal/nl"
+	"github.com/bengarrett/retrotxtgo/lib/internal/save"
 	"github.com/bengarrett/retrotxtgo/lib/logs"
-)
-
-type lineBreaks int
-
-const (
-	nl lineBreaks = iota
-	dos
-	win
-	c64
-	darwin
-	mac
-	amiga
-	linux
-	unix
 )
 
 // IsPipe determines if Stdin (standard input) is piped from another command.
@@ -112,15 +101,15 @@ func readLineBreaks(name string, cols bool) (int, error) {
 		return -1, err
 	}
 	defer file.Close()
-	nl, err := ReadLineBreaks(name)
+	lb, err := ReadLineBreaks(name)
 	if err != nil {
 		return -1, fmt.Errorf("could not find the line break method: %w", err)
 	}
 	var count int
 	if !cols {
-		count, err = Lines(file, nl)
+		count, err = Lines(file, lb)
 	} else {
-		count, err = Columns(file, nl)
+		count, err = Columns(file, lb)
 	}
 	if err != nil {
 		return -1, fmt.Errorf("read columns count the file: %q: %w", name, err)
@@ -146,9 +135,9 @@ func ReadControls(name string) (int, error) {
 }
 
 // ReadLine reads a named file location or a named temporary file and returns its content.
-func ReadLine(name string, lb lineBreaks) (string, error) {
-	var path, n = tempFile(name), lineBreak(lb)
-	file, err := os.OpenFile(path, os.O_RDONLY, fileMode)
+func ReadLine(name string, lb nl.LineBreaks) (string, error) {
+	path, n := util.Temp(name), nl.LineBreak(lb)
+	file, err := os.OpenFile(path, os.O_RDONLY, save.LogFileMode)
 	if errors.Is(err, os.ErrNotExist) {
 		return "", fmt.Errorf("%w: %s", ErrNotFound, name)
 	}
@@ -235,7 +224,10 @@ func ReadTail(name string, offset int) ([]byte, error) {
 		return nil, err
 	}
 	defer file.Close()
-	count, total := 0, 0
+	var (
+		count int
+		total int
+	)
 	total, err = ReadRunes(name)
 	if err != nil {
 		return nil, fmt.Errorf("read tail could not read runes: %q: %w", name, err)
@@ -259,7 +251,7 @@ func ReadTail(name string, offset int) ([]byte, error) {
 
 // ReadText reads a named file location or a named temporary file and returns its content.
 func ReadText(name string) (string, error) {
-	return ReadLine(name, nl)
+	return ReadLine(name, nl.NL)
 }
 
 // ReadWords counts the number of spaced words in the named file.
