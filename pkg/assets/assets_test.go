@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/archive"
@@ -33,12 +34,16 @@ func createTempDir() (int64, string, error) {
 	}
 	imgs := []string{"test.gif", "test.png", "test.jpg"}
 	done, sum := make(chan error), int64(0)
+	var mu sync.Mutex
 	for _, f := range imgs {
 		go func(f string) {
+			mu.Lock()
 			sum, err = archive.Copy(filepath.Join(src, f), filepath.Join(dir, f))
 			if err != nil {
+				mu.Unlock()
 				done <- err
 			}
+			mu.Unlock()
 			done <- nil
 		}(f)
 	}
