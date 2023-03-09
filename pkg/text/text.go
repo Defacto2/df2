@@ -57,20 +57,7 @@ func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records in
 	// missing images + source is an archive
 	if !ok && t.Archive() {
 		c++
-		err1 := t.Extract(dir)
-		switch {
-		case errors.Is(err1, tf.ErrMeUnk):
-			return i, c, nil
-		case errors.Is(err1, tf.ErrMeNo):
-			return i, c, nil
-		case err1 != nil:
-			log.Println(t.String(), err1)
-			return i, c, nil
-		}
-		if err1 := t.ExtractedImgs(dir.UUID); err1 != nil {
-			log.Println(t.String(), err1)
-		}
-		return i, c, nil
+		return extract(t, i, c, dir)
 	}
 	// missing images + source is a textfile
 	if !ok {
@@ -83,6 +70,23 @@ func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records in
 	c, err = t.WebP(c, dir.Img000)
 	if err != nil {
 		logs.Println(err)
+	}
+	return i, c, nil
+}
+
+func extract(t tf.TextFile, i, c int, dir *directories.Dir) (int, int, error) {
+	err := t.Extract(dir)
+	switch {
+	case errors.Is(err, tf.ErrMeUnk):
+		return i, c, nil
+	case errors.Is(err, tf.ErrMeNo):
+		return i, c, nil
+	case err != nil:
+		log.Println(t.String(), err)
+		return i, c, nil
+	}
+	if err := t.ExtractedImgs(dir.UUID); err != nil {
+		log.Println(t.String(), err)
 	}
 	return i, c, nil
 }

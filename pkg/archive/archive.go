@@ -165,25 +165,30 @@ func NFO(name string, files ...string) string {
 		default:
 			continue
 		}
-		switch {
-		case fn == base+".nfo": // [archive name].nfo
-			f[file] = demozoo.Lvl1
-		case fn == base+".txt": // [archive name].txt
-			f[file] = demozoo.Lvl2
-		case ext == ".nfo": // [random].nfo
-			f[file] = demozoo.Lvl3
-		case fn == "file_id.diz": // BBS file description
-			f[file] = demozoo.Lvl4
-		case fn == base+".diz": // [archive name].diz
-			f[file] = demozoo.Lvl5
-		case fn == ".txt": // [random].txt
-			f[file] = demozoo.Lvl6
-		case fn == ".diz": // [random].diz
-			f[file] = demozoo.Lvl7
-		default: // currently lacking is [group name].nfo and [group name].txt priorities
-		}
+		f = nfoFile(f, file, fn, base, ext)
 	}
 	return f.Top()
+}
+
+func nfoFile(f demozoo.Finds, file, fn, base, ext string) demozoo.Finds {
+	switch {
+	case fn == base+".nfo": // [archive name].nfo
+		f[file] = demozoo.Lvl1
+	case fn == base+".txt": // [archive name].txt
+		f[file] = demozoo.Lvl2
+	case ext == ".nfo": // [random].nfo
+		f[file] = demozoo.Lvl3
+	case fn == "file_id.diz": // BBS file description
+		f[file] = demozoo.Lvl4
+	case fn == base+".diz": // [archive name].diz
+		f[file] = demozoo.Lvl5
+	case fn == ".txt": // [random].txt
+		f[file] = demozoo.Lvl6
+	case fn == ".diz": // [random].diz
+		f[file] = demozoo.Lvl7
+	default: // currently lacking is [group name].nfo and [group name].txt priorities
+	}
+	return f
 }
 
 // Proof decompresses and parses a hosted file archive.

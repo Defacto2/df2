@@ -145,6 +145,10 @@ func MatchStdOut() error { //nolint:funlen
 		}
 	}
 	l = len(matches)
+	return matchSummary(tick, l, total)
+}
+
+func matchSummary(tick time.Time, l, total int) error {
 	elapsed := time.Since(tick)
 	w := os.Stdout
 	fmt.Fprintf(w, "\nProcessing time %s\n", elapsed)

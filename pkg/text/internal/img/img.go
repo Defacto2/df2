@@ -30,19 +30,20 @@ const (
 
 // Generate a collection of site images.
 func Generate(name, uuid string, amiga bool) error {
-	prnt := func(s string) {
+	stdout := func(s string) {
 		logs.Printf("  %s", s)
 	}
 	const note = `
 this command requires the installation of AnsiLove/C
 installation instructions: https://github.com/ansilove/ansilove`
-	n, f := name, directories.Files(uuid)
+	f := directories.Files(uuid)
 	o := f.Img000 + png
-	s, err := MakePng(n, f.Img000, amiga)
+	s, err := MakePng(name, f.Img000, amiga)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
 		log.Println(note)
 		return fmt.Errorf("generate, ansilove not found: %w", err)
-	} else if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
+	}
+	if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
 		tmp, err1 := Reduce(f.UUID, uuid)
 		if err1 != nil {
 			return fmt.Errorf("ansilove reduce: %w", err1)
@@ -53,30 +54,38 @@ installation instructions: https://github.com/ansilove/ansilove`
 	if err != nil {
 		return fmt.Errorf("generate: %w", err)
 	}
-	prnt(s)
+	stdout(s)
 	const thumbMedium = 400
-	var w, h int
-	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
-		if err != nil {
-			return fmt.Errorf("generate info: %w", err)
-		}
-		cw, ch := images.WebPCalc(w, h)
-		s, err = images.ToPng(o, images.NewExt(o, png), ch, cw)
-		if err != nil {
-			return fmt.Errorf("generate calc: %w", err)
-		}
-		prnt(s)
+	if err := resize(o); err != nil {
+		return err
 	}
 	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
 	if err != nil {
 		return fmt.Errorf("generate webp: %w", err)
 	}
-	prnt(s)
+	stdout(s)
 	s, err = images.ToThumb(o, f.Img400, thumbMedium)
 	if err != nil {
 		return fmt.Errorf("generate thumb %dpx: %w", thumbMedium, err)
 	}
-	prnt(s)
+	stdout(s)
+	return nil
+}
+
+func resize(o string) error {
+	var w, h int
+	var err error
+	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
+		if err != nil {
+			return fmt.Errorf("generate info: %w", err)
+		}
+		cw, ch := images.WebPCalc(w, h)
+		s, err := images.ToPng(o, images.NewExt(o, png), ch, cw)
+		if err != nil {
+			return fmt.Errorf("generate calc: %w", err)
+		}
+		logs.Printf("  %s", s)
+	}
 	return nil
 }
 

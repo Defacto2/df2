@@ -191,7 +191,7 @@ func RefreshPouet() error {
 	return refresh(pouet)
 }
 
-func refresh(r request) error {
+func refresh(r request) error { //nolint:cyclop
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()

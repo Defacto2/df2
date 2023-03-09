@@ -30,7 +30,7 @@ func (dl *DownloadsAPIv1) parse() bool {
 }
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink() (string, string) {
+func (p *ProductionsAPIv1) DownloadLink() (string, string) { //nolint:cyclop
 	const (
 		found       = 200
 		internalErr = 500

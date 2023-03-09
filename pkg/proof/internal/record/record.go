@@ -73,7 +73,7 @@ func (r Record) Approve() error {
 }
 
 // Iterate through each stat value.
-func (r Record) Iterate(s stat.Proof) error {
+func (r Record) Iterate(s stat.Proof) error { //nolint:cyclop
 	if reflect.DeepEqual(r, Record{}) {
 		return ErrNoRec
 	}

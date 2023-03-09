@@ -212,7 +212,7 @@ func PingFile(link string) (int, string, string, error) {
 }
 
 // StatusColor colours the HTTP status based on its severity.
-func StatusColor(code int, status string) string {
+func StatusColor(code int, status string) string { //nolint:cyclop
 	if status == "" {
 		return ""
 	}
