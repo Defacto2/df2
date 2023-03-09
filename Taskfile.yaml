@@ -29,3 +29,15 @@ tasks:
       - goreleaser release --clean --snapshot
       - cmd: ./dist/df2_linux_amd64_v1/df2 --version
         platforms: [linux/amd64]
+  patch:
+    silent: false
+    desc: patch the package deependencies
+    cmds:
+      - cmd: go get -u=patch -x
+      - cmd: go mod vendor
+  update:
+    silent: false
+    desc: update the package deependencies
+    cmds:
+      - cmd: go get -u -x
+      - cmd: go mod vendor
