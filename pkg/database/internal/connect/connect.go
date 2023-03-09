@@ -109,7 +109,7 @@ func defaults() {
 	}
 	viper.SetDefault("connection.name", "defacto2-inno")
 	viper.SetDefault("connection.user", "root")
-	viper.SetDefault("connection.password", "password")
+	viper.SetDefault("connection.password", "example")
 	viper.SetDefault("connection.server.protocol", "tcp")
 	viper.SetDefault("connection.server.port", "3306")
 }
