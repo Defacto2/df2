@@ -180,18 +180,9 @@ func backupParts(d *directories.Dir) (*directories.Dir, part) {
 func (s *Scan) backupPart(f Files, d *directories.Dir, p part, test bool) error {
 	t := time.Now().Format("2006-Jan-2-150405") // Mon Jan 2 15:04:05 MST 2006
 	tarName, basepath := filepath.Join(d.Backup, fmt.Sprintf("bak-%v-%v.tar", p[s.Path], t)), s.Path
-	_, err := os.Stat(basepath)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("create %q: %w", basepath, ErrDir)
-	}
-	_, err = os.Stat(d.Backup)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("create %q: %w", d.Backup, ErrDirBck)
-	}
-	// create tar archive
-	newTar, err := os.Create(tarName)
+	newTar, err := s.walker(d, basepath, tarName)
 	if err != nil {
-		return fmt.Errorf("create %q: %w", tarName, err)
+		return err
 	}
 	tw := tar.NewWriter(newTar)
 	defer tw.Close()
@@ -226,6 +217,23 @@ func (s *Scan) backupPart(f Files, d *directories.Dir, p part, test bool) error 
 		}
 	}
 	return nil
+}
+
+func (s *Scan) walker(d *directories.Dir, basepath, tarName string) (*os.File, error) {
+	_, err := os.Stat(basepath)
+	if os.IsNotExist(err) {
+		return nil, fmt.Errorf("create %q: %w", basepath, ErrDir)
+	}
+	_, err = os.Stat(d.Backup)
+	if os.IsNotExist(err) {
+		return nil, fmt.Errorf("create %q: %w", d.Backup, ErrDirBck)
+	}
+	// create tar archive
+	newTar, err := os.Create(tarName)
+	if err != nil {
+		return nil, fmt.Errorf("create %q: %w", tarName, err)
+	}
+	return newTar, nil
 }
 
 type item struct {

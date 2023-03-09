@@ -110,7 +110,7 @@ func TestDOS(t *testing.T) {
 	}
 }
 
-func Test_findNFO(t *testing.T) {
+func Test_NFO(t *testing.T) {
 	type args struct {
 		name  string
 		files content.Contents

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSite(t *testing.T) {
@@ -56,4 +57,19 @@ func TestProductionV1_Released(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTags(t *testing.T) {
+	p, s := releases.Tags("", "", "")
+	assert.Equal(t, "", p)
+	assert.Equal(t, "", s)
+	p, s = releases.Tags("", "Music", "")
+	assert.Equal(t, "audio", p)
+	assert.Equal(t, "demo", s)
+	p, s = releases.Tags("", "Game", "")
+	assert.Equal(t, "", p)
+	assert.Equal(t, "demo", s)
+	p, s = releases.Tags("Java", "256b Intro", "")
+	assert.Equal(t, "java", p)
+	assert.Equal(t, "demo", s)
 }

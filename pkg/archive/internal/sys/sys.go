@@ -50,30 +50,26 @@ func MagicExt(src string) (string, error) {
 	if len(out) == 0 {
 		return "", fmt.Errorf("magic file type: %w", ErrTypeOut)
 	}
-
+	magics := map[string]string{
+		"7-zip archive data":    ".7z",
+		"arj archive data":      arjext,
+		"bzip2 compressed data": ".tar.bz2",
+		"gzip compressed data":  ".tar.gz",
+		"rar archive data":      ".rar",
+		"posix tar archive":     ".tar",
+		"zip archive data":      zipext,
+	}
 	s := strings.Split(strings.ToLower(string(out)), ",")
 	magic := strings.TrimSpace(s[0])
-	switch magic {
-	case "7-zip archive data":
-		return ".7z", nil
-	case "arj archive data":
-		return arjext, nil
-	case "bzip2 compressed data":
-		return ".tar.bz2", nil
-	case "gzip compressed data":
-		return ".tar.gz", nil
-	case "rar archive data":
-		return ".rar", nil
-	case "posix tar archive":
-		return ".tar", nil
-	case "zip archive data":
-		return zipext, nil
-	default:
-		if MagicLHA(magic) {
-			return lhaext, nil
+	for magic, ext := range magics {
+		if strings.TrimSpace(s[0]) == magic {
+			return ext, nil
 		}
-		return "", fmt.Errorf("%w: %q", ErrMagic, magic)
 	}
+	if MagicLHA(magic) {
+		return lhaext, nil
+	}
+	return "", fmt.Errorf("%w: %q", ErrMagic, magic)
 }
 
 // MagicLHA returns true if the LHA file type is matched in the magic string.

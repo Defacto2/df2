@@ -121,44 +121,39 @@ func isDemo(types string) bool {
 	return false
 }
 
+type tag struct {
+	section  string
+	platform string
+}
+
 func typeTags(types string) (string, string) {
 	const logo = "logo"
 	if isDemo(types) {
 		return "demo", ""
 	}
-	platform, section := "", ""
-	switch types {
-	case "Diskmag", "Textmag":
-		section = "magazine"
-	case "BBStro":
-		section = "bbs"
-	case "Cracktro":
-		section = "releaseadvert"
-	case "Tool":
-		section = "programmingtool"
-	case "Executable Graphics":
-		section = logo
-		platform = "dos"
-	case "ASCII Collection":
-		section = "package"
-		platform = "text"
-	case "Artpack", "Pack":
-		section = "package"
-		platform = "bbs"
-	case "Graphics":
-		section = logo
-		platform = "image"
-	case "ANSI":
-		section = logo
-		platform = "ansi"
-	case "ASCII":
-		section = logo
-		platform = "text"
-	case "Music", "Musicdisk", "Tracked Music":
-		section = "demo"
-		platform = "audio"
+	tags := map[string]tag{
+		"Diskmag":             {"", "magazine"},
+		"Textmag":             {"", "magazine"},
+		"BBStro":              {"bbs", ""},
+		"Cracktro":            {"releaseadvert", ""},
+		"Tool":                {"programmingtool", ""},
+		"Executable Graphics": {logo, "dos"},
+		"ASCII Collection":    {"package", "text"},
+		"Artpack":             {"package", "bbs"},
+		"Pack":                {"package", "bbs"},
+		"Graphics":            {logo, "image"},
+		"ANSI":                {logo, "ansi"},
+		"ASCII":               {logo, "text"},
+		"Music":               {"demo", "audio"},
+		"Musicdisk":           {"demo", "audio"},
+		"Tracked Music":       {"demo", "audio"},
 	}
-	return section, platform
+	for s, data := range tags {
+		if types == s {
+			return data.section, data.platform
+		}
+	}
+	return "", ""
 }
 
 // Tags returns the platform and section.

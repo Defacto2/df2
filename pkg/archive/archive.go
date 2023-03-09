@@ -112,23 +112,9 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 	if _, err = Restore(src, filename, tempDir); err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo restore %q: %w", filename, err)
 	}
-	files, err := os.ReadDir(tempDir)
+	zips, err := zips(tempDir)
 	if err != nil {
-		return demozoo.Data{}, fmt.Errorf("extract demozoo readdir %q: %w", tempDir, err)
-	}
-	zips := make(content.Contents)
-	for i, file := range files {
-		f, err := file.Info()
-		if err != nil {
-			fmt.Fprintf(os.Stdout, "extract demozoo file info error: %s\n", err)
-		}
-		var zip content.File
-		zip.Path = tempDir // filename gets appended by z.scan()
-		zip.Scan(f)
-		if err = zip.MIME(); err != nil {
-			return demozoo.Data{}, fmt.Errorf("extract demozoo filemime %q: %w", f, err)
-		}
-		zips[i] = zip
+		return demozoo.Data{}, err
 	}
 	if nfo := demozoo.NFO(src, zips, varNames); nfo != "" {
 		if src == "" {
@@ -141,6 +127,28 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 		dz.DOSee = dos
 	}
 	return dz, nil
+}
+
+func zips(name string) (content.Contents, error) {
+	files, err := os.ReadDir(name)
+	if err != nil {
+		return nil, fmt.Errorf("extract demozoo readdir %q: %w", name, err)
+	}
+	zips := make(content.Contents)
+	for i, file := range files {
+		f, err := file.Info()
+		if err != nil {
+			fmt.Fprintf(os.Stdout, "extract demozoo file info error: %s\n", err)
+		}
+		var zip content.File
+		zip.Path = name // filename gets appended by z.scan()
+		zip.Scan(f)
+		if err = zip.MIME(); err != nil {
+			return nil, fmt.Errorf("extract demozoo filemime %q: %w", f, err)
+		}
+		zips[i] = zip
+	}
+	return zips, nil
 }
 
 // NFO attempts to discover a archive package NFO or information textfile from a collection of files.

@@ -195,15 +195,9 @@ func refresh(r request) error {
 	start := time.Now()
 	db := database.Connect()
 	defer db.Close()
-	var cnt int
-	stmt := count()
-	if r == pouet {
-		stmt = countPouet()
+	if err := counter(db, r); err != nil {
+		return err
 	}
-	if err := db.QueryRow(stmt).Scan(&cnt); err != nil {
-		return fmt.Errorf("count query: %w", err)
-	}
-	logs.Printf("There are %d records with %s links\n", cnt, r)
 	rows, err := db.Query(selectByID(""))
 	if err != nil {
 		return fmt.Errorf("meta query: %w", err)
@@ -237,5 +231,18 @@ func refresh(r request) error {
 		}
 	}
 	st.summary(time.Since(start))
+	return nil
+}
+
+func counter(db *sql.DB, r request) error {
+	var cnt int
+	stmt := count()
+	if r == pouet {
+		stmt = countPouet()
+	}
+	if err := db.QueryRow(stmt).Scan(&cnt); err != nil {
+		return fmt.Errorf("count query: %w", err)
+	}
+	logs.Printf("There are %d records with %s links\n", cnt, r)
 	return nil
 }

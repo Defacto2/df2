@@ -212,6 +212,15 @@ func (cmd Approvals) Store(path, partial string) error {
 	n := time.Now()
 	filename := filepath.Join(SaveDir(),
 		fmt.Sprintf("d2-%s_%d-%02d-%02d.tar", partial, n.Year(), n.Month(), n.Day()))
+
+	if err := storer(files, filename, partial); err != nil {
+		return err
+	}
+	logs.Printf("%s freeing up space is complete.\n", cmd)
+	return nil
+}
+
+func storer(files []string, filename, partial string) error {
 	store, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("store create: %w", err)
@@ -231,7 +240,6 @@ func (cmd Approvals) Store(path, partial string) error {
 		}
 		return fmt.Errorf("%w: %d %s", ErrDel, len(errs), strings.ToLower(partial))
 	}
-	logs.Printf("%s freeing up space is complete.\n", cmd)
 
 	return nil
 }

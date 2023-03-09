@@ -57,14 +57,19 @@ func WriteTar(absPath, filename string, tw *tar.Writer) error {
 		return fmt.Errorf("writetar write header:%w", err)
 	}
 	if head.Typeflag == tar.TypeReg {
-		file, err := os.Open(absPath)
-		if err != nil {
-			return fmt.Errorf("writetar open %q:%w", absPath, err)
-		}
-		defer file.Close()
-		if _, err = io.Copy(tw, file); err != nil {
-			return fmt.Errorf("writetar io.copy %q:%w", absPath, err)
-		}
+		return copyTar(absPath, tw)
+	}
+	return nil
+}
+
+func copyTar(name string, tw *tar.Writer) error {
+	file, err := os.Open(name)
+	if err != nil {
+		return fmt.Errorf("writetar open %q:%w", name, err)
+	}
+	defer file.Close()
+	if _, err = io.Copy(tw, file); err != nil {
+		return fmt.Errorf("writetar io.copy %q:%w", name, err)
 	}
 	return nil
 }

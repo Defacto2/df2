@@ -47,20 +47,27 @@ func List(limit uint, compress bool) error {
 		v.Scan(values)
 		f.Data = append(f.Data, [...]string{v.UUID, v.URLID, v.Title})
 	}
+	return list(f, compress)
+}
+
+func list(f file.Files, compress bool) error {
 	jsonData, err := json.Marshal(f)
 	if err != nil {
 		return fmt.Errorf("list json marshal: %w", err)
 	}
 	jsonData = append(jsonData, []byte("\n")...)
 	var out bytes.Buffer
-	if !compress {
-		if err = json.Indent(&out, jsonData, "", "    "); err != nil {
+	switch compress {
+	case true:
+		if err := json.Compact(&out, jsonData); err != nil {
+			return fmt.Errorf("list json compact: %w", err)
+		}
+	case false:
+		if err := json.Indent(&out, jsonData, "", "    "); err != nil {
 			return fmt.Errorf("list json indent: %w", err)
 		}
-	} else if err = json.Compact(&out, jsonData); err != nil {
-		return fmt.Errorf("list json compact: %w", err)
 	}
-	if _, err = out.WriteTo(os.Stdout); err != nil {
+	if _, err := out.WriteTo(os.Stdout); err != nil {
 		return fmt.Errorf("list write to: %w", err)
 	}
 	if ok := json.Valid(jsonData); !ok {
