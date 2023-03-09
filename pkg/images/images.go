@@ -325,40 +325,9 @@ func ToThumb(src, dest string, sizeSquared int) (string, error) {
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
 // Input format can be either GIF, PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
 func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
-	valid := func(a []string, x string) bool {
-		for _, n := range a {
-			if x == n {
-				return true
-			}
-		}
-		return false
-	}
-	input := src
-	v := []string{_png, jpg, jpeg, tif, tiff, webp}
-	// skip if already a webp image, or handle all other errors
-	m, err := mimetype.DetectFile(input)
-	switch {
-	case m.Extension() == gif:
-		// Dec 2022, https://github.com/nickalie/go-webpbin
-		// currently does not support the library,
-		// gif2webp -- Tool for converting GIF images to WebP
-		f, err := os.CreateTemp("", "df2-gifToWebp.png")
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = ToPng(input, f.Name(), 0, 0)
-		if err != nil {
-			return "", fmt.Errorf("to webp gif-topng: %w", err)
-		}
-		defer os.Remove(f.Name())
-		input = f.Name()
-	case m.Extension() == webp:
-		return "", nil
-	case err != nil:
-		return "", fmt.Errorf("to webp mimetype detect: %w", err)
-	case !valid(v, m.Extension()):
-		return "", fmt.Errorf("to webp mimetype %q != %s: %w",
-			m.Extension(), strings.Join(v, " "), ErrFormat)
+	input, err := checkWebP(src)
+	if err != nil {
+		return "", err
 	}
 	input, err = cropWebP(input)
 	if err != nil {
@@ -382,6 +351,45 @@ func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 		return "", fmt.Errorf("to webp run: %w", err)
 	}
 	return "»webp", nil
+}
+
+func checkWebP(src string) (string, error) {
+	valid := func(a []string, x string) bool {
+		for _, n := range a {
+			if x == n {
+				return true
+			}
+		}
+		return false
+	}
+	v := []string{_png, jpg, jpeg, tif, tiff, webp}
+	input := src
+	// skip if already a webp image, or handle all other errors
+	m, err := mimetype.DetectFile(src)
+	switch {
+	case m.Extension() == gif:
+		// Dec 2022, https://github.com/nickalie/go-webpbin
+		// currently does not support the library,
+		// gif2webp -- Tool for converting GIF images to WebP
+		f, err := os.CreateTemp("", "df2-gifToWebp.png")
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = ToPng(src, f.Name(), 0, 0)
+		if err != nil {
+			return "", fmt.Errorf("to webp gif-topng: %w", err)
+		}
+		defer os.Remove(f.Name())
+		input = f.Name()
+	case m.Extension() == webp:
+		return "", nil
+	case err != nil:
+		return "", fmt.Errorf("to webp mimetype detect: %w", err)
+	case !valid(v, m.Extension()):
+		return "", fmt.Errorf("to webp mimetype %q != %s: %w",
+			m.Extension(), strings.Join(v, " "), ErrFormat)
+	}
+	return input, nil
 }
 
 // cropWebP crops an image to be usable size for WebP conversion.

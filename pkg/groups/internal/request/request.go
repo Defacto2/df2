@@ -141,6 +141,10 @@ func (r Flags) Parse(name, tmpl string) error {
 	if name == "" {
 		return noname(t, data)
 	}
+	return r.parse(name, total, t, data)
+}
+
+func (r Flags) parse(name string, total int, t *template.Template, data *[]Result) error {
 	switch group.Get(r.Filter) {
 	case group.BBS, group.FTP, group.Group, group.Magazine:
 		html := path.Join(viper.GetString("directory.html"), name)

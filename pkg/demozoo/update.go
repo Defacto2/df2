@@ -206,35 +206,8 @@ func InsertProds(p *releases.Productions) error {
 	return insert.Prods(p)
 }
 
-//nolint:funlen
 func updates(r *Record) ([]string, []any) {
-	var args []any
-	set := []string{}
-	if r.Filename != "" {
-		set = append(set, "filename=?")
-		args = append(args, []any{r.Filename}...)
-	}
-	if r.Filesize != "" {
-		set = append(set, "filesize=?")
-		args = append(args, []any{r.Filesize}...)
-	}
-	if r.FileZipContent != "" {
-		set = append(set, "file_zip_content=?")
-		args = append(args, []any{r.FileZipContent}...)
-	}
-	if r.SumMD5 != "" {
-		set = append(set, "file_integrity_weak=?")
-		args = append(args, []any{r.SumMD5}...)
-	}
-	if r.Sum384 != "" {
-		set = append(set, "file_integrity_strong=?")
-		args = append(args, []any{r.Sum384}...)
-	}
-	const errYear = 0o001
-	if r.LastMod.Year() != errYear {
-		set = append(set, "file_last_modified=?")
-		args = append(args, []any{r.LastMod}...)
-	}
+	set, args := file(r)
 	if r.WebIDPouet != 0 {
 		set = append(set, "web_id_pouet=?")
 		args = append(args, []any{r.WebIDPouet}...)
@@ -262,6 +235,37 @@ func updates(r *Record) ([]string, []any) {
 	s, a := credits(r)
 	set = append(set, s...)
 	args = append(args, a...)
+	return set, args
+}
+
+func file(r *Record) ([]string, []any) {
+	var args []any
+	set := []string{}
+	if r.Filename != "" {
+		set = append(set, "filename=?")
+		args = append(args, []any{r.Filename}...)
+	}
+	if r.Filesize != "" {
+		set = append(set, "filesize=?")
+		args = append(args, []any{r.Filesize}...)
+	}
+	if r.FileZipContent != "" {
+		set = append(set, "file_zip_content=?")
+		args = append(args, []any{r.FileZipContent}...)
+	}
+	if r.SumMD5 != "" {
+		set = append(set, "file_integrity_weak=?")
+		args = append(args, []any{r.SumMD5}...)
+	}
+	if r.Sum384 != "" {
+		set = append(set, "file_integrity_strong=?")
+		args = append(args, []any{r.Sum384}...)
+	}
+	const errYear = 0o001
+	if r.LastMod.Year() != errYear {
+		set = append(set, "file_last_modified=?")
+		args = append(args, []any{r.LastMod}...)
+	}
 	return set, args
 }
 

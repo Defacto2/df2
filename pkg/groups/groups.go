@@ -55,51 +55,65 @@ func Count(name string) (int, error) {
 func Cronjob(force bool) error {
 	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
-		f := tag + htm
-		d := viper.GetString("directory.html")
-		n := path.Join((d), f)
-		if d == "" {
-			return fmt.Errorf("cronjob: %w", ErrCfg)
-		}
-		if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("cronjob: %w: %s", ErrCJDir, d)
-		}
-		if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
-			if err1 := directories.Touch(n); err1 != nil {
-				return fmt.Errorf("cronjob: %w: %s", err1, n)
-			}
+		if err := croncheck(tag, htm); err != nil {
+			return err
 		}
 	}
 	for _, tag := range Wheres() {
-		f := tag + htm
-		d := viper.GetString("directory.html")
-		n := path.Join((d), f)
-		last, err := database.LastUpdate()
-		if err != nil {
-			return fmt.Errorf("cronjob lastupdate: %w", err)
+		if err := cronjob(tag, htm, force); err != nil {
+			return err
 		}
-		update := true
-		if !force {
-			update, err = database.FileUpdate(n, last)
+	}
+	return nil
+}
+
+func croncheck(tag, htm string) error {
+	f := tag + htm
+	d := viper.GetString("directory.html")
+	n := path.Join((d), f)
+	if d == "" {
+		return fmt.Errorf("cronjob: %w", ErrCfg)
+	}
+	if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("cronjob: %w: %s", ErrCJDir, d)
+	}
+	if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
+		if err1 := directories.Touch(n); err1 != nil {
+			return fmt.Errorf("cronjob: %w: %s", err1, n)
 		}
-		switch {
-		case err != nil:
-			return fmt.Errorf("cronjob fileupdate: %w", err)
-		case !update:
-			logs.Printf("%s has nothing to update (%s)\n", tag, n)
-		default:
-			r := request.Flags{
-				Filter:      tag,
-				Counts:      true,
-				Initialisms: true,
-				Progress:    false,
-			}
-			if force {
-				r.Progress = true
-			}
-			if err := r.HTML(f); err != nil {
-				return fmt.Errorf("group cronjob html: %w", err)
-			}
+	}
+	return nil
+}
+
+func cronjob(tag, htm string, force bool) error {
+	f := tag + htm
+	d := viper.GetString("directory.html")
+	n := path.Join((d), f)
+	last, err := database.LastUpdate()
+	if err != nil {
+		return fmt.Errorf("cronjob lastupdate: %w", err)
+	}
+	update := true
+	if !force {
+		update, err = database.FileUpdate(n, last)
+	}
+	switch {
+	case err != nil:
+		return fmt.Errorf("cronjob fileupdate: %w", err)
+	case !update:
+		logs.Printf("%s has nothing to update (%s)\n", tag, n)
+	default:
+		r := request.Flags{
+			Filter:      tag,
+			Counts:      true,
+			Initialisms: true,
+			Progress:    false,
+		}
+		if force {
+			r.Progress = true
+		}
+		if err := r.HTML(f); err != nil {
+			return fmt.Errorf("group cronjob html: %w", err)
 		}
 	}
 	return nil

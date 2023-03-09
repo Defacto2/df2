@@ -32,7 +32,7 @@ func (request *Request) Query(id string) error {
 }
 
 // Queries parses all proofs.
-func (request Request) Queries() error { //nolint:funlen
+func (request Request) Queries() error { //nolint:cyclop,funlen
 	s := stat.Init()
 	db := database.Connect()
 	defer db.Close()

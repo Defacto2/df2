@@ -502,40 +502,30 @@ func columns(t Table) ([]string, error) {
 		db      = connect.Connect()
 	)
 	defer db.Close()
+	query, info := "", ""
 	switch t {
 	case Files:
-		rows, err = db.Query("SELECT * FROM files LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns files query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns files query rows: %w", rows.Err())
-		}
-		defer rows.Close()
+		query = "SELECT * FROM files LIMIT 0"
+		info = "files"
 	case Groups:
-		rows, err = db.Query("SELECT * FROM groupnames LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns groupnames query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns groupnames query rows: %w", rows.Err())
-		}
-		defer rows.Close()
+		query = "SELECT * FROM groupnames LIMIT 0"
+		info = "groupnames"
 	case Netresources:
-		rows, err = db.Query("SELECT * FROM netresources LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns netresources query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns netresources query rows: %w", rows.Err())
-		}
-		defer rows.Close()
+		query = "SELECT * FROM netresources LIMIT 0"
+		info = "netresources"
 	case Users:
-		rows, err = db.Query("SELECT * FROM users LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns users query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns users query rows: %w", rows.Err())
-		}
-		defer rows.Close()
+		query = "SELECT * FROM users LIMIT 0"
+		info = "users"
 	}
+
+	rows, err = db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("columns %s query: %w", info, err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("columns %s query rows: %w", info, rows.Err())
+	}
+	defer rows.Close()
+
 	columns, err = rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("columns rows: %w", err)
