@@ -11,7 +11,7 @@ tasks:
      - task --list-all
   lint:
     silent: false
-    desc: runs a formatter and linter over the source code
+    desc: runs a formatter and lints the source code
     cmds:
       - cmd: clear
       - cmd: gofumpt -w .
@@ -26,7 +26,7 @@ tasks:
     silent: false
     desc: build the multiple distribution packages for this program by simulating a release
     cmds:
-      - goreleaser release --clean --snapshot
+      - cmd: goreleaser release --clean --snapshot
       - cmd: ./dist/df2_linux_amd64_v1/df2 --version
         platforms: [linux/amd64]
   patch:
@@ -35,9 +35,11 @@ tasks:
     cmds:
       - cmd: go get -u=patch -x
       - cmd: go mod vendor
+      - cmd: go mod verify
   update:
     silent: false
     desc: update the package deependencies
     cmds:
       - cmd: go get -u -x
       - cmd: go mod vendor
+      - cmd: go mod verify
