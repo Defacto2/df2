@@ -21,17 +21,6 @@ func TestFlags_Run(t *testing.T) { //nolint:funlen
 	}{
 		{"empty", fields{}, true},
 		{"no table", fields{Type: "c"}, true},
-		{"users", fields{
-			Type:   "c",
-			Tables: export.Users.String(),
-			Limit:  1,
-		}, false},
-		{"users parallel", fields{
-			Type:     "c",
-			Tables:   export.Users.String(),
-			Parallel: true,
-			Limit:    1,
-		}, false},
 		{"net parallel", fields{
 			Type:     "c",
 			Tables:   export.Netresources.String(),

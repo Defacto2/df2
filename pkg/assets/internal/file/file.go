@@ -26,7 +26,7 @@ func WalkName(basepath, path string) (string, error) {
 	return filepath.ToSlash(name), nil
 }
 
-// writeTar saves the result of a fileWalk into a TAR writer.
+// WriteTar saves the result of a fileWalk into a TAR writer.
 // Source: cloudfoundry/archiver
 // https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
 func WriteTar(absPath, filename string, tw *tar.Writer) error {

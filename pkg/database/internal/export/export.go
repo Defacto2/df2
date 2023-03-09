@@ -94,6 +94,7 @@ func (f *Flags) Run() error {
 	f.Compress, f.Limit, f.Table = true, 0, Files
 	start := time.Now()
 	const delta = 2
+	var mu sync.Mutex
 	switch f.Parallel {
 	case true:
 		var wg sync.WaitGroup
@@ -101,18 +102,23 @@ func (f *Flags) Run() error {
 		wg.Add(delta)
 		go func(f *Flags) {
 			defer wg.Done()
+			mu.Lock()
 			f.Method = Create
 			e1 = f.ExportTable()
+			mu.Unlock()
 		}(f)
 		go func(f *Flags) {
 			defer wg.Done()
+			mu.Lock()
 			f.Method = Insert
 			e2 = f.ExportTable()
+			mu.Unlock()
 		}(f)
 		wg.Wait()
 		if e1 != nil {
 			return fmt.Errorf("run e1: %w", e1)
-		} else if e2 != nil {
+		}
+		if e2 != nil {
 			return fmt.Errorf("run e2: %w", e2)
 		}
 	default:
@@ -588,11 +594,11 @@ func allGroups(db *sql.DB) ([]string, error) {
 }
 
 func allNetresources(db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT * FROM users")
+	rows, err := db.Query("SELECT * FROM netresources")
 	if err != nil {
-		return nil, fmt.Errorf("rows users query: %w", err)
+		return nil, fmt.Errorf("rows netresources query: %w", err)
 	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
+		return nil, fmt.Errorf("rows netresources query rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	return values(rows)
