@@ -325,9 +325,12 @@ func ToThumb(src, dest string, sizeSquared int) (string, error) {
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
 // Input format can be either GIF, PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
 func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
-	input, err := checkWebP(src)
+	input, rm, err := checkWebP(src)
 	if err != nil {
 		return "", err
+	}
+	if rm {
+		defer os.Remove(input)
 	}
 	input, err = cropWebP(input)
 	if err != nil {
@@ -353,7 +356,9 @@ func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 	return "»webp", nil
 }
 
-func checkWebP(src string) (string, error) {
+// checkWebP checks the validity of and returns the absolute path of the input source image,
+// a returned true value means the input source is temporary and after use, it should be deleted.
+func checkWebP(src string) (string, bool, error) {
 	valid := func(a []string, x string) bool {
 		for _, n := range a {
 			if x == n {
@@ -377,19 +382,21 @@ func checkWebP(src string) (string, error) {
 		}
 		_, err = ToPng(src, f.Name(), 0, 0)
 		if err != nil {
-			return "", fmt.Errorf("to webp gif-topng: %w", err)
+			return "", true, fmt.Errorf("to webp gif-topng: %w", err)
 		}
-		defer os.Remove(f.Name())
 		input = f.Name()
 	case m.Extension() == webp:
-		return "", nil
+		return "", false, nil
 	case err != nil:
-		return "", fmt.Errorf("to webp mimetype detect: %w", err)
+		return "", false, fmt.Errorf("to webp mimetype detect: %w", err)
 	case !valid(v, m.Extension()):
-		return "", fmt.Errorf("to webp mimetype %q != %s: %w",
+		return "", false, fmt.Errorf("to webp mimetype %q != %s: %w",
 			m.Extension(), strings.Join(v, " "), ErrFormat)
 	}
-	return input, nil
+	if m.Extension() == gif {
+		return input, true, nil
+	}
+	return input, false, nil
 }
 
 // cropWebP crops an image to be usable size for WebP conversion.

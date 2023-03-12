@@ -1,6 +1,7 @@
 package images_test
 
 import (
+	"fmt"
 	_ "image/gif"
 	_ "image/jpeg"
 	"log"
@@ -275,7 +276,8 @@ func TestToWebxp(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			} else if str != "" {
+			}
+			if str != "" {
 				// cleanup
 				if err := os.Remove(testDest(w)); err != nil {
 					t.Fatal(err)
@@ -305,6 +307,7 @@ func TestToWebp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotPrint, err := images.ToWebp(tt.args.src, tt.args.dest, true)
 			if (err != nil) != tt.wantErr {
+				fmt.Fprintf(os.Stderr, "%s -> %s\n", tt.args.src, tt.args.dest)
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
