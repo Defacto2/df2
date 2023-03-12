@@ -80,13 +80,13 @@ func TestFlags_DB(t *testing.T) {
 		{"empty", fields{}, true},
 		{"export", fields{
 			Type:     "c",
-			Tables:   export.Users.String(),
+			Tables:   export.Netresources.String(),
 			Parallel: false,
 			Limit:    1,
 		}, false},
 		{"export", fields{
 			Type:     "c",
-			Tables:   export.Users.String(),
+			Tables:   export.Netresources.String(),
 			Parallel: true,
 			Limit:    1,
 		}, false},

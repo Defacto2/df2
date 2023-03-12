@@ -302,16 +302,16 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 
 // queryTables generates the SQL import database and tables statement.
 func (f *Flags) queryTables() (*bytes.Buffer, error) {
-	var buf1, buf2, buf3, buf4 *bytes.Buffer
+	var buf1, buf2, buf3 *bytes.Buffer
 	var err error
 	switch f.Parallel {
 	case true:
-		buf1, buf2, buf3, buf4, err = f.queryTablesWG()
+		buf1, buf2, buf3, _, err = f.queryTablesWG()
 		if err != nil {
 			return nil, err
 		}
 	default:
-		buf1, buf2, buf3, buf4, err = f.queryTablesSeq()
+		buf1, buf2, buf3, _, err = f.queryTablesSeq()
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +323,7 @@ func (f *Flags) queryTables() (*bytes.Buffer, error) {
 			{Columns: templ.NewFiles, Rows: buf1.String(), Table: ""},
 			{Columns: templ.NewGroups, Rows: buf2.String(), Table: ""},
 			{Columns: templ.NewNetresources, Rows: buf3.String(), Table: ""},
-			{Columns: templ.NewUsers, Rows: buf4.String(), Table: ""},
+			//{Columns: templ.NewUsers, Rows: buf4.String(), Table: ""},
 		},
 	}
 	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(templ.Tables)
@@ -338,9 +338,9 @@ func (f *Flags) queryTables() (*bytes.Buffer, error) {
 }
 
 func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
-	const delta = 4
+	const delta = 3
 	var wg sync.WaitGroup
-	var e1, e2, e3, e4 error
+	var e1, e2, e3 error
 	wg.Add(delta)
 	go func(f *Flags) {
 		defer wg.Done()
@@ -354,12 +354,12 @@ func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error
 		defer wg.Done()
 		buf3, e3 = f.reqDB(Netresources)
 	}(f)
-	go func(f *Flags) {
-		defer wg.Done()
-		buf4, e4 = f.reqDB(Users)
-	}(f)
+	// go func(f *Flags) {
+	// 	defer wg.Done()
+	// 	buf4, e4 = f.reqDB(Users)
+	// }(f)
 	wg.Wait()
-	for _, err := range []error{e1, e2, e3, e4} {
+	for _, err := range []error{e1, e2, e3} {
 		if err != nil {
 			return nil, nil, nil, nil, fmt.Errorf("query tables: %w", err)
 		}
@@ -380,10 +380,10 @@ func (f *Flags) queryTablesSeq() (buf1, buf2, buf3, buf4 *bytes.Buffer, err erro
 	if err != nil {
 		return nil, nil, nil, nil, qttErr(Netresources.String(), err)
 	}
-	buf4, err = f.reqDB(Users)
-	if err != nil {
-		return nil, nil, nil, nil, qttErr(Users.String(), err)
-	}
+	// buf4, err = f.reqDB(Users)
+	// if err != nil {
+	// 	return nil, nil, nil, nil, qttErr(Users.String(), err)
+	// }
 	return buf1, buf2, buf3, buf4, nil
 }
 

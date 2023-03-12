@@ -35,7 +35,7 @@ func ExampleConnInfo() {
 }
 
 func ExampleColTypes() {
-	if _, err := database.ColTypes(database.Users); err != nil {
+	if _, err := database.ColTypes(database.Netresources); err != nil {
 		fmt.Print(err)
 	}
 	// Output:
