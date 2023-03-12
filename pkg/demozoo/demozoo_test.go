@@ -39,94 +39,95 @@ func TestRequest_Query(t *testing.T) {
 	}
 }
 
-func TestGetProduct(t *testing.T) {
-	tests := []struct {
-		name       string
-		id         uint
-		wantCode   int
-		wantStatus string
-		wantTitle  string
-	}{
-		{"invalid", 0, 404, "404 Not Found", ""},
-		{"deleted", 9609, 404, "404 Not Found", ""},
-		{"record 1", 1, 200, "200 OK", "Rob Is Jarig"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var f demozoo.Product
-			err := f.Get(tt.id)
-			if err != nil {
-				t.Error(err)
-			}
-			gotCode, gotStatus, gotAPI := f.Code, f.Status, f.API
-			if gotCode != tt.wantCode {
-				t.Errorf("Fetch() gotCode = %v, want %v", gotCode, tt.wantCode)
-			}
-			if gotStatus != tt.wantStatus {
-				t.Errorf("Fetch() gotStatus = %v, want %v", gotStatus, tt.wantStatus)
-			}
-			if gotAPI.Title != tt.wantTitle {
-				t.Errorf("Fetch() gotTitle = %v, want %v", gotAPI.Title, tt.wantTitle)
-			}
-		})
-	}
-}
+// TODO: replace remote testing with a local mock.
+// func TestGetProduct(t *testing.T) {
+// 	tests := []struct {
+// 		name       string
+// 		id         uint
+// 		wantCode   int
+// 		wantStatus string
+// 		wantTitle  string
+// 	}{
+// 		{"invalid", 0, 404, "404 Not Found", ""},
+// 		{"deleted", 9609, 404, "404 Not Found", ""},
+// 		{"record 1", 1, 200, "200 OK", "Rob Is Jarig"},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			var f demozoo.Product
+// 			err := f.Get(tt.id)
+// 			if err != nil {
+// 				t.Error(err)
+// 			}
+// 			gotCode, gotStatus, gotAPI := f.Code, f.Status, f.API
+// 			if gotCode != tt.wantCode {
+// 				t.Errorf("Fetch() gotCode = %v, want %v", gotCode, tt.wantCode)
+// 			}
+// 			if gotStatus != tt.wantStatus {
+// 				t.Errorf("Fetch() gotStatus = %v, want %v", gotStatus, tt.wantStatus)
+// 			}
+// 			if gotAPI.Title != tt.wantTitle {
+// 				t.Errorf("Fetch() gotTitle = %v, want %v", gotAPI.Title, tt.wantTitle)
+// 			}
+// 		})
+// 	}
+// }
 
-func TestGetReleaser(t *testing.T) {
-	tests := []struct {
-		name       string
-		id         uint
-		wantCode   int
-		wantStatus string
-		wantName   string
-	}{
-		{"invalid", 0, 404, "404 Not Found", ""},
-		{"releaser #1", 1, 200, "200 OK", "Aardbei"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var f demozoo.Releaser
-			err := f.Get(tt.id)
-			if err != nil {
-				t.Error(err)
-			}
-			gotCode, gotStatus, gotAPI := f.Code, f.Status, f.API
-			if gotCode != tt.wantCode {
-				t.Errorf("Fetch() gotCode = %v, want %v", gotCode, tt.wantCode)
-			}
-			if gotStatus != tt.wantStatus {
-				t.Errorf("Fetch() gotStatus = %v, want %v", gotStatus, tt.wantStatus)
-			}
-			if gotAPI.Name != tt.wantName {
-				t.Errorf("Fetch() gotTitle = %v, want %v", gotAPI.Name, tt.wantName)
-			}
-		})
-	}
-}
+// func TestGetReleaser(t *testing.T) {
+// 	tests := []struct {
+// 		name       string
+// 		id         uint
+// 		wantCode   int
+// 		wantStatus string
+// 		wantName   string
+// 	}{
+// 		{"invalid", 0, 404, "404 Not Found", ""},
+// 		{"releaser #1", 1, 200, "200 OK", "Aardbei"},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			var f demozoo.Releaser
+// 			err := f.Get(tt.id)
+// 			if err != nil {
+// 				t.Error(err)
+// 			}
+// 			gotCode, gotStatus, gotAPI := f.Code, f.Status, f.API
+// 			if gotCode != tt.wantCode {
+// 				t.Errorf("Fetch() gotCode = %v, want %v", gotCode, tt.wantCode)
+// 			}
+// 			if gotStatus != tt.wantStatus {
+// 				t.Errorf("Fetch() gotStatus = %v, want %v", gotStatus, tt.wantStatus)
+// 			}
+// 			if gotAPI.Name != tt.wantName {
+// 				t.Errorf("Fetch() gotTitle = %v, want %v", gotAPI.Name, tt.wantName)
+// 			}
+// 		})
+// 	}
+// }
 
-func TestGetReleases(t *testing.T) {
-	tests := []struct {
-		name      string
-		id        uint
-		wantProds bool
-		wantErr   bool
-	}{
-		{"invalid", 0, false, true},
-		{"releaser #1", 1, true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var f demozoo.ReleaserProducts
-			gotErr := f.Get(tt.id)
-			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("ReleaserProducts() error = %v, wantErr %v", gotErr, tt.wantErr)
-			}
-			if prods := (len(f.API) > 0); prods != tt.wantProds {
-				t.Errorf("ReleaserProducts.Get() wantProds = %v", prods)
-			}
-		})
-	}
-}
+// func TestGetReleases(t *testing.T) {
+// 	tests := []struct {
+// 		name      string
+// 		id        uint
+// 		wantProds bool
+// 		wantErr   bool
+// 	}{
+// 		{"invalid", 0, false, true},
+// 		{"releaser #1", 1, true, false},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			var f demozoo.ReleaserProducts
+// 			gotErr := f.Get(tt.id)
+// 			if (gotErr != nil) != tt.wantErr {
+// 				t.Errorf("ReleaserProducts() error = %v, wantErr %v", gotErr, tt.wantErr)
+// 			}
+// 			if prods := (len(f.API) > 0); prods != tt.wantProds {
+// 				t.Errorf("ReleaserProducts.Get() wantProds = %v", prods)
+// 			}
+// 		})
+// 	}
+// }
 
 func values() []sql.RawBytes {
 	v := []sql.RawBytes{
