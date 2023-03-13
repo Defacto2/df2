@@ -1,9 +1,3 @@
-# github.com/Masterminds/goutils v1.1.1
-## explicit
-# github.com/Masterminds/semver/v3 v3.1.1
-## explicit; go 1.12
-# github.com/Masterminds/sprig/v3 v3.2.2
-## explicit; go 1.13
 # github.com/alecthomas/chroma v0.10.0
 ## explicit; go 1.13
 github.com/alecthomas/chroma
@@ -82,6 +76,7 @@ github.com/dsnet/compress/internal/prefix
 github.com/dustin/go-humanize
 # github.com/friendsofgo/errors v0.9.2
 ## explicit; go 1.13
+github.com/friendsofgo/errors
 # github.com/fsnotify/fsnotify v1.6.0
 ## explicit; go 1.16
 github.com/fsnotify/fsnotify
@@ -96,6 +91,7 @@ github.com/gabriel-vasile/mimetype/internal/magic
 github.com/go-sql-driver/mysql
 # github.com/gofrs/uuid v4.2.0+incompatible
 ## explicit
+github.com/gofrs/uuid
 # github.com/golang/snappy v0.0.4
 ## explicit
 github.com/golang/snappy
@@ -123,29 +119,29 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/huandu/xstrings v1.3.2
-## explicit; go 1.12
-# github.com/imdario/mergo v0.3.13
-## explicit; go 1.13
 # github.com/inconshreveable/mousetrap v1.1.0
 ## explicit; go 1.18
 github.com/inconshreveable/mousetrap
+# github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
+## explicit
+github.com/kat-co/vala
+# github.com/lib/pq v1.10.6
+## explicit; go 1.13
+github.com/lib/pq
+github.com/lib/pq/oid
+github.com/lib/pq/scram
 # github.com/magiconair/properties v1.8.7
 ## explicit; go 1.19
 github.com/magiconair/properties
 # github.com/mholt/archiver v3.1.1+incompatible
 ## explicit
 github.com/mholt/archiver
-# github.com/mitchellh/copystructure v1.2.0
-## explicit; go 1.15
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/mitchellh/reflectwalk v1.0.2
-## explicit
 # github.com/muesli/go-app-paths v0.2.2
 ## explicit; go 1.14
 github.com/muesli/go-app-paths
@@ -172,8 +168,6 @@ github.com/pierrec/lz4/internal/xxh32
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/shopspring/decimal v1.3.1
-## explicit; go 1.13
 # github.com/spf13/afero v1.9.5
 ## explicit; go 1.16
 github.com/spf13/afero
@@ -216,14 +210,27 @@ github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
 # github.com/volatiletech/inflect v0.0.1
 ## explicit; go 1.14
+github.com/volatiletech/inflect
 # github.com/volatiletech/null/v8 v8.1.2
 ## explicit; go 1.14
+github.com/volatiletech/null/v8
+github.com/volatiletech/null/v8/convert
 # github.com/volatiletech/randomize v0.0.1
 ## explicit; go 1.14
+github.com/volatiletech/randomize
 # github.com/volatiletech/sqlboiler/v4 v4.14.1
 ## explicit; go 1.16
+github.com/volatiletech/sqlboiler/v4/boil
+github.com/volatiletech/sqlboiler/v4/drivers
+github.com/volatiletech/sqlboiler/v4/drivers/sqlboiler-mysql/driver
+github.com/volatiletech/sqlboiler/v4/drivers/sqlboiler-psql/driver
+github.com/volatiletech/sqlboiler/v4/importers
+github.com/volatiletech/sqlboiler/v4/queries
+github.com/volatiletech/sqlboiler/v4/queries/qm
+github.com/volatiletech/sqlboiler/v4/queries/qmhelper
 # github.com/volatiletech/strmangle v0.0.4
 ## explicit; go 1.14
+github.com/volatiletech/strmangle
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 ## explicit
 github.com/xi2/xz
@@ -233,8 +240,6 @@ github.com/xo/terminfo
 # github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 ## explicit
 github.com/yusukebe/go-pngquant
-# golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d
-## explicit; go 1.17
 # golang.org/x/image v0.6.0
 ## explicit; go 1.12
 golang.org/x/image/bmp
@@ -287,6 +292,8 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 # golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 ## explicit; go 1.17
+golang.org/x/xerrors
+golang.org/x/xerrors/internal
 # gopkg.in/ini.v1 v1.67.0
 ## explicit
 gopkg.in/ini.v1
