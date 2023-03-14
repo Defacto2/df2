@@ -32,7 +32,7 @@ func TestRequest_Query(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := r.Query(tt.id); (err != nil) != tt.wantErr {
+			if err := r.Query(nil, nil, tt.id); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -183,7 +183,7 @@ func Test_newRecord(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotR, gotErr := demozoo.NewRecord(tt.args.c, tt.args.values)
+			gotR, gotErr := demozoo.NewRecord(nil, tt.args.c, tt.args.values)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("newRecord() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
@@ -229,7 +229,7 @@ func TestRecord_download(t *testing.T) {
 			r := &demozoo.Record{
 				UUID: tt.fields.UUID,
 			}
-			if gotSkip := r.Download(tt.args.overwrite, &tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
+			if gotSkip := r.Download(nil, nil, tt.args.overwrite, &tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
 				t.Errorf("Record.download() = %v, want %v", gotSkip, tt.wantSkip)
 			}
 		})
@@ -256,7 +256,7 @@ func TestRecord_doseeMeta_fileMeta(t *testing.T) {
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := r.DoseeMeta(); (err != nil) != tt.wantErr {
+			if err := r.DoseeMeta(nil); (err != nil) != tt.wantErr {
 				t.Errorf("Record.doseeMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -412,7 +412,7 @@ func TestZipContent(t *testing.T) {
 				FilePath: tt.fields.FilePath,
 				Filename: tt.fields.Filename,
 			}
-			gotOk, err := r.ZipContent()
+			gotOk, err := r.ZipContent(nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ZipContent()  error = %v, wantErr %v", err, tt.wantErr)
 			}

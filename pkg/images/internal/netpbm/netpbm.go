@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 // netpbm requires the installation of Netpbm.
@@ -50,7 +49,7 @@ func Extensions() Idents {
 }
 
 // Convert uses netpdm to convert a configured image to PNG.
-func Convert(src, dest string) error {
+func Convert(w io.Writer, src, dest string) error {
 	if _, err := os.Stat(src); os.IsNotExist(err) {
 		return fmt.Errorf("%w: %s", ErrSrc, src)
 	} else if err != nil {
@@ -86,13 +85,13 @@ func Convert(src, dest string) error {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, bash, "-c", cmdStr)
-	logs.Printf("running %s\n", cmdStr)
+	fmt.Fprintf(w, "running %s\n", cmdStr)
 	out, err := cmd.Output()
 	if err != nil {
 		return err
 	}
 	if len(out) > 0 {
-		logs.Printf("%s: %s", prog, string(out))
+		fmt.Fprintf(w, "%s: %s", prog, string(out))
 	}
 	return nil
 }

@@ -3,10 +3,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -20,22 +19,23 @@ var lookupCmd = &cobra.Command{
   uuid character groups are 8-4-4-16 (xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxxxxxx)`,
 	Hidden: false,
 	Run: func(cmd *cobra.Command, args []string) {
+		w := os.Stdout
 		if len(args) == 0 {
 			if err := cmd.Usage(); err != nil {
-				logs.Fatal(err)
+				log.Fatal(err)
 			}
 		}
 		for _, a := range args {
 			if err := database.CheckID(a); err != nil {
-				log.Printf("%s: %s\n", ErrID, a)
+				log.Infof("%s: %s\n", ErrID, a)
 				continue
 			}
-			id, err := database.GetID(a)
+			id, err := database.GetID(w, a)
 			if err != nil {
-				log.Println(err)
+				log.Info(err)
 				continue
 			}
-			logs.Printf("https://defacto2.net/f/%v\n",
+			fmt.Fprintf(os.Stdout, "https://defacto2.net/f/%v\n",
 				database.ObfuscateParam(fmt.Sprint(id)))
 		}
 	},

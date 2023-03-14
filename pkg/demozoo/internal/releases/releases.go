@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
-
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
@@ -256,12 +255,12 @@ func Site(title string) string {
 }
 
 // Print to stdout the production API results as tabbed JSON.
-func (p *Productions) Print() error {
+func (p *Productions) Print(w io.Writer) error {
 	js, err := json.MarshalIndent(&p, "", "  ")
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	logs.Println(string(js))
+	fmt.Fprintln(w, js)
 	return nil
 }
 

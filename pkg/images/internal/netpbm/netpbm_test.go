@@ -30,7 +30,7 @@ func TestConvert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := netpbm.Convert(tt.args.src, tt.args.dest); (err != nil) != tt.wantErr {
+			if err := netpbm.Convert(nil, tt.args.src, tt.args.dest); (err != nil) != tt.wantErr {
 				t.Errorf("Convert() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			defer os.Remove(dest)

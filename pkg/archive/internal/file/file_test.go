@@ -29,7 +29,7 @@ func TestDir(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := file.Dir(tt.name); (err != nil) != tt.wantErr {
+			if err := file.Dir(nil, tt.name); (err != nil) != tt.wantErr {
 				t.Errorf("Dir() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

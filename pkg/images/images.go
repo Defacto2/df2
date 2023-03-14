@@ -27,6 +27,7 @@ import (
 	"github.com/nickalie/go-webpbin"
 	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
+	"go.uber.org/zap"
 	_ "golang.org/x/image/bmp"  // register BMP decoding.
 	_ "golang.org/x/image/tiff" // register TIFF decoding.
 	_ "golang.org/x/image/webp" // register WebP decoding.
@@ -53,9 +54,9 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are images.
-func Fix() error {
+func Fix(w io.Writer, l *zap.SugaredLogger) error {
 	dir := directories.Init(false)
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image" ORDER BY id ASC`)
 	if err != nil {
@@ -75,21 +76,21 @@ func Fix() error {
 		}
 		if !img.IsDir(&dir) {
 			c++
-			logs.Printf("%d. %v", c, img)
+			fmt.Fprintf(w, "%d. %v", c, img)
 			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
-				logs.Printf("%s\n", str.X())
+				fmt.Fprintf(w, "%s\n", str.X())
 				continue
 			} else if err != nil {
 				return fmt.Errorf("images fix stat: %w", err)
 			}
-			if err := Generate(filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
+			if err := Generate(w, l, filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
 				return fmt.Errorf("images fix generate: %w", err)
 			}
-			logs.Print("\n")
+			fmt.Fprintln(w)
 		}
 	}
 	if c == 0 {
-		logs.Println("everything is okay, there is nothing to do")
+		fmt.Fprintln(w, "everything is okay, there is nothing to do")
 	}
 	return nil
 }
@@ -114,16 +115,8 @@ func Duplicate(name, suffix string) (string, error) {
 	return fmt.Sprintf("%s%s%s", fn, suffix, ext), nil
 }
 
-func out(s string, e error) {
-	if s != "" {
-		logs.Printf("  %s", s)
-		return
-	}
-	logs.Log(e)
-}
-
 // Generate a collection of site images.
-func Generate(name, id string, remove bool) error {
+func Generate(w io.Writer, l *zap.SugaredLogger, name, id string, remove bool) error {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		return fmt.Errorf("generate stat %q: %w", name, err)
 	}
@@ -136,20 +129,20 @@ func Generate(name, id string, remove bool) error {
 	pngDest, webpDest := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
 	const width = 1500
 	s, err := ToPng(name, pngDest, width, width)
-	out(s, err)
+	feedback(w, l, s, err)
 	// use netpbm or imagemagick to convert unsupported image formats into PNG
 	if !file.Check(pngDest, err) {
-		if err := external(name, pngDest, s, remove); err == nil {
+		if err := external(w, l, name, pngDest, s, remove); err == nil {
 			name = pngDest
 		}
 	}
 	// convert to webp
-	if s, err = ToWebp(name, webpDest, true); !errors.Is(err, ErrFormat) {
-		out(s, err)
+	if s, err = ToWebp(w, name, webpDest, true); !errors.Is(err, ErrFormat) {
+		feedback(w, l, s, err)
 	}
 	if err != nil {
-		s, err = ToWebp(pngDest, webpDest, true)
-		out(s, err)
+		s, err = ToWebp(w, pngDest, webpDest, true)
+		feedback(w, l, s, err)
 	}
 	webpOk := file.Check(webpDest, err)
 	// make 400x400 thumbs
@@ -159,19 +152,19 @@ func Generate(name, id string, remove bool) error {
 	} else if err != nil && webpOk {
 		s, err = ToThumb(webpDest, f.Img400, thumbWidth)
 	}
-	out(s, err)
+	feedback(w, l, s, err)
 	return file.Remove(remove, name)
 }
 
-func external(name, pngDest, s string, remove bool) error {
+func external(w io.Writer, l *zap.SugaredLogger, name, pngDest, s string, remove bool) error {
 	prog, err := netpbm.ID(name)
 	if err != nil {
 		return err
 	}
 	if prog != "" {
-		err := netpbm.Convert(name, pngDest)
+		err := netpbm.Convert(w, name, pngDest)
 		if err != nil {
-			out(s, err)
+			feedback(w, l, s, err)
 			return file.Remove(remove, name)
 		}
 		if !file.Check(pngDest, err) {
@@ -179,15 +172,25 @@ func external(name, pngDest, s string, remove bool) error {
 		}
 		return nil
 	}
-	err1 := imagemagick.Convert(name, pngDest)
+	err1 := imagemagick.Convert(w, name, pngDest)
 	if err1 != nil {
-		out(s, err1)
+		feedback(w, l, s, err1)
 		return file.Remove(remove, name)
 	}
 	if !file.Check(pngDest, err1) {
 		return file.Remove(remove, name)
 	}
 	return nil
+}
+
+func feedback(w io.Writer, l *zap.SugaredLogger, s string, err error) {
+	if s != "" {
+		fmt.Fprintf(w, "  %s", s)
+		return
+	}
+	if err != nil {
+		logs.Save(l, err)
+	}
 }
 
 // Move a file from the source location to the destination.
@@ -324,7 +327,7 @@ func ToThumb(src, dest string, sizeSquared int) (string, error) {
 
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
 // Input format can be either GIF, PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
-func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
+func ToWebp(w io.Writer, src, dest string, vendorTempDir bool) (string, error) {
 	input, rm, err := checkWebP(src)
 	if err != nil {
 		return "", err
@@ -332,7 +335,7 @@ func ToWebp(src, dest string, vendorTempDir bool) (string, error) {
 	if rm {
 		defer os.Remove(input)
 	}
-	input, err = cropWebP(input)
+	input, err = cropWebP(w, input)
 	if err != nil {
 		return "", fmt.Errorf("to webp crop: %w", err)
 	}
@@ -400,14 +403,14 @@ func checkWebP(src string) (string, bool, error) {
 }
 
 // cropWebP crops an image to be usable size for WebP conversion.
-func cropWebP(name string) (string, error) {
-	w, h, _, err := Info(name)
+func cropWebP(w io.Writer, name string) (string, error) {
+	wp, hp, _, err := Info(name)
 	if err != nil {
 		return "", fmt.Errorf("to webp size: %w", err)
 	}
-	if w+h > WebpMaxSize {
-		logs.Printf("crop to %dx%d", w, h)
-		cropW, cropH := WebPCalc(w, h)
+	if wp+hp > WebpMaxSize {
+		fmt.Fprintf(w, "crop to %dx%d", w, hp)
+		cropW, cropH := WebPCalc(wp, hp)
 		ext := filepath.Ext(name)
 		fn := strings.TrimSuffix(name, ext)
 		crop := fn + "-cropped" + ext

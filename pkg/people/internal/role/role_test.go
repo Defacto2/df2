@@ -133,7 +133,7 @@ func TestRename(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCount, err := role.Rename(tt.args.replacement, tt.args.name, tt.args.r)
+			gotCount, err := role.Rename(nil, tt.args.replacement, tt.args.name, tt.args.r)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Rename() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -142,7 +142,7 @@ func TestRename(t *testing.T) {
 				t.Errorf("Rename() = %v, want %v", gotCount, tt.wantCount)
 				return
 			}
-			_, _ = role.Rename(org, replace, role.Artists) // restore name
+			_, _ = role.Rename(nil, org, replace, role.Artists) // restore name
 		})
 	}
 }

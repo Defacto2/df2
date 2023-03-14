@@ -3,6 +3,7 @@ package filter
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prod"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 const maxTries = 5
@@ -40,7 +40,7 @@ func empty() []releases.ProductionV1 {
 }
 
 // Prods gets all the productions of a releaser and normalises the results.
-func (p *Productions) Prods() ([]releases.ProductionV1, error) { //nolint:funlen
+func (p *Productions) Prods(w io.Writer) ([]releases.ProductionV1, error) { //nolint:funlen
 	const endOfRecords, maxPage = "", 1000
 	var next []releases.ProductionV1
 	var dz ProductionList
@@ -51,7 +51,7 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { //nolint:funlen
 		return empty(), err
 	}
 	req := download.Request{Link: url}
-	logs.Printf("Fetching the first 100 of many records from Demozoo\n")
+	fmt.Fprintf(w, "Fetching the first 100 of many records from Demozoo\n")
 	tries := 0
 	for {
 		tries++
@@ -72,9 +72,9 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { //nolint:funlen
 		}
 	}
 	p.Count = dz.Count
-	logs.Printf("There are %d %s production matches\n", dz.Count, p.Filter)
-	finds, prods := Filter(dz.Results)
-	pp(1, finds)
+	fmt.Fprintf(w, "There are %d %s production matches\n", dz.Count, p.Filter)
+	finds, prods := Filter(w, dz.Results)
+	pp(w, 1, finds)
 	nu, page := dz.Next, 1
 	for {
 		page++
@@ -82,9 +82,9 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { //nolint:funlen
 		if err != nil {
 			return empty(), err
 		}
-		finds, next = Filter(next)
+		finds, next = Filter(w, next)
 		totalFinds += finds
-		pp(page, finds)
+		pp(w, page, finds)
 		prods = append(prods, next...)
 		if nu == endOfRecords {
 			break
@@ -97,16 +97,16 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { //nolint:funlen
 	return prods, nil
 }
 
-func pp(page, finds int) {
+func pp(w io.Writer, page, finds int) {
 	if finds == 0 {
-		logs.Printf("   Page %d, no new records found\n", page)
+		fmt.Fprintf(w, "   Page %d, no new records found\n", page)
 		return
 	}
 	if finds == 1 {
-		logs.Printf("   Page %d, new record found, 1\n", page)
+		fmt.Fprintf(w, "   Page %d, new record found, 1\n", page)
 		return
 	}
-	logs.Printf("   Page %d, new records found, %d\n", page, finds)
+	fmt.Fprintf(w, "   Page %d, new records found, %d\n", page, finds)
 }
 
 // Next gets all the next page of productions.
@@ -133,7 +133,7 @@ func Next(url string) ([]releases.ProductionV1, string, error) {
 }
 
 // Filter productions removes any records that are not suitable for Defacto2.
-func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
+func Filter(w io.Writer, p []releases.ProductionV1) (int, []releases.ProductionV1) {
 	finds := 0
 	var prods []releases.ProductionV1 //nolint:prealloc
 	for _, prod := range p {
@@ -144,43 +144,43 @@ func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
 			continue
 		}
 		// confirm ID is not already used in a defacto2 file record
-		if id, _ := database.DemozooID(uint(prod.ID)); id > 0 {
+		if id, _ := database.DemozooID(w, uint(prod.ID)); id > 0 {
 			continue
 		}
 		if l, _ := linked(prod.ID); l != "" {
-			sync(prod.ID, database.DeObfuscate(l))
+			sync(w, prod.ID, database.DeObfuscate(l))
 			continue
 		}
 		rec := make(releases.Productions, 1)
 		rec[0] = prod
-		if err := insert.Prods(&rec); err != nil {
-			logs.Println(err)
+		if err := insert.Prods(w, &rec); err != nil {
+			fmt.Fprintln(w, err)
 			continue
 		}
-		logs.Printf("%d. (%d) %s\n", finds+1, prod.ID, prod.Title)
+		fmt.Fprintf(w, "%d. (%d) %s\n", finds+1, prod.ID, prod.Title)
 		finds++
 		prods = append(prods, prod)
 	}
 	return finds, prods
 }
 
-func sync(demozooID, recordID int) {
-	i, err := update(demozooID, recordID)
+func sync(w io.Writer, demozooID, recordID int) error {
+	i, err := update(w, demozooID, recordID)
 	if err != nil {
-		logs.Printf(" Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
+		fmt.Fprintf(w, " Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
 			demozooID, recordID)
-		logs.Println(err)
-		return
+		return err
 	}
-	logs.Printf(" Updated %d record, the Demozoo ID %d was saved to record id: %v\n", i,
+	fmt.Fprintf(w, " Updated %d record, the Demozoo ID %d was saved to record id: %v\n", i,
 		demozooID, recordID)
+	return nil
 }
 
-func update(demozooID, recordID int) (int64, error) {
+func update(w io.Writer, demozooID, recordID int) (int64, error) {
 	var up database.Update
 	up.Query = "UPDATE files SET web_id_demozoo=? WHERE `id` = ?"
 	up.Args = []any{demozooID, recordID}
-	count, err := database.Execute(up)
+	count, err := database.Execute(w, up)
 	if err != nil {
 		return 0, fmt.Errorf("update installers: %w", err)
 	}

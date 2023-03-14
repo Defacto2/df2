@@ -4,11 +4,12 @@ package proof
 import (
 	"database/sql"
 	"fmt"
+	"io"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
+	"go.uber.org/zap"
 )
 
 // Request records classified with the "proof" filetype.
@@ -20,21 +21,21 @@ type Request struct {
 }
 
 // Query parses a single proof with the record id or uuid.
-func (request *Request) Query(id string) error {
+func (request *Request) Query(w io.Writer, l *zap.SugaredLogger, id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %q: %w", id, err)
 	}
 	request.ByID = id
-	if err := request.Queries(); err != nil {
+	if err := request.Queries(w, l); err != nil {
 		return fmt.Errorf("request queries: %w", err)
 	}
 	return nil
 }
 
 // Queries parses all proofs.
-func (request Request) Queries() error { //nolint:cyclop,funlen
+func (request Request) Queries(w io.Writer, l *zap.SugaredLogger) error { //nolint:cyclop,funlen
 	s := stat.Init()
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(Select(request.ByID))
 	if err != nil {
@@ -57,7 +58,7 @@ func (request Request) Queries() error { //nolint:cyclop,funlen
 	for rows.Next() {
 		s.Total++
 	}
-	logs.Print(Total(&s, request))
+	fmt.Fprint(w, Total(&s, request))
 	rows, err = db.Query(Select(request.ByID))
 	if err != nil {
 		return err
@@ -70,12 +71,12 @@ func (request Request) Queries() error { //nolint:cyclop,funlen
 		if err := rows.Scan(scanArgs...); err != nil {
 			return err
 		}
-		if request.Skip(values) {
+		if request.Skip(w, l, values) {
 			continue
 		}
 		s.Count++
 		r := record.New(values, s.BasePath)
-		if skip, err := record.Skip(s, r, request.HideMissing); skip {
+		if skip, err := record.Skip(w, s, r, request.HideMissing); skip {
 			continue
 		} else if err != nil {
 			return err
@@ -83,11 +84,11 @@ func (request Request) Queries() error { //nolint:cyclop,funlen
 		s.Columns = columns
 		s.Overwrite = request.Overwrite
 		s.Values = &values
-		if err := r.Iterate(s); err != nil {
+		if err := r.Iterate(w, l, s); err != nil {
 			return err
 		}
 	}
-	logs.Print(s.Summary(request.ByID))
+	fmt.Fprint(w, s.Summary(request.ByID))
 	return nil
 }
 
@@ -106,13 +107,17 @@ func Total(s *stat.Proof, request Request) string {
 }
 
 // Skip uses argument flags to check if a record is to be ignored.
-func (request Request) Skip(values []sql.RawBytes) bool {
+func (request Request) Skip(w io.Writer, l *zap.SugaredLogger, values []sql.RawBytes) bool {
 	if request.ByID != "" && request.Overwrite {
 		return false
 	}
-	if n := database.IsProof(values); !n && !request.AllProofs {
+	n, err := database.IsProof(l, values)
+	if err != nil {
+
+	}
+	if !n && !request.AllProofs {
 		if request.ByID != "" {
-			logs.Printf("skip record id '%s', as it is not new\n", request.ByID)
+			fmt.Fprintf(w, "skip record id '%s', as it is not new\n", request.ByID)
 		}
 		return true
 	}

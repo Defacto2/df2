@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"os"
@@ -23,6 +24,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
+	"go.uber.org/zap"
 )
 
 var (
@@ -89,8 +91,8 @@ func Init() connect.Connection {
 }
 
 // Connect will connect to the database and handle any errors.
-func Connect() *sql.DB {
-	return connect.Connect()
+func Connect(w io.Writer) *sql.DB {
+	return connect.Connect(w)
 }
 
 // ConnErr will connect to the database or return any errors.
@@ -140,8 +142,8 @@ func ConnInfo() string {
 }
 
 // Approve automatically checks and clears file records for live.
-func Approve(verbose bool) error {
-	return recd.Queries(verbose)
+func Approve(w io.Writer, l *zap.SugaredLogger, verbose bool) error {
+	return recd.Queries(w, l, verbose)
 }
 
 // CheckID reports an error message for an incorrect universal unique record id or MySQL auto-generated id.
@@ -162,8 +164,8 @@ func CheckUUID(s string) error {
 }
 
 // ColTypes details the columns used by the table.
-func ColTypes(t Table) (string, error) {
-	db := connect.Connect()
+func ColTypes(w io.Writer, t Table) (string, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	// LIMIT 0 quickly returns an empty set
 	var query string
@@ -191,13 +193,13 @@ func ColTypes(t Table) (string, error) {
 	}
 	const padding = 3
 	var buf strings.Builder
-	w := tabwriter.NewWriter(&buf, 0, 0, padding, ' ', tabwriter.AlignRight)
-	fmt.Fprintln(w, "Column name\tType\tNullable\tLength\t")
+	tw := tabwriter.NewWriter(&buf, 0, 0, padding, ' ', tabwriter.AlignRight)
+	fmt.Fprintln(tw, "Column name\tType\tNullable\tLength\t")
 	for _, s := range colTypes {
-		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t\n",
+		fmt.Fprintf(tw, "%v\t%v\t%v\t%v\t\n",
 			s.Name(), s.DatabaseTypeName(), nullable(s), recd.ColLen(s))
 	}
-	if err = w.Flush(); err != nil {
+	if err = tw.Flush(); err != nil {
 		return "", fmt.Errorf("column types flush tab writer: %w", err)
 	}
 	return buf.String(), nil
@@ -215,14 +217,14 @@ func nullable(s *sql.ColumnType) string {
 }
 
 // DateTime colours and formats a date and time string.
-func DateTime(raw sql.RawBytes) string {
+func DateTime(l *zap.SugaredLogger, raw sql.RawBytes) string {
 	v := string(raw)
 	if v == "" {
 		return ""
 	}
 	t, err := time.Parse(Datetime, v)
 	if err != nil {
-		logs.Log(err)
+		logs.Save(l, err)
 		return "?"
 	}
 	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
@@ -232,8 +234,8 @@ func DateTime(raw sql.RawBytes) string {
 }
 
 // Distinct returns a unique list of values from the table column.
-func Distinct(value string) ([]string, error) {
-	db := connect.Connect()
+func Distinct(w io.Writer, value string) ([]string, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	rows, err := db.Query("SELECT DISTINCT ? FROM `files`", value)
 	if err != nil {
@@ -270,41 +272,41 @@ func FileUpdate(name string, db time.Time) (bool, error) {
 type Update update.Update
 
 // Execute Query and Args to update the database and returns the total number of changes.
-func Execute(u Update) (int64, error) {
-	return update.Update(u).Execute()
+func Execute(w io.Writer, u Update) (int64, error) {
+	return update.Update(u).Execute(w)
 }
 
 // Fix any malformed section and platforms found in the database.
-func Fix() error {
+func Fix(w io.Writer, l *zap.SugaredLogger) error {
 	start := time.Now()
-	if err := update.Filename.NamedTitles(); err != nil {
+	if err := update.Filename.NamedTitles(w); err != nil {
 		return fmt.Errorf("update filenames: %w", err)
 	}
-	if err := update.GroupFor.NamedTitles(); err != nil {
+	if err := update.GroupFor.NamedTitles(w); err != nil {
 		return fmt.Errorf("update groups for: %w", err)
 	}
-	if err := update.GroupBy.NamedTitles(); err != nil {
+	if err := update.GroupBy.NamedTitles(w); err != nil {
 		return fmt.Errorf("update groups by: %w", err)
 	}
 	elapsed := time.Since(start).Seconds()
-	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
 
-	dist, err := update.Distinct("section")
+	dist, err := update.Distinct(w, "section")
 	if err != nil {
 		return fmt.Errorf("fix distinct section: %w", err)
 	}
-	update.Sections(&dist)
-	dist, err = update.Distinct("platform")
+	update.Sections(w, l, &dist)
+	dist, err = update.Distinct(w, "platform")
 	if err != nil {
 		return fmt.Errorf("fix distinct platform: %w", err)
 	}
-	update.Platforms(&dist)
+	update.Platforms(w, l, &dist)
 	return nil
 }
 
 // DemozooID finds a record ID by the saved Demozoo production ID. If no production exists a zero is returned.
-func DemozooID(id uint) (uint, error) {
-	db := connect.Connect()
+func DemozooID(w io.Writer, id uint) (uint, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	var dz uint
 	// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
@@ -315,8 +317,8 @@ func DemozooID(id uint) (uint, error) {
 }
 
 // GetID returns a numeric Id from a UUID or database id s value.
-func GetID(s string) (uint, error) {
-	db := connect.Connect()
+func GetID(w io.Writer, s string) (uint, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	// auto increment numeric ids
 	var id uint
@@ -341,8 +343,8 @@ func GetID(s string) (uint, error) {
 // GetKeys returns all the primary keys used by the files table.
 // The integer keys are sorted incrementally.
 // An SQL WHERE statement can be provided to filter the results.
-func GetKeys(whereStmt string) ([]int, error) {
-	db := connect.Connect()
+func GetKeys(w io.Writer, whereStmt string) ([]int, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 
 	whereStmt = strings.TrimSpace(whereStmt)
@@ -385,8 +387,8 @@ func GetKeys(whereStmt string) ([]int, error) {
 }
 
 // GetFile returns the filename from a supplied UUID or database ID value.
-func GetFile(s string) (string, error) {
-	db := connect.Connect()
+func GetFile(w io.Writer, s string) (string, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	var n sql.NullString
 	if v, err := strconv.Atoi(s); err == nil {
@@ -405,7 +407,7 @@ func GetFile(s string) (string, error) {
 }
 
 // IsDemozoo reports if a fetched demozoo file record is set to unapproved.
-func IsDemozoo(b []sql.RawBytes) bool {
+func IsDemozoo(b []sql.RawBytes) (bool, error) {
 	return recd.IsDemozoo(b)
 }
 
@@ -424,20 +426,20 @@ func IsID(s string) bool {
 }
 
 // IsProof reports if a fetched proof file record is set to unapproved.
-func IsProof(b []sql.RawBytes) bool {
+func IsProof(l *zap.SugaredLogger, b []sql.RawBytes) (bool, error) {
 	// SQL column names can be found in the sqlSelect() func in proof.go
 	const deletedat, updatedat = 2, 6
 	if len(b) < updatedat {
-		return false
+		return false, nil
 	}
 	if b[deletedat] == nil {
-		return false
+		return false, nil
 	}
 	n, err := recd.Valid(b[deletedat], b[updatedat])
 	if err != nil {
-		logs.Log(err)
+		return false, err
 	}
-	return n
+	return n, nil
 }
 
 // IsUUID reports whether string is a universal unique record id.
@@ -449,8 +451,8 @@ func IsUUID(s string) bool {
 }
 
 // LastUpdate reports the time when the files database was last modified.
-func LastUpdate() (time.Time, error) {
-	db := connect.Connect()
+func LastUpdate(w io.Writer) (time.Time, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	row := db.QueryRow(SelUpdate)
 	t := time.Time{}
@@ -521,13 +523,13 @@ func Tbls() string {
 }
 
 // Total reports the number of records fetched by the supplied SQL query.
-func Total(s *string) (int, error) {
-	db := connect.Connect()
+func Total(w io.Writer, s *string) (int, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(*s)
 	switch {
 	case err != nil && strings.Contains(err.Error(), "SQL syntax"):
-		logs.Println(*s)
+		fmt.Fprintln(w, *s)
 		return -1, err
 	case err != nil:
 		return -1, fmt.Errorf("total query: %w", err)
@@ -557,9 +559,9 @@ func Val(col sql.RawBytes) string {
 }
 
 // Waiting returns the number of files requiring approval for public display.
-func Waiting() (uint, error) {
+func Waiting(w io.Writer) (uint, error) {
 	var count uint
-	db := connect.Connect()
+	db := connect.Connect(w)
 	defer db.Close()
 	if err := db.QueryRow(CountWaiting).Scan(&count); err != nil {
 		return 0, err

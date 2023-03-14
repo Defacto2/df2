@@ -4,6 +4,7 @@ package demozoo
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releaser"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
-	"github.com/Defacto2/df2/pkg/logs"
+	"go.uber.org/zap"
 )
 
 // Product is a demozoo production.
@@ -86,9 +87,9 @@ type MsDosProducts struct {
 	Finds  int
 }
 
-func (m *MsDosProducts) Get() error {
+func (m *MsDosProducts) Get(w io.Writer) error {
 	d := filter.Productions{Filter: releases.MsDos}
-	api, err := d.Prods()
+	api, err := d.Prods(w)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
@@ -108,9 +109,9 @@ type WindowsProducts struct {
 	Finds  int
 }
 
-func (m *WindowsProducts) Get() error {
+func (m *WindowsProducts) Get(w io.Writer) error {
 	d := filter.Productions{Filter: releases.Windows}
-	api, err := d.Prods()
+	api, err := d.Prods(w)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
@@ -123,12 +124,12 @@ func (m *WindowsProducts) Get() error {
 }
 
 // Fix repairs imported Demozoo data conflicts.
-func Fix() error {
-	return fix.Configs()
+func Fix(w io.Writer) error {
+	return fix.Configs(w)
 }
 
 // NewRecord initialises a new file record.
-func NewRecord(c int, values []sql.RawBytes) (Record, error) {
+func NewRecord(l *zap.SugaredLogger, c int, values []sql.RawBytes) (Record, error) {
 	const sep, want = ",", 21
 	if l := len(values); l < want {
 		return Record{}, fmt.Errorf("new records = %d, want %d: %w", l, want, ErrTooFew)
@@ -142,12 +143,12 @@ func NewRecord(c int, values []sql.RawBytes) (Record, error) {
 		ID:    string(values[id]),
 		UUID:  string(values[uuid]),
 		// deletedat placeholder
-		CreatedAt: database.DateTime(values[createdat]),
+		CreatedAt: database.DateTime(l, values[createdat]),
 		Filename:  string(values[filename]),
 		Filesize:  string(values[filesize]),
 		// web_id_demozoo placeholder
 		FileZipContent: string(values[filezipcontent]),
-		UpdatedAt:      database.DateTime(values[updatedat]),
+		UpdatedAt:      database.DateTime(l, values[updatedat]),
 		Platform:       string(values[platform]),
 		Sum384:         string(values[fileintegritystrong]),
 		SumMD5:         string(values[fileintegrityweak]),
@@ -182,20 +183,20 @@ func (r request) String() string {
 }
 
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
-func RefreshMeta() error {
-	return refresh(meta)
+func RefreshMeta(w io.Writer, l *zap.SugaredLogger) error {
+	return refresh(w, l, meta)
 }
 
 // RefreshPouet synchronises missing file entries with Demozoo sourced metadata.
-func RefreshPouet() error {
-	return refresh(pouet)
+func RefreshPouet(w io.Writer, l *zap.SugaredLogger) error {
+	return refresh(w, l, pouet)
 }
 
-func refresh(r request) error { //nolint:cyclop
+func refresh(w io.Writer, l *zap.SugaredLogger, r request) error { //nolint:cyclop
 	start := time.Now()
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
-	if err := counter(db, r); err != nil {
+	if err := counter(db, w, r); err != nil {
 		return err
 	}
 	rows, err := db.Query(selectByID(""))
@@ -219,22 +220,22 @@ func refresh(r request) error { //nolint:cyclop
 	switch r {
 	case meta:
 		for rows.Next() {
-			if err := st.NextRefresh(Records{rows, scanArgs, values}); err != nil {
-				logs.Println(fmt.Errorf("meta rows: %w", err))
+			if err := st.NextRefresh(w, l, Records{rows, scanArgs, values}); err != nil {
+				fmt.Fprintf(w, "meta rows: %s\n", err)
 			}
 		}
 	case pouet:
 		for rows.Next() {
-			if err := st.NextPouet(Records{rows, scanArgs, values}); err != nil {
-				logs.Println(fmt.Errorf("meta rows: %w", err))
+			if err := st.NextPouet(w, l, Records{rows, scanArgs, values}); err != nil {
+				fmt.Fprintf(w, "meta rows: %s\n", err)
 			}
 		}
 	}
-	st.summary(time.Since(start))
+	st.summary(w, time.Since(start))
 	return nil
 }
 
-func counter(db *sql.DB, r request) error {
+func counter(db *sql.DB, w io.Writer, r request) error {
 	var cnt int
 	stmt := count()
 	if r == pouet {
@@ -243,6 +244,6 @@ func counter(db *sql.DB, r request) error {
 	if err := db.QueryRow(stmt).Scan(&cnt); err != nil {
 		return fmt.Errorf("count query: %w", err)
 	}
-	logs.Printf("There are %d records with %s links\n", cnt, r)
+	fmt.Fprintf(w, "There are %d records with %s links\n", cnt, r)
 	return nil
 }

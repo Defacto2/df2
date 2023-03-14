@@ -82,7 +82,7 @@ func TestRead(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, gotFile, err := archive.Read(tt.args.archive, tt.args.filename)
+			gotFiles, gotFile, err := archive.Read(nil, tt.args.archive, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -124,7 +124,7 @@ func TestRestore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, err := archive.Restore(tt.args.source, tt.args.filename, tt.args.destination)
+			gotFiles, err := archive.Restore(nil, tt.args.source, tt.args.filename, tt.args.destination)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -164,7 +164,7 @@ func TestExtract(t *testing.T) {
 			return
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			if err := archive.Proof(tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
+			if err := archive.Proof(nil, nil, tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
 				t.Errorf("Proof(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)
 			}
 		})

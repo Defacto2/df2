@@ -3,8 +3,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
@@ -28,11 +26,11 @@ var configCmd = &cobra.Command{
 	Aliases: []string{"cfg"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Usage(); err != nil {
-			log.Print(fmt.Errorf("config cmd usage: %w", err))
+			log.Infof("config cmd usage: %w\n", err)
 		}
 		if len(args) != 0 || cmd.Flags().NFlag() != 0 {
 			if err := logs.Arg("config", true, args...); err != nil {
-				log.Print(err)
+				log.Info(err)
 			}
 		}
 	},
@@ -46,8 +44,8 @@ This command is intended for scripts and Docker containers.`,
 	Aliases: []string{"db"},
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := csf.Set(); err != nil {
-			log.Print(fmt.Errorf("config setdb: %w", err))
+		if err := csf.Set(os.Stdout); err != nil {
+			log.Infof("config setdb: %w\n", err)
 		}
 	},
 }
@@ -57,8 +55,8 @@ var configCreateCmd = &cobra.Command{
 	Short:   "Create a new config file.",
 	Aliases: []string{"c"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Create(conf.Overwrite); err != nil {
-			log.Print(fmt.Errorf("config create: %w", err))
+		if err := config.Create(os.Stdout, conf.Overwrite); err != nil {
+			log.Infof("config create: %w\n", err)
 		}
 	},
 }
@@ -68,8 +66,8 @@ var configDeleteCmd = &cobra.Command{
 	Short:   "Remove the config file.",
 	Aliases: []string{"d"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Delete(); err != nil {
-			log.Print(fmt.Errorf("config delete: %w", err))
+		if err := config.Delete(os.Stdout); err != nil {
+			log.Infof("config delete: %w\n", err)
 		}
 	},
 }
@@ -79,7 +77,7 @@ var configEditCmd = &cobra.Command{
 	Short:   "Edit the config file.",
 	Aliases: []string{"e"},
 	Run: func(cmd *cobra.Command, args []string) {
-		config.Edit()
+		config.Edit(os.Stdout)
 	},
 }
 
@@ -89,8 +87,8 @@ var configInfoCmd = &cobra.Command{
 	Aliases: []string{"i"},
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Info(conf.InfoSize); err != nil {
-			log.Print(fmt.Errorf("config info: %w", err))
+		if err := config.Info(os.Stdout, log, conf.InfoSize); err != nil {
+			log.Infof("config info: %w\n", err)
 		}
 	},
 }
@@ -107,11 +105,11 @@ the command to list the available seettings.`,
 	Example: `--name connection.server.host # to change the database host setting
 --name directory.000          # to set the image preview directory`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Set(conf.Name); err != nil {
+		if err := config.Set(os.Stdout, conf.Name); err != nil {
 			if errors.Is(err, config.ErrSetName) {
 				os.Exit(1)
 			}
-			log.Print(fmt.Errorf("config set: %w", err))
+			log.Infof("config set: %w\n", err)
 		}
 	},
 }
@@ -134,7 +132,7 @@ func init() { //nolint:gochecknoinits
 		`the configuration path to edit in dot syntax (see examples)
 	to see a list of names run: df2 config info`)
 	if err := configSetCmd.MarkFlagRequired("name"); err != nil {
-		log.Print(err)
+		log.Info(err)
 	}
 	configCmd.AddCommand(configSetConnCmd)
 	configSetConnCmd.Flags().StringVarP(&csf.Host, "host", "t", "",

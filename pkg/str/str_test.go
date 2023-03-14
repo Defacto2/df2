@@ -67,7 +67,7 @@ func TestProgress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := str.Progress(tt.args.name, tt.args.count, tt.args.total); got != tt.want {
+			if got := str.Progress(nil, tt.args.name, tt.args.count, tt.args.total); got != tt.want {
 				t.Errorf("Progress() = %v, want %v", got, tt.want)
 			}
 		})

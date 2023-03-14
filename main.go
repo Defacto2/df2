@@ -31,6 +31,9 @@ import (
 	"github.com/gookit/color"
 )
 
+//go:embed cmd/defacto2.txt
+var brand []byte
+
 //go:embed .version
 var version string
 
@@ -73,6 +76,7 @@ func main() {
 
 	// print the compile and version details
 	if progInfo() {
+		cmd.Brand(log, brand)
 		s, err := cmd.ProgInfo(version)
 		if err != nil {
 			log.Fatal(err)
@@ -88,8 +92,8 @@ func main() {
 	}
 
 	// cobra flag library
-	if err := cmd.Execute(); err != nil {
-		log.Errorln(err)
+	if err := cmd.Execute(log); err != nil {
+		log.Error(err)
 		defer os.Exit(1)
 	}
 }

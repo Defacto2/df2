@@ -2,6 +2,7 @@ package logs_test
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
+	"github.com/stretchr/testify/assert"
 )
 
 const p, hi = "print", "hello"
@@ -51,32 +53,19 @@ func Test_save(t *testing.T) {
 	if err != nil {
 		log.Print(err)
 	}
-	tests := []struct {
-		name   string
-		err    error
-		wantOk bool
-	}{
-		{"nil", nil, false},
-		{"empty", ErrEmpty, true},
-		{"ok", ErrATest, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := logs.Save(name, tt.err); gotOk != tt.wantOk {
-				t.Errorf("Save() = %v, want %v", gotOk, tt.wantOk)
-			} else if gotOk {
-				// cleanup
-				if err := os.Remove(fp); err != nil {
-					t.Fatal(err)
-				}
-			}
-		})
-	}
+	defer os.Remove(fp)
+
+	err = logs.Saver(nil, name, nil)
+	assert.NotNil(t, err)
+	err = logs.Saver(nil, name, ErrEmpty)
+	assert.Nil(t, err)
+	err = logs.Saver(nil, name, ErrATest)
+	assert.Nil(t, err)
 }
 
 func TestFilepath(t *testing.T) {
 	t.Run("file path", func(t *testing.T) {
-		if got := logs.Filepath(logs.Filename); got == "" {
+		if got := logs.Filepath(nil, logs.Filename); got == "" {
 			t.Errorf("Filepath() = %q, want a directory path", got)
 		}
 	})
@@ -88,15 +77,15 @@ func printer(test, text string) string {
 	os.Stdout = w
 	switch test {
 	case p:
-		logs.Print(text)
+		fmt.Fprint(os.Stdout, text)
 	case "printcr":
-		logs.Printcr(text)
+		logs.Printcr(os.Stdout, text)
 	case "printf":
-		logs.Printf("%s", text)
+		fmt.Fprintf(os.Stdout, "%s", text)
 	case "println":
-		logs.Println(text)
+		fmt.Fprintln(os.Stdout, text)
 	case "printfcr":
-		logs.Printcrf("%s", text)
+		logs.Printcrf(os.Stdout, "%s", text)
 	}
 	w.Close()
 	bytes, _ := io.ReadAll(r)

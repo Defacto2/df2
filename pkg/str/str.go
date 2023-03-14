@@ -3,12 +3,13 @@ package str
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"math"
 	"os"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/gookit/color"
 )
 
@@ -17,20 +18,20 @@ import (
 func Piped() bool {
 	stat, err := os.Stdout.Stat()
 	if err != nil {
-		logs.Fatal(err)
+		log.Fatal(err)
 	}
 	return (stat.Mode() & os.ModeCharDevice) == 0
 }
 
 // Progress returns the count of total remaining as a percentage.
-func Progress(name string, count, total int) float64 {
+func Progress(w io.Writer, name string, count, total int) float64 {
 	const fin = 100
 	r := float64(count) / float64(total) * fin
 	switch r {
 	case fin:
-		logs.Printf("\rquerying %s %s %.0f %%  \n", name, bar(r), r)
+		fmt.Fprintf(w, "\rquerying %s %s %.0f %%  \n", name, bar(r), r)
 	default:
-		logs.Printf("\rquerying %s %s %.2f %% ", name, bar(r), r)
+		fmt.Fprintf(w, "\rquerying %s %s %.2f %% ", name, bar(r), r)
 	}
 	return r
 }

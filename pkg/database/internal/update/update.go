@@ -3,11 +3,13 @@ package update
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/gookit/color"
+	"go.uber.org/zap"
 )
 
 // Update row values based on conditions.
@@ -17,8 +19,8 @@ type Update struct {
 }
 
 // Execute Query and Args to update the database and returns the total number of changes.
-func (u Update) Execute() (int64, error) {
-	db := connect.Connect()
+func (u Update) Execute(w io.Writer) (int64, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	update, err := db.Prepare(u.Query)
 	if err != nil {
@@ -45,9 +47,9 @@ const (
 )
 
 // NamedTitles remove record titles that match the filename.
-func (col Column) NamedTitles() error {
+func (col Column) NamedTitles(w io.Writer) error {
 	ctx := context.Background()
-	db := connect.Connect()
+	db := connect.Connect(w)
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -67,17 +69,17 @@ func (col Column) NamedTitles() error {
 		return err
 	}
 	if rows == 0 {
-		logs.Printcrf("no named title fixes needed")
+		logs.Printcrf(w, "no named title fixes needed")
 		return nil
 	}
-	logs.Printcrf("%d named title fixes applied", rows)
+	logs.Printcrf(w, "%d named title fixes applied", rows)
 	return nil
 }
 
 // Distinct returns a unique list of values from the table column.
-func Distinct(column string) ([]string, error) {
+func Distinct(w io.Writer, column string) ([]string, error) {
 	var result string
-	db := connect.Connect()
+	db := connect.Connect(w)
 	defer db.Close()
 	rows, err := db.Query("SELECT DISTINCT ? AS `result` FROM `files` WHERE ? != \"\"", column, column)
 	if err != nil {
@@ -97,60 +99,60 @@ func Distinct(column string) ([]string, error) {
 	return values, db.Close()
 }
 
-func Sections(sections *[]string) {
+func Sections(w io.Writer, l *zap.SugaredLogger, sections *[]string) {
 	var u Update
 	u.Query = "UPDATE files SET section=? WHERE `section`=?"
 	for _, s := range *sections {
 		u.Args = []any{strings.ToLower(s), s}
-		c, err := u.Execute()
+		c, err := u.Execute(w)
 		if err != nil {
-			logs.Log(err)
+			l.Errorln(err)
 		}
 		if c == 0 {
 			continue
 		}
 		str := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
-		printcr(c, &str)
+		printcr(w, c, &str)
 	}
 	// set all audio platform files to use intro section
 	// releaseadvert
 	u.Query = "UPDATE files SET section=? WHERE `platform`=?"
 	u.Args = []any{"releaseadvert", "audio"}
-	c, err := u.Execute()
+	c, err := u.Execute(w)
 	if err != nil {
-		logs.Log(err)
+		l.Errorln(err)
 	}
 	if c == 0 {
 		return
 	}
 	str := fmt.Sprintf("%s %s \"%s\"",
 		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
-	printcr(c, &str)
+	printcr(w, c, &str)
 }
 
-func Platforms(platforms *[]string) {
+func Platforms(w io.Writer, l *zap.SugaredLogger, platforms *[]string) {
 	var u Update
 	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
 	for _, p := range *platforms {
 		u.Args = []any{strings.ToLower(p), p}
-		c, err := u.Execute()
+		c, err := u.Execute(w)
 		if err != nil {
-			logs.Log(err)
+			l.Errorln(err)
 		}
 		if c == 0 {
 			continue
 		}
 		s := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
-		printcr(c, &s)
+		printcr(w, c, &s)
 	}
 }
 
-func printcr(i int64, s *string) {
+func printcr(w io.Writer, i int64, s *string) {
 	if i == 0 {
-		logs.Printcr(*s)
+		logs.Printcr(w, *s)
 		return
 	}
-	logs.Println("\n" + *s)
+	fmt.Fprintln(w, "\n"+*s)
 }

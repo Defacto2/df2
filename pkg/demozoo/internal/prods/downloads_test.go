@@ -23,7 +23,7 @@ func TestProductionsAPIv1_Download(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.p.Download(tt.l); (err != nil) != tt.wantErr {
+			if err := tt.p.Download(nil, tt.l); (err != nil) != tt.wantErr {
 				t.Errorf("ProductionsAPIv1.Download() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

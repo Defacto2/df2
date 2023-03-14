@@ -72,7 +72,7 @@ func TestRecord_Approve(t *testing.T) {
 				File: tt.fields.File,
 				Name: tt.fields.Name,
 			}
-			if err := r.Approve(); (err != nil) != tt.wantErr {
+			if err := r.Approve(nil); (err != nil) != tt.wantErr {
 				t.Errorf("Record.Approve() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -127,7 +127,7 @@ func TestRecord_Iterate(t *testing.T) {
 				File: tt.fields.File,
 				Name: tt.fields.Name,
 			}
-			if err := r.Iterate(tt.args.s); (err != nil) != tt.wantErr {
+			if err := r.Iterate(nil, nil, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("Record.Iterate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -160,7 +160,7 @@ func TestSkip(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotSkip, err := record.Skip(tt.args.s, tt.args.r, tt.args.hide)
+			gotSkip, err := record.Skip(nil, tt.args.s, tt.args.r, tt.args.hide)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Skip() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -206,7 +206,7 @@ func TestRecord_Zip(t *testing.T) {
 				File: tt.fields.File,
 				Name: tt.fields.Name,
 			}
-			if err := r.Zip(tt.args.col, tt.args.s); (err != nil) != tt.wantErr {
+			if err := r.Zip(nil, nil, tt.args.col, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("Record.Zip() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -235,7 +235,7 @@ func TestUpdateZipContent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := record.UpdateZipContent(tt.args.id, tt.args.filename, tt.args.content, tt.args.items)
+			err := record.UpdateZipContent(nil, tt.args.id, tt.args.filename, tt.args.content, tt.args.items)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateZipContent() error = %v, wantErr %v", err, tt.wantErr)
 			}

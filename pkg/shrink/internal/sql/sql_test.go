@@ -43,11 +43,11 @@ func TestInit(t *testing.T) {
 		t.Error(err)
 	}
 	viper.Set("directory.sql", "")
-	if err := sql.Init(); err == nil {
+	if err := sql.Init(nil); err == nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
 	viper.Set("directory.sql", d)
-	if err := sql.Init(); err != nil {
+	if err := sql.Init(nil); err != nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
 }
@@ -70,7 +70,7 @@ func TestApprovals_Approve(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.cmd.Approve(); !errors.Is(err, sql.ErrApprove) != tt.wantErr {
+			if err := tt.cmd.Approve(nil); !errors.Is(err, sql.ErrApprove) != tt.wantErr {
 				t.Errorf("Approvals.Approve() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -118,7 +118,7 @@ func TestApprovals_Store(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.cmd.Store(tt.args.path, tt.args.partial); (err != nil) != tt.wantErr {
+			if err := tt.cmd.Store(nil, tt.args.path, tt.args.partial); (err != nil) != tt.wantErr {
 				t.Errorf("Approvals.Store() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -165,7 +165,7 @@ func TestCompress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := sql.Compress(tt.args.name, tt.args.files); (err != nil) != tt.wantErr {
+			if err := sql.Compress(nil, tt.args.name, tt.args.files); (err != nil) != tt.wantErr {
 				t.Errorf("Compress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			defer os.Remove(tgz)
@@ -184,7 +184,7 @@ func TestRemove(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := sql.Remove(tt.files); (err != nil) != tt.wantErr {
+			if err := sql.Remove(nil, tt.files); (err != nil) != tt.wantErr {
 				t.Errorf("Remove() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

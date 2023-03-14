@@ -97,7 +97,7 @@ func Test_generate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := img.Generate(tt.args.name, tt.args.id, tt.args.amiga)
+			err := img.Generate(nil, tt.args.name, tt.args.id, tt.args.amiga)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -142,7 +142,7 @@ func TestReduce(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := img.Reduce(tt.args.src, tt.args.uuid)
+			got, err := img.Reduce(nil, tt.args.src, tt.args.uuid)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Reduce() error = %v, wantErr %v", err, tt.wantErr)
 				return

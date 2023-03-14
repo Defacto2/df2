@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/go-sql-driver/mysql"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
@@ -65,7 +65,7 @@ func Init() Connection {
 }
 
 // Connect will connect to the database and handle any errors.
-func Connect() *sql.DB {
+func Connect(w io.Writer) *sql.DB {
 	c := Init()
 	db, err := sql.Open("mysql", c.String())
 	if err != nil {
@@ -74,7 +74,7 @@ func Connect() *sql.DB {
 	}
 	// ping the server to make sure the connection works
 	if err = db.Ping(); err != nil {
-		logs.Println(color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
+		fmt.Fprintln(w, color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors, use log.Printf("%T", err)
 		me := &mysql.MySQLError{}

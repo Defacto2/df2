@@ -2,12 +2,11 @@
 package cmd
 
 import (
-	"log"
+	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/groups"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/sitemap"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +20,7 @@ var testCmd = &cobra.Command{
 	GroupID: "group3",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Usage(); err != nil {
-			logs.Fatal(err)
+			log.Fatal(err)
 		}
 	},
 }
@@ -31,7 +30,7 @@ var testGroupNames = &cobra.Command{
 	Short:   "Scans over the various group names and attempts to match possible misnamed duplicates.",
 	Aliases: []string{"n"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := groups.MatchStdOut(); err != nil {
+		if err := groups.MatchStdOut(os.Stdout); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -46,7 +45,7 @@ var testURLsCmd = &cobra.Command{
 		if tests.LocalHost {
 			base = sitemap.LocalBase
 		}
-		if err := run.TestSite(base); err != nil {
+		if err := run.TestSite(os.Stdout, base); err != nil {
 			log.Fatal(err)
 		}
 	},

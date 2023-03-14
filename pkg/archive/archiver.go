@@ -12,7 +12,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive/internal/arc"
 	"github.com/Defacto2/df2/pkg/archive/internal/sys"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/mholt/archiver"
 	"github.com/nwaples/rardecode"
 	"golang.org/x/text/encoding/charmap"
@@ -50,14 +49,14 @@ func Extractor(src, filename, target, dest string) error {
 // and a suitable archive filename string.
 // If there are problems reading the archive due to an incorrect filename
 // extension, the returned filename string will be corrected.
-func Readr(src, filename string) ([]string, string, error) {
+func Readr(w io.Writer, src, filename string) ([]string, string, error) {
 	if files, err := readr(src, filename); err == nil {
 		return files, filename, nil
 	}
-	files, ext, err := sys.Readr(src, filename)
+	files, ext, err := sys.Readr(w, src, filename)
 	if errors.Is(err, sys.ErrWrongExt) {
 		newname := sys.Rename(ext, filename)
-		logs.Printf("rename to %s; ", newname)
+		fmt.Fprintf(w, "rename to %s; ", newname)
 		files, err = readr(src, newname)
 		if err != nil {
 			return nil, "", fmt.Errorf("readr fix: %w", err)

@@ -28,7 +28,7 @@ func TestParse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: this test is slow
 			t.Parallel()
-			if err := tt.r.Parse(tt.args.filename, tt.args.templ); (err != nil) != tt.wantErr {
+			if err := tt.r.Parse(nil, tt.args.filename, tt.args.templ); (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -50,7 +50,7 @@ func TestPrintr(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt := tt
 			t.Parallel()
-			gotTotal, err := request.Print(tt.r)
+			gotTotal, err := request.Print(nil, tt.r)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Print() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -79,7 +79,7 @@ func TestInitialism(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotName, err := tt.r.Initialism(tt.args.group)
+			gotName, err := tt.r.Initialism(nil, tt.args.group)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Initialism() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -108,7 +108,7 @@ func TestFiles(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTotal, err := tt.r.Files(tt.args.group)
+			gotTotal, err := tt.r.Files(nil, tt.args.group)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Request.files() error = %v, wantErr %v", err, tt.wantErr)
 				return

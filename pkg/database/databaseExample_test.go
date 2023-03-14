@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Defacto2/df2/pkg/database"
 )
@@ -13,7 +14,7 @@ func ExampleInit() {
 }
 
 func ExampleConnect() {
-	db := database.Connect()
+	db := database.Connect(os.Stdout)
 	defer db.Close()
 	fmt.Print(db.Stats().WaitCount)
 	// Output: 0
@@ -35,24 +36,25 @@ func ExampleConnInfo() {
 }
 
 func ExampleColTypes() {
-	if _, err := database.ColTypes(database.Netresources); err != nil {
+	if _, err := database.ColTypes(os.Stdout, database.Netresources); err != nil {
 		fmt.Print(err)
 	}
 	// Output:
 }
 
 func ExampleLastUpdate() {
-	if _, err := database.LastUpdate(); err != nil {
+	if _, err := database.LastUpdate(os.Stdout); err != nil {
 		fmt.Print(err)
 	}
 	// Output:
 }
 
 func ExampleTotal() {
-	db := database.Connect()
+	w := os.Stdout
+	db := database.Connect(w)
 	defer db.Close()
 	s := "SELECT * FROM `files` WHERE `id` = '1'"
-	i, err := database.Total(&s)
+	i, err := database.Total(w, &s)
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -61,7 +63,7 @@ func ExampleTotal() {
 }
 
 func ExampleWaiting() {
-	i, err := database.Waiting()
+	i, err := database.Waiting(os.Stdout)
 	if err != nil {
 		fmt.Print(err)
 	}

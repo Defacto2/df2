@@ -2,8 +2,9 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/Defacto2/df2/cmd/internal/run"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -22,8 +23,8 @@ This is the default df2 command when used without any flags or arguments.
       fix demozoo
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.New(); err != nil {
-			logs.Fatal(err)
+		if err := run.New(os.Stdout, log); err != nil {
+			log.Fatal(err)
 		}
 	},
 }

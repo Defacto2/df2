@@ -171,7 +171,7 @@ func TestTextFile_Extract(t *testing.T) {
 				Ext:    tt.fields.Ext,
 				Readme: tt.fields.Readme,
 			}
-			if err := tr.Extract(tt.dir); (err != nil) != tt.wantErr {
+			if err := tr.Extract(nil, tt.dir); (err != nil) != tt.wantErr {
 				t.Errorf("TextFile.Extract() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			defer os.Remove(filepath.Join(textDir, uuid+txt))
@@ -204,7 +204,7 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := tr.ExtractedImgs(tt.dir); (err != nil) != tt.wantErr {
+			if err := tr.ExtractedImgs(nil, tt.dir); (err != nil) != tt.wantErr {
 				t.Errorf("TextFile.ExtractedImgs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			defer os.Remove(filepath.Join(d, uuid+".png"))
@@ -238,12 +238,12 @@ func TestImages(t *testing.T) {
 			tr := &tf.TextFile{
 				UUID: tt.fields.UUID,
 			}
-			if err := tr.TextPng(tt.args.c, tt.args.dir); (err != nil) != tt.wantPngErr {
+			if err := tr.TextPng(nil, tt.args.c, tt.args.dir); (err != nil) != tt.wantPngErr {
 				t.Errorf("TextFile.TextPng() error = %v, wantErr %v", err, tt.wantPngErr)
 				return
 			}
 			defer os.Remove(filepath.Join(d, uuid+".png"))
-			if _, err := tr.WebP(tt.args.c, tt.args.dir); (err != nil) != tt.wantWebPErr {
+			if _, err := tr.WebP(nil, tt.args.c, tt.args.dir); (err != nil) != tt.wantWebPErr {
 				t.Errorf("TextFile.WebP() error = %v, wantErr %v", err, tt.wantWebPErr)
 				return
 			}

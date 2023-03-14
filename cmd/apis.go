@@ -3,10 +3,10 @@ package cmd
 
 import (
 	"errors"
+	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -23,14 +23,14 @@ require the parsing of 10,000s of records.`,
 	GroupID: "group3",
 	Example: `  df2 apis [--refresh|--pouet|--msdos|--windows]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := run.Apis(apis)
+		err := run.APIs(os.Stdout, log, apis)
 		switch {
-		case errors.Is(err, run.ErrUnkArg):
+		case errors.Is(err, run.ErrArg):
 			if err := cmd.Usage(); err != nil {
-				logs.Fatal(err)
+				log.Fatal(err)
 			}
 		case err != nil:
-			logs.Fatal(err)
+			log.Fatal(err)
 		}
 	},
 }

@@ -5,11 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"io"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 )
 
@@ -19,8 +18,9 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix() error {
-	dir, db := directories.Init(false), database.Connect()
+func Fix(w io.Writer) error {
+	dir := directories.Init(false)
+	db := database.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(fixStmt)
 	if err != nil {
@@ -31,20 +31,20 @@ func Fix() error {
 	defer rows.Close()
 	i, c := 0, 0
 	for rows.Next() {
-		if i, c, err = fixRow(i, c, &dir, rows); err != nil {
+		if i, c, err = fixRow(w, i, c, &dir, rows); err != nil {
 			if !errors.Is(err, tf.ErrPNG) {
 				return err
 			}
 		}
 	}
-	logs.Println("scanned", c, "fixes from", i, "text file records")
+	fmt.Fprintln(w, "scanned", c, "fixes from", i, "text file records")
 	if c == 0 {
-		logs.Println("everything is okay, there is nothing to do")
+		fmt.Fprintln(w, "everything is okay, there is nothing to do")
 	}
 	return nil
 }
 
-func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records int, err error) { //nolint:nonamedreturns
+func fixRow(w io.Writer, i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records int, err error) { //nolint:nonamedreturns
 	var t tf.TextFile
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
@@ -57,36 +57,36 @@ func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records in
 	// missing images + source is an archive
 	if !ok && t.Archive() {
 		c++
-		return extract(t, i, c, dir)
+		return extract(w, t, i, c, dir)
 	}
 	// missing images + source is a textfile
 	if !ok {
 		c++
-		if err := t.TextPng(c, dir.UUID); err != nil {
+		if err := t.TextPng(w, c, dir.UUID); err != nil {
 			return i, c, err
 		}
 	}
 	// missing webp specific images that rely on PNG sources
-	c, err = t.WebP(c, dir.Img000)
+	c, err = t.WebP(w, c, dir.Img000)
 	if err != nil {
-		logs.Println(err)
+		fmt.Fprintln(w, err)
 	}
 	return i, c, nil
 }
 
-func extract(t tf.TextFile, i, c int, dir *directories.Dir) (int, int, error) {
-	err := t.Extract(dir)
+func extract(w io.Writer, t tf.TextFile, i, c int, dir *directories.Dir) (int, int, error) {
+	err := t.Extract(w, dir)
 	switch {
 	case errors.Is(err, tf.ErrMeUnk):
 		return i, c, nil
 	case errors.Is(err, tf.ErrMeNo):
 		return i, c, nil
 	case err != nil:
-		log.Println(t.String(), err)
+		fmt.Fprintln(w, t.String(), err)
 		return i, c, nil
 	}
-	if err := t.ExtractedImgs(dir.UUID); err != nil {
-		log.Println(t.String(), err)
+	if err := t.ExtractedImgs(w, dir.UUID); err != nil {
+		fmt.Fprintln(w, t.String(), err)
 	}
 	return i, c, nil
 }

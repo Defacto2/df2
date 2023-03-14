@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/text/internal/img"
 	"github.com/dustin/go-humanize"
@@ -95,7 +95,7 @@ func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 }
 
 // Extract a textfile readme from an archive.
-func (t *TextFile) Extract(dir *directories.Dir) error {
+func (t *TextFile) Extract(w io.Writer, dir *directories.Dir) error {
 	if t.NoReadme.Valid && !t.NoReadme.Bool {
 		return ErrMeNo
 	}
@@ -103,7 +103,7 @@ func (t *TextFile) Extract(dir *directories.Dir) error {
 		return ErrMeUnk
 	}
 	s := strings.Split(t.Readme.String, ",")
-	f, _, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
+	f, _, err := archive.Read(w, filepath.Join(dir.UUID, t.UUID), t.Name)
 	if err != nil {
 		return err
 	}
@@ -130,65 +130,65 @@ func (t *TextFile) Extract(dir *directories.Dir) error {
 }
 
 // ExtractedImgs generates PNG and Webp image assets from a textfile extracted from an archive.
-func (t *TextFile) ExtractedImgs(dir string) error {
+func (t *TextFile) ExtractedImgs(w io.Writer, dir string) error {
 	j := filepath.Join(dir, t.UUID) + txt
 	n, err := filepath.Abs(j)
 	if err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
-	logs.Println("n", n)
+	fmt.Fprintln(w, "n", n)
 	if _, err := os.Stat(n); os.IsNotExist(err) {
 		return fmt.Errorf("extractedimgs: %w", os.ErrNotExist)
 	} else if err != nil {
 		return fmt.Errorf("extractedimgs: %s: %w", t.UUID, err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(n, t.UUID, amiga); err != nil {
+	if err := img.Generate(w, n, t.UUID, amiga); err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
 	return nil
 }
 
 // TextPng generates PNG format image assets from a textfile.
-func (t *TextFile) TextPng(c int, dir string) error {
-	logs.Printf("%d. %v", c, t)
+func (t *TextFile) TextPng(w io.Writer, c int, dir string) error {
+	fmt.Fprintf(w, "%d. %v", c, t)
 	name := filepath.Join(dir, t.UUID)
 	if _, err := os.Stat(name); os.IsNotExist(err) {
-		logs.Printf("%s\n", str.X())
+		fmt.Fprintf(w, "%s\n", str.X())
 		return fmt.Errorf("txtpng: %w", ErrPNG)
 	} else if err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(name, t.UUID, amiga); err != nil {
+	if err := img.Generate(w, name, t.UUID, amiga); err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
-	logs.Print("\n")
+	fmt.Fprintln(w)
 	return nil
 }
 
 // WebP finds and generates missing WebP format images.
-func (t *TextFile) WebP(c int, imgDir string) (int, error) {
+func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 	c++
 	name := filepath.Join(imgDir, t.UUID+webp)
 	if sw, err := os.Stat(name); err == nil && sw.Size() > 0 {
 		c--
 		return c, nil
 	} else if !os.IsNotExist(err) && err != nil {
-		logs.Printf("%s\n", str.X())
+		fmt.Fprintf(w, "%s\n", str.X())
 		return c, fmt.Errorf("txtwebp stat: %w", err)
 	}
-	logs.Printf("%d. %v", c, t)
+	fmt.Fprintf(w, "%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
 	if st, err := os.Stat(src); os.IsNotExist(err) || st.Size() == 0 {
-		logs.Printf("%s (no src png)\n", str.X())
+		fmt.Fprintf(w, "%s (no src png)\n", str.X())
 		return c, nil
 	}
-	s, err := images.ToWebp(src, name, true)
+	s, err := images.ToWebp(w, src, name, true)
 	if err != nil {
-		logs.Printf("%s\n", str.X())
+		fmt.Fprintf(w, "%s\n", str.X())
 		return c, fmt.Errorf("txtwebp: %w", err)
 	}
-	logs.Printf("%s %s\n", s, str.Y())
+	fmt.Fprintf(w, "%s %s\n", s, str.Y())
 	return c, nil
 }

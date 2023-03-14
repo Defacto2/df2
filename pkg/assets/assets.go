@@ -4,12 +4,12 @@ package assets
 import (
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver.
 	"github.com/gookit/color"
@@ -33,9 +33,9 @@ var (
 
 // Clean walks through and scans directories containing UUID files
 // and erases any orphans that cannot be matched to the database.
-func Clean(dir string, remove, human bool) error {
+func Clean(w io.Writer, dir string, remove, human bool) error {
 	d := directories.Init(false)
-	return Cleaner(targetfy(dir), &d, remove, human)
+	return Cleaner(w, targetfy(dir), &d, remove, human)
 }
 
 func targetfy(s string) Target {
@@ -52,17 +52,17 @@ func targetfy(s string) Target {
 	return -1
 }
 
-func Cleaner(t Target, d *directories.Dir, remove, human bool) error {
+func Cleaner(w io.Writer, t Target, d *directories.Dir, remove, human bool) error {
 	paths := Targets(t, d)
 	if paths == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
 	// connect to the database
-	rows, m, err := CreateUUIDMap()
+	rows, m, err := CreateUUIDMap(w)
 	if err != nil {
 		return fmt.Errorf("clean uuid map: %w", err)
 	}
-	logs.Println("The following files do not match any UUIDs in the database")
+	fmt.Fprintln(w, "The following files do not match any UUIDs in the database")
 	// parse directories
 	var sum scan.Results
 	for p := range paths {
@@ -72,15 +72,15 @@ func Cleaner(t Target, d *directories.Dir, remove, human bool) error {
 			Human:  human,
 			M:      m,
 		}
-		if err := sum.Calculate(s, d); err != nil {
+		if err := sum.Calculate(w, s, d); err != nil {
 			return fmt.Errorf("clean sum calculate: %w", err)
 		}
 	}
 	// output a summary of the Results
-	logs.Println(color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v",
+	fmt.Fprintln(w, color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v",
 		humanize.Comma(int64(sum.Count)), humanize.Comma(int64(rows))))
 	if sum.Fails > 0 {
-		logs.Print(fmt.Sprintf("assets clean: due to errors %v files could not be deleted\n",
+		fmt.Fprint(w, fmt.Sprintf("assets clean: due to errors %v files could not be deleted\n",
 			sum.Fails))
 	}
 	if len(paths) > 1 && sum.Bytes > 0 {
@@ -88,15 +88,15 @@ func Cleaner(t Target, d *directories.Dir, remove, human bool) error {
 		if human {
 			pts = humanize.Bytes(uint64(sum.Bytes))
 		}
-		logs.Print(fmt.Sprintf("%v drive space consumed\n", pts))
+		fmt.Fprintf(w, "%v drive space consumed\n", pts)
 	}
 	return nil
 }
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
 // Returns the total number of UUID and a collection of UUIDs.
-func CreateUUIDMap() (int, database.IDs, error) {
-	db := database.Connect()
+func CreateUUIDMap(w io.Writer) (int, database.IDs, error) {
+	db := database.Connect(w)
 	defer db.Close()
 	// count rows
 	count := 0

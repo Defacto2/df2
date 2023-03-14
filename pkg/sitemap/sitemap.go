@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -24,16 +25,16 @@ const (
 )
 
 // Create generates and prints the sitemap.
-func Create() error {
+func Create(w io.Writer) error {
 	// query
 	id, v := "", &urlset.Set{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	var createdat, updatedat sql.NullString
-	count, err := nullsDeleteAt()
+	db := database.Connect(w)
+	defer db.Close()
+	count, err := nullsDeleteAt(db)
 	if err != nil {
 		return err
 	}
-	db := database.Connect()
-	defer db.Close()
 	rows, err := db.Query("SELECT `id`,`createdat`,`updatedat` FROM `files` WHERE `deletedat` IS NULL")
 	if err != nil {
 		return fmt.Errorf("create db query: %w", err)
@@ -103,9 +104,7 @@ func createOutput(v *urlset.Set) error {
 	return nil
 }
 
-func nullsDeleteAt() (int, error) {
-	db := database.Connect()
-	defer db.Close()
+func nullsDeleteAt(db *sql.DB) (int, error) {
 	var count int
 	if err := db.QueryRow("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL").Scan(&count); err != nil {
 		return 0, err

@@ -3,6 +3,7 @@ package demozoo
 import (
 	"errors"
 	"fmt"
+	"io"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/Defacto2/df2/pkg/archive/internal/file"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 )
 
@@ -81,7 +81,7 @@ func (f Finds) Top() string {
 }
 
 // DOS attempts to discover a software package starting executable from a collection of files.
-func DOS(name string, files content.Contents, varNames *[]string) string {
+func DOS(w io.Writer, name string, files content.Contents, varNames *[]string) string {
 	f := make(Finds) // filename and priority values
 	for _, file := range files {
 		if !file.Executable {
@@ -92,7 +92,7 @@ func DOS(name string, files content.Contents, varNames *[]string) string {
 		ext := strings.ToLower(file.Ext)                     // normalise file extensions
 		e := findVariant(fn, exe, varNames)
 		c := findVariant(fn, com, varNames)
-		logs.Printf(" > %q, %q, chk1 %s", ext, fn, base+exe)
+		fmt.Fprintf(w, " > %q, %q, chk1 %s", ext, fn, base+exe)
 		switch {
 		case ext == bat: // [random].bat
 			f[file.Name] = Lvl1
@@ -114,7 +114,7 @@ func DOS(name string, files content.Contents, varNames *[]string) string {
 }
 
 // MoveText moves the name file to a [uuid].txt named file.
-func MoveText(src, uuid string) error {
+func MoveText(w io.Writer, src, uuid string) error {
 	if src == "" {
 		return ErrNoSrc
 	}
@@ -126,7 +126,7 @@ func MoveText(src, uuid string) error {
 	if err != nil {
 		return fmt.Errorf("movetext filemove %q: %w", src, err)
 	}
-	logs.Printf(" • NFO » %s", humanize.Bytes(uint64(size)))
+	fmt.Fprintf(w, " • NFO » %s", humanize.Bytes(uint64(size)))
 	return nil
 }
 

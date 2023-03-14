@@ -5,11 +5,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"text/template"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/spf13/viper"
 )
@@ -26,7 +26,7 @@ type Person struct {
 type Persons []Person
 
 // Tempate creates the HTML used by the website to list people.
-func (p Persons) Template(filename, tpl string, filter string) error {
+func (p Persons) Template(w io.Writer, filename, tpl string, filter string) error {
 	t, err := template.New("h2").Parse(tpl)
 	if err != nil {
 		return fmt.Errorf("parse h2 template: %w", err)
@@ -40,7 +40,7 @@ func (p Persons) Template(filename, tpl string, filter string) error {
 		if err := wr.Flush(); err != nil {
 			return fmt.Errorf("parse writer flush: %w", err)
 		}
-		logs.Println(buf.String())
+		fmt.Fprintln(w, buf.String())
 		return nil
 	}
 	switch role.Roles(filter) {

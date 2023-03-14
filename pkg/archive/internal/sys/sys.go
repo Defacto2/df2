@@ -5,12 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var (
@@ -111,7 +110,7 @@ func Rename(ext, filename string) string {
 
 // Readr attempts to use programs on the host operating system to determine
 // the src archive content and a usable filename based on its format.
-func Readr(src, filename string) ([]string, string, error) {
+func Readr(w io.Writer, src, filename string) ([]string, string, error) {
 	ext, err := MagicExt(src)
 	if err != nil {
 		return []string{}, "", fmt.Errorf("system reader: %w", err)
@@ -129,7 +128,7 @@ func Readr(src, filename string) ([]string, string, error) {
 	case rarext:
 		return RarReader(src)
 	case zipext:
-		return ZipReader(src)
+		return ZipReader(w, src)
 	}
 	return []string{}, "", fmt.Errorf("system reader: %w", ErrReadr)
 }
@@ -375,7 +374,7 @@ func RarReader(src string) ([]string, string, error) {
 }
 
 // ZipReader returns the content of the src ZIP archive.
-func ZipReader(src string) ([]string, string, error) {
+func ZipReader(w io.Writer, src string) ([]string, string, error) {
 	prog, err := exec.LookPath("zipinfo")
 	if err != nil {
 		return nil, "", fmt.Errorf("zipinfo reader: %w", err)
@@ -393,7 +392,7 @@ func ZipReader(src string) ([]string, string, error) {
 	if err != nil {
 		// handle broken zips that still contain some valid files
 		if b.String() != "" && len(out) > 0 {
-			logs.Print(strings.ReplaceAll(b.String(), "\n", " "))
+			fmt.Fprint(w, strings.ReplaceAll(b.String(), "\n", " "))
 			return files, zipext, nil
 		}
 		// otherwise the zipinfo threw an error

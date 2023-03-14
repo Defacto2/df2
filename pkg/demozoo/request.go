@@ -3,11 +3,13 @@ package demozoo
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logs"
+	"go.uber.org/zap"
 )
 
 // Request Demozoo entries.
@@ -19,12 +21,12 @@ type Request struct {
 }
 
 // Query parses a single Demozoo entry.
-func (r *Request) Query(id string) error {
+func (r *Request) Query(w io.Writer, log *zap.SugaredLogger, id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("query id %s: %w", id, err)
 	}
 	r.ByID = id
-	if err := r.Queries(); err != nil {
+	if err := r.Queries(w, log); err != nil {
 		return fmt.Errorf("query queries: %w", err)
 	}
 	return nil
@@ -33,10 +35,10 @@ func (r *Request) Query(id string) error {
 // Queries parses all new proofs.
 // Overwrite will replace existing assets such as images.
 // All parses every Demozoo entry, not just records waiting for approval.
-func (r Request) Queries() error { //nolint:cyclop,funlen
+func (r Request) Queries(w io.Writer, log *zap.SugaredLogger) error { //nolint:cyclop,funlen
 	var st Stat
 	stmt, start := selectByID(r.ByID), time.Now()
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
 	values, scanArgs, rows, err := values(db, stmt)
 	if err != nil {
@@ -46,7 +48,7 @@ func (r Request) Queries() error { //nolint:cyclop,funlen
 	if err = st.sumTotal(Records{rows, scanArgs, values}, r); err != nil {
 		return fmt.Errorf("queries sumtotal: %w", err)
 	}
-	queriesTotal(st.Total)
+	queriesTotal(w, st.Total)
 	rows, err = db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("queries query 2: %w", err)
@@ -58,22 +60,22 @@ func (r Request) Queries() error { //nolint:cyclop,funlen
 	for rows.Next() {
 		st.Fetched++
 		if skip, err := st.nextResult(Records{rows, scanArgs, values}, r); err != nil {
-			logs.Danger(fmt.Errorf("queries nextrow: %w", err))
+			log.Errorf("queries nextrow: %w", err)
 			continue
 		} else if skip {
 			continue
 		}
-		rec, err := NewRecord(st.Count, values)
+		rec, err := NewRecord(log, st.Count, values)
 		if err != nil {
-			logs.Danger(fmt.Errorf("queries new: %w", err))
+			log.Errorf("queries new: %w", err)
 			continue
 		}
-		logs.Printcrf(rec.String(st.Total))
-		if update := rec.check(); !update {
+		logs.Printcrf(w, rec.String(st.Total))
+		if update := rec.check(w); !update {
 			continue
 		}
-		if skip, err := rec.parseAPI(st, r.Overwrite, storage); err != nil {
-			logs.Danger(fmt.Errorf("queries parseapi: %w", err))
+		if skip, err := rec.parseAPI(w, log, st, r.Overwrite, storage); err != nil {
+			log.Errorf("queries parseapi: %w", err)
 			continue
 		} else if skip {
 			continue
@@ -81,17 +83,17 @@ func (r Request) Queries() error { //nolint:cyclop,funlen
 		if st.Total == 0 {
 			break
 		}
-		rec.save()
+		rec.save(w, log)
 	}
 	if r.ByID != "" {
 		st.ByID = r.ByID
-		st.printer()
+		st.printer(w)
 		return nil
 	}
 	if st.Total > 0 {
-		logs.Println()
+		fmt.Fprintln(w)
 	}
-	st.summary(time.Since(start))
+	st.summary(w, time.Since(start))
 	return nil
 }
 
@@ -115,12 +117,12 @@ func values(db *sql.DB, stmt string) ([]sql.RawBytes, []any, *sql.Rows, error) {
 	return values, scanArgs, rows, nil
 }
 
-func queriesTotal(total int) {
+func queriesTotal(w io.Writer, total int) {
 	if total == 0 {
-		logs.Println("nothing to do")
+		fmt.Fprintln(w, "nothing to do")
 		return
 	}
-	logs.Println("Total records", total)
+	fmt.Fprintln(w, "Total records", total)
 }
 
 // Skip the Request?

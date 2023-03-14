@@ -3,6 +3,7 @@ package sql
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/user"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
@@ -82,13 +82,13 @@ const (
 )
 
 // Approve prints the number of records waiting for approval for public display.
-func (cmd Approvals) Approve() error {
+func (cmd Approvals) Approve(w io.Writer) error {
 	switch cmd {
 	case Preview, Incoming:
 	default:
 		return ErrUnknown
 	}
-	wait, err := database.Waiting()
+	wait, err := database.Waiting(w)
 	if err != nil {
 		return fmt.Errorf("approve count: %w", err)
 	}
@@ -99,7 +99,7 @@ func (cmd Approvals) Approve() error {
 }
 
 // Init SQL directory.
-func Init() error { //nolint:funlen
+func Init(w io.Writer) error { //nolint:funlen
 	const (
 		layout   = "2-1-2006"
 		minDash  = 2
@@ -120,7 +120,7 @@ func Init() error { //nolint:funlen
 		}
 		f, err := entry.Info()
 		if err != nil {
-			logs.Printf("error with file info: %s\n", err)
+			fmt.Fprintf(w, "error with file info: %s\n", err)
 			continue
 		}
 		exts := strings.Split(f.Name(), ".")
@@ -143,21 +143,21 @@ func Init() error { //nolint:funlen
 		const expire = time.Hour * oneMonth * 2
 		if time.Since(create) > expire {
 			if filepath.Ext(f.Name()) == ".sql" {
-				logs.Printf("%s is to be moved.\n", f.Name())
+				fmt.Fprintf(w, "%s is to be moved.\n", f.Name())
 			}
 			files = append(files, filepath.Join(s, f.Name()))
 			freed += int(f.Size())
 		}
 	}
-	logs.Printf("SQL found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
+	fmt.Fprintf(w, "SQL found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
 	if len(files) == 0 {
-		logs.Println(", but there is nothing to do.")
+		fmt.Fprintln(w, ", but there is nothing to do.")
 		return nil
 	}
-	logs.Println(".")
-	logs.Printf("SQL will move %d items totaling %s, leaving %s used.\n",
+	fmt.Fprintln(w, ".")
+	fmt.Fprintf(w, "SQL will move %d items totaling %s, leaving %s used.\n",
 		len(files), humanize.Bytes(uint64(freed)), humanize.Bytes(uint64(inUse-freed)))
-	return sqlProcess(files)
+	return sqlProcess(w, files)
 }
 
 // SaveDir returns a usable path to store backups.
@@ -176,7 +176,7 @@ func SaveDir() string {
 }
 
 // Store incoming or preview files as a tar archive.
-func (cmd Approvals) Store(path, partial string) error {
+func (cmd Approvals) Store(w io.Writer, path, partial string) error {
 	switch cmd {
 	case Preview, Incoming:
 	default:
@@ -207,7 +207,7 @@ func (cmd Approvals) Store(path, partial string) error {
 	if len(files) == 0 {
 		return nil
 	}
-	logs.Printf("%s found %d files using %s for backup.\n", cmd, cnt, humanize.Bytes(uint64(inUse)))
+	fmt.Fprintf(w, "%s found %d files using %s for backup.\n", cmd, cnt, humanize.Bytes(uint64(inUse)))
 
 	n := time.Now()
 	filename := filepath.Join(SaveDir(),
@@ -216,7 +216,7 @@ func (cmd Approvals) Store(path, partial string) error {
 	if err := storer(files, filename, partial); err != nil {
 		return err
 	}
-	logs.Printf("%s freeing up space is complete.\n", cmd)
+	fmt.Fprintf(w, "%s freeing up space is complete.\n", cmd)
 	return nil
 }
 
@@ -245,7 +245,7 @@ func storer(files []string, filename, partial string) error {
 }
 
 // Compress the collection of files into a named archive.
-func Compress(name string, files []string) error {
+func Compress(w io.Writer, name string, files []string) error {
 	tgz, err := os.Create(name)
 	if err != nil {
 		return fmt.Errorf("sql create: %w", err)
@@ -257,28 +257,28 @@ func Compress(name string, files []string) error {
 		}
 		return fmt.Errorf("%w: %d", ErrSQLComp, len(errs))
 	}
-	logs.Println("SQL archiving is complete.")
+	fmt.Fprintln(w, "SQL archiving is complete.")
 	return nil
 }
 
-func sqlProcess(files []string) error {
+func sqlProcess(w io.Writer, files []string) error {
 	n := time.Now()
 	name := filepath.Join(SaveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz",
 		n.Year(), n.Month(), n.Day()))
-	if err := Compress(name, files); err != nil {
+	if err := Compress(w, name, files); err != nil {
 		return err
 	}
-	return Remove(files)
+	return Remove(w, files)
 }
 
 // Remove files from the host file system.
-func Remove(files []string) error {
+func Remove(w io.Writer, files []string) error {
 	if errs := archive.Delete(files); errs != nil {
 		for i, err := range errs {
 			log.Printf("error #%d: %s\n", i+1, err)
 		}
 		return fmt.Errorf("%w: %d", ErrSQLDel, len(errs))
 	}
-	logs.Println("SQL freeing up space is complete.")
+	fmt.Fprintln(w, "SQL freeing up space is complete.")
 	return nil
 }

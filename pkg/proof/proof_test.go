@@ -34,7 +34,7 @@ func TestQuery(t *testing.T) {
 				AllProofs:   tt.fields.AllProofs,
 				HideMissing: tt.fields.HideMissing,
 			}
-			if err := request.Query(tt.id); (err != nil) != tt.wantErr {
+			if err := request.Query(nil, nil, tt.id); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -118,7 +118,7 @@ func TestRequest_Skip(t *testing.T) {
 				HideMissing: tt.fields.HideMissing,
 				ByID:        tt.fields.ByID,
 			}
-			if got := request.Skip(tt.values); got != tt.want {
+			if got := request.Skip(nil, nil, tt.values); got != tt.want {
 				t.Errorf("Request.Skip() = %v, want %v", got, tt.want)
 			}
 		})

@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +28,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gookit/color"
 	"github.com/hako/durafmt"
+	"go.uber.org/zap"
 )
 
 const (
@@ -38,49 +39,39 @@ const (
 	statusOk = 200
 )
 
-// Copyright returns a © Copyright year, or a range of years.
-func Copyright() string {
-	const initYear = 2020
-	y, c := time.Now().Year(), initYear
-	if y == c {
-		return strconv.Itoa(c) // © 2020
-	}
-	return fmt.Sprintf("%s-%s", strconv.Itoa(c), time.Now().Format("06")) // © 2020-21
-}
-
 var (
 	ErrToFew  = errors.New("too few arguments given")
-	ErrUnkArg = errors.New("unknown args flag")
+	ErrArg    = errors.New("unknown args flag")
 	ErrDZFlag = errors.New("unknown demozoo flag")
 )
 
-func Data(d database.Flags) error {
+func Data(w io.Writer, d database.Flags) error {
 	switch {
 	case d.CronJob:
-		return d.Run()
+		return d.Run(w)
 	case d.Tables == "all":
-		return d.DB()
+		return d.DB(w)
 	default:
-		return d.ExportTable()
+		return d.ExportTable(w)
 	}
 }
 
-func Apis(a arg.Apis) error {
+func APIs(w io.Writer, l *zap.SugaredLogger, a arg.Apis) error {
 	switch {
 	case a.Refresh:
-		return demozoo.RefreshMeta()
+		return demozoo.RefreshMeta(w, l)
 	case a.Pouet:
-		return demozoo.RefreshPouet()
+		return demozoo.RefreshPouet(w, l)
 	case a.SyncDos:
-		return syncdos()
+		return syncdos(w)
 	case a.SyncWin:
-		return syncwin()
+		return syncwin(w)
 	default:
-		return ErrUnkArg
+		return ErrArg
 	}
 }
 
-func Demozoo(dzf arg.Demozoo) error {
+func Demozoo(w io.Writer, log *zap.SugaredLogger, dzf arg.Demozoo) error {
 	var empty []string
 	r := demozoo.Request{
 		All:       dzf.All,
@@ -88,53 +79,53 @@ func Demozoo(dzf arg.Demozoo) error {
 	}
 	switch {
 	case dzf.New, dzf.All:
-		return r.Queries()
+		return r.Queries(w, log)
 	case dzf.ID != "":
-		return r.Query(dzf.ID)
+		return r.Query(w, log, dzf.ID)
 	case dzf.Releaser != 0:
-		return releaser(dzf.Releaser)
+		return releaser(w, dzf.Releaser)
 	case dzf.Ping != 0:
-		return ping(dzf.Ping)
+		return ping(w, dzf.Ping)
 	case dzf.Download != 0:
-		return download(dzf.Download)
+		return download(w, dzf.Download)
 	case len(dzf.Extract) == 1:
-		return extract(dzf.Extract[0])
+		return extract(w, dzf.Extract[0])
 	case len(dzf.Extract) > 1: // limit to the first 2 flags
-		d, err := archive.Demozoo(dzf.Extract[0], dzf.Extract[1], &empty)
+		d, err := archive.Demozoo(w, dzf.Extract[0], dzf.Extract[1], &empty)
 		if err != nil {
 			return err
 		}
-		logs.Println(d.String())
+		fmt.Fprintln(w, d)
 		return nil
 	default:
 		return ErrDZFlag
 	}
 }
 
-func syncdos() error {
+func syncdos(w io.Writer) error {
 	var p demozoo.MsDosProducts
-	if err := p.Get(); err != nil {
+	if err := p.Get(w); err != nil {
 		return err
 	}
-	logs.Printf("There were %d new productions found\n", p.Finds)
+	fmt.Fprintf(w, "There were %d new productions found\n", p.Finds)
 	return nil
 }
 
-func syncwin() error {
+func syncwin(w io.Writer) error {
 	var p demozoo.WindowsProducts
-	if err := p.Get(); err != nil {
+	if err := p.Get(w); err != nil {
 		return err
 	}
-	logs.Printf("There were %d new productions found\n", p.Finds)
+	fmt.Fprintf(w, "There were %d new productions found\n", p.Finds)
 	return nil
 }
 
-func releaser(id uint) error {
+func releaser(w io.Writer, id uint) error {
 	var r demozoo.Releaser
 	if err := r.Get(id); err != nil {
 		return err
 	}
-	logs.Printf("Demozoo ID %v, HTTP status %v\n", id, r.Status)
+	fmt.Fprintf(w, "Demozoo ID %v, HTTP status %v\n", id, r.Status)
 	if r.Code != statusOk {
 		return nil
 	}
@@ -154,79 +145,79 @@ func releaser(id uint) error {
 	if !prompt.YN(s, true) {
 		return nil
 	}
-	return demozoo.InsertProds(&p.API)
+	return demozoo.InsertProds(w, &p.API)
 }
 
-func ping(id uint) error {
+func ping(w io.Writer, id uint) error {
 	var f demozoo.Product
 	err := f.Get(id)
 	if err != nil {
 		return err
 	}
 	if !str.Piped() {
-		logs.Printf("Demozoo ID %v, HTTP status %v\n", id, f.Status)
+		fmt.Fprintf(w, "Demozoo ID %v, HTTP status %v\n", id, f.Status)
 	}
-	return f.API.Print()
+	return f.API.Print(w)
 }
 
-func download(id uint) error {
+func download(w io.Writer, id uint) error {
 	var f demozoo.Product
 	if err := f.Get(id); err != nil {
 		return err
 	}
-	logs.Printf("Demozoo ID %v, HTTP status %v\n", id, f.Status)
-	f.API.Downloads()
-	logs.Print("\n")
+	fmt.Fprintf(w, "Demozoo ID %v, HTTP status %v\n", id, f.Status)
+	f.API.Downloads(w)
+	fmt.Fprintln(w)
 	return nil
 }
 
-func extract(src string) error {
+func extract(w io.Writer, src string) error {
 	var empty []string
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
-	d, err := archive.Demozoo(src, id.String(), &empty)
+	d, err := archive.Demozoo(w, src, id.String(), &empty)
 	if err != nil {
 		return err
 	}
-	logs.Println(d.String())
+	fmt.Fprintln(w, d)
 	return nil
 }
 
-func Groups(gpf arg.Group) error {
+func Groups(w io.Writer, gpf arg.Group) error {
 	switch {
 	case gpf.Cronjob, gpf.Forcejob:
 		force := false
 		if gpf.Forcejob {
 			force = true
 		}
-		if err := groups.Cronjob(force); err != nil {
+		if err := groups.Cronjob(w, force); err != nil {
 			return err
 		}
 		return nil
 	}
-	arg.FilterFlag(groups.Wheres(), "filter", gpf.Filter)
+	arg.FilterFlag(w, groups.Wheres(), "filter", gpf.Filter)
 	req := groups.Request{Filter: gpf.Filter, Counts: gpf.Counts, Initialisms: gpf.Init, Progress: gpf.Progress}
 	switch gpf.Format {
 	case datal, dl, "d":
-		return req.DataList("")
+		return req.DataList(w, "")
 	case htm, "h", "":
-		return req.HTML("")
+		return req.HTML(w, "")
 	case txt, "t":
-		if _, err := req.Print(); err != nil {
+		if _, err := req.Print(w); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func Log() error {
-	logs.Printf("%v%v %v\n",
+func Log(w io.Writer, l *zap.SugaredLogger) error {
+	fmt.Fprintf(w, "%v%v %v\n",
 		color.Cyan.Sprint("log file"),
 		color.Red.Sprint(":"),
-		logs.Filepath(logs.Filename))
-	f, err := os.Open(logs.Filepath(logs.Filename))
+		logs.Filepath(l, logs.Filename))
+	f, err := os.Open(logs.Filepath(l, logs.Filename))
 	if err != nil {
 		return err
 	}
@@ -239,11 +230,11 @@ func Log() error {
 		s := strings.SplitN(scanner.Text(), " ", maxSplit)
 		t, err := time.Parse("2006/01/02 15:04:05", strings.Join(s[0:2], " "))
 		if err != nil {
-			logs.Printf("%d. %v\n", c, scanner.Text())
+			fmt.Fprintf(w, "%d. %v\n", c, scanner.Text())
 			continue
 		}
 		duration := durafmt.Parse(time.Since(t)).LimitFirstN(1)
-		logs.Printf("%v %v ago  %v %s\n",
+		fmt.Fprintf(w, "%v %v ago  %v %s\n",
 			color.Secondary.Sprintf("%d.", c),
 			duration, color.Info.Sprint(s[2]),
 			strings.Join(s[3:], " "))
@@ -251,7 +242,7 @@ func Log() error {
 	return scanner.Err()
 }
 
-func New() error {
+func New(w io.Writer, l *zap.SugaredLogger) error {
 	i := 0
 	color.Primary.Println("Scans for new submissions and record cleanup")
 	config.Check()
@@ -262,7 +253,7 @@ func New() error {
 		Overwrite: false,
 		Refresh:   false,
 	}
-	if err := newDZ.Queries(); err != nil {
+	if err := newDZ.Queries(w, l); err != nil {
 		return err
 	}
 	i++
@@ -272,69 +263,68 @@ func New() error {
 		AllProofs:   false,
 		HideMissing: false,
 	}
-	if err := newProof.Queries(); err != nil {
+	if err := newProof.Queries(w, l); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. scan for empty archives\n", i)
-	if err := zipcontent.Fix(true); err != nil {
+	if err := zipcontent.Fix(w, l, true); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. generate missing images\n", i)
-	if err := images.Fix(); err != nil {
+	if err := images.Fix(w, l); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. generate missing text previews\n", i)
-	if err := text.Fix(); err != nil {
+	if err := text.Fix(w); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. fix demozoo data conflicts\n", i)
-	if err := demozoo.Fix(); err != nil {
+	if err := demozoo.Fix(w); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. fix malformed database entries\n", i)
-	if err := database.Fix(); err != nil {
+	if err := database.Fix(w, l); err != nil {
 		return err
 	}
-	return groups.Fix()
+	return groups.Fix(w)
 }
 
-func People(pf arg.People) error {
+func People(w io.Writer, pf arg.People) error {
 	switch {
 	case pf.Cronjob, pf.Forcejob:
 		force := false
 		if pf.Forcejob {
 			force = true
 		}
-		if err := people.Cronjob(force); err != nil {
+		if err := people.Cronjob(w, force); err != nil {
 			return err
 		}
 		return nil
 	}
 	fmtflags := [7]string{datal, htm, txt, dl, "d", "h", "t"}
-	arg.FilterFlag(people.Filters(), "filter", pf.Filter)
+	arg.FilterFlag(w, people.Filters(), "filter", pf.Filter)
 	var req people.Request
-	if arg.FilterFlag(fmtflags, "format", pf.Format); pf.Format != "" {
+	if arg.FilterFlag(w, fmtflags, "format", pf.Format); pf.Format != "" {
 		req = people.Request{Filter: pf.Filter, Progress: pf.Progress}
 	}
 	switch pf.Format {
 	case datal, dl, "d":
-		return people.DataList("", req)
+		return people.DataList(w, "", req)
 	case htm, "h", "":
-		return people.HTML("", req)
+		return people.HTML(w, "", req)
 	case txt, "t":
-		return people.Print(req)
+		return people.Print(w, req)
 	}
 	return nil
 }
 
-func Rename(args ...string) error {
+func Rename(w io.Writer, args ...string) error {
 	const wantedCount = 2
-	w := os.Stdout
 	switch len(args) {
 	case 0, 1:
 		return ErrToFew
@@ -347,7 +337,7 @@ func Rename(args ...string) error {
 		return nil
 	}
 	oldArg, newArg := args[0], args[1]
-	src, err := groups.Exact(oldArg)
+	src, err := groups.Exact(w, oldArg)
 	if err != nil {
 		return err
 	}
@@ -356,9 +346,9 @@ func Rename(args ...string) error {
 		return nil
 	}
 	newName := groups.Format(newArg)
-	dest, err := groups.Exact(newName)
+	dest, err := groups.Exact(w, newName)
 	if err != nil {
-		logs.Fatal(err)
+		return err
 	}
 	switch dest {
 	case 0:
@@ -371,7 +361,7 @@ func Rename(args ...string) error {
 	if b := prompt.YN("Rename the group", false); !b {
 		return nil
 	}
-	i, err := groups.Update(newName, oldArg)
+	i, err := groups.Update(w, newName, oldArg)
 	if err != nil {
 		return err
 	}
@@ -379,50 +369,50 @@ func Rename(args ...string) error {
 	return nil
 }
 
-func TestSite(base string) error { //nolint:funlen
+func TestSite(w io.Writer, base string) error { //nolint:funlen
 	urls, err := sitemap.FileList(base)
 	if err != nil {
 		return err
 	}
 	color.Primary.Printf("\nRequesting %d various query-string options of the list of files\n", len(urls))
-	sitemap.Success.Range(urls)
+	sitemap.Success.Range(w, urls)
 
 	const pingCount = 10
-	total, ids, err := sitemap.RandIDs(pingCount)
+	total, ids, err := sitemap.RandIDs(w, pingCount)
 	if err != nil {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
 	color.Primary.Printf("\nRequesting the <title> of %d random files from %d public records\n", pingCount, total)
-	sitemap.LinkSuccess.Range(urls)
+	sitemap.LinkSuccess.Range(w, urls)
 
-	total, ids, err = sitemap.RandIDs(pingCount)
+	total, ids, err = sitemap.RandIDs(w, pingCount)
 	if err != nil {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.Download)
 	color.Primary.Printf("\nRequesting the content disposition of %d random file download from %d public records\n",
 		pingCount, total)
-	sitemap.Success.RangeFiles(urls)
+	sitemap.Success.RangeFiles(w, urls)
 
 	const hideCount = 2
-	total, ids, err = sitemap.RandDeleted(hideCount)
+	total, ids, err = sitemap.RandDeleted(w, hideCount)
 	if err != nil {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
 	color.Primary.Printf("\nRequesting the <title> of %d "+
 		"random files from %d disabled records\n", hideCount, total)
-	sitemap.LinkNotFound.Range(urls)
+	sitemap.LinkNotFound.Range(w, urls)
 
-	total, ids, err = sitemap.RandBlocked(hideCount)
+	total, ids, err = sitemap.RandBlocked(w, hideCount)
 	if err != nil {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.Download)
 	color.Primary.Printf("\nRequesting the content disposition of %d "+
 		"random file download from %d disabled records\n", hideCount, total)
-	sitemap.NotFound.RangeFiles(urls)
+	sitemap.NotFound.RangeFiles(w, urls)
 
 	invalidIDs := []int{-99999999, -1, 0, 99999999}
 	urls = sitemap.IDs(invalidIDs).JoinPaths(base, sitemap.File)
@@ -440,21 +430,21 @@ func TestSite(base string) error { //nolint:funlen
 	}
 	urls = append(urls, loc)
 	color.Primary.Printf("\nRequesting the <title> of %d invalid file URLs\n", len(urls))
-	sitemap.NotFound.Range(urls)
+	sitemap.NotFound.Range(w, urls)
 
 	paths, err := sitemap.AbsPaths(base)
 	if err != nil {
 		return err
 	}
 	color.Primary.Printf("\nRequesting %d static URLs used in the sitemap.xml\n", len(paths))
-	sitemap.Success.Range(paths[:])
+	sitemap.Success.Range(w, paths[:])
 
-	html3s, err := sitemap.AbsPathsH3(base)
+	html3s, err := sitemap.AbsPathsH3(w, base)
 	if err != nil {
 		return err
 	}
 	color.Primary.Printf("\nRequesting %d static URLs used by the HTML3 text mode\n", len(html3s))
-	sitemap.Success.Range(html3s)
+	sitemap.Success.Range(w, html3s)
 
 	return nil
 }

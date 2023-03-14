@@ -2,12 +2,11 @@ package zipcmmt
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/zipcmmt/internal/cmmt"
 )
 
@@ -16,9 +15,10 @@ const (
 	fixStmt   = `SELECT id, uuid, filename, filesize, file_magic_type FROM files WHERE filename LIKE "%.zip"`
 )
 
-func Fix(ascii, unicode, overwrite, summary bool) error {
+func Fix(w io.Writer, ascii, unicode, overwrite, summary bool) error {
 	start := time.Now()
-	dir, db := directories.Init(false), database.Connect()
+	dir := directories.Init(false)
+	db := database.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(fixStmt)
 	if err != nil {
@@ -44,17 +44,17 @@ func Fix(ascii, unicode, overwrite, summary bool) error {
 		if ok := z.CheckCmmtFile(dir.UUID); !ok {
 			continue
 		}
-		if err := z.Save(dir.UUID); err != nil {
-			log.Println(err)
+		if err := z.Save(w, dir.UUID); err != nil {
+			fmt.Fprintln(w, err)
 		}
 	}
 	elapsed := time.Since(start).Seconds()
 	if ascii || unicode {
-		logs.Println()
+		fmt.Fprintln(w)
 	}
 	if summary {
-		logs.Print(fmt.Sprintf("%d zip archives scanned for comments", i))
-		logs.Print(fmt.Sprintf(", time taken %.3f seconds\n", elapsed))
+		fmt.Fprintf(w, "%d zip archives scanned for comments", i)
+		fmt.Fprintf(w, ", time taken %.3f seconds\n", elapsed)
 	}
 	return nil
 }

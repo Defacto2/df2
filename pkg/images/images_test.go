@@ -155,7 +155,7 @@ func TestGenerate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := images.Generate(tt.args.src, tt.args.id, tt.args.remove); (err != nil) != tt.wantErr {
+			if err := images.Generate(nil, nil, tt.args.src, tt.args.id, tt.args.remove); (err != nil) != tt.wantErr {
 				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -272,7 +272,7 @@ func TestToWebxp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			str, err := images.ToWebp(tt.args.src, tt.args.dest, false)
+			str, err := images.ToWebp(nil, tt.args.src, tt.args.dest, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -305,7 +305,7 @@ func TestToWebp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotPrint, err := images.ToWebp(tt.args.src, tt.args.dest, true)
+			gotPrint, err := images.ToWebp(nil, tt.args.src, tt.args.dest, true)
 			if (err != nil) != tt.wantErr {
 				fmt.Fprintf(os.Stderr, "%s -> %s\n", tt.args.src, tt.args.dest)
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
@@ -365,7 +365,7 @@ func TestFix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := images.Fix(); (err != nil) != tt.wantErr {
+			if err := images.Fix(nil, nil); (err != nil) != tt.wantErr {
 				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

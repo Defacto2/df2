@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
@@ -8,21 +9,26 @@ import (
 	"runtime"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/carlmjohnson/versioninfo"
 	"github.com/gookit/color"
+	"go.uber.org/zap"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 const (
-	Author  = "Ben Garrett"          // Author is the primary programmer of this program.
-	Domain  = "defacto2.net"         // Domain of the website.
-	Email   = "contact@defacto2.net" // Email contact for public display.
-	Program = "df2"
-	Title   = "The Defacto2 tool" // Title of this program.
+	About   = "A tool the optimise and manage " + Domain
+	Author  = "Ben Garrett"                     // Author is the primary programmer of this program.
+	Domain  = "defacto2.net"                    // Domain of the website.
+	Program = "df2"                             // Program command.
+	Title   = "The Defacto2 tool"               // Title of this program.
+	URL     = "https://github.com/Defacto2/df2" // URL of the program repository.
+
+	unknown = "unknown"
 )
 
 // Arch returns this program's system architecture.
@@ -42,6 +48,17 @@ func Arch() string {
 	return runtime.GOARCH
 }
 
+// Brand prints the byte ASCII logo to the stdout.
+func Brand(log *zap.SugaredLogger, b []byte) {
+	if logo := string(b); len(logo) > 0 {
+		w := bufio.NewWriter(os.Stdout)
+		if _, err := fmt.Fprintf(w, "%s\n\n", logo); err != nil {
+			log.Warnf("Could not print the brand logo: %s.", err)
+		}
+		w.Flush()
+	}
+}
+
 // Commit returns a formatted, git commit description for this repository,
 // including tag version and date.
 func Commit(version string) string {
@@ -54,19 +71,23 @@ func Commit(version string) string {
 		s += fmt.Sprintf("version %s, ", c)
 	}
 	if s == "" {
-		return "n.a"
+		return unknown
 	}
 	return strings.TrimSpace(s)
 }
 
 // Copyright returns the copyright years and author of this program.
 func Copyright() string {
-	const initYear = 2023
+	const initYear = 2020
 	t := versioninfo.LastCommit
-	s := fmt.Sprintf("© %d Defacto2 & %s", initYear, Author)
+	if t.Year() < initYear {
+		t = time.Now()
+	}
+	s := fmt.Sprintf("© %d", initYear)
 	if t.Year() > initYear {
 		s += "-" + t.Local().Format("06")
 	}
+	s += fmt.Sprintf(" Defacto2 & %s", Author)
 	return s
 }
 
@@ -98,7 +119,7 @@ func ExeTmpl() string {
 func LastCommit() string {
 	d := versioninfo.LastCommit
 	if d.IsZero() {
-		return "n.a"
+		return unknown
 	}
 	return d.Local().Format("2006 Jan 2 15:04")
 }

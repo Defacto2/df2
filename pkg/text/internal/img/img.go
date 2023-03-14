@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
@@ -29,9 +29,9 @@ const (
 )
 
 // Generate a collection of site images.
-func Generate(name, uuid string, amiga bool) error {
+func Generate(w io.Writer, name, uuid string, amiga bool) error {
 	stdout := func(s string) {
-		logs.Printf("  %s", s)
+		fmt.Fprintf(w, "  %s", s)
 	}
 	const note = `
 this command requires the installation of AnsiLove/C
@@ -44,7 +44,7 @@ installation instructions: https://github.com/ansilove/ansilove`
 		return fmt.Errorf("generate, ansilove not found: %w", err)
 	}
 	if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
-		tmp, err1 := Reduce(f.UUID, uuid)
+		tmp, err1 := Reduce(w, f.UUID, uuid)
 		if err1 != nil {
 			return fmt.Errorf("ansilove reduce: %w", err1)
 		}
@@ -56,10 +56,10 @@ installation instructions: https://github.com/ansilove/ansilove`
 	}
 	stdout(s)
 	const thumbMedium = 400
-	if err := resize(o); err != nil {
+	if err := resize(w, o); err != nil {
 		return err
 	}
-	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
+	s, err = images.ToWebp(w, o, images.NewExt(o, webp), true)
 	if err != nil {
 		return fmt.Errorf("generate webp: %w", err)
 	}
@@ -72,26 +72,26 @@ installation instructions: https://github.com/ansilove/ansilove`
 	return nil
 }
 
-func resize(o string) error {
-	var w, h int
+func resize(w io.Writer, o string) error {
+	var wp, hp int
 	var err error
-	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
+	if wp, hp, _, err = images.Info(o); (wp + hp) > images.WebpMaxSize {
 		if err != nil {
 			return fmt.Errorf("generate info: %w", err)
 		}
-		cw, ch := images.WebPCalc(w, h)
+		cw, ch := images.WebPCalc(wp, hp)
 		s, err := images.ToPng(o, images.NewExt(o, png), ch, cw)
 		if err != nil {
 			return fmt.Errorf("generate calc: %w", err)
 		}
-		logs.Printf("  %s", s)
+		fmt.Fprintf(w, "  %s", s)
 	}
 	return nil
 }
 
 // Reduce the length of the textfile so it can be parsed by AnsiLove.
-func Reduce(src, uuid string) (string, error) {
-	logs.Print(" will attempt to reduce the length of file")
+func Reduce(w io.Writer, src, uuid string) (string, error) {
+	fmt.Fprint(w, " will attempt to reduce the length of file")
 
 	f, err := os.Open(src)
 	if err != nil {

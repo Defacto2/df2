@@ -4,6 +4,7 @@ package groups
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -32,27 +33,27 @@ const htm = ".htm"
 type Request request.Flags
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Request) DataList(name string) error {
-	return request.Flags(r).DataList(name)
+func (r Request) DataList(w io.Writer, name string) error {
+	return request.Flags(r).DataList(w, name)
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(name string) error {
-	return request.Flags(r).HTML(name)
+func (r Request) HTML(w io.Writer, name string) error {
+	return request.Flags(r).HTML(w, name)
 }
 
 // Print a list of organisations or groups filtered by a name and summarizes the results.
-func (r Request) Print() (int, error) {
-	return request.Print(request.Flags(r))
+func (r Request) Print(w io.Writer) (int, error) {
+	return request.Print(w, request.Flags(r))
 }
 
 // Count returns the number of file entries associated with a named group.
-func Count(name string) (int, error) {
-	return group.Count(name)
+func Count(w io.Writer, name string) (int, error) {
+	return group.Count(w, name)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(force bool) error {
+func Cronjob(w io.Writer, force bool) error {
 	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
 		if err := croncheck(tag, htm); err != nil {
@@ -60,7 +61,7 @@ func Cronjob(force bool) error {
 		}
 	}
 	for _, tag := range Wheres() {
-		if err := cronjob(tag, htm, force); err != nil {
+		if err := cronjob(w, tag, htm, force); err != nil {
 			return err
 		}
 	}
@@ -85,11 +86,11 @@ func croncheck(tag, htm string) error {
 	return nil
 }
 
-func cronjob(tag, htm string, force bool) error {
+func cronjob(w io.Writer, tag, htm string, force bool) error {
 	f := tag + htm
 	d := viper.GetString("directory.html")
 	n := path.Join((d), f)
-	last, err := database.LastUpdate()
+	last, err := database.LastUpdate(w)
 	if err != nil {
 		return fmt.Errorf("cronjob lastupdate: %w", err)
 	}
@@ -101,7 +102,7 @@ func cronjob(tag, htm string, force bool) error {
 	case err != nil:
 		return fmt.Errorf("cronjob fileupdate: %w", err)
 	case !update:
-		logs.Printf("%s has nothing to update (%s)\n", tag, n)
+		fmt.Fprintf(w, "%s has nothing to update (%s)\n", tag, n)
 	default:
 		r := request.Flags{
 			Filter:      tag,
@@ -112,7 +113,7 @@ func cronjob(tag, htm string, force bool) error {
 		if force {
 			r.Progress = true
 		}
-		if err := r.HTML(f); err != nil {
+		if err := r.HTML(w, f); err != nil {
 			return fmt.Errorf("group cronjob html: %w", err)
 		}
 	}
@@ -123,11 +124,11 @@ func cronjob(tag, htm string, force bool) error {
 // The casing is ignored, but comma separated multi-groups are not matched to their parents.
 // The name "tristar" will match "Tristar" but will not match records using
 // "Tristar, Red Sector Inc".
-func Exact(name string) (int, error) {
+func Exact(w io.Writer, name string) (int, error) {
 	if name == "" {
 		return 0, nil
 	}
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
 	n, count := name, 0
 	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
@@ -139,43 +140,43 @@ func Exact(name string) (int, error) {
 }
 
 // Fix any malformed group names found in the database.
-func Fix() error {
+func Fix(w io.Writer) error {
 	// fix group names stored in the files table
-	names, _, err := group.List("")
+	names, _, err := group.List(w, "")
 	if err != nil {
 		return err
 	}
 	c, start := 0, time.Now()
 	for _, name := range names {
-		if r := rename.Clean(name); r {
+		if r := rename.Clean(w, name); r {
 			c++
 		}
 	}
 	switch {
 	case c == 1:
-		logs.Printcr("1 fix applied")
+		logs.Printcr(w, "1 fix applied")
 	case c > 0:
-		logs.Printcrf("%d fixes applied", c)
+		logs.Printcrf(w, "%d fixes applied", c)
 	default:
-		logs.Printcr("no group fixes needed")
+		logs.Printcr(w, "no group fixes needed")
 	}
 	// fix initialisms stored in the groupnames table
-	logs.Print(" and...\n")
+	fmt.Fprint(w, " and...\n")
 	i, err := acronym.Fix()
 	if err != nil {
 		return err
 	}
 	switch i {
 	case 1:
-		logs.Printcr("removed a broken initialism entry")
+		logs.Printcr(w, "removed a broken initialism entry")
 	case 0:
-		logs.Printcr("no initialism fixes needed")
+		logs.Printcr(w, "no initialism fixes needed")
 	default:
-		logs.Printcrf("%d broken initialism entries removed", i)
+		logs.Printcrf(w, "%d broken initialism entries removed", i)
 	}
 	// report time taken
 	elapsed := time.Since(start).Seconds()
-	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+	fmt.Fprint(w, fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
 	return nil
 }
 
@@ -194,8 +195,8 @@ func Initialism(name string) (string, error) {
 }
 
 // List returns all the distinct groups.
-func List() ([]string, int, error) {
-	return group.List("")
+func List(w io.Writer) ([]string, int, error) {
+	return group.List(w, "")
 }
 
 // Slug takes a string and makes it into a URL friendly slug.
@@ -204,8 +205,8 @@ func Slug(s string) string {
 }
 
 // Update replaces all instances of the group name with the new group name.
-func Update(newName, group string) (int64, error) {
-	return rename.Update(newName, group)
+func Update(w io.Writer, newName, group string) (int64, error) {
+	return rename.Update(w, newName, group)
 }
 
 // Variations creates format variations for a named group.

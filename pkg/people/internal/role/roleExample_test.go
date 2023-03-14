@@ -2,6 +2,7 @@ package role_test
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 )
@@ -14,7 +15,7 @@ func ExampleRole() {
 
 func ExampleList() {
 	r := role.Musicians
-	_, total, err := role.List(r)
+	_, total, err := role.List(os.Stdout, r)
 	if err != nil {
 		fmt.Print(err)
 	}

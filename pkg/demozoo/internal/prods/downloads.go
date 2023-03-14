@@ -3,13 +3,13 @@ package prods
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
 	"path/filepath"
 
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 // DownloadsAPIv1 are DownloadLinks for ProductionsAPIv1.
@@ -74,10 +74,10 @@ func (p *ProductionsAPIv1) DownloadLink() (string, string) { //nolint:cyclop
 	return name, link
 }
 
-func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
+func (p *ProductionsAPIv1) Download(w io.Writer, l DownloadsAPIv1) error {
 	const found = 200
 	if ok := l.parse(); !ok {
-		logs.Print(" not usable\n")
+		fmt.Fprint(w, " not usable\n")
 		return nil
 	}
 	ping, err := download.PingHead(l.URL)
@@ -86,7 +86,7 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 	}
 	defer ping.Body.Close()
 	if ping.StatusCode != found {
-		logs.Printf(" %s", ping.Status) // print the HTTP status
+		fmt.Fprintf(w, " %s", ping.Status) // print the HTTP status
 		return nil
 	}
 	save, err := SaveName(l.URL)
@@ -101,7 +101,7 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 	if err != nil {
 		return fmt.Errorf("download off demozoo abs filepath: %w", err)
 	}
-	_, err = download.GetSave(dest, l.URL)
+	_, err = download.GetSave(w, dest, l.URL)
 	if err != nil {
 		return fmt.Errorf("download off demozoo download: %w", err)
 	}
@@ -109,10 +109,10 @@ func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
 }
 
 // Downloads parses the Demozoo DownloadLinks and saves the first suitable download.
-func (p *ProductionsAPIv1) Downloads() {
+func (p *ProductionsAPIv1) Downloads(w io.Writer) {
 	for _, l := range p.DownloadLinks {
-		if err := p.Download(l); err != nil {
-			log.Printf(" %s", err)
+		if err := p.Download(w, l); err != nil {
+			fmt.Fprintf(w, " %s", err)
 		} else {
 			break
 		}

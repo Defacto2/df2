@@ -2,11 +2,12 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/viper"
 )
 
@@ -15,12 +16,12 @@ var ErrNoEditor = errors.New(`no suitable editor could be found
 please set one by creating a $EDITOR environment variable in your shell configuration`)
 
 // Edit a configuration file.
-func Edit() {
+func Edit(w io.Writer) {
 	var editor string
 	editors := []string{"micro", "nano", "vim"}
 	cfg := viper.ConfigFileUsed()
 	if cfg == "" {
-		missing("edit")
+		missing(w, "edit")
 	}
 	if err := viper.BindEnv("editor", "EDITOR"); err != nil {
 		editor = fallback(editors...)
@@ -32,7 +33,7 @@ func Edit() {
 	exe.Stdin = os.Stdin
 	exe.Stdout = os.Stdout
 	if err := exe.Run(); err != nil {
-		logs.Printf("%s\n", err)
+		fmt.Fprintf(w, "%s\n", err)
 	}
 }
 

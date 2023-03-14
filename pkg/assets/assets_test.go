@@ -78,7 +78,7 @@ func TestClean(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := assets.Clean(tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := assets.Clean(os.Stdout, tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("Clean() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -97,7 +97,7 @@ func TestCreateUUIDMap(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTotal, gotUuids, err := assets.CreateUUIDMap()
+			gotTotal, gotUuids, err := assets.CreateUUIDMap(nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreateUUIDMap() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -117,7 +117,7 @@ func TestBackup(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, uuids, err := assets.CreateUUIDMap()
+	_, uuids, err := assets.CreateUUIDMap(nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -159,7 +159,7 @@ func TestBackup(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := scan.Backup(tt.args.s, &d, nil, tt.args.list); (err != nil) != tt.wantErr {
+			if err := scan.Backup(nil, tt.args.s, &d, nil, tt.args.list); (err != nil) != tt.wantErr {
 				t.Errorf("backup() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -188,7 +188,7 @@ func TestCleaner(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := assets.Cleaner(tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := assets.Cleaner(nil, tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("Cleaner() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

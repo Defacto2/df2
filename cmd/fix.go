@@ -4,7 +4,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
@@ -13,7 +12,6 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/people"
 	"github.com/Defacto2/df2/pkg/text"
 	"github.com/Defacto2/df2/pkg/zipcmmt"
@@ -33,14 +31,14 @@ var fixCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			if err := cmd.Usage(); err != nil {
-				logs.Fatal(err)
+				log.Fatal(err)
 			}
 			os.Exit(0)
 		}
 		if err := cmd.Usage(); err != nil {
-			logs.Fatal(err)
+			log.Fatal(err)
 		}
-		logs.Danger(fmt.Errorf("fix cmd %q: %w", args[0], ErrCmd))
+		log.Errorf("fix cmd %q: %w", args[0], ErrCmd)
 	},
 }
 
@@ -53,8 +51,8 @@ records that do not have this expected context.`,
 	Aliases: []string{"a"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcontent.Fix(true); err != nil {
-			log.Print(fmt.Errorf("archives fix: %w", err))
+		if err := zipcontent.Fix(os.Stdout, log, true); err != nil {
+			log.Info(fmt.Errorf("archives fix: %w", err))
 		}
 	},
 }
@@ -67,14 +65,15 @@ This includes the formatting and trimming of groups, people, platforms and secti
 	Aliases: []string{"d", "db"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := database.Fix(); err != nil {
-			log.Print(err)
+		w := os.Stdout
+		if err := database.Fix(w, log); err != nil {
+			log.Info(err)
 		}
-		if err := groups.Fix(); err != nil {
-			log.Print(err)
+		if err := groups.Fix(w); err != nil {
+			log.Info(err)
 		}
-		if err := people.Fix(); err != nil {
-			log.Print(err)
+		if err := people.Fix(w); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -85,8 +84,8 @@ var fixDemozooCmd = &cobra.Command{
 	Aliases: []string{"dz"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := demozoo.Fix(); err != nil {
-			log.Print(fmt.Errorf("demozoo fix: %w", err))
+		if err := demozoo.Fix(os.Stdout); err != nil {
+			log.Info(fmt.Errorf("demozoo fix: %w", err))
 		}
 	},
 }
@@ -99,8 +98,8 @@ that are raster images.`,
 	Aliases: []string{"i"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := images.Fix(); err != nil {
-			log.Print(err)
+		if err := images.Fix(os.Stdout, log); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -113,15 +112,15 @@ var fixRenGroup = &cobra.Command{
 	Example: `  df2 fix rename "The Group" "New Group Name"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// in the future this command could be adapted to use a --person flag
-		err := run.Rename(args...)
+		err := run.Rename(os.Stdout, args...)
 		if errors.Is(err, run.ErrToFew) {
 			if err := cmd.Usage(); err != nil {
-				logs.Fatal(err)
+				log.Fatal(err)
 			}
 			os.Exit(0)
 		}
 		if err != nil {
-			log.Print(err)
+			log.Info(err)
 		}
 	},
 }
@@ -134,8 +133,8 @@ that are plain text files.`,
 	Aliases: []string{"t", "txt"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := text.Fix(); err != nil {
-			log.Print(err)
+		if err := text.Fix(os.Stdout); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -149,8 +148,8 @@ var fixZipCmmtCmd = &cobra.Command{
 	Aliases: []string{"z"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcmmt.Fix(zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
-			log.Print(err)
+		if err := zipcmmt.Fix(os.Stdout, zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
+			log.Info(err)
 		}
 	},
 }

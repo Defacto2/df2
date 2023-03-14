@@ -4,7 +4,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/Defacto2/df2/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/people"
 	"github.com/Defacto2/df2/pkg/recent"
 	"github.com/Defacto2/df2/pkg/sitemap"
@@ -39,17 +37,16 @@ var outputCmd = &cobra.Command{
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			logs.Println(ErrNoOutput)
-			logs.Println()
+			fmt.Fprintf(os.Stdout, "%s\n\n", ErrNoOutput)
 			if err := cmd.Usage(); err != nil {
-				logs.Fatal(err)
+				log.Fatal(err)
 			}
 			os.Exit(0)
 		}
 		if err := cmd.Usage(); err != nil {
-			logs.Fatal(err)
+			log.Fatal(err)
 		}
-		logs.Danger(fmt.Errorf("output cmd %q: %w", args[0], ErrCmd))
+		log.Warnf("output cmd %q: %w", args[0], ErrCmd)
 	},
 }
 
@@ -72,7 +69,7 @@ func init() { //nolint:gochecknoinits
 	dataCmd.Flags().StringVarP(&dbf.Type, "type", "y", "update",
 		"database export type\noptions: create or update")
 	if err := dataCmd.Flags().MarkHidden("parallel"); err != nil {
-		logs.Fatal(err)
+		log.Fatal(err)
 	}
 	outputCmd.AddCommand(groupCmd)
 	groupCmd.Flags().StringVarP(&gpf.Filter, "filter", "f", "",
@@ -116,8 +113,8 @@ var dataCmd = &cobra.Command{
 	SQL statements that can recreate the database objects and data. These can be
 	used with mysqldump or Adminer to manage content in the MySQL databases.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.Data(dbf); err != nil {
-			log.Print(err)
+		if err := run.Data(os.Stdout, dbf); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -133,8 +130,8 @@ heading-2 element containing a relative anchor link to the group's page and name
 The HTML output returned by the cronjob flag includes additional elements for
 the website stylization.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.Groups(gpf); err != nil {
-			log.Print(err)
+		if err := run.Groups(os.Stdout, gpf); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -150,8 +147,8 @@ heading-2 element containing a relative anchor link to the person's page and nam
 The HTML output returned by the cronjob flag includes additional elements for
 the website stylization.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.People(ppf); err != nil {
-			log.Print(err)
+		if err := run.People(os.Stdout, ppf); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -162,8 +159,8 @@ var recentCmd = &cobra.Command{
 	Short:   "JSON snippet generator to list recent additions.",
 	Long:    `JSON snippet generator to list recent additions.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := recent.List(rcf.Limit, rcf.Compress); err != nil {
-			log.Print(err)
+		if err := recent.List(os.Stdout, rcf.Limit, rcf.Compress); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -184,8 +181,8 @@ discover most of the site."
 
 See: https://developers.google.com/search/docs/advanced/sitemaps/overview`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := sitemap.Create(); err != nil {
-			log.Print(err)
+		if err := sitemap.Create(os.Stdout); err != nil {
+			log.Info(err)
 		}
 	},
 }

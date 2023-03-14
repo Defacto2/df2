@@ -2,6 +2,7 @@ package groups
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"sort"
@@ -35,14 +36,14 @@ func Contains(x string, sorted []string) bool {
 
 // MatchStdOut scans over the groups and attempts to match possible misnamed duplicates.
 // The results are printed to stdout in realtime.
-func MatchStdOut() error { //nolint:funlen
+func MatchStdOut(w io.Writer) error { //nolint:funlen
 	tick := time.Now()
 
 	const (
 		n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12 = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 	)
 
-	list, total, err := List()
+	list, total, err := List(w)
 	if err != nil {
 		return err
 	}
@@ -128,8 +129,8 @@ func MatchStdOut() error { //nolint:funlen
 				f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12,
 				g0, g1, g2, g3, g4, g5, g6, g7, g8,
 				h0, h1, h2, h3, h4, h5, h6, h7, h8:
-				g, err1 := Count(group)
-				m, err2 := Count(match)
+				g, err1 := Count(w, group)
+				m, err2 := Count(w, match)
 				fmt.Fprintf(os.Stdout, "%s %s %s (%d%s%d)\n", group, approx, match,
 					g, approx, m)
 				if err1 != nil {

@@ -15,7 +15,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/templ"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver"
 	"github.com/spf13/viper"
@@ -90,7 +89,7 @@ type Flags struct {
 
 // Run is intended for an operating system time-based job scheduler.
 // It creates both create and update types exports for the files table.
-func (f *Flags) Run() error {
+func (f *Flags) Run(w io.Writer) error {
 	f.Compress, f.Limit, f.Table = true, 0, Files
 	start := time.Now()
 	const delta = 2
@@ -104,14 +103,14 @@ func (f *Flags) Run() error {
 			defer wg.Done()
 			mu.Lock()
 			f.Method = Create
-			e1 = f.ExportTable()
+			e1 = f.ExportTable(w)
 			mu.Unlock()
 		}(f)
 		go func(f *Flags) {
 			defer wg.Done()
 			mu.Lock()
 			f.Method = Insert
-			e2 = f.ExportTable()
+			e2 = f.ExportTable(w)
 			mu.Unlock()
 		}(f)
 		wg.Wait()
@@ -123,39 +122,39 @@ func (f *Flags) Run() error {
 		}
 	default:
 		f.Method = Create
-		if err := f.ExportTable(); err != nil {
+		if err := f.ExportTable(w); err != nil {
 			return fmt.Errorf("run create: %w", err)
 		}
 		f.Method = Insert
-		if err := f.ExportTable(); err != nil {
+		if err := f.ExportTable(w); err != nil {
 			return fmt.Errorf("run update: %w", err)
 		}
 	}
 	elapsed := time.Since(start)
-	logs.Printf("cronjob export took %s\n", elapsed)
+	fmt.Fprintf(w, "cronjob export took %s\n", elapsed)
 	return nil
 }
 
 // DB saves or prints a MySQL compatible SQL import database statement.
-func (f *Flags) DB() error {
+func (f *Flags) DB(w io.Writer) error {
 	start := time.Now()
 	if err := f.method(); err != nil {
 		return fmt.Errorf("db: %w", err)
 	}
-	buf, err := f.queryTables()
+	buf, err := f.queryTables(w)
 	if err != nil {
 		return fmt.Errorf("db query: %w", err)
 	}
-	if err = f.write(buf); err != nil {
+	if err = f.write(w, buf); err != nil {
 		return fmt.Errorf("db write: %w", err)
 	}
 	elapsed := time.Since(start)
-	logs.Printf("sql exports took %s\n", elapsed)
+	fmt.Fprintf(w, "sql exports took %s\n", elapsed)
 	return nil
 }
 
 // ExportTable saves or prints a MySQL compatible SQL import table statement.
-func (f *Flags) ExportTable() error {
+func (f *Flags) ExportTable(w io.Writer) error {
 	if err := f.method(); err != nil {
 		return fmt.Errorf("table: %w", err)
 	}
@@ -171,11 +170,11 @@ func (f *Flags) ExportTable() error {
 	default:
 		return fmt.Errorf("invalid table: %w", ErrNoTable)
 	}
-	buf, err := f.queryTable()
+	buf, err := f.queryTable(w)
 	if err != nil {
 		return fmt.Errorf("table query: %w", err)
 	}
-	if err := f.write(buf); err != nil {
+	if err := f.write(w, buf); err != nil {
 		return fmt.Errorf("table write: %w", err)
 	}
 	return nil
@@ -228,11 +227,11 @@ func (f *Flags) method() error {
 }
 
 // queryDB requests columns and values of f.Table to create an INSERT INTO ? VALUES ? SQL statement.
-func (f *Flags) queryDB() (*bytes.Buffer, error) {
+func (f *Flags) queryDB(w io.Writer) (*bytes.Buffer, error) {
 	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query db table: %w", err)
 	}
-	col, err := columns(f.Table)
+	col, err := columns(w, f.Table)
 	if err != nil {
 		return nil, fmt.Errorf("query db columns: %w", err)
 	}
@@ -241,7 +240,7 @@ func (f *Flags) queryDB() (*bytes.Buffer, error) {
 	if f.Limit == 0 {
 		l = -1 // list all
 	}
-	vals, err := rows(f.Table, l)
+	vals, err := rows(w, f.Table, l)
 	if err != nil {
 		return nil, fmt.Errorf("query db rows: %w", err)
 	}
@@ -263,11 +262,11 @@ func (f *Flags) queryDB() (*bytes.Buffer, error) {
 }
 
 // query generates the SQL import table statement.
-func (f *Flags) queryTable() (*bytes.Buffer, error) {
+func (f *Flags) queryTable(w io.Writer) (*bytes.Buffer, error) {
 	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query table check: %w", err)
 	}
-	col, err := columns(f.Table)
+	col, err := columns(w, f.Table)
 	if err != nil {
 		return nil, fmt.Errorf("query table columns: %w", err)
 	}
@@ -276,7 +275,7 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 	if f.Limit == 0 {
 		l = -1 // list all
 	}
-	vals, err := rows(f.Table, l)
+	vals, err := rows(w, f.Table, l)
 	if err != nil {
 		return nil, fmt.Errorf("query table rows: %w", err)
 	}
@@ -301,17 +300,17 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 }
 
 // queryTables generates the SQL import database and tables statement.
-func (f *Flags) queryTables() (*bytes.Buffer, error) {
+func (f *Flags) queryTables(w io.Writer) (*bytes.Buffer, error) {
 	var buf1, buf2, buf3 *bytes.Buffer
 	var err error
 	switch f.Parallel {
 	case true:
-		buf1, buf2, buf3, _, err = f.queryTablesWG()
+		buf1, buf2, buf3, _, err = f.queryTablesWG(w)
 		if err != nil {
 			return nil, err
 		}
 	default:
-		buf1, buf2, buf3, _, err = f.queryTablesSeq()
+		buf1, buf2, buf3, _, err = f.queryTablesSeq(w)
 		if err != nil {
 			return nil, err
 		}
@@ -337,27 +336,23 @@ func (f *Flags) queryTables() (*bytes.Buffer, error) {
 	return &b, nil
 }
 
-func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
+func (f *Flags) queryTablesWG(w io.Writer) (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
 	const delta = 3
 	var wg sync.WaitGroup
 	var e1, e2, e3 error
 	wg.Add(delta)
 	go func(f *Flags) {
 		defer wg.Done()
-		buf1, e1 = f.reqDB(Files)
+		buf1, e1 = f.reqDB(w, Files)
 	}(f)
 	go func(f *Flags) {
 		defer wg.Done()
-		buf2, e2 = f.reqDB(Groups)
+		buf2, e2 = f.reqDB(w, Groups)
 	}(f)
 	go func(f *Flags) {
 		defer wg.Done()
-		buf3, e3 = f.reqDB(Netresources)
+		buf3, e3 = f.reqDB(w, Netresources)
 	}(f)
-	// go func(f *Flags) {
-	// 	defer wg.Done()
-	// 	buf4, e4 = f.reqDB(Users)
-	// }(f)
 	wg.Wait()
 	for _, err := range []error{e1, e2, e3} {
 		if err != nil {
@@ -367,16 +362,16 @@ func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error
 	return buf1, buf2, buf3, buf4, nil
 }
 
-func (f *Flags) queryTablesSeq() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
-	buf1, err = f.reqDB(Files)
+func (f *Flags) queryTablesSeq(w io.Writer) (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
+	buf1, err = f.reqDB(w, Files)
 	if err != nil {
 		return nil, nil, nil, nil, qttErr(Files.String(), err)
 	}
-	buf2, err = f.reqDB(Groups)
+	buf2, err = f.reqDB(w, Groups)
 	if err != nil {
 		return nil, nil, nil, nil, qttErr(Groups.String(), err)
 	}
-	buf3, err = f.reqDB(Netresources)
+	buf3, err = f.reqDB(w, Netresources)
 	if err != nil {
 		return nil, nil, nil, nil, qttErr(Netresources.String(), err)
 	}
@@ -392,7 +387,7 @@ func qttErr(s string, err error) error {
 }
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
-func (f *Flags) reqDB(t Table) (*bytes.Buffer, error) {
+func (f *Flags) reqDB(w io.Writer, t Table) (*bytes.Buffer, error) {
 	if f.Table.check() != nil {
 		return nil, fmt.Errorf("reqdb table: %w", ErrNoTable)
 	}
@@ -401,7 +396,7 @@ func (f *Flags) reqDB(t Table) (*bytes.Buffer, error) {
 		Method: Create,
 		Limit:  f.Limit,
 	}
-	buf, err := c.queryDB()
+	buf, err := c.queryDB(w)
 	if err != nil {
 		return nil, fmt.Errorf("reqdb: %w", err)
 	}
@@ -419,7 +414,7 @@ func (f *Flags) ver() string {
 }
 
 // write the buffer to stdout, an SQL file or a compressed SQL file.
-func (f *Flags) write(buf *bytes.Buffer) error {
+func (f *Flags) write(w io.Writer, buf *bytes.Buffer) error {
 	const bz2 = ".bz2"
 	name := path.Join(viper.GetString("directory.sql"), f.fileName())
 	switch {
@@ -437,7 +432,7 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 		if err != nil {
 			return fmt.Errorf("flags write compress stat: %w", err)
 		}
-		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(stat.Size())), name)
+		fmt.Fprintf(w, "Saved %s to %s\n", humanize.Bytes(uint64(stat.Size())), name)
 		return file.Close()
 	case f.Save:
 		file, err := os.OpenFile(name, fo, fsql)
@@ -449,7 +444,7 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 		if err != nil {
 			return fmt.Errorf("flags write save io copy: %w", err)
 		}
-		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(n)), name)
+		fmt.Fprintf(w, "Saved %s to %s\n", humanize.Bytes(uint64(n)), name)
 		return file.Close()
 	default:
 		if _, err := io.WriteString(os.Stdout, buf.String()); err != nil {
@@ -500,12 +495,12 @@ func (t Table) check() error {
 }
 
 // columns returns the column names of table.
-func columns(t Table) ([]string, error) {
+func columns(w io.Writer, t Table) ([]string, error) {
 	var (
 		columns []string
 		err     error
 		rows    *sql.Rows
-		db      = connect.Connect()
+		db      = connect.Connect(w)
 	)
 	defer db.Close()
 	query, info := "", ""
@@ -540,8 +535,8 @@ func columns(t Table) ([]string, error) {
 }
 
 // rows returns the values of table.
-func rows(t Table, limit int) ([]string, error) {
-	db := connect.Connect()
+func rows(w io.Writer, t Table, limit int) ([]string, error) {
+	db := connect.Connect(w)
 	defer db.Close()
 	var rows *sql.Rows
 	const listAll = 0

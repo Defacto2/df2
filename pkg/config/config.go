@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -68,13 +69,13 @@ func Filepath() string {
 	return dir
 }
 
-func missing(suffix string) {
-	color.Warn.Println("no config file is in use")
-	logs.Printf("to create:\t%s %s\n", cmdRun, suffix)
+func missing(w io.Writer, suffix string) {
+	fmt.Fprintln(w, color.Warn.Sprint("no config file is in use"))
+	fmt.Fprintf(w, "to create:\t%s %s\n", cmdRun, suffix)
 }
 
 // write saves all configs to a configuration file.
-func write(update bool) error {
+func write(w io.Writer, update bool) error {
 	bs, err := yaml.Marshal(viper.AllSettings())
 	if err != nil {
 		return fmt.Errorf("write config yaml marshal: %w", err)
@@ -93,6 +94,6 @@ func write(update bool) error {
 	if update {
 		s = "updated the"
 	}
-	logs.Println(s+" config file", Filepath())
+	fmt.Fprintln(w, s+" config file", Filepath())
 	return nil
 }

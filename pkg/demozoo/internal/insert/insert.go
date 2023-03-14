@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/google/uuid"
 )
 
@@ -42,8 +42,8 @@ type Record struct {
 }
 
 // Insert the new Demozoo releaser production into the database.
-func (r *Record) Insert() (sql.Result, error) {
-	db := database.Connect()
+func (r *Record) Insert(w io.Writer) (sql.Result, error) {
+	db := database.Connect(w)
 	defer db.Close()
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -69,16 +69,16 @@ func (r *Record) Insert() (sql.Result, error) {
 
 // Prods adds the Demozoo releasers productions to the database.
 // API: https://demozoo.org/api/v1/releasers/
-func Prods(p *releases.Productions) error {
+func Prods(w io.Writer, p *releases.Productions) error {
 	recs := 0
 	for i, prod := range *p {
 		item := fmt.Sprintf("%d. ", i)
-		logs.Printf("\n%s%s", item, prod.Title)
-		rec := Prod(prod)
+		fmt.Fprintf(w, "\n%s%s", item, prod.Title)
+		rec := Prod(w, prod)
 		if reflect.DeepEqual(rec, Record{}) {
 			continue
 		}
-		res, err := rec.Insert()
+		res, err := rec.Insert(w)
 		if err != nil {
 			return err
 		}
@@ -87,21 +87,21 @@ func Prods(p *releases.Productions) error {
 			return err
 		}
 		pad := strings.Repeat(" ", len(item))
-		logs.Printf("\n%s ↳ production added using auto-id: %d", pad, newID)
+		fmt.Fprintf(w, "\n%s ↳ production added using auto-id: %d", pad, newID)
 		recs++
 	}
 	if recs > 0 {
-		logs.Printf("\nAdded %d new releaser productions from Demozoo.\n", recs)
+		fmt.Fprintf(w, "\nAdded %d new releaser productions from Demozoo.\n", recs)
 	}
 	return nil
 }
 
 // Prod mutates the raw Demozoo API releaser production data to database ready values.
-func Prod(prod releases.ProductionV1) Record {
-	dbID, _ := database.DemozooID(uint(prod.ID))
+func Prod(w io.Writer, prod releases.ProductionV1) Record {
+	dbID, _ := database.DemozooID(w, uint(prod.ID))
 	if dbID > 0 {
 		prod.ExistsInDB = true
-		logs.Printf(": skipped, production already exists")
+		fmt.Fprintf(w, ": skipped, production already exists")
 		return Record{}
 	}
 
@@ -121,17 +121,17 @@ func Prod(prod releases.ProductionV1) Record {
 		if t != "" {
 			s += " " + t
 		}
-		logs.Printf(": skipped, unsuitable production [%s]", strings.TrimSpace(s))
+		fmt.Fprintf(w, ": skipped, unsuitable production [%s]", strings.TrimSpace(s))
 		return Record{}
 	}
-	logs.Printf(" [%s/%s]", platform, section)
+	fmt.Fprintf(w, " [%s/%s]", platform, section)
 
 	a, b := prod.Groups()
 	if a != "" {
-		logs.Printf(" for: %s", a)
+		fmt.Fprintf(w, " for: %s", a)
 	}
 	if b != "" {
-		logs.Printf(" by: %s", b)
+		fmt.Fprintf(w, " by: %s", b)
 	}
 
 	y, m, d := prod.Released()

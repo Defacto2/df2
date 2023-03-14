@@ -84,12 +84,12 @@ func CheckTime(t time.Duration) time.Duration {
 }
 
 // printProgress prints that the download progress is complete.
-func progressDone(name string, written int64) {
-	logs.Printcrf("%v download saved to: %v", humanize.Bytes(uint64(written)), name)
+func progressDone(w io.Writer, name string, written int64) {
+	logs.Printcrf(w, "%v download saved to: %v", humanize.Bytes(uint64(written)), name)
 }
 
 // GetSave downloads the url and saves it as the named file.
-func GetSave(name, url string) (http.Header, error) {
+func GetSave(w io.Writer, name, url string) (http.Header, error) {
 	// open local target file
 	out, err := os.Create(name)
 	if err != nil {
@@ -115,7 +115,7 @@ func GetSave(name, url string) (http.Header, error) {
 	if err != nil {
 		return nil, err
 	}
-	progressDone(out.Name(), i)
+	progressDone(w, out.Name(), i)
 	return resp.Header, nil
 }
 

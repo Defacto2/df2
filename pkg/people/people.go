@@ -4,6 +4,7 @@ package people
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -40,12 +41,12 @@ type Request struct {
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(name string) error {
-	return HTML(name, r)
+func (r Request) HTML(w io.Writer, name string) error {
+	return HTML(w, name, r)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(force bool) error {
+func Cronjob(w io.Writer, force bool) error {
 	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
 		f := tag + htm
@@ -64,15 +65,15 @@ func Cronjob(force bool) error {
 		}
 	}
 	for _, tag := range Wheres() {
-		if err := cronjob(tag, force); err != nil {
+		if err := cronjob(w, tag, force); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func cronjob(tag string, force bool) error {
-	last, err := database.LastUpdate()
+func cronjob(w io.Writer, tag string, force bool) error {
+	last, err := database.LastUpdate(w)
 	if err != nil {
 		return fmt.Errorf("cronjob lastupdate: %w", err)
 	}
@@ -86,7 +87,7 @@ func cronjob(tag string, force bool) error {
 	case err != nil:
 		return fmt.Errorf("cronjob fileupdate: %w", err)
 	case !update:
-		logs.Printf("%s has nothing to update (%s)\n", tag, n)
+		fmt.Fprintf(w, "%s has nothing to update (%s)\n", tag, n)
 	default:
 		r := Request{
 			Filter:   tag,
@@ -96,7 +97,7 @@ func cronjob(tag string, force bool) error {
 		if force {
 			r.Progress = true
 		}
-		if err := r.HTML(f); err != nil {
+		if err := r.HTML(w, f); err != nil {
 			return fmt.Errorf("group cronjob html: %w", err)
 		}
 	}
@@ -104,10 +105,10 @@ func cronjob(tag string, force bool) error {
 }
 
 // DataList prints an auto-complete list for HTML input elements.
-func DataList(filename string, r Request) error {
+func DataList(w io.Writer, filename string, r Request) error {
 	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
 	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
-	if err := parse(filename, tpl, r); err != nil {
+	if err := parse(w, filename, tpl, r); err != nil {
 		return fmt.Errorf("datalist: %w", err)
 	}
 	return nil
@@ -124,27 +125,27 @@ func Filters() []string {
 }
 
 // HTML prints a snippet listing links to each person.
-func HTML(filename string, r Request) error {
+func HTML(w io.Writer, filename string, r Request) error {
 	// <h2><a href="/p/ben">Ben</a></h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
-	if err := parse(filename, tpl, r); err != nil {
+	if err := parse(w, filename, tpl, r); err != nil {
 		return fmt.Errorf("html: %w", err)
 	}
 	return nil
 }
 
 // Print lists people filtered by a role and summaries the results.
-func Print(r Request) error {
-	ppl, total, err := role.List(role.Roles(r.Filter))
+func Print(w io.Writer, r Request) error {
+	ppl, total, err := role.List(w, role.Roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("print request: %w", err)
 	}
-	logs.Printf("%d matching %s records found\n", total, r.Filter)
+	fmt.Fprintf(w, "%d matching %s records found\n", total, r.Filter)
 	var a []string
 	//	a := make([]string, total)
 	for i, p := range ppl {
 		if r.Progress {
-			str.Progress(r.Filter, i+1, total)
+			str.Progress(w, r.Filter, i+1, total)
 		}
 		// role
 		a = append(a, strings.Split(p, ",")...)
@@ -153,7 +154,7 @@ func Print(r Request) error {
 	title := cases.Title(language.English, cases.NoLower)
 	for i := range a {
 		if r.Progress {
-			str.Progress(r.Filter, i+1, total)
+			str.Progress(w, r.Filter, i+1, total)
 		}
 		a[i] = title.String(a[i])
 	}
@@ -165,7 +166,7 @@ func Print(r Request) error {
 	if a[0] == "" {
 		a = a[1:]
 	}
-	logs.Printf("\n%s\nTotal authors %d\n", strings.Join(a, ", "), len(a))
+	fmt.Fprintf(w, "\n%s\nTotal authors %d\n", strings.Join(a, ", "), len(a))
 	return nil
 }
 
@@ -174,8 +175,8 @@ func Roles() string {
 	return strings.Join(Filters(), ",")
 }
 
-func parse(filename, tpl string, r Request) error {
-	grp, x, err := role.List(role.Roles(r.Filter))
+func parse(w io.Writer, filename, tpl string, r Request) error {
+	grp, x, err := role.List(w, role.Roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
@@ -184,13 +185,13 @@ func parse(filename, tpl string, r Request) error {
 		f = "all"
 	}
 	if !str.Piped() {
-		logs.Printf("%d matching %s records found\n", x, f)
+		fmt.Fprintf(w, "%d matching %s records found\n", x, f)
 	}
 	data, s, hr := make(person.Persons, len(grp)), "", false
 	total := len(grp)
 	for i := range grp {
 		if r.Progress {
-			str.Progress(r.Filter, i+1, total)
+			str.Progress(w, r.Filter, i+1, total)
 		}
 		n := grp[i]
 		// hr element
@@ -209,33 +210,33 @@ func parse(filename, tpl string, r Request) error {
 			Hr:   hr,
 		}
 	}
-	return data.Template(filename, tpl, r.Filter)
+	return data.Template(w, filename, tpl, r.Filter)
 }
 
 // Fix any malformed group names found in the database.
-func Fix() error {
+func Fix(w io.Writer) error {
 	c, start := 0, time.Now()
 	for _, r := range []role.Role{role.Artists, role.Coders, role.Musicians, role.Writers} {
-		credits, _, err := role.List(r)
+		credits, _, err := role.List(w, r)
 		if err != nil {
 			return err
 		}
 		for _, credit := range credits {
-			if r := role.Clean(credit, r); r {
+			if r := role.Clean(w, credit, r); r {
 				c++
 			}
 		}
 	}
 	switch {
 	case c == 1:
-		logs.Printcr("1 fix applied")
+		logs.Printcr(w, "1 fix applied")
 	case c > 0:
-		logs.Printcrf("%d fixes applied", c)
+		logs.Printcrf(w, "%d fixes applied", c)
 	default:
-		logs.Printcr("no people fixes needed")
+		logs.Printcr(w, "no people fixes needed")
 	}
 	elapsed := time.Since(start).Seconds()
-	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
 	return nil
 }
 

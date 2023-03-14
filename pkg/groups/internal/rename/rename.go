@@ -2,12 +2,12 @@ package rename
 
 import (
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 	"golang.org/x/text/cases"
@@ -17,19 +17,19 @@ import (
 const space = " "
 
 // Clean a malformed group name and save the fix to the database.
-func Clean(name string) bool {
+func Clean(w io.Writer, name string) bool {
 	fix := CleanStr(name)
 	if fix == name {
 		return false
 	}
 	count, status := int64(0), str.Y()
 	ok := true
-	count, err := Update(fix, name)
+	count, err := Update(w, fix, name)
 	if err != nil {
 		status = str.X()
 		ok = false
 	}
-	logs.Printf("%s %q %s %s (%d)\n",
+	fmt.Fprintf(w, "%s %q %s %s (%d)\n",
 		status, name, color.Question.Sprint("⟫"), color.Info.Sprint(fix), count)
 	return ok
 }
@@ -126,8 +126,8 @@ func TrimThe(s string) string {
 }
 
 // Update replaces all instances of the group name with a new group name.
-func Update(newName, group string) (int64, error) {
-	db := database.Connect()
+func Update(w io.Writer, newName, group string) (int64, error) {
+	db := database.Connect(w)
 	defer db.Close()
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?," +
 		" group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")

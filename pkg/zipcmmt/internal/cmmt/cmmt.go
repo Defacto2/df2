@@ -4,11 +4,11 @@ import (
 	"archive/zip"
 	"database/sql"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/bengarrett/retrotxtgo/lib/convert"
 )
 
@@ -50,7 +50,7 @@ func (z *Zipfile) CheckCmmtFile(path string) bool {
 	return true
 }
 
-func (z *Zipfile) Save(path string) error {
+func (z *Zipfile) Save(w io.Writer, path string) error {
 	file := filepath.Join(fmt.Sprint(path), z.UUID)
 	name := file + Filename
 	// Open a zip archive for reading.
@@ -70,7 +70,7 @@ func (z *Zipfile) Save(path string) error {
 	if strings.Contains(cmmt, SceneOrg) {
 		return nil
 	}
-	logs.Print(z.Print(&cmmt))
+	fmt.Fprint(w, z.Print(&cmmt))
 	f, err := os.Create(name)
 	if err != nil {
 		return err

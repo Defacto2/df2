@@ -21,7 +21,7 @@ func TestList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := recent.List(tt.args.limit, tt.args.compress); (err != nil) != tt.wantErr {
+			if err := recent.List(nil, tt.args.limit, tt.args.compress); (err != nil) != tt.wantErr {
 				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

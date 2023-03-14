@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"path"
 	"strconv"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
@@ -59,12 +59,12 @@ type ReleaserV1 struct { //nolint:revive
 }
 
 // Print to stdout the releaser API results as tabbed JSON.
-func (r *ReleaserV1) Print() error {
+func (r *ReleaserV1) Print(w io.Writer) error {
 	js, err := json.MarshalIndent(&r, "", "  ")
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	logs.Println(string(js))
+	fmt.Fprintln(w, js)
 	return nil
 }
 

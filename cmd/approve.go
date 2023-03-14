@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"log"
+	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/database"
@@ -19,17 +19,18 @@ var approveCmd = &cobra.Command{
 	Aliases: []string{"a"},
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := database.Approve(appr.Verbose); err != nil {
-			log.Print(err)
+		w := os.Stdout
+		if err := database.Approve(w, log, appr.Verbose); err != nil {
+			log.Info(err)
 		}
-		if err := database.Fix(); err != nil {
-			log.Print(err)
+		if err := database.Fix(w, log); err != nil {
+			log.Info(err)
 		}
-		if err := groups.Fix(); err != nil {
-			log.Print(err)
+		if err := groups.Fix(w); err != nil {
+			log.Info(err)
 		}
-		if err := people.Fix(); err != nil {
-			log.Print(err)
+		if err := people.Fix(w); err != nil {
+			log.Info(err)
 		}
 	},
 }

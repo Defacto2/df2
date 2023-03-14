@@ -3,7 +3,7 @@ package demozoo
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -15,6 +15,7 @@ import (
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
+	"go.uber.org/zap"
 )
 
 // Stat are the remote query statistics.
@@ -43,16 +44,16 @@ type Records struct {
 }
 
 // NextRefresh iterates over the Records to update sync their Demozoo data to the database.
-func (st *Stat) NextRefresh(rec Records) error {
+func (st *Stat) NextRefresh(w io.Writer, l *zap.SugaredLogger, rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
 	st.Count++
-	r, err := NewRecord(st.Count, rec.Values)
+	r, err := NewRecord(l, st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 1: %w", err)
 	}
-	logs.Printcrf(r.String(0))
+	logs.Printcrf(w, r.String(0))
 	var f Product
 	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
@@ -60,48 +61,48 @@ func (st *Stat) NextRefresh(rec Records) error {
 	}
 	var ok bool
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err = r.confirm(code, status); err != nil {
+	if ok, err = r.confirm(w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
 	} else if !ok {
 		return nil
 	}
-	if err = r.pouet(&api); err != nil {
+	if err = r.pouet(w, &api); err != nil {
 		return fmt.Errorf("next refresh: %w", err)
 	}
-	r.title(&api)
+	r.title(w, &api)
 	a := api.Authors()
-	r.authors(&a)
+	r.authors(w, &a)
 	var nr Record
-	nr, err = NewRecord(st.Count, rec.Values)
+	nr, err = NewRecord(l, st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 2: %w", err)
 	}
 	if reflect.DeepEqual(nr, r) {
-		logs.Printf("• skipped %v", str.Y())
+		fmt.Fprintf(w, "• skipped %v", str.Y())
 		return nil
 	}
-	if err = r.Save(); err != nil {
-		logs.Printf("• saved %v ", str.X())
+	if err = r.Save(w); err != nil {
+		fmt.Fprintf(w, "• saved %v ", str.X())
 		return fmt.Errorf("next save: %w", err)
 	}
-	logs.Printf("• saved %v", str.Y())
+	fmt.Fprintf(w, "• saved %v", str.Y())
 	return nil
 }
 
 // NextPouet iterates over the linked Demozoo records and sync any linked Pouet data to the local files table.
-func (st *Stat) NextPouet(rec Records) error {
+func (st *Stat) NextPouet(w io.Writer, l *zap.SugaredLogger, rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
 	st.Count++
-	r, err := NewRecord(st.Count, rec.Values)
+	r, err := NewRecord(l, st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 1: %w", err)
 	}
 	if r.WebIDPouet > 0 {
 		return nil
 	}
-	logs.Printcrf(r.String(0))
+	logs.Printcrf(w, r.String(0))
 	var f Product
 	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
@@ -109,28 +110,28 @@ func (st *Stat) NextPouet(rec Records) error {
 	}
 	var ok bool
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err = r.confirm(code, status); err != nil {
+	if ok, err = r.confirm(w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
 	} else if !ok {
 		return nil
 	}
-	if err = r.pouet(&api); err != nil {
+	if err = r.pouet(w, &api); err != nil {
 		return fmt.Errorf("next refresh: %w", err)
 	}
 	var nr Record
-	nr, err = NewRecord(st.Count, rec.Values)
+	nr, err = NewRecord(l, st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 2: %w", err)
 	}
 	if reflect.DeepEqual(nr, r) {
-		logs.Printf("• skipped %v", str.Y())
+		fmt.Fprintf(w, "• skipped %v", str.Y())
 		return nil
 	}
-	if err = r.Save(); err != nil {
-		logs.Printf("• saved %v ", str.X())
+	if err = r.Save(w); err != nil {
+		fmt.Fprintf(w, "• saved %v ", str.X())
 		return fmt.Errorf("next save: %w", err)
 	}
-	logs.Printf("• saved %v", str.Y())
+	fmt.Fprintf(w, "• saved %v", str.Y())
 	return nil
 }
 
@@ -139,32 +140,36 @@ func (st *Stat) nextResult(rec Records, req Request) (bool, error) {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
-	if n := database.IsDemozoo(rec.Values); !n && req.skip() {
+	n, err := database.IsDemozoo(rec.Values)
+	if err != nil {
+		return false, err
+	}
+	if !n && req.skip() {
 		return true, nil
 	}
 	st.Count++
 	return false, nil
 }
 
-func (st Stat) printer() {
+func (st Stat) printer(w io.Writer) {
 	if st.Count == 0 {
 		if st.Fetched == 0 {
-			log.Printf("id %q does not have an associated Demozoo link\n", st.ByID)
+			fmt.Fprintf(w, "id %q does not have an associated Demozoo link\n", st.ByID)
 			return
 		}
-		log.Printf("id %q does not have any empty cells that can be replaced with Demozoo data, "+
+		fmt.Fprintf(w, "id %q does not have any empty cells that can be replaced with Demozoo data, "+
 			"use --id=%v --overwrite to refetch the linked download and reapply data\n", st.ByID, st.ByID)
 		return
 	}
-	logs.Println()
+	fmt.Fprintln(w)
 }
 
-func (st Stat) summary(elapsed time.Duration) {
+func (st Stat) summary(w io.Writer, elapsed time.Duration) {
 	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.Count, elapsed.Seconds())
-	logs.Println(strings.Repeat("─", len(t)))
-	logs.Println(t)
+	fmt.Fprintln(w, strings.Repeat("─", len(t)))
+	fmt.Fprintln(w, t)
 	if st.Missing > 0 {
-		logs.Println("UUID files not found:", st.Missing)
+		fmt.Fprintln(w, "UUID files not found:", st.Missing)
 	}
 }
 
@@ -174,7 +179,11 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 		if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
 		}
-		if n := database.IsDemozoo(rec.Values); !n && req.skip() {
+		n, err := database.IsDemozoo(rec.Values)
+		if err != nil {
+			return err
+		}
+		if !n && req.skip() {
 			continue
 		}
 		st.Total++
@@ -183,28 +192,28 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 }
 
 // Download the first available remote file linked in the Demozoo production record.
-func (r *Record) Download(overwrite bool, api *prods.ProductionsAPIv1, st Stat) bool {
+func (r *Record) Download(w io.Writer, l *zap.SugaredLogger, overwrite bool, api *prods.ProductionsAPIv1, st Stat) bool {
 	if st.FileExist(r) || overwrite {
 		if r.UUID == "" {
-			log.Print(color.Error.Sprint("UUID is empty, cannot continue"))
+			fmt.Fprintf(w, color.Error.Sprint("UUID is empty, cannot continue"))
 			return true
 		}
 		name, link := api.DownloadLink()
 		if link == "" {
-			logs.Print(color.Note.Sprint("no suitable downloads found"))
+			fmt.Fprint(w, color.Note.Sprint("no suitable downloads found"))
 			return true
 		}
 		const OK = 200
-		logs.Printcrf("%s%s %s", r.String(st.Total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
-		head, err := download.GetSave(r.FilePath, link)
+		logs.Printcrf(w, "%s%s %s", r.String(st.Total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
+		head, err := download.GetSave(w, r.FilePath, link)
 		if err != nil {
-			logs.Log(err)
+			l.Errorln(err)
 			return true
 		}
-		logs.Printcrf(r.String(st.Total))
-		logs.Printf("• %s", name)
+		logs.Printcrf(w, r.String(st.Total))
+		fmt.Fprintf(w, "• %s", name)
 		r.downloadReset(name)
-		r.lastMod(head)
+		r.lastMod(w, head)
 	}
 	return false
 }

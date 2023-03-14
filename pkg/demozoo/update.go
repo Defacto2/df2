@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -27,6 +26,7 @@ import (
 	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
+	"go.uber.org/zap"
 )
 
 var (
@@ -106,12 +106,12 @@ func (r *Record) String(total int) string {
 }
 
 // DoseeMeta generates DOSee related metadata from the file archive.
-func (r *Record) DoseeMeta() error {
+func (r *Record) DoseeMeta(w io.Writer) error {
 	names, err := r.variations()
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	d, err := archive.Demozoo(r.FilePath, r.UUID, &names)
+	d, err := archive.Demozoo(w, r.FilePath, r.UUID, &names)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
@@ -151,8 +151,8 @@ func (r *Record) FileMeta() error {
 }
 
 // Save the record to the database.
-func (r *Record) Save() error {
-	db := database.Connect()
+func (r *Record) Save(w io.Writer) error {
+	db := database.Connect(w)
 	defer db.Close()
 	query, args := r.Stmt()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -186,13 +186,13 @@ func (r *Record) Stmt() (string, []any) {
 }
 
 // ZipContent reads an archive and saves its content to the database.
-func (r *Record) ZipContent() (bool, error) {
+func (r *Record) ZipContent(w io.Writer) (bool, error) {
 	if r.FilePath == "" {
 		return false, fmt.Errorf("zipcontent: %w", ErrFilePath)
 	} else if r.Filename == "" {
 		return false, fmt.Errorf("zipcontent: %w", ErrFilename)
 	}
-	a, fn, err := archive.Read(r.FilePath, r.Filename)
+	a, fn, err := archive.Read(w, r.FilePath, r.Filename)
 	if err != nil {
 		return false, fmt.Errorf("zipcontent read: %w", err)
 	}
@@ -202,8 +202,8 @@ func (r *Record) ZipContent() (bool, error) {
 }
 
 // InsertProds adds the collection of Demozoo productions to the file database.
-func InsertProds(p *releases.Productions) error {
-	return insert.Prods(p)
+func InsertProds(w io.Writer, p *releases.Productions) error {
+	return insert.Prods(w, p)
 }
 
 func updates(r *Record) ([]string, []any) {
@@ -295,12 +295,12 @@ func credits(r *Record) ([]string, []any) {
 	return set, args
 }
 
-func (r *Record) authors(a *prods.Authors) {
+func (r *Record) authors(w io.Writer, a *prods.Authors) {
 	compare := func(n, o []string, i string) bool {
 		if !reflect.DeepEqual(n, o) {
-			logs.Printf("c%s:%s ", i, color.Secondary.Sprint(n))
+			fmt.Fprintf(w, "c%s:%s ", i, color.Secondary.Sprint(n))
 			if len(o) > 1 {
-				logs.Printf("%s ", color.Danger.Sprint(o))
+				fmt.Fprintf(w, "%s ", color.Danger.Sprint(o))
 			}
 			return false
 		}
@@ -333,7 +333,7 @@ func (r *Record) authors(a *prods.Authors) {
 }
 
 // check record to see if it needs updating.
-func (r *Record) check() bool {
+func (r *Record) check(w io.Writer) bool {
 	switch {
 	case
 		r.Filename == "",
@@ -344,57 +344,57 @@ func (r *Record) check() bool {
 		r.FileZipContent == "":
 		return true
 	default:
-		logs.Printf("skipped, no changes needed %v", str.Y())
+		fmt.Fprintf(w, "skipped, no changes needed %v", str.Y())
 		return false
 	}
 }
 
-func (r *Record) confirm(code int, status string) (bool, error) {
+func (r *Record) confirm(w io.Writer, code int, status string) (bool, error) {
 	const nofound, found, problems = 404, 200, 300
 	if code == nofound {
 		r.WebIDDemozoo = 0
-		if err := r.Save(); err != nil {
+		if err := r.Save(w); err != nil {
 			return true, fmt.Errorf("confirm: %w", err)
 		}
-		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		fmt.Fprintf(w, "(%s)\n", download.StatusColor(code, status))
 		return false, nil
 	}
 	if code < found || code >= problems {
-		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		fmt.Fprintf(w, "(%s)\n", download.StatusColor(code, status))
 		return false, nil
 	}
 	return true, nil
 }
 
 // last modified time passed via HTTP.
-func (r *Record) lastMod(head http.Header) {
+func (r *Record) lastMod(w io.Writer, head http.Header) {
 	lm := head.Get("Last-Modified")
 	if len(lm) < 1 {
 		return
 	}
 	t, err := time.Parse(download.RFC5322, lm)
 	if err != nil {
-		logs.Printf(" • last-mod value %q ?", lm)
+		fmt.Fprintf(w, " • last-mod value %q ?", lm)
 		return
 	}
 	r.LastMod = t
 	if time.Now().Year() == t.Year() {
-		logs.Printf(" • %s", t.Format("2 Jan"))
+		fmt.Fprintf(w, " • %s", t.Format("2 Jan"))
 		return
 	}
-	logs.Printf(" • %s", t.Format("Jan 06"))
+	fmt.Fprintf(w, " • %s", t.Format("Jan 06"))
 }
 
-func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
+func (r *Record) parse(w io.Writer, l *zap.SugaredLogger, api *prods.ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
 		if n, _ := api.DownloadLink(); n != "" {
-			logs.Print(n)
+			fmt.Fprint(w, n)
 			r.Filename = n
-			r.save()
+			r.save(w, l)
 		} else {
-			log.Println("could not find a suitable value for the required filename column")
+			fmt.Fprintln(w, "could not find a suitable value for the required filename column")
 			return true, nil
 		}
 		fallthrough
@@ -405,26 +405,26 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 		if err := r.FileMeta(); err != nil {
 			return true, apiErr(err)
 		}
-		r.save()
+		r.save(w, l)
 		fallthrough
 	case r.FileZipContent == "":
-		if zip, err := r.ZipContent(); err != nil {
+		if zip, err := r.ZipContent(w); err != nil {
 			return true, apiErr(err)
 		} else if zip {
-			if err := r.DoseeMeta(); err != nil {
+			if err := r.DoseeMeta(w); err != nil {
 				return true, apiErr(err)
 			}
 		}
-		r.save()
+		r.save(w, l)
 	}
 	return false, nil
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (bool, error) {
+func (r *Record) parseAPI(w io.Writer, l *zap.SugaredLogger, st Stat, overwrite bool, storage string) (bool, error) {
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
-		logs.Println("Clearing filename which is incorrectly set as", r.Filename)
+		fmt.Fprintln(w, "Clearing filename which is incorrectly set as", r.Filename)
 		r.Filename = ""
 	}
 	var f Product
@@ -432,7 +432,7 @@ func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (bool, error)
 		return true, fmt.Errorf("parse api fetch: %w", err)
 	}
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err := r.confirm(code, status); err != nil {
+	if ok, err := r.confirm(w, code, status); err != nil {
 		return true, apiErr(err)
 	} else if !ok {
 		return true, nil
@@ -441,16 +441,16 @@ func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (bool, error)
 		return true, apiErr(err)
 	}
 	r.FilePath = filepath.Join(storage, r.UUID)
-	if skip := r.Download(overwrite, &api, st); skip {
+	if skip := r.Download(w, l, overwrite, &api, st); skip {
 		return true, nil
 	}
-	if update := r.check(); !update {
+	if update := r.check(w); !update {
 		return true, nil
 	}
 	if r.Platform == "" {
 		r.platform(&api)
 	}
-	return r.parse(&api)
+	return r.parse(w, l, &api)
 }
 
 func (r *Record) pingPouet(api *prods.ProductionsAPIv1) error {
@@ -477,30 +477,30 @@ func (r *Record) platform(api *prods.ProductionsAPIv1) {
 	}
 }
 
-func (r *Record) pouet(api *prods.ProductionsAPIv1) error {
+func (r *Record) pouet(w io.Writer, api *prods.ProductionsAPIv1) error {
 	pid, _, err := api.PouetID(false)
 	if err != nil {
 		return fmt.Errorf("pouet: %w", err)
 	}
 	if r.WebIDPouet != uint(pid) {
 		r.WebIDPouet = uint(pid)
-		logs.Printf("PN:%s ", color.Note.Sprint(pid))
+		fmt.Fprintf(w, "PN:%s ", color.Note.Sprint(pid))
 	}
 	return nil
 }
 
-func (r *Record) save() {
-	if err := r.Save(); err != nil {
-		logs.Printf(" %v \n", str.X())
-		logs.Log(err)
+func (r *Record) save(w io.Writer, l *zap.SugaredLogger) {
+	if err := r.Save(w); err != nil {
+		fmt.Fprintf(w, " %v \n", str.X())
+		logs.Save(l, err)
 		return
 	}
-	logs.Printf(" 💾%v", str.Y())
+	fmt.Fprintf(w, " 💾%v", str.Y())
 }
 
-func (r *Record) title(api *prods.ProductionsAPIv1) {
+func (r *Record) title(w io.Writer, api *prods.ProductionsAPIv1) {
 	if r.Section != Magazine.String() && !strings.EqualFold(r.Title, api.Title) {
-		logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
+		fmt.Fprintf(w, "i:%s ", color.Secondary.Sprint(api.Title))
 		r.Title = api.Title
 	}
 }

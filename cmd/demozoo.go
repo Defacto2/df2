@@ -3,10 +3,10 @@ package cmd
 
 import (
 	"errors"
+	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -23,14 +23,14 @@ There are additional Demozoo commands found under the api command.`,
 	Example: `  df2 demozoo [--new|--all|--releases|--id] (--overwrite)
   df2 demozoo [--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := run.Demozoo(dzf)
+		err := run.Demozoo(os.Stdout, log, dzf)
 		switch {
 		case errors.Is(err, run.ErrDZFlag):
 			if err := cmd.Usage(); err != nil {
-				logs.Fatal(err)
+				log.Fatal(err)
 			}
 		case err != nil:
-			logs.Fatal(err)
+			log.Fatal(err)
 		}
 	},
 }
@@ -55,10 +55,10 @@ func init() { //nolint:gochecknoinits
 		`extracts and parses an archived file
 requires two flags: --extract [filename] --extract [uuid]`)
 	if err := demozooCmd.MarkFlagFilename("extract"); err != nil {
-		logs.Fatal(err)
+		log.Fatal(err)
 	}
 	if err := demozooCmd.Flags().MarkHidden("extract"); err != nil {
-		logs.Fatal(err)
+		log.Fatal(err)
 	}
 	demozooCmd.Flags().SortFlags = false
 }

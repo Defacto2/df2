@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"log"
+	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/assets"
@@ -23,8 +23,8 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
 		directories.Init(clf.MakeDirs)
-		if err := assets.Clean(clf.Target, clf.Delete, clf.Humanise); err != nil {
-			log.Print(err)
+		if err := assets.Clean(os.Stdout, clf.Target, clf.Delete, clf.Humanise); err != nil {
+			log.Info(err)
 		}
 	},
 }
@@ -41,6 +41,6 @@ func init() { //nolint:gochecknoinits
 		"generate uuid directories and placeholder files")
 	cleanCmd.Flags().SortFlags = false
 	if err := cleanCmd.Flags().MarkHidden("makedirs"); err != nil {
-		log.Print(err)
+		log.Info(err)
 	}
 }

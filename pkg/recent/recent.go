@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 
@@ -18,8 +19,8 @@ import (
 var ErrJSON = errors.New("data fails json validation")
 
 // List recent files as a JSON document.
-func List(limit uint, compress bool) error {
-	db := database.Connect()
+func List(w io.Writer, limit uint, compress bool) error {
+	db := database.Connect(w)
 	defer db.Close()
 	query := sqlRecent(limit, false)
 	rows, err := db.Query(query)

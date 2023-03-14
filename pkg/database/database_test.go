@@ -87,7 +87,7 @@ func TestDateTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := strings.TrimSpace(database.DateTime(tt.args.value)); got != tt.want {
+			if got := strings.TrimSpace(database.DateTime(nil, tt.args.value)); got != tt.want {
 				t.Errorf("DateTime() = %q, want %q", got, tt.want)
 			}
 		})
@@ -217,7 +217,7 @@ func TestGetID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := database.GetID(tt.s)
+			got, err := database.GetID(nil, tt.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetID() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -244,7 +244,7 @@ func TestGetFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := database.GetFile(tt.s)
+			got, err := database.GetFile(nil, tt.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -343,7 +343,7 @@ func TestDemozooID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := database.DemozooID(tt.id)
+			got, err := database.DemozooID(nil, tt.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DemozooID() error = %v, wantErr %v", err, tt.wantErr)
 				return

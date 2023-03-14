@@ -3,6 +3,7 @@ package prods
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 const (
@@ -127,12 +127,12 @@ func (p *ProductionsAPIv1) PouetID(ping bool) (int, int, error) {
 }
 
 // Print to stdout the production API results as tabbed JSON.
-func (p *ProductionsAPIv1) Print() error {
+func (p *ProductionsAPIv1) Print(w io.Writer) error {
 	js, err := json.MarshalIndent(&p, "", "  ")
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	logs.Println(string(js))
+	fmt.Fprintln(w, js)
 	return nil
 }
 
@@ -208,9 +208,7 @@ func RandomName() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("random name tempfile: %w", err)
 	}
-	if err := os.Remove(s); err != nil {
-		logs.Log(fmt.Errorf("random name remove tempfile %q: %w", s, err))
-	}
+	defer os.Remove(s)
 	return s, nil
 }
 

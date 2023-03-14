@@ -2,8 +2,9 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/Defacto2/df2/cmd/internal/arg"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/proof"
 	"github.com/spf13/cobra"
 )
@@ -25,14 +26,15 @@ photos and text NFO files.`,
 			AllProofs:   proofs.All,
 			HideMissing: proofs.HideMissing,
 		}
+		w := os.Stdout
 		switch {
 		case proofs.ID != "":
-			if err := r.Query(proofs.ID); err != nil {
-				logs.Danger(err)
+			if err := r.Query(w, log, proofs.ID); err != nil {
+				log.Error(err)
 			}
 		default:
-			if err := r.Queries(); err != nil {
-				logs.Danger(err)
+			if err := r.Queries(w, log); err != nil {
+				log.Error(err)
 			}
 		}
 	},

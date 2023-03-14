@@ -59,7 +59,7 @@ func TestZipfile_Save(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			z := &cmmt.Zipfile{}
-			if err := z.Save(tt.path); (err != nil) != tt.wantErr {
+			if err := z.Save(nil, tt.path); (err != nil) != tt.wantErr {
 				t.Errorf("Zipfile.Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

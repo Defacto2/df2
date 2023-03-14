@@ -3,10 +3,10 @@ package sitemap
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
 	"github.com/google/go-querystring/query"
 	"github.com/gookit/color"
@@ -151,37 +150,37 @@ func (a IDs) JoinPaths(base string, r Root) []string {
 type Style int
 
 // RangeFiles ranges over the file download URLs.
-func (p Style) RangeFiles(urls []string) {
+func (p Style) RangeFiles(w io.Writer, urls []string) {
 	wg := &sync.WaitGroup{}
 	for _, link := range urls {
 		if link == "" {
 			continue
 		}
 		wg.Add(1)
-		go func(link string) {
+		go func(w io.Writer, link string) {
 			link = strings.TrimSpace(link)
 			code, name, size, err := download.PingFile(link)
 			if err != nil {
-				logs.Printf("%s\t%s\n", ColorCode(code), err)
+				fmt.Fprintf(w, "%s\t%s\n", ColorCode(code), err)
 				wg.Done()
 				return
 			}
 			switch p {
 			case NotFound:
-				fmt.Fprintf(os.Stdout, "%s\t%s  ↳ %s - %s\n", link, Color404(code), size, name)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s - %s\n", link, Color404(code), size, name)
 			case Success:
-				fmt.Fprintf(os.Stdout, "%s\t%s  ↳ %s - %s\n", link, ColorCode(code), size, name)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s - %s\n", link, ColorCode(code), size, name)
 			case LinkNotFound, LinkSuccess:
-				fmt.Fprintf(os.Stdout, "%q formatting is unused in RangeFiles", p)
+				fmt.Fprintf(w, "%q formatting is unused in RangeFiles", p)
 			}
 			wg.Done()
-		}(link)
+		}(w, link)
 	}
 	wg.Wait()
 }
 
 // Range over the file URLs.
-func (p Style) Range(urls []string) {
+func (p Style) Range(w io.Writer, urls []string) {
 	const (
 		pauseOnItem = 10
 		pauseSecs   = 5
@@ -195,15 +194,14 @@ func (p Style) Range(urls []string) {
 			time.Sleep(pauseSecs * time.Second)
 		}
 		wg.Add(1)
-		go func(link string) {
+		go func(w io.Writer, link string) {
 			link = strings.TrimSpace(link)
 			s, code, err := GetTitle(true, link)
 			if err != nil {
-				logs.Printf("%s\t%s\n", ColorCode(code), err)
+				fmt.Fprintf(w, "%s\t%s\n", ColorCode(code), err)
 				wg.Done()
 				return
 			}
-			w := os.Stdout
 			switch p {
 			case LinkNotFound:
 				fmt.Fprintf(w, "%s\t%s  ↳ %s\n", link, Color404(code), s)
@@ -215,7 +213,7 @@ func (p Style) Range(urls []string) {
 				fmt.Fprintf(w, "%s\t%s  -  %s\n", ColorCode(code), link, s)
 			}
 			wg.Done()
-		}(link)
+		}(w, link)
 	}
 	wg.Wait()
 }
@@ -234,7 +232,7 @@ func AbsPaths(base string) ([28]string, error) {
 }
 
 // AbsPaths returns all the HTML3 static URLs used by the sitemap.
-func AbsPathsH3(base string) ([]string, error) {
+func AbsPathsH3(w io.Writer, base string) ([]string, error) {
 	const root = "html3"
 	urls := urlset.HTML3Path()
 	paths := make([]string, 0, len(urls))
@@ -246,7 +244,7 @@ func AbsPathsH3(base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to platforms
-	plats, err := Platforms()
+	plats, err := Platforms(w)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +256,7 @@ func AbsPathsH3(base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to sections
-	sects, err := Sections()
+	sects, err := Sections(w)
 	if err != nil {
 		return nil, err
 	}
@@ -299,8 +297,8 @@ func ColorCode(i int) string {
 }
 
 // GetBlocked returns all the primary keys of the records with blocked file downloads.
-func GetBlocked() (IDs, error) {
-	ids, err := database.GetKeys(database.WhereDownloadBlock)
+func GetBlocked(w io.Writer) (IDs, error) {
+	ids, err := database.GetKeys(w, database.WhereDownloadBlock)
 	if err != nil {
 		return nil, fmt.Errorf("%w: blocked downloads", err)
 	}
@@ -308,8 +306,8 @@ func GetBlocked() (IDs, error) {
 }
 
 // GetKeys returns all the primary keys of the file records that are public.
-func GetKeys() (IDs, error) {
-	ids, err := database.GetKeys(database.WhereAvailable)
+func GetKeys(w io.Writer) (IDs, error) {
+	ids, err := database.GetKeys(w, database.WhereAvailable)
 	if err != nil {
 		return nil, fmt.Errorf("%w: keys", err)
 	}
@@ -317,8 +315,8 @@ func GetKeys() (IDs, error) {
 }
 
 // GetSoftDeleteKeys returns all the primary keys of the file records that are not public and hidden.
-func GetSoftDeleteKeys() (IDs, error) {
-	ids, err := database.GetKeys(database.WhereHidden)
+func GetSoftDeleteKeys(w io.Writer) (IDs, error) {
+	ids, err := database.GetKeys(w, database.WhereHidden)
 	if err != nil {
 		return nil, fmt.Errorf("%w: hidden keys", err)
 	}
@@ -350,11 +348,11 @@ func FindTitle(b []byte) string {
 }
 
 // RandBlocked returns a randomized count of primary keys for records with blocked file downloads.
-func RandBlocked(count int) (int, IDs, error) {
+func RandBlocked(w io.Writer, count int) (int, IDs, error) {
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetBlocked()
+	keys, err := GetBlocked(w)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -363,11 +361,11 @@ func RandBlocked(count int) (int, IDs, error) {
 }
 
 // RandDeleted returns a randomized count of primary keys for hidden file records.
-func RandDeleted(count int) (int, IDs, error) {
+func RandDeleted(w io.Writer, count int) (int, IDs, error) {
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetSoftDeleteKeys()
+	keys, err := GetSoftDeleteKeys(w)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -376,11 +374,11 @@ func RandDeleted(count int) (int, IDs, error) {
 }
 
 // RandBlocked returns a randomized count of primary keys for public file records.
-func RandIDs(count int) (int, IDs, error) {
+func RandIDs(w io.Writer, count int) (int, IDs, error) {
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetKeys()
+	keys, err := GetKeys(w)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -389,11 +387,11 @@ func RandIDs(count int) (int, IDs, error) {
 }
 
 // Platforms lists the operating systems required by the files.
-func Platforms() ([]string, error) {
-	return database.Distinct("platform")
+func Platforms(w io.Writer) ([]string, error) {
+	return database.Distinct(w, "platform")
 }
 
 // Sections lists the categories of files.
-func Sections() ([]string, error) {
-	return database.Distinct("section")
+func Sections(w io.Writer) ([]string, error) {
+	return database.Distinct(w, "section")
 }

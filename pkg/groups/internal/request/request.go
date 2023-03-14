@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/spf13/viper"
 )
@@ -36,33 +36,33 @@ type Result struct {
 }
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Flags) DataList(name string) error {
+func (r Flags) DataList(w io.Writer, name string) error {
 	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
 	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}`
 	tpl += `<option value="{{.Name}}" label="{{.Name}}">{{end}}`
-	if err := r.Parse(name, tpl); err != nil {
+	if err := r.Parse(w, name, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Flags) HTML(name string) error {
+func (r Flags) HTML(w io.Writer, name string) error {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>`
 	tpl += `{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
-	if err := r.Parse(name, tpl); err != nil {
+	if err := r.Parse(w, name, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
 }
 
 // Files returns the number of files associated with the named group.
-func (r Flags) Files(name string) (int, error) {
+func (r Flags) Files(w io.Writer, name string) (int, error) {
 	if !r.Counts {
 		return 0, nil
 	}
-	total, err := group.Count(name)
+	total, err := group.Count(w, name)
 	if err != nil {
 		return 0, fmt.Errorf("files %q: %w", name, err)
 	}
@@ -70,18 +70,18 @@ func (r Flags) Files(name string) (int, error) {
 }
 
 // Initialism returns the initialism of the named group.
-func (r Flags) Initialism(name string) (string, error) {
+func (r Flags) Initialism(w io.Writer, name string) (string, error) {
 	if !r.Initialisms {
 		return "", nil
 	}
-	s, err := acronym.Get(name)
+	s, err := acronym.Get(w, name)
 	if err != nil {
 		return "", fmt.Errorf("initialism %q: %w", name, err)
 	}
 	return s, nil
 }
 
-func (r Flags) iterate(groups ...string) (*[]Result, error) {
+func (r Flags) iterate(w io.Writer, groups ...string) (*[]Result, error) {
 	piped := str.Piped()
 	total := len(groups)
 	data := make([]Result, total)
@@ -91,14 +91,14 @@ func (r Flags) iterate(groups ...string) (*[]Result, error) {
 	)
 	for i, grp := range groups {
 		if !piped && r.Progress {
-			str.Progress(r.Filter, i+1, total)
+			str.Progress(w, r.Filter, i+1, total)
 		}
 		lastLetter, hr = group.UseHr(lastLetter, grp)
-		c, err := r.Files(grp)
+		c, err := r.Files(w, grp)
 		if err != nil {
 			return nil, fmt.Errorf("iterate files %q: %w", grp, err)
 		}
-		init, err := r.Initialism(grp)
+		init, err := r.Initialism(w, grp)
 		if err != nil {
 			return nil, fmt.Errorf("iterate initialism %q: %w", grp, err)
 		}
@@ -117,20 +117,20 @@ func (r Flags) iterate(groups ...string) (*[]Result, error) {
 // If the named file is empty, the results will be sent to stdout.
 // The HTML returned to stdout is different to the markup saved
 // to a file.
-func (r Flags) Parse(name, tmpl string) error {
-	groups, total, err := group.List(r.Filter)
+func (r Flags) Parse(w io.Writer, name, tmpl string) error {
+	groups, total, err := group.List(w, r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
 	if !str.Piped() {
 		if f := r.Filter; f == "" {
-			logs.Println(total, "matching (all) records found")
+			fmt.Fprintln(w, total, "matching (all) records found")
 		} else {
 			p := path.Join(viper.GetString("directory.html"), name)
-			logs.Printf("%d matching %s records found (%s)\n", total, f, p)
+			fmt.Fprintf(w, "%d matching %s records found (%s)\n", total, f, p)
 		}
 	}
-	data, err := r.iterate(groups...)
+	data, err := r.iterate(w, groups...)
 	if err != nil {
 		return fmt.Errorf("parse iterate: %w", err)
 	}
@@ -139,7 +139,7 @@ func (r Flags) Parse(name, tmpl string) error {
 		return fmt.Errorf("parse template: %w", err)
 	}
 	if name == "" {
-		return noname(t, data)
+		return noname(w, t, data)
 	}
 	return r.parse(name, total, t, data)
 }
@@ -183,7 +183,7 @@ func (r Flags) prependHTML(total int) string {
 	return s
 }
 
-func noname(t *template.Template, data *[]Result) error {
+func noname(w io.Writer, t *template.Template, data *[]Result) error {
 	var buf bytes.Buffer
 	wr := bufio.NewWriter(&buf)
 	if err := t.Execute(wr, &data); err != nil {
@@ -192,25 +192,25 @@ func noname(t *template.Template, data *[]Result) error {
 	if err := wr.Flush(); err != nil {
 		return fmt.Errorf("parse flush: %w", err)
 	}
-	logs.Println(buf.String())
+	fmt.Fprintln(w, buf.String())
 	return nil
 }
 
 // Print list organisations or groups filtered by a name and summaries the results.
-func Print(r Flags) (int, error) {
-	grp, total, err := group.List(r.Filter)
+func Print(w io.Writer, r Flags) (int, error) {
+	grp, total, err := group.List(w, r.Filter)
 	if err != nil {
 		return 0, fmt.Errorf("print groups: %w", err)
 	}
-	fmt.Fprintf(os.Stdout, "\n\n%d matching %q records found\n", total, r.Filter)
+	fmt.Fprintf(w, "\n\n%d matching %q records found\n", total, r.Filter)
 	a := make([]string, total)
 	for i, g := range grp {
 		if r.Progress {
-			str.Progress(r.Filter, i+1, total)
+			str.Progress(w, r.Filter, i+1, total)
 		}
 		s := g
 		if r.Initialisms {
-			if in, err := acronym.Get(g); err != nil {
+			if in, err := acronym.Get(w, g); err != nil {
 				return 0, fmt.Errorf("print initialism: %w", err)
 			} else if in != "" {
 				s = fmt.Sprintf("%v [%s]", s, in)
@@ -218,7 +218,7 @@ func Print(r Flags) (int, error) {
 		}
 		// file totals
 		if r.Counts {
-			c, err := group.Count(g)
+			c, err := group.Count(w, g)
 			if err != nil {
 				return 0, fmt.Errorf("print counts: %w", err)
 			}
@@ -232,6 +232,6 @@ func Print(r Flags) (int, error) {
 	if a[0] == "" {
 		a = a[1:]
 	}
-	logs.Printf("\n%s\nTotal groups %d\n", strings.Join(a, ", "), total)
+	fmt.Fprintf(w, "\n%s\nTotal groups %d\n", strings.Join(a, ", "), total)
 	return total, nil
 }

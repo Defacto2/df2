@@ -18,7 +18,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
+	"go.uber.org/zap"
 )
 
 const (
@@ -94,7 +94,7 @@ func Store(files []string, buf io.Writer) []error {
 }
 
 // Demozoo decompresses and parses archives fetched from https://demozoo.org.
-func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
+func Demozoo(w io.Writer, src, uuid string, varNames *[]string) (demozoo.Data, error) {
 	dz := demozoo.Data{}
 	if err := database.CheckUUID(uuid); err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
@@ -105,11 +105,11 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
-	filename, err := database.GetFile(uuid)
+	filename, err := database.GetFile(w, uuid)
 	if err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo lookup id %q: %w", uuid, err)
 	}
-	if _, err = Restore(src, filename, tempDir); err != nil {
+	if _, err = Restore(w, src, filename, tempDir); err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo restore %q: %w", filename, err)
 	}
 	zips, err := zips(tempDir)
@@ -119,11 +119,11 @@ func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
 	if nfo := demozoo.NFO(src, zips, varNames); nfo != "" {
 		if src == "" {
 			dz.NFO = nfo
-		} else if err := demozoo.MoveText(filepath.Join(tempDir, nfo), uuid); err != nil {
+		} else if err := demozoo.MoveText(w, filepath.Join(tempDir, nfo), uuid); err != nil {
 			return demozoo.Data{}, fmt.Errorf("extract demozo move nfo: %w", err)
 		}
 	}
-	if dos := demozoo.DOS(src, zips, varNames); dos != "" {
+	if dos := demozoo.DOS(w, src, zips, varNames); dos != "" {
 		dz.DOSee = dos
 	}
 	return dz, nil
@@ -195,7 +195,7 @@ func nfoFile(f demozoo.Finds, file, fn, base, ext string) demozoo.Finds {
 // src is the path to the file including the uuid filename.
 // filename is the original archive filename, usually kept in the database.
 // uuid is used to rename the extracted assets such as image previews.
-func Proof(src, filename, uuid string) error {
+func Proof(w io.Writer, l *zap.SugaredLogger, src, filename, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
 		return fmt.Errorf("archive uuid %q: %w", uuid, err)
 	}
@@ -213,7 +213,7 @@ func Proof(src, filename, uuid string) error {
 		return err
 	}
 	if n := th.Name; n != "" {
-		if err := images.Generate(n, uuid, true); err != nil {
+		if err := images.Generate(w, l, n, uuid, true); err != nil {
 			return fmt.Errorf("archive generate img: %w", err)
 		}
 	}
@@ -222,10 +222,10 @@ func Proof(src, filename, uuid string) error {
 		if _, err := file.Move(n, f.UUID+txt); err != nil {
 			return fmt.Errorf("archive filemove %q: %w", n, err)
 		}
-		logs.Print("  »txt")
+		fmt.Fprint(w, "  »txt")
 	}
 	if x := true; !x {
-		if err := file.Dir(tempDir); err != nil {
+		if err := file.Dir(w, tempDir); err != nil {
 			return fmt.Errorf("archive dir %q: %w", tempDir, err)
 		}
 	}
@@ -238,13 +238,13 @@ func Proof(src, filename, uuid string) error {
 // extension.
 // src is the absolute path to the archive file named as a unique id.
 // name is the original archive filename and file extension.
-func Read(src, name string) ([]string, string, error) {
+func Read(w io.Writer, src, name string) ([]string, string, error) {
 	if info, err := os.Stat(src); os.IsNotExist(err) {
 		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrFile)
 	} else if info.IsDir() {
 		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrDir)
 	}
-	files, filename, err := Readr(src, name)
+	files, filename, err := Readr(w, src, name)
 	if err != nil {
 		return nil, "", fmt.Errorf("read uuid/filename: %w", err)
 	}
@@ -257,12 +257,12 @@ func Read(src, name string) ([]string, string, error) {
 // supplied using filename.
 // src is the absolute path to the archive file named as a unique id.
 // filename is the original archive filename and file extension.
-func Restore(src, name, dest string) ([]string, error) {
+func Restore(w io.Writer, src, name, dest string) ([]string, error) {
 	err := Unarchiver(src, name, dest)
 	if err != nil {
 		return nil, fmt.Errorf("restore unarchiver: %w", err)
 	}
-	files, _, err := Readr(src, name)
+	files, _, err := Readr(w, src, name)
 	if err != nil {
 		return nil, fmt.Errorf("restore readr: %w", err)
 	}

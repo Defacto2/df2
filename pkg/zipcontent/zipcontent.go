@@ -4,18 +4,19 @@ package zipcontent
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
+	"go.uber.org/zap"
 )
 
 // Fix the content of zip archives within in the database.
-func Fix(summary bool) error { //nolint:cyclop
+func Fix(w io.Writer, l *zap.SugaredLogger, summary bool) error { //nolint:cyclop
 	s := scan.Init()
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(where())
 	if err != nil {
@@ -56,14 +57,14 @@ func Fix(summary bool) error { //nolint:cyclop
 		}
 		s.Columns = columns
 		s.Values = &values
-		if err := r.Iterate(&s); err != nil {
+		if err := r.Iterate(w, l, &s); err != nil {
 			log.Printf("\n%s\n", err)
 			continue
 		}
-		logs.Println()
+		fmt.Fprintln(w)
 	}
 	if summary {
-		s.Summary()
+		s.Summary(w)
 	}
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 func BenchmarkCreate(b *testing.B) {
 	const limit = 10
 	for i := 0; i < b.N; i++ {
-		if err := recent.List(limit, true); err != nil {
+		if err := recent.List(nil, limit, true); err != nil {
 			log.Print(err)
 		}
 	}

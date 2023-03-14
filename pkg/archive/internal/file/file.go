@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
 )
@@ -69,7 +68,7 @@ func Copy(name, dest string) (int64, error) {
 }
 
 // Dir lists the content of a directory.
-func Dir(name string) error {
+func Dir(w io.Writer, name string) error {
 	files, err := os.ReadDir(name)
 	if err != nil {
 		return fmt.Errorf("dir read name %q: %w", name, err)
@@ -83,7 +82,7 @@ func Dir(name string) error {
 		if err != nil {
 			return fmt.Errorf("dir mime failure on %q: %w", f, err)
 		}
-		logs.Println(f.Name(), humanize.Bytes(uint64(f.Size())), mime)
+		fmt.Fprintln(w, f.Name(), humanize.Bytes(uint64(f.Size())), mime)
 	}
 	return nil
 }

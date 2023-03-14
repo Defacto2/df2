@@ -31,7 +31,7 @@ func TestSQLWhere(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := group.SQLWhere(tt.args.f, tt.args.incSoftDeletes); got != tt.want {
+			if got, _ := group.SQLWhere(nil, tt.args.f, tt.args.incSoftDeletes); got != tt.want {
 				t.Errorf("SQLWhere() = %q, want %q", got, tt.want)
 			}
 		})
@@ -83,7 +83,7 @@ func TestSQLSelect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := group.SQLSelect(tt.args.f, tt.args.includeSoftDeletes)
+			_, err := group.SQLSelect(nil, tt.args.f, tt.args.includeSoftDeletes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SQLSelect() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -107,7 +107,7 @@ func TestList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotGroups, gotTotal, err := group.List(tt.name)
+			gotGroups, gotTotal, err := group.List(nil, tt.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -157,7 +157,7 @@ func TestCount(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCount, err := group.Count(tt.name)
+			gotCount, err := group.Count(nil, tt.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Count() error = %v, wantErr %v", err, tt.wantErr)
 				return

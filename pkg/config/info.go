@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -14,21 +15,22 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
 const colon = ":"
 
 // Info prints the content of a configuration file.
-func Info(sizes bool) error {
-	logs.Print("\nDefault configurations in use when no flags are given.\n\n")
+func Info(w io.Writer, l *zap.SugaredLogger, sizes bool) error {
+	fmt.Fprint(w, "\nDefault configurations in use when no flags are given.\n\n")
 	sets, err := yaml.Marshal(viper.AllSettings())
 	if err != nil {
 		return fmt.Errorf("info config yaml marshal: %w", err)
 	}
-	logs.Printf("%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(colon), Filepath())
+	fmt.Fprintf(w, "%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(colon), Filepath())
 	Check()
-	logs.Printf("%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(colon), logs.Filepath(logs.Filename))
+	fmt.Fprintf(w, "%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(colon), logs.Filepath(l, logs.Filename))
 	db := database.ConnInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {
@@ -39,41 +41,41 @@ func Info(sizes bool) error {
 		color.Cyan.Print(s[0])
 		color.Red.Print(colon)
 		if len(s) <= 1 {
-			logs.Println()
+			fmt.Fprintln(w)
 			continue
 		}
 		val := strings.TrimSpace(strings.Join(s[1:], colon))
 		switch strings.TrimSpace(s[0]) {
 		case "server":
 			if db != "" {
-				logs.Printf(" %s %s", str.X(), db)
+				fmt.Fprintf(w, " %s %s", str.X(), db)
 				break
 			}
-			logFmt(color.Success.Sprint("up"), str.Y())
+			logFmt(w, color.Success.Sprint("up"), str.Y())
 		case `"000"`, `"400"`, "backup", "emu", "html", "files", "previews", "sql", "root", "views", "uuid":
-			if err := parse(sizes, val); err != nil {
+			if err := parse(w, sizes, val); err != nil {
 				return err
 			}
 		case "password":
-			logs.Print(color.Warn.Sprint(" **********"))
+			fmt.Fprint(w, color.Warn.Sprint(" **********"))
 		default:
-			logs.Printf(" %s", val)
+			fmt.Fprintf(w, " %s", val)
 		}
-		logs.Println()
+		fmt.Fprintln(w)
 	}
 	return nil
 }
 
-func parse(sizes bool, val string) error {
+func parse(w io.Writer, sizes bool, val string) error {
 	_, err := os.Stat(val)
 	switch {
 	case os.IsNotExist(err):
-		logFmt(val, str.X())
+		logFmt(w, val, str.X())
 	case err != nil:
 		return fmt.Errorf("info stat %q: %w", val, err)
 	default:
 		if !sizes {
-			logFmt(val, str.Y())
+			logFmt(w, val, str.Y())
 			break
 		}
 		count, size, err := directories.Size(val)
@@ -81,14 +83,14 @@ func parse(sizes bool, val string) error {
 			log.Println(err)
 		}
 		if count == 0 {
-			logs.Printf(" %s (0 files) %s", val, str.Y())
+			fmt.Fprintf(w, " %s (0 files) %s", val, str.Y())
 			break
 		}
-		logs.Printf(" %s (%d files, %s) %s", val, count, humanize.Bytes(size), str.Y())
+		fmt.Fprintf(w, " %s (%d files, %s) %s", val, count, humanize.Bytes(size), str.Y())
 	}
 	return nil
 }
 
-func logFmt(s, mark string) {
-	logs.Printf(" %s %s", s, mark)
+func logFmt(w io.Writer, s, mark string) {
+	fmt.Fprintf(w, " %s %s", s, mark)
 }

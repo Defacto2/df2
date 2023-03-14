@@ -17,6 +17,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
@@ -73,8 +74,8 @@ func (r *Record) String() string {
 }
 
 // approve sets the record to be publically viewable.
-func (r *Record) Approve() error {
-	db := connect.Connect()
+func (r *Record) Approve(w io.Writer) error {
+	db := connect.Connect(w)
 	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	if err != nil {
@@ -97,53 +98,53 @@ func (r *Record) AutoID(data string) uint {
 	return id
 }
 
-func (r *Record) Check(values []sql.RawBytes, dir *directories.Dir) bool {
+func (r *Record) Check(w io.Writer, values []sql.RawBytes, dir *directories.Dir) bool {
 	v := r.Verbose
 	if !r.checkFileName(string(values[filename])) {
-		verbose(v, "!filename")
+		verbose(w, v, "!filename")
 		return false
 	}
 	if !r.checkFileSize(string(values[filesize])) {
-		verbose(v, "!filesize")
+		verbose(w, v, "!filesize")
 		return false
 	}
 	if !r.checkHash(string(values[hashstrong]), string(values[hashweak])) {
-		verbose(v, "!hash")
+		verbose(w, v, "!hash")
 		return false
 	}
 	if !r.checkFileContent(string(values[filezipcontent])) {
-		verbose(v, "!file content")
+		verbose(w, v, "!file content")
 		return false
 	}
 	if !r.CheckGroups(string(values[groupbrandby]), string(values[groupbrandfor])) {
-		verbose(v, "!group")
+		verbose(w, v, "!group")
 		return false
 	}
 	if !r.checkTags(string(values[platform]), string(values[section])) {
-		verbose(v, "!tag")
+		verbose(w, v, "!tag")
 		return false
 	}
-	if !r.checkDownload(dir.UUID) {
-		verbose(v, "!download")
+	if !r.checkDownload(w, dir.UUID) {
+		verbose(w, v, "!download")
 		return false
 	}
 	if string(values[platform]) != "audio" {
 		if !r.checkImage(dir.Img000) {
-			verbose(v, "!000x")
+			verbose(w, v, "!000x")
 			return false
 		}
 		if !r.checkImage(dir.Img400) {
-			verbose(v, "!400x")
+			verbose(w, v, "!400x")
 			return false
 		}
 	}
 	return true
 }
 
-func (r *Record) checkDownload(path string) bool {
+func (r *Record) checkDownload(w io.Writer, path string) bool {
 	file := filepath.Join(fmt.Sprint(path), r.UUID)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return r.recoverDownload(path)
+		return r.recoverDownload(w, path)
 	}
 	return true
 }
@@ -217,36 +218,36 @@ func (r *Record) ImagePath(path string) string {
 	return filepath.Join(fmt.Sprint(path), r.UUID+png)
 }
 
-func (r *Record) recoverDownload(path string) bool {
+func (r *Record) recoverDownload(w io.Writer, path string) bool {
 	src, v := viper.GetString("directory.incoming.files"), r.Verbose
 	if src == "" {
 		return false
 	}
 	file := filepath.Join(src, r.Filename)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		verbose(v, "!incoming:"+file+" ")
+		verbose(w, v, "!incoming:"+file+" ")
 		return false
 	}
 	fc, err := dupe(file, path)
 	if err != nil {
-		verbose(v, "!filecopy ")
-		logs.Log(err)
+		verbose(w, v, "!filecopy ")
+		fmt.Fprintln(os.Stderr, err)
 		return false
 	}
-	verbose(v, fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
+	verbose(w, v, fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		verbose(v, "!!filecopy ")
-		logs.Log(err)
+		verbose(w, v, "!!filecopy ")
+		fmt.Fprintln(os.Stderr, err)
 		return false
 	}
 	return true
 }
 
-func (r *Record) Summary(rows int) {
+func (r *Record) Summary(w io.Writer, rows int) {
 	if rows == 0 {
 		const m = "No files were approved"
 		l := strings.Repeat("─", len(m))
-		logs.Printf("%s\n%s\n%s\n", l, m, l)
+		fmt.Fprintf(w, "%s\n%s\n%s\n", l, m, l)
 		return
 	}
 	t := fmt.Sprintf("%d new files approved", r.C)
@@ -255,25 +256,25 @@ func (r *Record) Summary(rows int) {
 	}
 	if rows <= r.C {
 		l := strings.Repeat("─", len(t))
-		logs.Printf("%s\n%s\n%s\n", l, t, l)
+		fmt.Fprintf(w, "%s\n%s\n%s\n", l, t, l)
 		return
 	}
 	d := fmt.Sprintf("%d database new records were skipped", rows-r.C)
 	l := strings.Repeat("─", len(d))
-	logs.Printf("%s\n%s\n%s\n%s\n", l, t, d, l)
+	fmt.Fprintf(w, "%s\n%s\n%s\n%s\n", l, t, d, l)
 }
 
-func verbose(v bool, i any) {
+func verbose(w io.Writer, v bool, i any) {
 	if !v {
 		return
 	}
 	const exclamationMark = 33
 	if val, ok := i.(string); ok {
 		if len(val) > 0 && val[0] == exclamationMark {
-			logs.Printf("%s", color.Warn.Sprint(val))
+			fmt.Fprintf(w, "%s", color.Warn.Sprint(val))
 			return
 		}
-		logs.Printf("%s", val)
+		fmt.Fprintf(w, "%s", val)
 	}
 }
 
@@ -300,17 +301,17 @@ func dupe(name, dest string) (int64, error) {
 // -----------------
 
 // NewApprove reports if a new file record is set to unapproved.
-func NewApprove(b []sql.RawBytes) bool {
+func NewApprove(b []sql.RawBytes) (bool, error) {
 	// SQL column names can be found in the newFilesSQL statement in approve.go
 	const deletedat, createdat = 2, 3
 	if b[deletedat] == nil {
-		return false
+		return false, nil
 	}
 	n, err := Valid(b[deletedat], b[createdat])
 	if err != nil {
-		logs.Log(err)
+		return false, err
 	}
-	return n
+	return n, nil
 }
 
 func Valid(deletedat, updatedat sql.RawBytes) (bool, error) {
@@ -361,17 +362,17 @@ func ReverseInt(i uint) (uint, error) {
 	return uint(n), nil
 }
 
-func Verbose(v bool, i any) {
+func Verbose(w io.Writer, v bool, i any) {
 	if !v {
 		return
 	}
 	const exclamationMark = 33
 	if val, ok := i.(string); ok {
 		if len(val) > 0 && val[0] == exclamationMark {
-			logs.Printf("%s", color.Warn.Sprint(val))
+			fmt.Fprintf(w, "%s", color.Warn.Sprint(val))
 			return
 		}
-		logs.Printf("%s", val)
+		fmt.Fprintf(w, "%s", val)
 	}
 }
 
@@ -383,8 +384,8 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func Queries(v bool) error {
-	db := connect.Connect()
+func Queries(w io.Writer, l *zap.SugaredLogger, v bool) error {
+	db := connect.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {
@@ -398,10 +399,10 @@ func Queries(v bool) error {
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
-	return query(v, rows, columns)
+	return query(w, l, v, rows, columns)
 }
 
-func query(v bool, rows *sql.Rows, columns []string) error {
+func query(w io.Writer, l *zap.SugaredLogger, v bool, rows *sql.Rows, columns []string) error {
 	x := func() string {
 		return fmt.Sprintf(" %s", str.X())
 	}
@@ -421,45 +422,53 @@ func query(v bool, rows *sql.Rows, columns []string) error {
 		if err := rows.Scan(scanArgs...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
-		Verbose(v, fmt.Sprintf("\nitem %04d (%v) %s %s ",
+		Verbose(w, v, fmt.Sprintf("\nitem %04d (%v) %s %s ",
 			rowCnt, string(values[0]), color.Primary.Sprint(r.UUID), color.Info.Sprint(r.Filename)))
-		if na, dz := NewApprove(values), IsDemozoo(values); !na && !dz {
-			Verbose(v, x())
+		na, err := NewApprove(values)
+		if err != nil {
+			logs.Save(l, err)
+		}
+		dz, err := IsDemozoo(values)
+		if err != nil {
+			logs.Save(l, err)
+		}
+		if !na && !dz {
+			Verbose(w, v, x())
 			continue
 		}
 		r.UUID = string(values[1])
-		if ok := r.Check(values, &dir); !ok {
-			Verbose(v, x())
+		if ok := r.Check(w, values, &dir); !ok {
+			Verbose(w, v, x())
 			continue
 		}
 		r.Save = true
 		if r.AutoID(string(values[0])) == 0 {
 			r.Save = false
-		} else if err := r.Approve(); err != nil {
-			Verbose(v, x())
-			logs.Log(err)
+		} else if err := r.Approve(w); err != nil {
+			Verbose(w, v, x())
+			logs.Save(l, err)
 			r.Save = false
 		}
-		Verbose(v, fmt.Sprintf(" %s", str.Y()))
+		Verbose(w, v, fmt.Sprintf(" %s", str.Y()))
 		r.C++
 	}
 	if rowCnt > 0 {
-		Verbose(v, "\n")
+		Verbose(w, v, "\n")
 	}
-	r.Summary(rowCnt)
+	r.Summary(w, rowCnt)
 	return nil
 }
 
 // IsDemozoo reports if a fetched demozoo file record is set to unapproved.
-func IsDemozoo(b []sql.RawBytes) bool {
+func IsDemozoo(b []sql.RawBytes) (bool, error) {
 	// SQL column names can be found in the selectSQL statement in database.go
 	const deletedat, updatedat = 2, 8
 	if b[deletedat] == nil {
-		return false
+		return false, nil
 	}
 	n, err := Valid(b[deletedat], b[updatedat])
 	if err != nil {
-		logs.Log(err)
+		return false, err
 	}
-	return n
+	return n, nil
 }

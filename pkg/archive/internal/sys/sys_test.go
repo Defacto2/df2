@@ -87,7 +87,7 @@ func TestPKZip(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gots, got, err := sys.Readr(tt.args.src, tt.args.filename)
+			gots, got, err := sys.Readr(nil, tt.args.src, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -137,7 +137,7 @@ func TestReadr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gots, got, err := sys.Readr(tt.args.src, tt.args.filename)
+			gots, got, err := sys.Readr(nil, tt.args.src, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return

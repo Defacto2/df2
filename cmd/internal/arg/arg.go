@@ -1,7 +1,8 @@
 package arg
 
 import (
-	"log"
+	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strings"
@@ -98,7 +99,7 @@ type ZipCmmt struct {
 }
 
 // FilterFlag compairs the value of the filter flag against the list of slice values.
-func FilterFlag(t any, flag, val string) {
+func FilterFlag(w io.Writer, t any, flag, val string) {
 	if val == "" {
 		return
 	}
@@ -110,13 +111,14 @@ func FilterFlag(t any, flag, val string) {
 				break
 			}
 		}
-		if !sup {
-			log.Printf("%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
-				color.Bold.Sprintf("%q", val),
-				color.Warn.Sprint("available flag values"),
-				color.Primary.Sprint(strings.Join(t, ",")))
-			os.Exit(1)
+		if sup {
+			return
 		}
+		fmt.Fprintf(w, "%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
+			color.Bold.Sprintf("%q", val),
+			color.Warn.Sprint("available flag values"),
+			color.Primary.Sprint(strings.Join(t, ",")))
+		os.Exit(1)
 	}
 }
 

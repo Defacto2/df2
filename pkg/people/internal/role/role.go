@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 )
@@ -56,14 +56,14 @@ func (r Role) String() string {
 }
 
 // List people filtered by a role.
-func List(role Role) ([]string, int, error) {
-	db := database.Connect()
+func List(w io.Writer, role Role) ([]string, int, error) {
+	db := database.Connect(w)
 	defer db.Close()
 	s := PeopleStmt(role, false)
 	if s == "" {
 		return nil, 0, fmt.Errorf("list statement %v: %w", role, ErrRole)
 	}
-	total, err := database.Total(&s)
+	total, err := database.Total(w, &s)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list totals: %w", err)
 	}
@@ -145,7 +145,7 @@ func Roles(r string) Role {
 
 // Rename replaces the persons using name with the replacement.
 // The task must be limited names associated to a Role.
-func Rename(replacement, name string, r Role) (int64, error) {
+func Rename(w io.Writer, replacement, name string, r Role) (int64, error) {
 	if replacement == "" {
 		return 0, ErrNoReplace
 	}
@@ -165,7 +165,7 @@ func Rename(replacement, name string, r Role) (int64, error) {
 	case Everyone:
 		return 0, ErrRenAll
 	}
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -184,19 +184,19 @@ func Rename(replacement, name string, r Role) (int64, error) {
 }
 
 // Clean fixes and saves a malformed name.
-func Clean(name string, r Role) bool {
+func Clean(w io.Writer, name string, r Role) bool {
 	rep := CleanS(Trim(name))
 	if rep == name {
 		return false
 	}
 	s := str.Y()
 	ok := true
-	c, err := Rename(rep, name, r)
+	c, err := Rename(w, rep, name, r)
 	if err != nil {
 		s = str.X()
 		ok = false
 	}
-	logs.Printf("\n%s %q %s %s (%d)", s, name,
+	fmt.Fprintf(w, "\n%s %q %s %s (%d)", s, name,
 		color.Question.Sprint("⟫"), color.Info.Sprint(rep), c)
 	return ok
 }

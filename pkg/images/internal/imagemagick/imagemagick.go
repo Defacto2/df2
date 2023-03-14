@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"os/exec"
 	"time"
-
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 // imagemagick tools require the installation of ImageMagick v6.
@@ -22,7 +22,7 @@ import (
 var ErrFmt = errors.New("imagemagick does not support this image")
 
 // Convert uses the magick convert command to convert an image to PNG.
-func Convert(src, dest string) error {
+func Convert(w io.Writer, src, dest string) error {
 	if _, err := ID(src); err != nil {
 		return err
 	}
@@ -39,13 +39,13 @@ func Convert(src, dest string) error {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, path, args...)
-	logs.Printf("running %s %s\n", file, args)
+	fmt.Fprintf(w, "running %s %s\n", file, args)
 	out, err := cmd.Output()
 	if err != nil {
 		return err
 	}
 	if len(out) > 0 {
-		logs.Println("magick:", string(out))
+		fmt.Fprintln(w, "magick:", string(out))
 	}
 
 	return nil

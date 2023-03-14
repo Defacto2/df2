@@ -13,7 +13,7 @@ func ExampleFix() {
 		overwrite = false
 		summary   = false
 	)
-	if err := zipcmmt.Fix(ascii, unicode, overwrite, summary); err != nil {
+	if err := zipcmmt.Fix(nil, ascii, unicode, overwrite, summary); err != nil {
 		fmt.Println(err)
 	}
 	// Output:

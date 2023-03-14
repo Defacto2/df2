@@ -2,9 +2,9 @@
 package cmd
 
 import (
+	"os"
 	"sync"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/shrink"
 	"github.com/spf13/cobra"
 )
@@ -20,23 +20,24 @@ are 'waiting for approval.'`,
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
 		const delta = 3
+		w := os.Stdout
 		var wg sync.WaitGroup
 		wg.Add(delta)
 		go func() {
-			if err := shrink.SQL(); err != nil {
-				logs.Danger(err)
+			if err := shrink.SQL(w); err != nil {
+				log.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Files(); err != nil {
-				logs.Danger(err)
+			if err := shrink.Files(w); err != nil {
+				log.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Previews(); err != nil {
-				logs.Danger(err)
+			if err := shrink.Previews(w); err != nil {
+				log.Error(err)
 			}
 			wg.Done()
 		}()

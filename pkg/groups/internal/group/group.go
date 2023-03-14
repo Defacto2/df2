@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var ErrFilter = errors.New("invalid filter used")
@@ -66,11 +66,11 @@ func Get(s string) Filter {
 }
 
 // Count returns the number of file entries associated with a named group.
-func Count(name string) (int, error) {
+func Count(w io.Writer, name string) (int, error) {
 	if name == "" {
 		return 0, nil
 	}
-	db := database.Connect()
+	db := database.Connect(w)
 	defer db.Close()
 	n, count := name, 0
 	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
@@ -84,14 +84,14 @@ func Count(name string) (int, error) {
 }
 
 // List all organisations or groups filtered by s.
-func List(s string) ([]string, int, error) {
-	db := database.Connect()
+func List(w io.Writer, s string) ([]string, int, error) {
+	db := database.Connect(w)
 	defer db.Close()
-	r, err := SQLSelect(Get(s), false)
+	r, err := SQLSelect(w, Get(s), false)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list statement: %w", err)
 	}
-	total, err := database.Total(&r)
+	total, err := database.Total(w, &r)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list total: %w", err)
 	}
@@ -118,8 +118,8 @@ func List(s string) ([]string, int, error) {
 }
 
 // SQLSelect returns a complete SQL WHERE statement where the groups are filtered.
-func SQLSelect(f Filter, includeSoftDeletes bool) (string, error) {
-	where, err := SQLWhere(f, includeSoftDeletes)
+func SQLSelect(w io.Writer, f Filter, includeSoftDeletes bool) (string, error) {
+	where, err := SQLWhere(w, f, includeSoftDeletes)
 	if err != nil {
 		return "", fmt.Errorf("sql select %q: %w", f.String(), err)
 	}
@@ -139,7 +139,7 @@ func SQLSelect(f Filter, includeSoftDeletes bool) (string, error) {
 }
 
 // SQLWhere returns a partial SQL WHERE statement where groups are filtered.
-func SQLWhere(f Filter, includeSoftDeletes bool) (string, error) {
+func SQLWhere(w io.Writer, f Filter, includeSoftDeletes bool) (string, error) {
 	deleted := includeSoftDeletes
 	s, err := SQLFilter(f)
 	if err != nil {
@@ -157,7 +157,7 @@ func SQLWhere(f Filter, includeSoftDeletes bool) (string, error) {
 	const andLen = 4
 	l := len(s)
 	if l > andLen && s[l-andLen:] == " AND" {
-		logs.Printf("%q|", s[l-andLen:])
+		fmt.Fprintf(w, "%q|", s[l-andLen:])
 		return s[:l-andLen], nil
 	}
 	return s, nil
