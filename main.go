@@ -79,7 +79,8 @@ func main() {
 		cmd.Brand(log, brand)
 		s, err := cmd.ProgInfo(version)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			return
 		}
 		fmt.Fprintln(os.Stdout, s)
 		return

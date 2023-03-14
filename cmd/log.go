@@ -11,7 +11,7 @@ var logCmd = &cobra.Command{
 	Aliases: []string{},
 	Hidden:  true,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: make this print zapper's log
+		// TODO: make this print zapper's log.
 		// if err := run.Log(os.Stdout, log); err != nil {
 		// 	log.Fatal(err)
 		// }

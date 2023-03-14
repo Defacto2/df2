@@ -20,6 +20,31 @@ import (
 	"golang.org/x/text/language"
 )
 
+type ProgData struct {
+	Database   string
+	Ansilove   string
+	Webp       string
+	Magick     string
+	Netpbm     string
+	PngQuant   string
+	Arj        string
+	File       string
+	Lha        string
+	UnRar      string
+	UnZip      string
+	ZipInfo    string
+	Version    string
+	Revision   string
+	LastCommit string
+	Path       string
+	Platform   string
+	GoVer      string
+	GoOS       string
+	Docker     string
+	Title      string
+	Cmd        string
+}
+
 const (
 	About   = "A tool the optimise and manage " + Domain
 	Author  = "Ben Garrett"                     // Author is the primary programmer of this program.
@@ -159,36 +184,12 @@ func Vers(version string) string {
 
 // ProgInfo returns the response for the -version flag.
 func ProgInfo(version string) (string, error) {
-	type Data struct {
-		Database   string
-		Ansilove   string
-		Webp       string
-		Magick     string
-		Netpbm     string
-		PngQuant   string
-		Arj        string
-		File       string
-		Lha        string
-		UnRar      string
-		UnZip      string
-		ZipInfo    string
-		Version    string
-		Revision   string
-		LastCommit string
-		Path       string
-		Platform   string
-		GoVer      string
-		GoOS       string
-		Docker     string
-		Title      string
-		Cmd        string
-	}
 	bin, err := configger.BinPath()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
 	l := check()
-	data := Data{
+	data := ProgData{
 		Database:   colorize(l["db"]),
 		Ansilove:   colorize(l["ansilove"]),
 		Webp:       colorize(l["cwebp"]),

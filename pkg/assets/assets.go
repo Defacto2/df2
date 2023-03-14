@@ -80,8 +80,8 @@ func Cleaner(w io.Writer, t Target, d *directories.Dir, remove, human bool) erro
 	fmt.Fprintln(w, color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v",
 		humanize.Comma(int64(sum.Count)), humanize.Comma(int64(rows))))
 	if sum.Fails > 0 {
-		fmt.Fprint(w, fmt.Sprintf("assets clean: due to errors %v files could not be deleted\n",
-			sum.Fails))
+		fmt.Fprintf(w, "assets clean: due to errors %v files could not be deleted\n",
+			sum.Fails)
 	}
 	if len(paths) > 1 && sum.Bytes > 0 {
 		pts := fmt.Sprintf("%v B", sum.Bytes)

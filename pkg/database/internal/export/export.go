@@ -305,12 +305,12 @@ func (f *Flags) queryTables(w io.Writer) (*bytes.Buffer, error) {
 	var err error
 	switch f.Parallel {
 	case true:
-		buf1, buf2, buf3, _, err = f.queryTablesWG(w)
+		buf1, buf2, buf3, err = f.queryTablesWG(w)
 		if err != nil {
 			return nil, err
 		}
 	default:
-		buf1, buf2, buf3, _, err = f.queryTablesSeq(w)
+		buf1, buf2, buf3, err = f.queryTablesSeq(w)
 		if err != nil {
 			return nil, err
 		}
@@ -322,7 +322,6 @@ func (f *Flags) queryTables(w io.Writer) (*bytes.Buffer, error) {
 			{Columns: templ.NewFiles, Rows: buf1.String(), Table: ""},
 			{Columns: templ.NewGroups, Rows: buf2.String(), Table: ""},
 			{Columns: templ.NewNetresources, Rows: buf3.String(), Table: ""},
-			//{Columns: templ.NewUsers, Rows: buf4.String(), Table: ""},
 		},
 	}
 	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(templ.Tables)
@@ -336,7 +335,7 @@ func (f *Flags) queryTables(w io.Writer) (*bytes.Buffer, error) {
 	return &b, nil
 }
 
-func (f *Flags) queryTablesWG(w io.Writer) (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
+func (f *Flags) queryTablesWG(w io.Writer) (buf1, buf2, buf3 *bytes.Buffer, err error) { //nolint:nonamedreturns
 	const delta = 3
 	var wg sync.WaitGroup
 	var e1, e2, e3 error
@@ -356,30 +355,26 @@ func (f *Flags) queryTablesWG(w io.Writer) (buf1, buf2, buf3, buf4 *bytes.Buffer
 	wg.Wait()
 	for _, err := range []error{e1, e2, e3} {
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("query tables: %w", err)
+			return nil, nil, nil, fmt.Errorf("query tables: %w", err)
 		}
 	}
-	return buf1, buf2, buf3, buf4, nil
+	return buf1, buf2, buf3, nil
 }
 
-func (f *Flags) queryTablesSeq(w io.Writer) (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) { //nolint:nonamedreturns
+func (f *Flags) queryTablesSeq(w io.Writer) (buf1, buf2, buf3 *bytes.Buffer, err error) { //nolint:nonamedreturns
 	buf1, err = f.reqDB(w, Files)
 	if err != nil {
-		return nil, nil, nil, nil, qttErr(Files.String(), err)
+		return nil, nil, nil, qttErr(Files.String(), err)
 	}
 	buf2, err = f.reqDB(w, Groups)
 	if err != nil {
-		return nil, nil, nil, nil, qttErr(Groups.String(), err)
+		return nil, nil, nil, qttErr(Groups.String(), err)
 	}
 	buf3, err = f.reqDB(w, Netresources)
 	if err != nil {
-		return nil, nil, nil, nil, qttErr(Netresources.String(), err)
+		return nil, nil, nil, qttErr(Netresources.String(), err)
 	}
-	// buf4, err = f.reqDB(Users)
-	// if err != nil {
-	// 	return nil, nil, nil, nil, qttErr(Users.String(), err)
-	// }
-	return buf1, buf2, buf3, buf4, nil
+	return buf1, buf2, buf3, nil
 }
 
 func qttErr(s string, err error) error {

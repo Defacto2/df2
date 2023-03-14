@@ -12,7 +12,6 @@ import (
 func (c Config) Checks(log *zap.SugaredLogger) {
 	DownloadDir(c.DownloadDir, log)
 	LogDir(c.LogDir, log)
-
 }
 
 func BinPath() (string, error) {
@@ -42,7 +41,8 @@ func DownloadDir(name string, log *zap.SugaredLogger) {
 	if err != nil {
 		log.Fatalf("The download directory path could not be read: %s.", err)
 	}
-	if len(files) < 10 {
+	const minFiles = 10
+	if len(files) < minFiles {
 		log.Warnf("The download directory path contains only a few items, is the directory correct:  %s",
 			dir.Name())
 		return

@@ -148,7 +148,9 @@ func Filter(w io.Writer, p []releases.ProductionV1) (int, []releases.ProductionV
 			continue
 		}
 		if l, _ := linked(prod.ID); l != "" {
-			sync(w, prod.ID, database.DeObfuscate(l))
+			if err := sync(w, prod.ID, database.DeObfuscate(l)); err != nil {
+				fmt.Fprintln(w, err)
+			}
 			continue
 		}
 		rec := make(releases.Productions, 1)

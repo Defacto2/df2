@@ -11,17 +11,17 @@ import (
 
 // Config options for the Defacto2 tool.
 type Config struct {
-	IsProduction bool   `env:"PRODUCTION" envDefault:"false" help:"Use the production mode to log all errors and warnings to a file"`
-	MaxProcs     uint   `env:"MAXPROCS" envDefault:"0" help:"Limit the number of operating system threads the program can use"`
+	IsProduction bool   `env:"PRODUCTION" envDefault:"false" help:"Use the production mode to log all errors and warnings to a file"` //nolint:lll
+	MaxProcs     uint   `env:"MAXPROCS" envDefault:"0" help:"Limit the number of operating system threads the program can use"`       //nolint:lll
 	HTTPPort     uint   `env:"PORT" envDefault:"1323" help:"The port number to be used by the HTTP server"`
 	Timeout      uint   `env:"TIMEOUT" envDefault:"5" help:"The timeout value in seconds for the HTTP server"`
-	DownloadDir  string `env:"DOWNLOAD" help:"The directory path that holds the UUID named fields that are served as release downloads"`
-	NoRobots     bool   `env:"NOROBOTS" envDefault:"false" avoid:"true" help:"Tell all search engines to not crawl the website pages or assets"`
+	DownloadDir  string `env:"DOWNLOAD" help:"The directory path that holds the UUID named fields that are served as release downloads"`         //nolint:lll
+	NoRobots     bool   `env:"NOROBOTS" envDefault:"false" avoid:"true" help:"Tell all search engines to not crawl the website pages or assets"` //nolint:lll
 	LogRequests  bool   `env:"REQUESTS" envDefault:"false" avoid:"true" help:"Log all HTTP client requests to a file"`
 	LogDir       string `env:"LOG" avoid:"true" help:"Overwrite the directory path that will store the program logs"`
 }
 
-func (c Config) String() string {
+func (c Config) String() string { //nolint:funlen
 	const (
 		minwidth = 2
 		tabwidth = 4
@@ -109,7 +109,7 @@ func match(x, y string) string {
 }
 
 func types(t reflect.Type) string {
-	switch t.Kind() {
+	switch t.Kind() { //nolint:exhaustive
 	case reflect.Bool:
 		return "true|false"
 	case reflect.Uint:

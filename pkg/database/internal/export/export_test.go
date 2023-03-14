@@ -7,7 +7,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database/internal/export"
 )
 
-func TestFlags_Run(t *testing.T) { //nolint:funlen
+func TestFlags_Run(t *testing.T) {
 	type fields struct {
 		Parallel bool
 		Tables   string

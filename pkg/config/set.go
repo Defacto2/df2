@@ -132,7 +132,8 @@ func save(w io.Writer, value any) error {
 		return fmt.Errorf("save: %w", ErrSaveType)
 	}
 	viper.Set(Config.nameFlag, value)
-	fmt.Fprintf(w, "%s %s is now set to \"%v\"\n", str.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))
+	fmt.Fprintf(w, "%s %s is now set to \"%v\"\n",
+		str.Y(), color.Primary.Sprint(Config.nameFlag), color.Info.Sprint(value))
 	if err := write(w, true); err != nil {
 		return fmt.Errorf("save: %w", err)
 	}

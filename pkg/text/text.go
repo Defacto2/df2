@@ -44,7 +44,7 @@ func Fix(w io.Writer) error {
 	return nil
 }
 
-func fixRow(w io.Writer, i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records int, err error) { //nolint:nonamedreturns
+func fixRow(w io.Writer, i, c int, dir *directories.Dir, rows *sql.Rows) (int, int, error) {
 	var t tf.TextFile
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {

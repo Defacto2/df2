@@ -82,7 +82,7 @@ func init() { //nolint:gochecknoinits
 }
 
 // readIn the config file and any set ENV variables.
-// TODO: remove and use configger.Config
+// TODO: remove and use configger.Config.
 func readIn() {
 	cf := config.Filepath()
 	switch cf {

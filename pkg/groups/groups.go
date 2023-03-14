@@ -176,7 +176,7 @@ func Fix(w io.Writer) error {
 	}
 	// report time taken
 	elapsed := time.Since(start).Seconds()
-	fmt.Fprint(w, fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
+	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
 	return nil
 }
 

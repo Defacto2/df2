@@ -19,7 +19,6 @@ func TestConnection_String(t *testing.T) {
 		NoSSLMode: true,
 	}
 	assert.Equal(t, "root:qwerty@tcp(example.com:3360)/?allowCleartextPasswords=false&parseTime=true", c.String())
-
 }
 
 func TestConnectDB(t *testing.T) {

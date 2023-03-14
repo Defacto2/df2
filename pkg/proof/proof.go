@@ -113,7 +113,7 @@ func (request Request) Skip(w io.Writer, l *zap.SugaredLogger, values []sql.RawB
 	}
 	n, err := database.IsProof(l, values)
 	if err != nil {
-
+		l.Errorln(err)
 	}
 	if !n && !request.AllProofs {
 		if request.ByID != "" {

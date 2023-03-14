@@ -192,10 +192,12 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 }
 
 // Download the first available remote file linked in the Demozoo production record.
-func (r *Record) Download(w io.Writer, l *zap.SugaredLogger, overwrite bool, api *prods.ProductionsAPIv1, st Stat) bool {
+func (r *Record) Download(w io.Writer, l *zap.SugaredLogger,
+	overwrite bool, api *prods.ProductionsAPIv1, st Stat,
+) bool {
 	if st.FileExist(r) || overwrite {
 		if r.UUID == "" {
-			fmt.Fprintf(w, color.Error.Sprint("UUID is empty, cannot continue"))
+			fmt.Fprint(w, color.Error.Sprint("UUID is empty, cannot continue"))
 			return true
 		}
 		name, link := api.DownloadLink()
