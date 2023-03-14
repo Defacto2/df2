@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database/internal/connect"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/gookit/color"
 	"go.uber.org/zap"
 )
@@ -69,10 +69,10 @@ func (col Column) NamedTitles(w io.Writer) error {
 		return err
 	}
 	if rows == 0 {
-		logs.Printcrf(w, "no named title fixes needed")
+		logger.Printcrf(w, "no named title fixes needed")
 		return nil
 	}
-	logs.Printcrf(w, "%d named title fixes applied", rows)
+	logger.Printcrf(w, "%d named title fixes applied", rows)
 	return nil
 }
 
@@ -151,7 +151,7 @@ func Platforms(w io.Writer, l *zap.SugaredLogger, platforms *[]string) {
 
 func printcr(w io.Writer, i int64, s *string) {
 	if i == 0 {
-		logs.Printcr(w, *s)
+		logger.Printcr(w, *s)
 		return
 	}
 	fmt.Fprintln(w, "\n"+*s)

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/str"
 )
 
@@ -45,7 +45,7 @@ func Dir(r io.Reader) (string, error) {
 			save = txt
 		}
 		if _, err := os.Stat(save); os.IsNotExist(err) {
-			return "", fmt.Errorf("%w: %s", ErrDir, logs.Path(save))
+			return "", fmt.Errorf("%w: %s", ErrDir, logger.SprintPath(save))
 		} else if err == nil {
 			break // exit loop if the directory is found
 		}

@@ -12,7 +12,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
@@ -426,11 +425,11 @@ func query(w io.Writer, l *zap.SugaredLogger, v bool, rows *sql.Rows, columns []
 			rowCnt, string(values[0]), color.Primary.Sprint(r.UUID), color.Info.Sprint(r.Filename)))
 		na, err := NewApprove(values)
 		if err != nil {
-			logs.Save(l, err)
+			l.Errorln(err)
 		}
 		dz, err := IsDemozoo(values)
 		if err != nil {
-			logs.Save(l, err)
+			l.Errorln(err)
 		}
 		if !na && !dz {
 			Verbose(w, v, x())
@@ -446,7 +445,7 @@ func query(w io.Writer, l *zap.SugaredLogger, v bool, rows *sql.Rows, columns []
 			r.Save = false
 		} else if err := r.Approve(w); err != nil {
 			Verbose(w, v, x())
-			logs.Save(l, err)
+			l.Errorln(err)
 			r.Save = false
 		}
 		Verbose(w, v, fmt.Sprintf(" %s", str.Y()))

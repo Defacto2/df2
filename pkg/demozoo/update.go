@@ -23,7 +23,6 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
 	"github.com/Defacto2/df2/pkg/groups"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 	"go.uber.org/zap"
@@ -492,7 +491,7 @@ func (r *Record) pouet(w io.Writer, api *prods.ProductionsAPIv1) error {
 func (r *Record) save(w io.Writer, l *zap.SugaredLogger) {
 	if err := r.Save(w); err != nil {
 		fmt.Fprintf(w, " %v \n", str.X())
-		logs.Save(l, err)
+		l.Errorln(err)
 		return
 	}
 	fmt.Fprintf(w, " 💾%v", str.Y())

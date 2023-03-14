@@ -1,14 +1,11 @@
 package run
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
 	"net/url"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/archive"
@@ -17,7 +14,6 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/people"
 	"github.com/Defacto2/df2/pkg/prompt"
 	"github.com/Defacto2/df2/pkg/proof"
@@ -27,7 +23,6 @@ import (
 	"github.com/Defacto2/df2/pkg/zipcontent"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
-	"github.com/hako/durafmt"
 	"go.uber.org/zap"
 )
 
@@ -210,36 +205,6 @@ func Groups(w io.Writer, gpf arg.Group) error {
 		}
 	}
 	return nil
-}
-
-func Log(w io.Writer, l *zap.SugaredLogger) error {
-	fmt.Fprintf(w, "%v%v %v\n",
-		color.Cyan.Sprint("log file"),
-		color.Red.Sprint(":"),
-		logs.Filepath(l, logs.Filename))
-	f, err := os.Open(logs.Filepath(l, logs.Filename))
-	if err != nil {
-		return err
-	}
-	scanner := bufio.NewScanner(f)
-	c := 0
-	scanner.Text()
-	const maxSplit = 5
-	for scanner.Scan() {
-		c++
-		s := strings.SplitN(scanner.Text(), " ", maxSplit)
-		t, err := time.Parse("2006/01/02 15:04:05", strings.Join(s[0:2], " "))
-		if err != nil {
-			fmt.Fprintf(w, "%d. %v\n", c, scanner.Text())
-			continue
-		}
-		duration := durafmt.Parse(time.Since(t)).LimitFirstN(1)
-		fmt.Fprintf(w, "%v %v ago  %v %s\n",
-			color.Secondary.Sprintf("%d.", c),
-			duration, color.Info.Sprint(s[2]),
-			strings.Join(s[3:], " "))
-	}
-	return scanner.Err()
 }
 
 func New(w io.Writer, l *zap.SugaredLogger) error {

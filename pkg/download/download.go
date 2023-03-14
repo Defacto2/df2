@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/download/internal/cnter"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
@@ -85,7 +85,7 @@ func CheckTime(t time.Duration) time.Duration {
 
 // printProgress prints that the download progress is complete.
 func progressDone(w io.Writer, name string, written int64) {
-	logs.Printcrf(w, "%v download saved to: %v", humanize.Bytes(uint64(written)), name)
+	logger.Printcrf(w, "%v download saved to: %v", humanize.Bytes(uint64(written)), name)
 }
 
 // GetSave downloads the url and saves it as the named file.

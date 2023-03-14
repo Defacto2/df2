@@ -3,7 +3,7 @@ package cnter
 import (
 	"io"
 
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/dustin/go-humanize"
 )
 
@@ -26,10 +26,10 @@ func (wc *Writer) Write(p []byte) (int, error) {
 // Percent prints the current download progress.
 func (wc Writer) Percent() {
 	if pct := Percent(wc.Written, wc.Total); pct > 0 {
-		logs.Printcrf(wc.W, "downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
+		logger.Printcrf(wc.W, "downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
 		return
 	}
-	logs.Printcrf(wc.W, "downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
+	logger.Printcrf(wc.W, "downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
 }
 
 // Percent of count in total.

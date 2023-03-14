@@ -13,7 +13,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
@@ -127,7 +127,7 @@ func UpdateZipContent(w io.Writer, id, filename, content string, items int) erro
 
 // Prefix prints the stat count and record Id to stdout.
 func (r Record) Prefix(w io.Writer, s *stat.Proof) {
-	logs.Printcrf(w, "%s %0*d. %v ",
+	logger.Printcrf(w, "%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.Total)),
 		s.Count,

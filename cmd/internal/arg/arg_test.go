@@ -27,3 +27,28 @@ func Test_options(t *testing.T) {
 		})
 	}
 }
+
+func TestInvalid(t *testing.T) {
+	type args struct {
+		arg  string
+		args []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"empty", args{}, true},
+		{"args", args{
+			arg:  "abc",
+			args: []string{"abc", "def"},
+		}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := arg.Invalid(nil, tt.args.arg, tt.args.args...); (err != nil) != tt.wantErr {
+				t.Errorf("Invalid() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

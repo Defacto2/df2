@@ -13,7 +13,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
 	"github.com/gookit/color"
@@ -155,7 +155,7 @@ func (r *Record) id(w io.Writer, s *scan.Stats) error {
 	if s == nil {
 		return ErrStatNil
 	}
-	logs.Printcrf(w, "%s %0*d. %v ",
+	logger.Printcrf(w, "%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.Total)),
 		s.Count,

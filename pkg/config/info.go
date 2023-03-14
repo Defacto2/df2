@@ -10,7 +10,6 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
@@ -30,7 +29,6 @@ func Info(w io.Writer, l *zap.SugaredLogger, sizes bool) error {
 	}
 	fmt.Fprintf(w, "%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(colon), Filepath())
 	Check()
-	fmt.Fprintf(w, "%v%v %v\n", color.Cyan.Sprint("log file"), color.Red.Sprint(colon), logs.Filepath(l, logs.Filename))
 	db := database.ConnInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {

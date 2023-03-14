@@ -9,7 +9,6 @@ import (
 	"github.com/Defacto2/df2/pkg/config"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/spf13/cobra"
 )
 
@@ -29,9 +28,10 @@ var configCmd = &cobra.Command{
 			log.Infof("config cmd usage: %w\n", err)
 		}
 		if len(args) != 0 || cmd.Flags().NFlag() != 0 {
-			if err := logs.Arg("config", true, args...); err != nil {
+			if err := arg.Invalid(os.Stdout, "config", args...); err != nil {
 				log.Info(err)
 			}
+			os.Exit(1)
 		}
 	},
 }

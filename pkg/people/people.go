@@ -15,7 +15,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/groups"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/people/internal/person"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/Defacto2/df2/pkg/str"
@@ -229,11 +229,11 @@ func Fix(w io.Writer) error {
 	}
 	switch {
 	case c == 1:
-		logs.Printcr(w, "1 fix applied")
+		logger.Printcr(w, "1 fix applied")
 	case c > 0:
-		logs.Printcrf(w, "%d fixes applied", c)
+		logger.Printcrf(w, "%d fixes applied", c)
 	default:
-		logs.Printcr(w, "no people fixes needed")
+		logger.Printcr(w, "no people fixes needed")
 	}
 	elapsed := time.Since(start).Seconds()
 	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)

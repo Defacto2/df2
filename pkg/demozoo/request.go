@@ -8,7 +8,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -70,7 +70,7 @@ func (r Request) Queries(w io.Writer, log *zap.SugaredLogger) error { //nolint:c
 			log.Errorf("queries new: %w", err)
 			continue
 		}
-		logs.Printcrf(w, rec.String(st.Total))
+		logger.Printcrf(w, rec.String(st.Total))
 		if update := rec.check(w); !update {
 			continue
 		}

@@ -12,7 +12,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 	"go.uber.org/zap"
@@ -53,7 +53,7 @@ func (st *Stat) NextRefresh(w io.Writer, l *zap.SugaredLogger, rec Records) erro
 	if err != nil {
 		return fmt.Errorf("next record 1: %w", err)
 	}
-	logs.Printcrf(w, r.String(0))
+	logger.Printcrf(w, r.String(0))
 	var f Product
 	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
@@ -102,7 +102,7 @@ func (st *Stat) NextPouet(w io.Writer, l *zap.SugaredLogger, rec Records) error 
 	if r.WebIDPouet > 0 {
 		return nil
 	}
-	logs.Printcrf(w, r.String(0))
+	logger.Printcrf(w, r.String(0))
 	var f Product
 	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
@@ -204,13 +204,13 @@ func (r *Record) Download(w io.Writer, l *zap.SugaredLogger, overwrite bool, api
 			return true
 		}
 		const OK = 200
-		logs.Printcrf(w, "%s%s %s", r.String(st.Total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
+		logger.Printcrf(w, "%s%s %s", r.String(st.Total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
 		head, err := download.GetSave(w, r.FilePath, link)
 		if err != nil {
 			l.Errorln(err)
 			return true
 		}
-		logs.Printcrf(w, r.String(st.Total))
+		logger.Printcrf(w, r.String(st.Total))
 		fmt.Fprintf(w, "• %s", name)
 		r.downloadReset(name)
 		r.lastMod(w, head)

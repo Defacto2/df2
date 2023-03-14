@@ -1,6 +1,7 @@
 package arg
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/gookit/color"
 )
+
+var ErrNoCmd = errors.New("no command argument was provided")
 
 func Targets() []string {
 	return []string{"all", "download", "emulation", "image"}
@@ -96,6 +99,26 @@ type ZipCmmt struct {
 	ASCII   bool
 	Unicode bool
 	OW      bool
+}
+
+// Invalid returns instructions for invalid command arguments and exits with an error code.
+func Invalid(w io.Writer, arg string, args ...string) error {
+	if arg == "" {
+		return ErrNoCmd
+	}
+	s := ""
+	if len(args) == 0 {
+		s = fmt.Sprintf("%s %s", color.Warn.Sprint("invalid command"),
+			color.Bold.Sprintf("\"%s\"", arg))
+	}
+	if len(args) > 0 {
+		s = fmt.Sprintf("%s %s",
+			color.Warn.Sprint("invalid command"),
+			color.Bold.Sprintf("\"%s %s\"", arg, args[0]))
+	}
+	s += fmt.Sprint("\n" + color.Warn.Sprint("please use one of the Available Commands shown above"))
+	fmt.Fprintln(w, s)
+	return nil
 }
 
 // FilterFlag compairs the value of the filter flag against the list of slice values.

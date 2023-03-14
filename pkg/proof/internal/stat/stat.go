@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 )
 
 // Proof data.
@@ -26,7 +26,7 @@ type Proof struct {
 func Init() Proof {
 	dir := directories.Init(false)
 	return Proof{
-		Base:     logs.Path(dir.UUID),
+		Base:     logger.SprintPath(dir.UUID),
 		BasePath: dir.UUID,
 		start:    time.Now(),
 	}

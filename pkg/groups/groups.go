@@ -17,7 +17,7 @@ import (
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/spf13/viper"
 )
 
@@ -154,11 +154,11 @@ func Fix(w io.Writer) error {
 	}
 	switch {
 	case c == 1:
-		logs.Printcr(w, "1 fix applied")
+		logger.Printcr(w, "1 fix applied")
 	case c > 0:
-		logs.Printcrf(w, "%d fixes applied", c)
+		logger.Printcrf(w, "%d fixes applied", c)
 	default:
-		logs.Printcr(w, "no group fixes needed")
+		logger.Printcr(w, "no group fixes needed")
 	}
 	// fix initialisms stored in the groupnames table
 	fmt.Fprint(w, " and...\n")
@@ -168,11 +168,11 @@ func Fix(w io.Writer) error {
 	}
 	switch i {
 	case 1:
-		logs.Printcr(w, "removed a broken initialism entry")
+		logger.Printcr(w, "removed a broken initialism entry")
 	case 0:
-		logs.Printcr(w, "no initialism fixes needed")
+		logger.Printcr(w, "no initialism fixes needed")
 	default:
-		logs.Printcrf(w, "%d broken initialism entries removed", i)
+		logger.Printcrf(w, "%d broken initialism entries removed", i)
 	}
 	// report time taken
 	elapsed := time.Since(start).Seconds()

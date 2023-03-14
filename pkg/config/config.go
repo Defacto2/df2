@@ -11,7 +11,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 	"github.com/spf13/viper"
@@ -23,6 +22,7 @@ var ErrSaveType = errors.New("unsupported value interface type")
 // directories are initialised and configured by InitDefaults() in lib/cmd.go.
 
 const (
+	GapUser              = "df2"
 	cmdRun               = "df2 config"
 	filename             = "config.yaml"
 	dir      fs.FileMode = 0o700
@@ -58,7 +58,7 @@ func Check() {
 
 // Filepath is the absolute path and filename of the configuration file.
 func Filepath() string {
-	dir, err := gap.NewScope(gap.User, logs.GapUser).ConfigPath(filename)
+	dir, err := gap.NewScope(gap.User, GapUser).ConfigPath(filename)
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {

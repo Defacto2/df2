@@ -20,7 +20,6 @@ import (
 	"github.com/Defacto2/df2/pkg/images/internal/file"
 	"github.com/Defacto2/df2/pkg/images/internal/imagemagick"
 	"github.com/Defacto2/df2/pkg/images/internal/netpbm"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
@@ -189,7 +188,7 @@ func feedback(w io.Writer, l *zap.SugaredLogger, s string, err error) {
 		return
 	}
 	if err != nil {
-		logs.Save(l, err)
+		l.Errorln(err)
 	}
 }
 

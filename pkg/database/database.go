@@ -20,7 +20,6 @@ import (
 	"github.com/Defacto2/df2/pkg/database/internal/export"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
 	"github.com/Defacto2/df2/pkg/database/internal/update"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
@@ -224,7 +223,7 @@ func DateTime(l *zap.SugaredLogger, raw sql.RawBytes) string {
 	}
 	t, err := time.Parse(Datetime, v)
 	if err != nil {
-		logs.Save(l, err)
+		l.Errorln(err)
 		return "?"
 	}
 	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
