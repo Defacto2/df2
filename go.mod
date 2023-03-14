@@ -6,6 +6,7 @@ go 1.20
 
 require (
 	github.com/bengarrett/retrotxtgo v0.0.38
+	github.com/caarlos0/env/v7 v7.1.0
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/carlmjohnson/versioninfo v0.22.4
 	github.com/disintegration/imaging v1.6.2
@@ -31,6 +32,7 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.14.1
 	github.com/volatiletech/strmangle v0.0.4
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
+	go.uber.org/zap v1.24.0
 	golang.org/x/image v0.6.0
 	golang.org/x/sys v0.6.0
 	golang.org/x/text v0.8.0
@@ -64,6 +66,8 @@ require (
 	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	go.uber.org/atomic v1.10.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
