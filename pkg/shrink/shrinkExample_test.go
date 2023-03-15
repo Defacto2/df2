@@ -7,21 +7,21 @@ import (
 )
 
 func ExampleFiles() {
-	if err := shrink.Files(nil); err != nil {
+	if err := shrink.Files(nil, ""); err != nil {
 		fmt.Print("shrink files error")
 	}
 	// Output: shrink files error
 }
 
 func ExamplePreviews() {
-	if err := shrink.Previews(nil); err != nil {
+	if err := shrink.Previews(nil, ""); err != nil {
 		fmt.Print("shrink previews error")
 	}
 	// Output:
 }
 
 func ExampleSQL() {
-	if err := shrink.SQL(nil); err != nil {
+	if err := shrink.SQL(nil, ""); err != nil {
 		fmt.Print("shrink sql error")
 	}
 	// Output: shrink sql error

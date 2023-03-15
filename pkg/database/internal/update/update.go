@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/database/internal/connect"
+	"github.com/Defacto2/df2/pkg/database/connect"
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/gookit/color"
 	"go.uber.org/zap"

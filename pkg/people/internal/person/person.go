@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	"github.com/Defacto2/df2/pkg/people/internal/role"
-	"github.com/spf13/viper"
 )
 
 var ErrFilter = errors.New("invalid filter used")
@@ -26,7 +25,7 @@ type Person struct {
 type Persons []Person
 
 // Tempate creates the HTML used by the website to list people.
-func (p Persons) Template(w io.Writer, filename, tpl string, filter string) error {
+func (p Persons) Template(w io.Writer, filename, directory, tpl string, filter string) error {
 	t, err := template.New("h2").Parse(tpl)
 	if err != nil {
 		return fmt.Errorf("parse h2 template: %w", err)
@@ -45,7 +44,7 @@ func (p Persons) Template(w io.Writer, filename, tpl string, filter string) erro
 	}
 	switch role.Roles(filter) {
 	case role.Artists, role.Coders, role.Musicians, role.Writers:
-		f, err := os.Create(path.Join(viper.GetString("directory.html"), filename))
+		f, err := os.Create(path.Join(directory, filename))
 		if err != nil {
 			return fmt.Errorf("parse create: %w", err)
 		}

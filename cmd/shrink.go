@@ -24,19 +24,19 @@ are 'waiting for approval.'`,
 		var wg sync.WaitGroup
 		wg.Add(delta)
 		go func() {
-			if err := shrink.SQL(w); err != nil {
+			if err := shrink.SQL(w, cfg.SQLDumps); err != nil {
 				log.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Files(w); err != nil {
+			if err := shrink.Files(w, cfg.IncomingFiles); err != nil {
 				log.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Previews(w); err != nil {
+			if err := shrink.Previews(w, cfg.IncomingImgs); err != nil {
 				log.Error(err)
 			}
 			wg.Done()

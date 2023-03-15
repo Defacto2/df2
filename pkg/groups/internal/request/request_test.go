@@ -28,7 +28,7 @@ func TestParse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: this test is slow
 			t.Parallel()
-			if err := tt.r.Parse(nil, tt.args.filename, tt.args.templ); (err != nil) != tt.wantErr {
+			if err := tt.r.Parse(nil, tt.args.filename, "", tt.args.templ); (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

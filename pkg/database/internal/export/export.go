@@ -13,11 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/database/internal/connect"
+	"github.com/Defacto2/df2/pkg/database/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/templ"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -85,6 +84,7 @@ type Flags struct {
 	Type     string // Type of export (create|update)
 	Version  string // df2 app version pass-through
 	Limit    uint   // Limit the number of records
+	SQLDumps string // SQLDumps should be the value of config.SQLDumps
 }
 
 // Run is intended for an operating system time-based job scheduler.
@@ -411,7 +411,7 @@ func (f *Flags) ver() string {
 // write the buffer to stdout, an SQL file or a compressed SQL file.
 func (f *Flags) write(w io.Writer, buf *bytes.Buffer) error {
 	const bz2 = ".bz2"
-	name := path.Join(viper.GetString("directory.sql"), f.fileName())
+	name := path.Join(f.SQLDumps, f.fileName())
 	switch {
 	case f.Compress:
 		name += bz2

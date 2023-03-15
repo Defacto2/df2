@@ -15,7 +15,6 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -99,13 +98,13 @@ func (cmd Approvals) Approve(w io.Writer) error {
 }
 
 // Init SQL directory.
-func Init(w io.Writer) error { //nolint:funlen
+func Init(w io.Writer, directory string) error { //nolint:funlen
 	const (
 		layout   = "2-1-2006"
 		minDash  = 2
 		oneMonth = 730
 	)
-	s := viper.GetString("directory.sql")
+	s := directory
 	color.Primary.Printf("SQL directory: %s\n", s)
 	entries, err := os.ReadDir(s)
 	if err != nil {

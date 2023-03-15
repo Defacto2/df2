@@ -15,7 +15,6 @@ import (
 	"github.com/Defacto2/df2/pkg/recent"
 	"github.com/Defacto2/df2/pkg/sitemap"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var ErrNoOutput = errors.New("no output command used")
@@ -57,13 +56,13 @@ func init() { //nolint:gochecknoinits
 	dataCmd.Flags().BoolVarP(&dbf.CronJob, "cronjob", "j", false,
 		"data backup for the cron time-based job scheduler\nall other flags are ignored")
 	dataCmd.Flags().BoolVarP(&dbf.Compress, "compress", "c", false,
-		fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", viper.Get("directory.sql")))
+		fmt.Sprintf("save and compress the SQL using bzip2\n%s/d2-sql-create.bz2", cfg.SQLDumps))
 	dataCmd.Flags().UintVarP(&dbf.Limit, "limit", "l", 1,
 		"limit the number of rows returned (no limit 0)")
 	dataCmd.Flags().BoolVarP(&dbf.Parallel, "parallel", "p", true,
 		"run --table=all queries in parallel")
 	dataCmd.Flags().BoolVarP(&dbf.Save, "save", "s", false,
-		fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", viper.Get("directory.sql")))
+		fmt.Sprintf("save the SQL\n%s/d2-sql-update.sql", cfg.SQLDumps))
 	dataCmd.Flags().StringVarP(&dbf.Tables, "table", "t", "files",
 		fmt.Sprintf("database table to use\noptions: all, %s", database.Tbls()))
 	dataCmd.Flags().StringVarP(&dbf.Type, "type", "y", "update",
@@ -113,6 +112,7 @@ var dataCmd = &cobra.Command{
 	SQL statements that can recreate the database objects and data. These can be
 	used with mysqldump or Adminer to manage content in the MySQL databases.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		dbf.SQLDumps = cfg.SQLDumps
 		if err := run.Data(os.Stdout, dbf); err != nil {
 			log.Info(err)
 		}
@@ -130,7 +130,7 @@ heading-2 element containing a relative anchor link to the group's page and name
 The HTML output returned by the cronjob flag includes additional elements for
 the website stylization.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.Groups(os.Stdout, gpf); err != nil {
+		if err := run.Groups(os.Stdout, cfg.HTMLExports, gpf); err != nil {
 			log.Info(err)
 		}
 	},
@@ -147,7 +147,7 @@ heading-2 element containing a relative anchor link to the person's page and nam
 The HTML output returned by the cronjob flag includes additional elements for
 the website stylization.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.People(os.Stdout, ppf); err != nil {
+		if err := run.People(os.Stdout, cfg.HTMLExports, ppf); err != nil {
 			log.Info(err)
 		}
 	},
@@ -181,7 +181,7 @@ discover most of the site."
 
 See: https://developers.google.com/search/docs/advanced/sitemaps/overview`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := sitemap.Create(os.Stdout); err != nil {
+		if err := sitemap.Create(os.Stdout, cfg.HTMLViews); err != nil {
 			log.Info(err)
 		}
 	},

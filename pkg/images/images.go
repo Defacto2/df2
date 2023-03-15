@@ -24,7 +24,6 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/nickalie/go-webpbin"
-	"github.com/spf13/viper"
 	"github.com/yusukebe/go-pngquant"
 	"go.uber.org/zap"
 	_ "golang.org/x/image/bmp"  // register BMP decoding.
@@ -34,7 +33,6 @@ import (
 
 var (
 	ErrFormat = errors.New("unsupported image format")
-	ErrViper  = errors.New("viper directory locations cannot be read")
 )
 
 const (
@@ -118,9 +116,6 @@ func Duplicate(name, suffix string) (string, error) {
 func Generate(w io.Writer, l *zap.SugaredLogger, name, id string, remove bool) error {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		return fmt.Errorf("generate stat %q: %w", name, err)
-	}
-	if viper.GetString("directory.root") == "" {
-		return fmt.Errorf("%w: directory.root", ErrViper)
 	}
 	f := directories.Files(id)
 	// these funcs use dependencies that are not thread safe

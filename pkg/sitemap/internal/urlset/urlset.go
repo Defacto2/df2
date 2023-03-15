@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 const (
@@ -77,7 +75,7 @@ func HTML3Path() [7]string {
 	}
 }
 
-func (set *Set) StaticURLs() (c, i int) { //nolint:nonamedreturns
+func (set *Set) StaticURLs(directory string) (c, i int) { //nolint:nonamedreturns
 	paths := Paths()
 	if set == nil || len(set.Urls) < len(paths) {
 		return 0, 0
@@ -87,21 +85,21 @@ func (set *Set) StaticURLs() (c, i int) { //nolint:nonamedreturns
 	uri := func(path string) string {
 		return static + path
 	}
-	c, i, view := 0, 0, viper.GetString("directory.views")
+	c, i = 0, 0
 	for i, path := range paths {
-		file := filepath.Join(view, path, index)
+		file := filepath.Join(directory, path, index)
 		if s, err := os.Stat(file); !os.IsNotExist(err) {
 			set.Urls[i] = Tag{uri(path), Lastmod(s), "", veryHigh}
 			c++
 			continue
 		}
-		j := filepath.Join(view, path) + cfm
+		j := filepath.Join(directory, path) + cfm
 		if s, err := os.Stat(j); !os.IsNotExist(err) {
 			set.Urls[i] = Tag{uri(path), Lastmod(s), "", high}
 			c++
 			continue
 		}
-		k := filepath.Join(view, strings.ReplaceAll(path, "-", "")+cfm)
+		k := filepath.Join(directory, strings.ReplaceAll(path, "-", "")+cfm)
 		if s, err := os.Stat(k); !os.IsNotExist(err) {
 			set.Urls[i] = Tag{uri(path), Lastmod(s), "", standard}
 			c++

@@ -20,7 +20,7 @@ var approveCmd = &cobra.Command{
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
 		w := os.Stdout
-		if err := database.Approve(w, log, appr.Verbose); err != nil {
+		if err := database.Approve(w, log, cfg.IncomingFiles, appr.Verbose); err != nil {
 			log.Info(err)
 		}
 		if err := database.Fix(w, log); err != nil {

@@ -11,7 +11,6 @@ import (
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 	"github.com/gookit/color"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -29,8 +28,6 @@ func config(t *testing.T) string {
 	if err != nil {
 		t.Error(err)
 	}
-	viper.Set("directory.000", d)
-	viper.Set("directory.400", d)
 	return d
 }
 

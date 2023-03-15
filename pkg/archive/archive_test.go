@@ -10,7 +10,6 @@ import (
 	"github.com/Defacto2/df2/pkg/archive/internal/content"
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
 	"github.com/gabriel-vasile/mimetype"
-	"github.com/spf13/viper"
 )
 
 func testDir(name string) string {
@@ -160,9 +159,6 @@ func TestExtract(t *testing.T) {
 		{"zip.bz2", args{testDir("demozoo/test.bz2.zip"), "test.bz2.zip", uuid}, false},
 	}
 	for _, tt := range tests {
-		if viper.GetString("directory.root") == "" {
-			return
-		}
 		t.Run(tt.name, func(t *testing.T) {
 			if err := archive.Proof(nil, nil, tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
 				t.Errorf("Proof(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)

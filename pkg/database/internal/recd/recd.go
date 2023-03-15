@@ -10,12 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/database/internal/connect"
+	"github.com/Defacto2/df2/pkg/database/connect"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -97,7 +96,7 @@ func (r *Record) AutoID(data string) uint {
 	return id
 }
 
-func (r *Record) Check(w io.Writer, values []sql.RawBytes, dir *directories.Dir) bool {
+func (r *Record) Check(w io.Writer, incoming string, values []sql.RawBytes, dir *directories.Dir) bool {
 	v := r.Verbose
 	if !r.checkFileName(string(values[filename])) {
 		verbose(w, v, "!filename")
@@ -123,7 +122,7 @@ func (r *Record) Check(w io.Writer, values []sql.RawBytes, dir *directories.Dir)
 		verbose(w, v, "!tag")
 		return false
 	}
-	if !r.checkDownload(w, dir.UUID) {
+	if !r.checkDownload(w, incoming, dir.UUID) {
 		verbose(w, v, "!download")
 		return false
 	}
@@ -140,10 +139,10 @@ func (r *Record) Check(w io.Writer, values []sql.RawBytes, dir *directories.Dir)
 	return true
 }
 
-func (r *Record) checkDownload(w io.Writer, path string) bool {
+func (r *Record) checkDownload(w io.Writer, incoming, path string) bool {
 	file := filepath.Join(fmt.Sprint(path), r.UUID)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return r.recoverDownload(w, path)
+		return r.recoverDownload(w, incoming, path)
 	}
 	return true
 }
@@ -217,8 +216,8 @@ func (r *Record) ImagePath(path string) string {
 	return filepath.Join(fmt.Sprint(path), r.UUID+png)
 }
 
-func (r *Record) recoverDownload(w io.Writer, path string) bool {
-	src, v := viper.GetString("directory.incoming.files"), r.Verbose
+func (r *Record) recoverDownload(w io.Writer, incoming, path string) bool {
+	src, v := incoming, r.Verbose
 	if src == "" {
 		return false
 	}
@@ -383,7 +382,7 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func Queries(w io.Writer, l *zap.SugaredLogger, v bool) error {
+func Queries(w io.Writer, l *zap.SugaredLogger, incoming string, v bool) error {
 	db := connect.Connect(w)
 	defer db.Close()
 	rows, err := db.Query(newFilesSQL)
@@ -398,10 +397,10 @@ func Queries(w io.Writer, l *zap.SugaredLogger, v bool) error {
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
-	return query(w, l, v, rows, columns)
+	return query(w, l, incoming, v, rows, columns)
 }
 
-func query(w io.Writer, l *zap.SugaredLogger, v bool, rows *sql.Rows, columns []string) error {
+func query(w io.Writer, l *zap.SugaredLogger, incoming string, v bool, rows *sql.Rows, columns []string) error {
 	x := func() string {
 		return fmt.Sprintf(" %s", str.X())
 	}
@@ -436,7 +435,7 @@ func query(w io.Writer, l *zap.SugaredLogger, v bool, rows *sql.Rows, columns []
 			continue
 		}
 		r.UUID = string(values[1])
-		if ok := r.Check(w, values, &dir); !ok {
+		if ok := r.Check(w, incoming, values, &dir); !ok {
 			Verbose(w, v, x())
 			continue
 		}

@@ -15,7 +15,6 @@ import (
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -67,7 +66,6 @@ func Execute(log *zap.SugaredLogger, c configger.Config) error {
 
 func init() { //nolint:gochecknoinits
 	cobra.OnInitialize()
-	readIn()
 	rootCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Admin:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "group2", Title: "Drive:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "group3", Title: "Remote:"})
@@ -81,29 +79,5 @@ func init() { //nolint:gochecknoinits
 		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
 		log.Fatal(err)
-	}
-}
-
-// readIn the config file and any set ENV variables.
-// TODO: remove and use configger.Config.
-func readIn() {
-	cf := config.Filepath()
-	switch cf {
-	case "":
-		home, err := os.UserHomeDir()
-		if err != nil {
-			log.Fatal(err)
-		}
-		viper.AddConfigPath(home)
-		viper.SetConfigName(config.Config.Name)
-	default:
-		viper.SetConfigFile(cf)
-	}
-	// read in environment variables that match
-	viper.AutomaticEnv()
-	// if a config file is found, read it in
-	if err := viper.ReadInConfig(); err != nil {
-		config.Config.Errors = true
-		return
 	}
 }

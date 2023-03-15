@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/spf13/viper"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
@@ -128,7 +127,7 @@ func TestInfo(t *testing.T) {
 
 func TestGenerate(t *testing.T) {
 	dir := testDir(imgs)
-	viper.Set("directory.root", "../../tests/images")
+	// "../../tests/images"
 	const (
 		gif = ".gif"
 		jpg = ".jpg"

@@ -15,7 +15,6 @@ import (
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
 	"github.com/Defacto2/df2/pkg/str"
-	"github.com/spf13/viper"
 )
 
 // Flags for group functions.
@@ -36,22 +35,22 @@ type Result struct {
 }
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Flags) DataList(w io.Writer, name string) error {
+func (r Flags) DataList(w io.Writer, name, directory string) error {
 	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
 	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}`
 	tpl += `<option value="{{.Name}}" label="{{.Name}}">{{end}}`
-	if err := r.Parse(w, name, tpl); err != nil {
+	if err := r.Parse(w, name, directory, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Flags) HTML(w io.Writer, name string) error {
+func (r Flags) HTML(w io.Writer, name, directory string) error {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>`
 	tpl += `{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
-	if err := r.Parse(w, name, tpl); err != nil {
+	if err := r.Parse(w, name, directory, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
@@ -117,7 +116,7 @@ func (r Flags) iterate(w io.Writer, groups ...string) (*[]Result, error) {
 // If the named file is empty, the results will be sent to stdout.
 // The HTML returned to stdout is different to the markup saved
 // to a file.
-func (r Flags) Parse(w io.Writer, name, tmpl string) error {
+func (r Flags) Parse(w io.Writer, name, directory, tmpl string) error {
 	groups, total, err := group.List(w, r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
@@ -126,7 +125,7 @@ func (r Flags) Parse(w io.Writer, name, tmpl string) error {
 		if f := r.Filter; f == "" {
 			fmt.Fprintln(w, total, "matching (all) records found")
 		} else {
-			p := path.Join(viper.GetString("directory.html"), name)
+			p := path.Join(directory, name)
 			fmt.Fprintf(w, "%d matching %s records found (%s)\n", total, f, p)
 		}
 	}
@@ -141,16 +140,16 @@ func (r Flags) Parse(w io.Writer, name, tmpl string) error {
 	if name == "" {
 		return noname(w, t, data)
 	}
-	return r.parse(name, total, t, data)
+	return r.parse(name, directory, total, t, data)
 }
 
-func (r Flags) parse(name string, total int, t *template.Template, data *[]Result) error {
+func (r Flags) parse(name, directory string, total int, t *template.Template, data *[]Result) error {
 	switch group.Get(r.Filter) {
 	case group.BBS, group.FTP, group.Group, group.Magazine:
-		html := path.Join(viper.GetString("directory.html"), name)
+		html := path.Join(directory, name)
 		f, err := os.Create(html)
 		if err != nil {
-			if _, _ = os.Stat(viper.GetString("directory.html")); errors.Is(err, os.ErrNotExist) {
+			if _, _ = os.Stat(directory); errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("parse create: parent directory is missing: %w", err)
 			}
 			return fmt.Errorf("parse create: %w", err)

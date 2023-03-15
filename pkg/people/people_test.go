@@ -85,14 +85,14 @@ func Test_DataList_HTML(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := people.HTML(nil, tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
+			if err := people.HTML(nil, tt.args.filename, "", tt.args.r); (err != nil) != tt.wantErr {
 				t.Errorf("HTML() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := people.DataList(nil, tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
+			if err := people.DataList(nil, tt.args.filename, "", tt.args.r); (err != nil) != tt.wantErr {
 				t.Errorf("DataList() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

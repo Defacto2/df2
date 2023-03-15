@@ -180,14 +180,14 @@ func extract(w io.Writer, src string) error {
 	return nil
 }
 
-func Groups(w io.Writer, gpf arg.Group) error {
+func Groups(w io.Writer, directory string, gpf arg.Group) error {
 	switch {
 	case gpf.Cronjob, gpf.Forcejob:
 		force := false
 		if gpf.Forcejob {
 			force = true
 		}
-		if err := groups.Cronjob(w, force); err != nil {
+		if err := groups.Cronjob(w, directory, force); err != nil {
 			return err
 		}
 		return nil
@@ -196,9 +196,9 @@ func Groups(w io.Writer, gpf arg.Group) error {
 	req := groups.Request{Filter: gpf.Filter, Counts: gpf.Counts, Initialisms: gpf.Init, Progress: gpf.Progress}
 	switch gpf.Format {
 	case datal, dl, "d":
-		return req.DataList(w, "")
+		return req.DataList(w, "", directory)
 	case htm, "h", "":
-		return req.HTML(w, "")
+		return req.HTML(w, "", directory)
 	case txt, "t":
 		if _, err := req.Print(w); err != nil {
 			return err
@@ -259,14 +259,14 @@ func New(w io.Writer, l *zap.SugaredLogger) error {
 	return groups.Fix(w)
 }
 
-func People(w io.Writer, pf arg.People) error {
+func People(w io.Writer, directory string, pf arg.People) error {
 	switch {
 	case pf.Cronjob, pf.Forcejob:
 		force := false
 		if pf.Forcejob {
 			force = true
 		}
-		if err := people.Cronjob(w, force); err != nil {
+		if err := people.Cronjob(w, directory, force); err != nil {
 			return err
 		}
 		return nil
@@ -279,9 +279,9 @@ func People(w io.Writer, pf arg.People) error {
 	}
 	switch pf.Format {
 	case datal, dl, "d":
-		return people.DataList(w, "", req)
+		return people.DataList(w, "", directory, req)
 	case htm, "h", "":
-		return people.HTML(w, "", req)
+		return people.HTML(w, "", directory, req)
 	case txt, "t":
 		return people.Print(w, req)
 	}

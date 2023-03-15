@@ -16,7 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/database/internal/connect"
+	"github.com/Defacto2/df2/pkg/database/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/export"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
 	"github.com/Defacto2/df2/pkg/database/internal/update"
@@ -141,8 +141,8 @@ func ConnInfo() string {
 }
 
 // Approve automatically checks and clears file records for live.
-func Approve(w io.Writer, l *zap.SugaredLogger, verbose bool) error {
-	return recd.Queries(w, l, verbose)
+func Approve(w io.Writer, l *zap.SugaredLogger, incoming string, verbose bool) error {
+	return recd.Queries(w, l, incoming, verbose)
 }
 
 // CheckID reports an error message for an incorrect universal unique record id or MySQL auto-generated id.

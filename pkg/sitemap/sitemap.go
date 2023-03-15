@@ -25,7 +25,7 @@ const (
 )
 
 // Create generates and prints the sitemap.
-func Create(w io.Writer) error {
+func Create(w io.Writer, directory string) error {
 	// query
 	id, v := "", &urlset.Set{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	var createdat, updatedat sql.NullString
@@ -46,7 +46,7 @@ func Create(w io.Writer) error {
 	// handle static urls
 	const paths = 29
 	v.Urls = make([]urlset.Tag, paths+count)
-	c, i := v.StaticURLs()
+	c, i := v.StaticURLs(directory)
 	// handle query results.
 	for rows.Next() {
 		i++

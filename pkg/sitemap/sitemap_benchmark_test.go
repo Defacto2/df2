@@ -9,7 +9,7 @@ import (
 
 func BenchmarkCreate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		if err := sitemap.Create(nil); err != nil {
+		if err := sitemap.Create(nil, ""); err != nil {
 			log.Print(err)
 		}
 	}

@@ -18,7 +18,6 @@ import (
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
 	"github.com/Defacto2/df2/pkg/logger"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -33,13 +32,13 @@ const htm = ".htm"
 type Request request.Flags
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Request) DataList(w io.Writer, name string) error {
-	return request.Flags(r).DataList(w, name)
+func (r Request) DataList(w io.Writer, name, directory string) error {
+	return request.Flags(r).DataList(w, name, directory)
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(w io.Writer, name string) error {
-	return request.Flags(r).HTML(w, name)
+func (r Request) HTML(w io.Writer, name, directory string) error {
+	return request.Flags(r).HTML(w, name, directory)
 }
 
 // Print a list of organisations or groups filtered by a name and summarizes the results.
@@ -53,24 +52,24 @@ func Count(w io.Writer, name string) (int, error) {
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(w io.Writer, force bool) error {
+func Cronjob(w io.Writer, directory string, force bool) error {
 	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
-		if err := croncheck(tag, htm); err != nil {
+		if err := croncheck(tag, htm, directory); err != nil {
 			return err
 		}
 	}
 	for _, tag := range Wheres() {
-		if err := cronjob(w, tag, htm, force); err != nil {
+		if err := cronjob(w, tag, htm, directory, force); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func croncheck(tag, htm string) error {
+func croncheck(tag, htm, directory string) error {
 	f := tag + htm
-	d := viper.GetString("directory.html")
+	d := directory
 	n := path.Join((d), f)
 	if d == "" {
 		return fmt.Errorf("cronjob: %w", ErrCfg)
@@ -86,9 +85,9 @@ func croncheck(tag, htm string) error {
 	return nil
 }
 
-func cronjob(w io.Writer, tag, htm string, force bool) error {
+func cronjob(w io.Writer, tag, htm, directory string, force bool) error {
 	f := tag + htm
-	d := viper.GetString("directory.html")
+	d := directory
 	n := path.Join((d), f)
 	last, err := database.LastUpdate(w)
 	if err != nil {
@@ -113,7 +112,7 @@ func cronjob(w io.Writer, tag, htm string, force bool) error {
 		if force {
 			r.Progress = true
 		}
-		if err := r.HTML(w, f); err != nil {
+		if err := r.HTML(w, f, d); err != nil {
 			return fmt.Errorf("group cronjob html: %w", err)
 		}
 	}

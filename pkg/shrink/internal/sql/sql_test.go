@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/shrink/internal/sql"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -42,12 +41,10 @@ func TestInit(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	viper.Set("directory.sql", "")
-	if err := sql.Init(nil); err == nil {
+	if err := sql.Init(nil, ""); err == nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
-	viper.Set("directory.sql", d)
-	if err := sql.Init(nil); err != nil {
+	if err := sql.Init(nil, d); err != nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
 }

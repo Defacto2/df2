@@ -20,7 +20,6 @@ import (
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/campoy/unique"
-	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -41,16 +40,16 @@ type Request struct {
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(w io.Writer, name string) error {
-	return HTML(w, name, r)
+func (r Request) HTML(w io.Writer, name, directory string) error {
+	return HTML(w, name, directory, r)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(w io.Writer, force bool) error {
+func Cronjob(w io.Writer, directory string, force bool) error {
 	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
 		f := tag + htm
-		d := viper.GetString("directory.html")
+		d := directory
 		n := path.Join((d), f)
 		if d == "" {
 			return fmt.Errorf("cronjob: %w", ErrCfg)
@@ -65,20 +64,20 @@ func Cronjob(w io.Writer, force bool) error {
 		}
 	}
 	for _, tag := range Wheres() {
-		if err := cronjob(w, tag, force); err != nil {
+		if err := cronjob(w, directory, tag, force); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func cronjob(w io.Writer, tag string, force bool) error {
+func cronjob(w io.Writer, directory, tag string, force bool) error {
 	last, err := database.LastUpdate(w)
 	if err != nil {
 		return fmt.Errorf("cronjob lastupdate: %w", err)
 	}
 	f := tag + htm
-	n := path.Join(viper.GetString("directory.html"), f)
+	n := path.Join(directory, f)
 	update := true
 	if !force {
 		update, err = database.FileUpdate(n, last)
@@ -97,7 +96,7 @@ func cronjob(w io.Writer, tag string, force bool) error {
 		if force {
 			r.Progress = true
 		}
-		if err := r.HTML(w, f); err != nil {
+		if err := r.HTML(w, f, directory); err != nil {
 			return fmt.Errorf("group cronjob html: %w", err)
 		}
 	}
@@ -105,10 +104,10 @@ func cronjob(w io.Writer, tag string, force bool) error {
 }
 
 // DataList prints an auto-complete list for HTML input elements.
-func DataList(w io.Writer, filename string, r Request) error {
+func DataList(w io.Writer, filename, directory string, r Request) error {
 	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
 	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
-	if err := parse(w, filename, tpl, r); err != nil {
+	if err := parse(w, filename, directory, tpl, r); err != nil {
 		return fmt.Errorf("datalist: %w", err)
 	}
 	return nil
@@ -125,10 +124,10 @@ func Filters() []string {
 }
 
 // HTML prints a snippet listing links to each person.
-func HTML(w io.Writer, filename string, r Request) error {
+func HTML(w io.Writer, filename, directory string, r Request) error {
 	// <h2><a href="/p/ben">Ben</a></h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
-	if err := parse(w, filename, tpl, r); err != nil {
+	if err := parse(w, filename, directory, tpl, r); err != nil {
 		return fmt.Errorf("html: %w", err)
 	}
 	return nil
@@ -175,7 +174,7 @@ func Roles() string {
 	return strings.Join(Filters(), ",")
 }
 
-func parse(w io.Writer, filename, tpl string, r Request) error {
+func parse(w io.Writer, filename, directory, tpl string, r Request) error {
 	grp, x, err := role.List(w, role.Roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
@@ -210,7 +209,7 @@ func parse(w io.Writer, filename, tpl string, r Request) error {
 			Hr:   hr,
 		}
 	}
-	return data.Template(w, filename, tpl, r.Filter)
+	return data.Template(w, filename, directory, tpl, r.Filter)
 }
 
 // Fix any malformed group names found in the database.

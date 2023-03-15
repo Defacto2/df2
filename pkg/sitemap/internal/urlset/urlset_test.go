@@ -88,7 +88,7 @@ func TestSet_StaticURLs(t *testing.T) {
 				XMLNS:   tt.fields.XMLNS,
 				Urls:    tt.fields.Urls,
 			}
-			gotC, gotI := set.StaticURLs()
+			gotC, gotI := set.StaticURLs("")
 			if gotC != tt.wantC {
 				t.Errorf("Set.StaticURLs() gotC = %v, want %v", gotC, tt.wantC)
 			}
