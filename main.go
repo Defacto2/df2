@@ -42,12 +42,9 @@ func main() {
 	log := logger.Development().Sugar()
 
 	// Environment configuration
-	configs := configger.Config{
-		// hardcoded overrides can go here
-		// IsProduction: true,
-	}
+	configs := configger.Defaults()
 	if err := env.Parse(
-		&configs, env.Options{Prefix: configger.EnvPrefix}); err != nil {
+		&configs, configger.Options()); err != nil {
 		log.Fatalf("Environment variable probably contains an invalid value: %s.", err)
 	}
 
@@ -56,7 +53,7 @@ func main() {
 		runtime.GOMAXPROCS(int(i))
 	}
 
-	// Setup the logger
+	// Setup the production logger
 	if configs.IsProduction {
 		log = logger.Production().Sugar()
 	}
@@ -93,7 +90,7 @@ func main() {
 	}
 
 	// cobra flag library
-	if err := cmd.Execute(log); err != nil {
+	if err := cmd.Execute(log, configs); err != nil {
 		log.Error(err)
 		defer os.Exit(1)
 	}

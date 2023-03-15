@@ -10,8 +10,8 @@ import (
 
 // Checks runs a number of sanity checks for the environment variable configurations.
 func (c Config) Checks(log *zap.SugaredLogger) {
-	DownloadDir(c.DownloadDir, log)
-	LogDir(c.LogDir, log)
+	// DownloadDir(c.DownloadDir, log)
+	// LogDir(c.LogDir, log)
 }
 
 func BinPath() (string, error) {

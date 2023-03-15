@@ -9,6 +9,7 @@ require (
 	github.com/caarlos0/env/v7 v7.1.0
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/carlmjohnson/versioninfo v0.22.4
+	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/friendsofgo/errors v0.9.2
@@ -41,6 +42,7 @@ require (
 
 require (
 	github.com/alecthomas/chroma v0.10.0 // indirect
+	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bengarrett/sauce v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.8.1 // indirect
@@ -50,13 +52,19 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
+	github.com/muesli/termenv v0.15.1 // indirect
 	github.com/nickalie/go-binwrapper v0.0.0-20190114141239-525121d43c84 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
