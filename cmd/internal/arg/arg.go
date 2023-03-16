@@ -58,8 +58,8 @@ type Demozoo struct {
 	Releaser  uint // id for a releaser
 }
 
-// Execute global flags.
-type Execute struct {
+// Persistant global flags.
+type Persistant struct {
 	Panic   bool // Enable panic errors to help debug.
 	ASCII   bool // Ascii is placeholder for Cobra to store the PersistentFlag value*
 	Quiet   bool // Quiet is placeholder for Cobra to store the PersistentFlag value*

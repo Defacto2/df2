@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var zcf arg.ZipCmmt
+var zipc arg.ZipCmmt
 
 // fixCmd represents the fix command.
 var fixCmd = &cobra.Command{
@@ -184,7 +184,7 @@ var fixZipCmmtCmd = &cobra.Command{
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := zipcmmt.Fix(db, os.Stdout, cfg, zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
+		if err := zipcmmt.Fix(db, os.Stdout, cfg, zipc.ASCII, zipc.Unicode, zipc.OW, true); err != nil {
 			logr.Error(err)
 		}
 	},
@@ -202,10 +202,10 @@ func init() { //nolint:gochecknoinits
 	fixCmd.AddCommand(fixRenGroup)
 	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.AddCommand(fixZipCmmtCmd)
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.ASCII, "print", "p", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zipc.ASCII, "print", "p", false,
 		"also print saved comments to the stdout")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.Unicode, "unicode", "u", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zipc.Unicode, "unicode", "u", false,
 		"also convert saved comments into Unicode and print to the stdout")
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zcf.OW, "overwrite", "o", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zipc.OW, "overwrite", "o", false,
 		"overwrite all existing saved comments")
 }

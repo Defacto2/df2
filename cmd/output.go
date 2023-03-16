@@ -23,9 +23,9 @@ const notUsed = "\n\nThis document is not in use on the website."
 
 var (
 	dbf database.Flags
-	gpf arg.Group
-	ppf arg.People
-	rcf arg.Recent
+	gro arg.Group
+	peo arg.People
+	rec arg.Recent
 )
 
 // outputCmd represents the output command.
@@ -71,35 +71,35 @@ func init() { //nolint:gochecknoinits
 		logr.Fatal(err)
 	}
 	outputCmd.AddCommand(groupCmd)
-	groupCmd.Flags().StringVarP(&gpf.Filter, "filter", "f", "",
+	groupCmd.Flags().StringVarP(&gro.Filter, "filter", "f", "",
 		"filter groups (default all)\noptions: "+strings.Join(groups.Wheres(), ","))
-	groupCmd.Flags().BoolVarP(&gpf.Counts, "count", "c", false,
+	groupCmd.Flags().BoolVarP(&gro.Counts, "count", "c", false,
 		"display the file totals for each group (SLOW)")
-	groupCmd.Flags().BoolVarP(&gpf.Progress, "progress", "p", true,
+	groupCmd.Flags().BoolVarP(&gro.Progress, "progress", "p", true,
 		"show a progress indicator while fetching a large number of records")
-	groupCmd.Flags().BoolVarP(&gpf.Cronjob, "cronjob", "j", false,
+	groupCmd.Flags().BoolVarP(&gro.Cronjob, "cronjob", "j", false,
 		"run in cronjob automated mode, ignores all other arguments")
-	groupCmd.Flags().BoolVar(&gpf.Forcejob, "cronjob-force", false,
+	groupCmd.Flags().BoolVar(&gro.Forcejob, "cronjob-force", false,
 		"force the running of the cronjob automated mode")
-	groupCmd.Flags().StringVarP(&gpf.Format, "format", "t", "",
+	groupCmd.Flags().StringVarP(&gro.Format, "format", "t", "",
 		"output format (default html)\noptions: datalist,html,text")
-	groupCmd.Flags().BoolVarP(&gpf.Init, "initialism", "i", false,
+	groupCmd.Flags().BoolVarP(&gro.Init, "initialism", "i", false,
 		"display the acronyms and initialisms for groups (SLOW)")
 	outputCmd.AddCommand(peopleCmd)
-	peopleCmd.Flags().StringVarP(&ppf.Filter, "filter", "f", "",
+	peopleCmd.Flags().StringVarP(&peo.Filter, "filter", "f", "",
 		"filter people (default all)\noptions: "+people.Roles())
-	peopleCmd.Flags().StringVarP(&ppf.Format, "format", "t", "",
+	peopleCmd.Flags().StringVarP(&peo.Format, "format", "t", "",
 		"output format (default html)\noptions: datalist,html,text")
 
-	peopleCmd.Flags().BoolVarP(&ppf.Cronjob, "cronjob", "j", false,
+	peopleCmd.Flags().BoolVarP(&peo.Cronjob, "cronjob", "j", false,
 		"run in cronjob automated mode, ignores all other arguments")
-	peopleCmd.Flags().BoolVar(&ppf.Forcejob, "cronjob-force", false,
+	peopleCmd.Flags().BoolVar(&peo.Forcejob, "cronjob-force", false,
 		"force the running of the cronjob automated mode")
 
 	outputCmd.AddCommand(recentCmd)
-	recentCmd.Flags().BoolVarP(&rcf.Compress, "compress", "c", false,
+	recentCmd.Flags().BoolVarP(&rec.Compress, "compress", "c", false,
 		"remove insignificant whitespace characters")
-	recentCmd.Flags().UintVarP(&rcf.Limit, "limit", "l", fifteen,
+	recentCmd.Flags().UintVarP(&rec.Limit, "limit", "l", fifteen,
 		"limit the number of rows returned")
 	outputCmd.AddCommand(sitemapCmd)
 }
@@ -140,7 +140,7 @@ the website stylization.`,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := run.Groups(db, os.Stdout, cfg.HTMLExports, gpf); err != nil {
+		if err := run.Groups(db, os.Stdout, cfg.HTMLExports, gro); err != nil {
 			logr.Error(err)
 		}
 	},
@@ -162,7 +162,7 @@ the website stylization.` + notUsed,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := run.People(db, os.Stdout, cfg.HTMLExports, ppf); err != nil {
+		if err := run.People(db, os.Stdout, cfg.HTMLExports, peo); err != nil {
 			logr.Error(err)
 		}
 	},
@@ -179,7 +179,7 @@ var recentCmd = &cobra.Command{
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := recent.List(db, rcf.Limit, rcf.Compress); err != nil {
+		if err := recent.List(db, rec.Limit, rec.Compress); err != nil {
 			logr.Error(err)
 		}
 	},

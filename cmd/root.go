@@ -29,8 +29,8 @@ var (
 
 var (
 	cfg  configger.Config   // Enviroment variables for configuration.
-	flg  arg.Execute        // Global, command line flags.
 	logr *zap.SugaredLogger // Zap sugared logger for printing and storing.
+	pers arg.Persistant     // Persistant, command-line bool flags.
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -87,13 +87,13 @@ func init() { //nolint:gochecknoinits
 	rootCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Admin:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "group2", Title: "Drive:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "group3", Title: "Remote:"})
-	rootCmd.PersistentFlags().BoolVar(&flg.ASCII, "ascii", false,
+	rootCmd.PersistentFlags().BoolVar(&pers.ASCII, "ascii", false,
 		"suppress all ANSI color feedback")
-	rootCmd.PersistentFlags().BoolVar(&flg.Quiet, "quiet", false,
+	rootCmd.PersistentFlags().BoolVar(&pers.Quiet, "quiet", false,
 		"suppress all feedback except for errors")
-	rootCmd.PersistentFlags().BoolVarP(&flg.Version, "version", "v", false,
+	rootCmd.PersistentFlags().BoolVarP(&pers.Version, "version", "v", false,
 		"version and information for this program")
-	rootCmd.PersistentFlags().BoolVar(&flg.Panic, "panic", false,
+	rootCmd.PersistentFlags().BoolVar(&pers.Panic, "panic", false,
 		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
 		logr.Fatal(err)

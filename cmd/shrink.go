@@ -26,9 +26,9 @@ are 'waiting for approval.'`,
 		}
 		defer db.Close()
 
-		const delta = 3
 		w := os.Stdout
 		var wg sync.WaitGroup
+		const delta = 3
 		wg.Add(delta)
 		go func() {
 			if err := shrink.SQL(w, cfg.SQLDumps); err != nil {
