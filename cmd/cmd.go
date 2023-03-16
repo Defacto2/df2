@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -21,6 +23,11 @@ import (
 	"golang.org/x/text/language"
 )
 
+var (
+	ErrDB = errors.New("database handle pointer cannot be nil")
+)
+
+// ProgData is used for holding the version flag template data.
 type ProgData struct {
 	Database   string
 	Ansilove   string
@@ -75,14 +82,19 @@ func Arch() string {
 }
 
 // Brand prints the byte ASCII logo to the stdout.
-func Brand(log *zap.SugaredLogger, b []byte) {
-	if logo := string(b); len(logo) > 0 {
-		w := bufio.NewWriter(os.Stdout)
-		if _, err := fmt.Fprintf(w, "%s\n\n", logo); err != nil {
-			log.Warnf("Could not print the brand logo: %s.", err)
-		}
-		w.Flush()
+func Brand(w io.Writer, l *zap.SugaredLogger, b []byte) {
+	if w == nil {
+		w = io.Discard
 	}
+	logo := string(b)
+	if len(logo) == 0 {
+		return
+	}
+	nw := bufio.NewWriter(w)
+	if _, err := fmt.Fprintf(nw, "%s\n\n", logo); err != nil {
+		l.Warnf("Could not print the brand logo: %s.", err)
+	}
+	nw.Flush()
 }
 
 // Commit returns a formatted, git commit description for this repository,
@@ -142,6 +154,7 @@ func ExeTmpl() string {
 	return tmpl
 }
 
+// LastCommit returns the time and date of the last repo commit.
 func LastCommit() string {
 	d := versioninfo.LastCommit
 	if d.IsZero() {
@@ -185,11 +198,17 @@ func Vers(version string) string {
 
 // ProgInfo returns the response for the -version flag.
 func ProgInfo(db *sql.DB, version string) (string, error) {
+	if db == nil {
+		return "", fmt.Errorf("proginfo: %w", ErrDB)
+	}
 	bin, err := configger.BinPath()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
-	l := check(db)
+	l, err := check(db)
+	if err != nil {
+		return "", err
+	}
 	data := ProgData{
 		Database:   colorize(l["db"]),
 		Ansilove:   colorize(l["ansilove"]),
@@ -215,11 +234,11 @@ func ProgInfo(db *sql.DB, version string) (string, error) {
 	}
 	tmpl, err := template.New("checks").Parse(ExeTmpl())
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("proginfo tmpl: %w", err)
 	}
 	var b bytes.Buffer
 	if err := tmpl.Execute(&b, data); err != nil {
-		return "", err
+		return "", fmt.Errorf("proginfo exec: %w", err)
 	}
 	return b.String(), nil
 }
@@ -227,7 +246,10 @@ func ProgInfo(db *sql.DB, version string) (string, error) {
 type lookups = map[string]string
 
 // check looks up the collection of dependencies and database connection.
-func check(db *sql.DB) lookups {
+func check(db *sql.DB) (lookups, error) {
+	if db == nil {
+		return nil, fmt.Errorf("check: %w", ErrDB)
+	}
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
@@ -259,7 +281,7 @@ func check(db *sql.DB) lookups {
 			l[file] = ok
 		}
 	}
-	return l
+	return l, nil
 }
 
 // colorize applies color to s.

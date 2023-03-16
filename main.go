@@ -97,13 +97,14 @@ func main() {
 
 	// Print the compile and version details
 	if progInfo() {
-		cmd.Brand(log, brand)
+		w := os.Stdout
+		cmd.Brand(w, log, brand)
 		s, err := cmd.ProgInfo(db, version)
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		fmt.Fprintln(os.Stdout, s)
+		fmt.Fprintln(w, s)
 		return
 	}
 
@@ -115,7 +116,7 @@ func main() {
 
 	// Execute the cobra flag library
 	if err := cmd.Execute(log, configs); err != nil {
-		log.Error(err)
+		log.Errorln(err)
 		defer os.Exit(1)
 	}
 }
