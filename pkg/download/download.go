@@ -149,8 +149,8 @@ func Silent(name, url string) (http.Header, error) {
 func ping(url, method string, timeout time.Duration) (*http.Response, error) {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,10 @@ func PingHead(url string) (*http.Response, error) {
 func PingFile(link string) (int, string, string, error) {
 	res, err := PingHead(link)
 	if err != nil {
-		return res.StatusCode, "", "", err
+		if res != nil {
+			return res.StatusCode, "", "", err
+		}
+		return 0, "", "", err
 	}
 	cd, cl := res.Header.Get(ContentDisposition), res.Header.Get(ContentLength)
 	name := strings.TrimPrefix(cd, DownloadPrefix)

@@ -220,10 +220,7 @@ func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
 		if gpf.Forcejob {
 			force = true
 		}
-		if err := groups.Cronjob(db, w, directory, force); err != nil {
-			return err
-		}
-		return nil
+		return groups.Cronjob(db, w, directory, force)
 	}
 	arg.FilterFlag(w, groups.Wheres(), "filter", gpf.Filter)
 	req := groups.Request{Filter: gpf.Filter, Counts: gpf.Counts, Initialisms: gpf.Init, Progress: gpf.Progress}
@@ -310,16 +307,19 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 }
 
 func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	switch {
 	case pf.Cronjob, pf.Forcejob:
 		force := false
 		if pf.Forcejob {
 			force = true
 		}
-		if err := people.Cronjob(db, w, directory, force); err != nil {
-			return err
-		}
-		return nil
+		return people.Cronjob(db, w, directory, force)
 	}
 	fmtflags := [7]string{datal, htm, txt, dl, "d", "h", "t"}
 	arg.FilterFlag(w, people.Filters(), "filter", pf.Filter)
@@ -335,10 +335,16 @@ func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
 	case txt, "t":
 		return people.Print(db, w, req)
 	}
-	return nil
+	return ErrNothing
 }
 
 func Rename(db *sql.DB, w io.Writer, args ...string) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	const wantedCount = 2
 	switch len(args) {
 	case 0, 1:
@@ -385,11 +391,18 @@ func Rename(db *sql.DB, w io.Writer, args ...string) error {
 }
 
 func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	urls, err := sitemap.FileList(base)
 	if err != nil {
 		return err
 	}
-	color.Primary.Printf("\nRequesting %d various query-string options of the list of files\n", len(urls))
+	s := color.Primary.Sprintf("\nRequesting %d various query-string options of the list of files\n", len(urls))
+	fmt.Fprint(w, s)
 	sitemap.Success.Range(w, urls)
 
 	const pingCount = 10
@@ -398,7 +411,8 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
-	color.Primary.Printf("\nRequesting the <title> of %d random files from %d public records\n", pingCount, total)
+	s = color.Primary.Sprintf("\nRequesting the <title> of %d random files from %d public records\n", pingCount, total)
+	fmt.Fprint(w, s)
 	sitemap.LinkSuccess.Range(w, urls)
 
 	total, ids, err = sitemap.RandIDs(db, pingCount)
@@ -406,8 +420,9 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.Download)
-	color.Primary.Printf("\nRequesting the content disposition of %d random file download from %d public records\n",
+	s = color.Primary.Sprintf("\nRequesting the content disposition of %d random file download from %d public records\n",
 		pingCount, total)
+	fmt.Fprint(w, s)
 	sitemap.Success.RangeFiles(w, urls)
 
 	const hideCount = 2
@@ -416,8 +431,9 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
-	color.Primary.Printf("\nRequesting the <title> of %d "+
+	s = color.Primary.Sprintf("\nRequesting the <title> of %d "+
 		"random files from %d disabled records\n", hideCount, total)
+	fmt.Fprint(w, s)
 	sitemap.LinkNotFound.Range(w, urls)
 
 	total, ids, err = sitemap.RandBlocked(db, hideCount)
@@ -425,8 +441,9 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.Download)
-	color.Primary.Printf("\nRequesting the content disposition of %d "+
+	s = color.Primary.Sprintf("\nRequesting the content disposition of %d "+
 		"random file download from %d disabled records\n", hideCount, total)
+	fmt.Fprint(w, s)
 	sitemap.NotFound.RangeFiles(w, urls)
 
 	invalidIDs := []int{-99999999, -1, 0, 99999999}
@@ -444,21 +461,24 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 		return err
 	}
 	urls = append(urls, loc)
-	color.Primary.Printf("\nRequesting the <title> of %d invalid file URLs\n", len(urls))
+	s = color.Primary.Sprintf("\nRequesting the <title> of %d invalid file URLs\n", len(urls))
+	fmt.Fprint(w, s)
 	sitemap.NotFound.Range(w, urls)
 
 	paths, err := sitemap.AbsPaths(base)
 	if err != nil {
 		return err
 	}
-	color.Primary.Printf("\nRequesting %d static URLs used in the sitemap.xml\n", len(paths))
+	s = color.Primary.Sprintf("\nRequesting %d static URLs used in the sitemap.xml\n", len(paths))
+	fmt.Fprint(w, s)
 	sitemap.Success.Range(w, paths[:])
 
 	html3s, err := sitemap.AbsPathsH3(db, w, base)
 	if err != nil {
 		return err
 	}
-	color.Primary.Printf("\nRequesting %d static URLs used by the HTML3 text mode\n", len(html3s))
+	s = color.Primary.Sprintf("\nRequesting %d static URLs used by the HTML3 text mode\n", len(html3s))
+	fmt.Fprint(w, s)
 	sitemap.Success.Range(w, html3s)
 
 	return nil

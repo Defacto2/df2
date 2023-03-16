@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"io"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
@@ -70,5 +71,27 @@ func TestNew(t *testing.T) {
 	err := New(nil, nil, nil, configger.Config{})
 	assert.NotNil(t, err)
 	err = New(db, io.Discard, l, configger.Config{})
+	assert.NotNil(t, err)
+}
+
+func TestPeople(t *testing.T) {
+	err := People(nil, nil, "", arg.People{})
+	assert.NotNil(t, err)
+	err = People(db, io.Discard, "", arg.People{})
+	assert.Nil(t, err)
+}
+
+func TestRename(t *testing.T) {
+	s := []string{}
+	err := Rename(nil, nil, s...)
+	assert.NotNil(t, err)
+	err = Rename(db, io.Discard, s...)
+	assert.NotNil(t, err)
+}
+
+func TestTestSite(t *testing.T) {
+	err := TestSite(nil, nil, "")
+	assert.NotNil(t, err)
+	err = TestSite(db, os.Stdout, "")
 	assert.NotNil(t, err)
 }

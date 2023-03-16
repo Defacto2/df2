@@ -152,15 +152,17 @@ type Style int
 
 // RangeFiles ranges over the file download URLs.
 func (p Style) RangeFiles(w io.Writer, urls []string) {
-	wg := &sync.WaitGroup{}
+	if w == nil {
+		w = io.Discard
+	}
+	var wg sync.WaitGroup
 	for _, link := range urls {
 		if link == "" {
 			continue
 		}
 		wg.Add(1)
-		go func(w io.Writer, link string) {
-			link = strings.TrimSpace(link)
-			code, name, size, err := download.PingFile(link)
+		go func(link string) {
+			code, name, size, err := download.PingFile(strings.TrimSpace(link))
 			if err != nil {
 				fmt.Fprintf(w, "%s\t%s\n", ColorCode(code), err)
 				wg.Done()
@@ -175,7 +177,7 @@ func (p Style) RangeFiles(w io.Writer, urls []string) {
 				fmt.Fprintf(w, "%q formatting is unused in RangeFiles", p)
 			}
 			wg.Done()
-		}(w, link)
+		}(link)
 	}
 	wg.Wait()
 }
