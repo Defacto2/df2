@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof"
 	"github.com/spf13/cobra"
 )
@@ -26,14 +27,19 @@ photos and text NFO files.`,
 			AllProofs:   proofs.All,
 			HideMissing: proofs.HideMissing,
 		}
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
 		w := os.Stdout
 		switch {
 		case proofs.ID != "":
-			if err := r.Query(w, log, proofs.ID); err != nil {
+			if err := r.Query(db, w, log, proofs.ID); err != nil {
 				log.Error(err)
 			}
 		default:
-			if err := r.Queries(w, log); err != nil {
+			if err := r.Queries(db, w, log); err != nil {
 				log.Error(err)
 			}
 		}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,12 @@ There are additional Demozoo commands found under the api command.`,
 	Example: `  df2 demozoo [--new|--all|--releases|--id] (--overwrite)
   df2 demozoo [--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := run.Demozoo(os.Stdout, log, dzf)
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Errorln(err)
+		}
+		defer db.Close()
+		err = run.Demozoo(db, os.Stdout, log, dzf)
 		switch {
 		case errors.Is(err, run.ErrDZFlag):
 			if err := cmd.Usage(); err != nil {

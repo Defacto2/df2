@@ -16,10 +16,12 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/export"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
 	"github.com/Defacto2/df2/pkg/database/internal/update"
+	"github.com/Defacto2/df2/pkg/database/msql"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
@@ -90,8 +92,9 @@ func Init() connect.Connection {
 }
 
 // Connect will connect to the database and handle any errors.
-func Connect(w io.Writer) *sql.DB {
-	return connect.Connect(w)
+func Connect(cfg configger.Config) (*sql.DB, error) {
+	// In the future this could use either psql or msql.
+	return msql.Connect(cfg)
 }
 
 // ConnErr will connect to the database or return any errors.
@@ -141,8 +144,8 @@ func ConnInfo() string {
 }
 
 // Approve automatically checks and clears file records for live.
-func Approve(w io.Writer, l *zap.SugaredLogger, incoming string, verbose bool) error {
-	return recd.Queries(w, l, incoming, verbose)
+func Approve(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, verbose bool) error {
+	return recd.Queries(db, w, l, incoming, verbose)
 }
 
 // CheckID reports an error message for an incorrect universal unique record id or MySQL auto-generated id.
@@ -163,9 +166,7 @@ func CheckUUID(s string) error {
 }
 
 // ColTypes details the columns used by the table.
-func ColTypes(w io.Writer, t Table) (string, error) {
-	db := connect.Connect(w)
-	defer db.Close()
+func ColTypes(db *sql.DB, w io.Writer, t Table) (string, error) {
 	// LIMIT 0 quickly returns an empty set
 	var query string
 	switch t {
@@ -233,9 +234,7 @@ func DateTime(l *zap.SugaredLogger, raw sql.RawBytes) string {
 }
 
 // Distinct returns a unique list of values from the table column.
-func Distinct(w io.Writer, value string) ([]string, error) {
-	db := connect.Connect(w)
-	defer db.Close()
+func Distinct(db *sql.DB, w io.Writer, value string) ([]string, error) {
 	rows, err := db.Query("SELECT DISTINCT ? FROM `files`", value)
 	if err != nil {
 		return nil, fmt.Errorf("distinct query: %w", err)
@@ -271,54 +270,50 @@ func FileUpdate(name string, db time.Time) (bool, error) {
 type Update update.Update
 
 // Execute Query and Args to update the database and returns the total number of changes.
-func Execute(w io.Writer, u Update) (int64, error) {
-	return update.Update(u).Execute(w)
+func Execute(db *sql.DB, u Update) (int64, error) {
+	return update.Update(u).Execute(db)
 }
 
 // Fix any malformed section and platforms found in the database.
-func Fix(w io.Writer, l *zap.SugaredLogger) error {
+func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 	start := time.Now()
-	if err := update.Filename.NamedTitles(w); err != nil {
+	if err := update.Filename.NamedTitles(db, w); err != nil {
 		return fmt.Errorf("update filenames: %w", err)
 	}
-	if err := update.GroupFor.NamedTitles(w); err != nil {
+	if err := update.GroupFor.NamedTitles(db, w); err != nil {
 		return fmt.Errorf("update groups for: %w", err)
 	}
-	if err := update.GroupBy.NamedTitles(w); err != nil {
+	if err := update.GroupBy.NamedTitles(db, w); err != nil {
 		return fmt.Errorf("update groups by: %w", err)
 	}
 	elapsed := time.Since(start).Seconds()
 	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
 
-	dist, err := update.Distinct(w, "section")
+	dist, err := update.Distinct(db, "section")
 	if err != nil {
 		return fmt.Errorf("fix distinct section: %w", err)
 	}
-	update.Sections(w, l, &dist)
-	dist, err = update.Distinct(w, "platform")
+	update.Sections(db, w, l, &dist)
+	dist, err = update.Distinct(db, "platform")
 	if err != nil {
 		return fmt.Errorf("fix distinct platform: %w", err)
 	}
-	update.Platforms(w, l, &dist)
+	update.Platforms(db, w, l, &dist)
 	return nil
 }
 
 // DemozooID finds a record ID by the saved Demozoo production ID. If no production exists a zero is returned.
-func DemozooID(w io.Writer, id uint) (uint, error) {
-	db := connect.Connect(w)
-	defer db.Close()
+func DemozooID(db *sql.DB, id uint) (uint, error) {
 	var dz uint
 	// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
 	if err := db.QueryRow("SELECT id FROM files WHERE web_id_demozoo=?", id).Scan(&dz); err != nil {
 		return 0, fmt.Errorf("demozoo exist query row: %w", err)
 	}
-	return dz, db.Close()
+	return dz, nil
 }
 
 // GetID returns a numeric Id from a UUID or database id s value.
-func GetID(w io.Writer, s string) (uint, error) {
-	db := connect.Connect(w)
-	defer db.Close()
+func GetID(db *sql.DB, s string) (uint, error) {
 	// auto increment numeric ids
 	var id uint
 	if v, err := strconv.Atoi(s); err == nil {
@@ -336,16 +331,13 @@ func GetID(w io.Writer, s string) (uint, error) {
 	if err := db.QueryRow("SELECT id FROM files WHERE uuid=?", s).Scan(&id); err != nil {
 		return 0, fmt.Errorf("lookupid %q: %w", s, ErrNoID)
 	}
-	return id, db.Close()
+	return id, nil
 }
 
 // GetKeys returns all the primary keys used by the files table.
 // The integer keys are sorted incrementally.
 // An SQL WHERE statement can be provided to filter the results.
-func GetKeys(w io.Writer, whereStmt string) ([]int, error) {
-	db := connect.Connect(w)
-	defer db.Close()
-
+func GetKeys(db *sql.DB, whereStmt string) ([]int, error) {
 	whereStmt = strings.TrimSpace(whereStmt)
 	cs := CountFiles
 	if whereStmt != "" {
@@ -386,9 +378,7 @@ func GetKeys(w io.Writer, whereStmt string) ([]int, error) {
 }
 
 // GetFile returns the filename from a supplied UUID or database ID value.
-func GetFile(w io.Writer, s string) (string, error) {
-	db := connect.Connect(w)
-	defer db.Close()
+func GetFile(db *sql.DB, s string) (string, error) {
 	var n sql.NullString
 	if v, err := strconv.Atoi(s); err == nil {
 		err = db.QueryRow(SelNames+" WHERE id=?", v).Scan(&n)
@@ -450,9 +440,7 @@ func IsUUID(s string) bool {
 }
 
 // LastUpdate reports the time when the files database was last modified.
-func LastUpdate(w io.Writer) (time.Time, error) {
-	db := connect.Connect(w)
-	defer db.Close()
+func LastUpdate(db *sql.DB) (time.Time, error) {
 	row := db.QueryRow(SelUpdate)
 	t := time.Time{}
 	if err := row.Scan(&t); err != nil {
@@ -522,9 +510,7 @@ func Tbls() string {
 }
 
 // Total reports the number of records fetched by the supplied SQL query.
-func Total(w io.Writer, s *string) (int, error) {
-	db := connect.Connect(w)
-	defer db.Close()
+func Total(db *sql.DB, w io.Writer, s *string) (int, error) {
 	rows, err := db.Query(*s)
 	switch {
 	case err != nil && strings.Contains(err.Error(), "SQL syntax"):
@@ -540,7 +526,7 @@ func Total(w io.Writer, s *string) (int, error) {
 	for rows.Next() {
 		sum++
 	}
-	return sum, db.Close()
+	return sum, nil
 }
 
 // TrimSP removes duplicate spaces from a string.
@@ -558,10 +544,8 @@ func Val(col sql.RawBytes) string {
 }
 
 // Waiting returns the number of files requiring approval for public display.
-func Waiting(w io.Writer) (uint, error) {
+func Waiting(db *sql.DB) (uint, error) {
 	var count uint
-	db := connect.Connect(w)
-	defer db.Close()
 	if err := db.QueryRow(CountWaiting).Scan(&count); err != nil {
 		return 0, err
 	}

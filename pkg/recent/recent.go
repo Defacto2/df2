@@ -8,20 +8,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 
-	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/recent/internal/file"
 )
 
 var ErrJSON = errors.New("data fails json validation")
 
 // List recent files as a JSON document.
-func List(w io.Writer, limit uint, compress bool) error {
-	db := database.Connect(w)
-	defer db.Close()
+func List(db *sql.DB, limit uint, compress bool) error {
 	query := sqlRecent(limit, false)
 	rows, err := db.Query(query)
 	if err != nil {

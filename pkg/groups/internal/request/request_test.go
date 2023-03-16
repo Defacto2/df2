@@ -28,7 +28,7 @@ func TestParse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// note: this test is slow
 			t.Parallel()
-			if err := tt.r.Parse(nil, tt.args.filename, "", tt.args.templ); (err != nil) != tt.wantErr {
+			if err := tt.r.Parse(nil, nil, tt.args.filename, "", tt.args.templ); (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -50,7 +50,7 @@ func TestPrintr(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt := tt
 			t.Parallel()
-			gotTotal, err := request.Print(nil, tt.r)
+			gotTotal, err := request.Print(nil, nil, tt.r)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Print() error = %v, wantErr %v", err, tt.wantErr)
 				return

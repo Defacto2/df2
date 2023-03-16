@@ -13,6 +13,7 @@ import (
 	"github.com/Defacto2/df2/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/config"
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -39,8 +40,13 @@ var rootCmd = &cobra.Command{
 		Copyright(),
 		color.Primary.Sprint(URL)),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.New(os.Stdout, log); err != nil {
-			log.Fatal(err)
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := run.New(db, os.Stdout, log); err != nil {
+			log.Fatalln(err)
 		}
 	},
 }

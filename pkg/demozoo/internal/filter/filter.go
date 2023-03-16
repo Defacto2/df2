@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,7 +41,7 @@ func empty() []releases.ProductionV1 {
 }
 
 // Prods gets all the productions of a releaser and normalises the results.
-func (p *Productions) Prods(w io.Writer) ([]releases.ProductionV1, error) { //nolint:funlen
+func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, error) { //nolint:funlen
 	const endOfRecords, maxPage = "", 1000
 	var next []releases.ProductionV1
 	var dz ProductionList
@@ -73,7 +74,7 @@ func (p *Productions) Prods(w io.Writer) ([]releases.ProductionV1, error) { //no
 	}
 	p.Count = dz.Count
 	fmt.Fprintf(w, "There are %d %s production matches\n", dz.Count, p.Filter)
-	finds, prods := Filter(w, dz.Results)
+	finds, prods := Filter(db, w, dz.Results)
 	pp(w, 1, finds)
 	nu, page := dz.Next, 1
 	for {
@@ -82,7 +83,7 @@ func (p *Productions) Prods(w io.Writer) ([]releases.ProductionV1, error) { //no
 		if err != nil {
 			return empty(), err
 		}
-		finds, next = Filter(w, next)
+		finds, next = Filter(db, w, next)
 		totalFinds += finds
 		pp(w, page, finds)
 		prods = append(prods, next...)
@@ -133,7 +134,7 @@ func Next(url string) ([]releases.ProductionV1, string, error) {
 }
 
 // Filter productions removes any records that are not suitable for Defacto2.
-func Filter(w io.Writer, p []releases.ProductionV1) (int, []releases.ProductionV1) {
+func Filter(db *sql.DB, w io.Writer, p []releases.ProductionV1) (int, []releases.ProductionV1) {
 	finds := 0
 	var prods []releases.ProductionV1 //nolint:prealloc
 	for _, prod := range p {
@@ -144,18 +145,18 @@ func Filter(w io.Writer, p []releases.ProductionV1) (int, []releases.ProductionV
 			continue
 		}
 		// confirm ID is not already used in a defacto2 file record
-		if id, _ := database.DemozooID(w, uint(prod.ID)); id > 0 {
+		if id, _ := database.DemozooID(db, uint(prod.ID)); id > 0 {
 			continue
 		}
 		if l, _ := linked(prod.ID); l != "" {
-			if err := sync(w, prod.ID, database.DeObfuscate(l)); err != nil {
+			if err := sync(db, w, prod.ID, database.DeObfuscate(l)); err != nil {
 				fmt.Fprintln(w, err)
 			}
 			continue
 		}
 		rec := make(releases.Productions, 1)
 		rec[0] = prod
-		if err := insert.Prods(w, &rec); err != nil {
+		if err := insert.Prods(db, w, &rec); err != nil {
 			fmt.Fprintln(w, err)
 			continue
 		}
@@ -166,8 +167,8 @@ func Filter(w io.Writer, p []releases.ProductionV1) (int, []releases.ProductionV
 	return finds, prods
 }
 
-func sync(w io.Writer, demozooID, recordID int) error {
-	i, err := update(w, demozooID, recordID)
+func sync(db *sql.DB, w io.Writer, demozooID, recordID int) error {
+	i, err := update(db, demozooID, recordID)
 	if err != nil {
 		fmt.Fprintf(w, " Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
 			demozooID, recordID)
@@ -178,11 +179,11 @@ func sync(w io.Writer, demozooID, recordID int) error {
 	return nil
 }
 
-func update(w io.Writer, demozooID, recordID int) (int64, error) {
+func update(db *sql.DB, demozooID, recordID int) (int64, error) {
 	var up database.Update
 	up.Query = "UPDATE files SET web_id_demozoo=? WHERE `id` = ?"
 	up.Args = []any{demozooID, recordID}
-	count, err := database.Execute(w, up)
+	count, err := database.Execute(db, up)
 	if err != nil {
 		return 0, fmt.Errorf("update installers: %w", err)
 	}

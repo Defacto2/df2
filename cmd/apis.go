@@ -7,6 +7,7 @@ import (
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/spf13/cobra"
 )
 
@@ -23,14 +24,19 @@ require the parsing of 10,000s of records.`,
 	GroupID: "group3",
 	Example: `  df2 apis [--refresh|--pouet|--msdos|--windows]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := run.APIs(os.Stdout, log, apis)
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		err = run.APIs(db, os.Stdout, log, apis)
 		switch {
 		case errors.Is(err, run.ErrArg):
 			if err := cmd.Usage(); err != nil {
-				log.Fatal(err)
+				log.Fatalln(err)
 			}
 		case err != nil:
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 	},
 }

@@ -44,7 +44,7 @@ type Records struct {
 }
 
 // NextRefresh iterates over the Records to update sync their Demozoo data to the database.
-func (st *Stat) NextRefresh(w io.Writer, l *zap.SugaredLogger, rec Records) error {
+func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
@@ -61,7 +61,7 @@ func (st *Stat) NextRefresh(w io.Writer, l *zap.SugaredLogger, rec Records) erro
 	}
 	var ok bool
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err = r.confirm(w, code, status); err != nil {
+	if ok, err = r.confirm(db, w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
 	} else if !ok {
 		return nil
@@ -81,7 +81,7 @@ func (st *Stat) NextRefresh(w io.Writer, l *zap.SugaredLogger, rec Records) erro
 		fmt.Fprintf(w, "• skipped %v", str.Y())
 		return nil
 	}
-	if err = r.Save(w); err != nil {
+	if err = r.Save(db); err != nil {
 		fmt.Fprintf(w, "• saved %v ", str.X())
 		return fmt.Errorf("next save: %w", err)
 	}
@@ -90,7 +90,7 @@ func (st *Stat) NextRefresh(w io.Writer, l *zap.SugaredLogger, rec Records) erro
 }
 
 // NextPouet iterates over the linked Demozoo records and sync any linked Pouet data to the local files table.
-func (st *Stat) NextPouet(w io.Writer, l *zap.SugaredLogger, rec Records) error {
+func (st *Stat) NextPouet(db *sql.DB, w io.Writer, l *zap.SugaredLogger, rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
@@ -110,7 +110,7 @@ func (st *Stat) NextPouet(w io.Writer, l *zap.SugaredLogger, rec Records) error 
 	}
 	var ok bool
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err = r.confirm(w, code, status); err != nil {
+	if ok, err = r.confirm(db, w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
 	} else if !ok {
 		return nil
@@ -127,7 +127,7 @@ func (st *Stat) NextPouet(w io.Writer, l *zap.SugaredLogger, rec Records) error 
 		fmt.Fprintf(w, "• skipped %v", str.Y())
 		return nil
 	}
-	if err = r.Save(w); err != nil {
+	if err = r.Save(db); err != nil {
 		fmt.Fprintf(w, "• saved %v ", str.X())
 		return fmt.Errorf("next save: %w", err)
 	}

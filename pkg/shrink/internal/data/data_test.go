@@ -1,4 +1,4 @@
-package sql_test
+package data_test
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/shrink/internal/sql"
+	"github.com/Defacto2/df2/pkg/shrink/internal/data"
 )
 
 const (
@@ -19,7 +19,7 @@ func TestMonth(t *testing.T) {
 	tests := []struct {
 		name string
 		s    string
-		want sql.Months
+		want data.Months
 	}{
 		{"empty", "", 0},
 		{"two letters", "ja", 0},
@@ -28,7 +28,7 @@ func TestMonth(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := sql.Month(tt.s); got != tt.want {
+			if got := data.Month(tt.s); got != tt.want {
 				t.Errorf("Month() = %v, want %v", got, tt.want)
 			}
 		})
@@ -41,16 +41,16 @@ func TestInit(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if err := sql.Init(nil, ""); err == nil {
+	if err := data.Init(nil, ""); err == nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
-	if err := sql.Init(nil, d); err != nil {
+	if err := data.Init(nil, d); err != nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
 }
 
 func TestSaveDir(t *testing.T) {
-	if s := sql.SaveDir(); s == "" {
+	if s := data.SaveDir(); s == "" {
 		t.Errorf("SaveDir() is empty")
 	}
 }
@@ -58,16 +58,16 @@ func TestSaveDir(t *testing.T) {
 func TestApprovals_Approve(t *testing.T) {
 	tests := []struct {
 		name    string
-		cmd     sql.Approvals
+		cmd     data.Approvals
 		wantErr bool
 	}{
 		{"empty", "", true},
 		{"bad", "invalid", true},
-		{"okay", sql.Incoming, false},
+		{"okay", data.Incoming, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.cmd.Approve(nil); !errors.Is(err, sql.ErrApprove) != tt.wantErr {
+			if err := tt.cmd.Approve(nil); !errors.Is(err, data.ErrApprove) != tt.wantErr {
 				t.Errorf("Approvals.Approve() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -103,13 +103,13 @@ func TestApprovals_Store(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		cmd     sql.Approvals
+		cmd     data.Approvals
 		args    args
 		wantErr bool
 	}{
 		{"empty", "", args{}, true},
-		{"no args", sql.Incoming, args{}, true},
-		{"", sql.Incoming, args{
+		{"no args", data.Incoming, args{}, true},
+		{"", data.Incoming, args{
 			path: d, partial: "",
 		}, false},
 	}
@@ -162,7 +162,7 @@ func TestCompress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := sql.Compress(nil, tt.args.name, tt.args.files); (err != nil) != tt.wantErr {
+			if err := data.Compress(nil, tt.args.name, tt.args.files); (err != nil) != tt.wantErr {
 				t.Errorf("Compress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			defer os.Remove(tgz)
@@ -181,7 +181,7 @@ func TestRemove(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := sql.Remove(nil, tt.files); (err != nil) != tt.wantErr {
+			if err := data.Remove(nil, tt.files); (err != nil) != tt.wantErr {
 				t.Errorf("Remove() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

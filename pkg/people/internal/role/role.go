@@ -56,14 +56,12 @@ func (r Role) String() string {
 }
 
 // List people filtered by a role.
-func List(w io.Writer, role Role) ([]string, int, error) {
-	db := database.Connect(w)
-	defer db.Close()
+func List(db *sql.DB, w io.Writer, role Role) ([]string, int, error) {
 	s := PeopleStmt(role, false)
 	if s == "" {
 		return nil, 0, fmt.Errorf("list statement %v: %w", role, ErrRole)
 	}
-	total, err := database.Total(w, &s)
+	total, err := database.Total(db, w, &s)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list totals: %w", err)
 	}
@@ -145,7 +143,7 @@ func Roles(r string) Role {
 
 // Rename replaces the persons using name with the replacement.
 // The task must be limited names associated to a Role.
-func Rename(w io.Writer, replacement, name string, r Role) (int64, error) {
+func Rename(db *sql.DB, replacement, name string, r Role) (int64, error) {
 	if replacement == "" {
 		return 0, ErrNoReplace
 	}
@@ -165,8 +163,6 @@ func Rename(w io.Writer, replacement, name string, r Role) (int64, error) {
 	case Everyone:
 		return 0, ErrRenAll
 	}
-	db := database.Connect(w)
-	defer db.Close()
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return 0, fmt.Errorf("rename people statement: %w", err)
@@ -184,14 +180,14 @@ func Rename(w io.Writer, replacement, name string, r Role) (int64, error) {
 }
 
 // Clean fixes and saves a malformed name.
-func Clean(w io.Writer, name string, r Role) bool {
+func Clean(db *sql.DB, w io.Writer, name string, r Role) bool {
 	rep := CleanS(Trim(name))
 	if rep == name {
 		return false
 	}
 	s := str.Y()
 	ok := true
-	c, err := Rename(w, rep, name, r)
+	c, err := Rename(db, rep, name, r)
 	if err != nil {
 		s = str.X()
 		ok = false

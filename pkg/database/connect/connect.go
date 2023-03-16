@@ -18,11 +18,6 @@ import (
 var ErrConnect = errors.New("could not connect to the mysql database server")
 
 const (
-	// Datetime MySQL format.
-	Datetime = "2006-01-02T15:04:05Z"
-	// UpdateID is a user id to use with the updatedby column.
-	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
-
 	hide = "****"
 )
 
@@ -65,7 +60,7 @@ func Init() Connection {
 }
 
 // Connect will connect to the database and handle any errors.
-func Connect(w io.Writer) *sql.DB {
+func xConnect(w io.Writer) *sql.DB {
 	c := Init()
 	db, err := sql.Open("mysql", c.String())
 	if err != nil {

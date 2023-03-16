@@ -21,12 +21,12 @@ type Request struct {
 }
 
 // Query parses a single Demozoo entry.
-func (r *Request) Query(w io.Writer, log *zap.SugaredLogger, id string) error {
+func (r *Request) Query(db *sql.DB, w io.Writer, log *zap.SugaredLogger, id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("query id %s: %w", id, err)
 	}
 	r.ByID = id
-	if err := r.Queries(w, log); err != nil {
+	if err := r.Queries(db, w, log); err != nil {
 		return fmt.Errorf("query queries: %w", err)
 	}
 	return nil
@@ -35,11 +35,9 @@ func (r *Request) Query(w io.Writer, log *zap.SugaredLogger, id string) error {
 // Queries parses all new proofs.
 // Overwrite will replace existing assets such as images.
 // All parses every Demozoo entry, not just records waiting for approval.
-func (r Request) Queries(w io.Writer, log *zap.SugaredLogger) error { //nolint:cyclop,funlen
+func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger) error { //nolint:cyclop,funlen
 	var st Stat
 	stmt, start := selectByID(r.ByID), time.Now()
-	db := database.Connect(w)
-	defer db.Close()
 	values, scanArgs, rows, err := values(db, stmt)
 	if err != nil {
 		return err
@@ -74,7 +72,7 @@ func (r Request) Queries(w io.Writer, log *zap.SugaredLogger) error { //nolint:c
 		if update := rec.check(w); !update {
 			continue
 		}
-		if skip, err := rec.parseAPI(w, log, st, r.Overwrite, storage); err != nil {
+		if skip, err := rec.parseAPI(db, w, log, st, r.Overwrite, storage); err != nil {
 			log.Errorf("queries parseapi: %w", err)
 			continue
 		} else if skip {
@@ -83,7 +81,7 @@ func (r Request) Queries(w io.Writer, log *zap.SugaredLogger) error { //nolint:c
 		if st.Total == 0 {
 			break
 		}
-		rec.save(w, log)
+		rec.save(db, w, log)
 	}
 	if r.ByID != "" {
 		st.ByID = r.ByID

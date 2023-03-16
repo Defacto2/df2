@@ -15,7 +15,7 @@ func ExampleRole() {
 
 func ExampleList() {
 	r := role.Musicians
-	_, total, err := role.List(os.Stdout, r)
+	_, total, err := role.List(nil, os.Stdout, r)
 	if err != nil {
 		fmt.Print(err)
 	}

@@ -78,7 +78,7 @@ func TestClean(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := assets.Clean(os.Stdout, tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := assets.Clean(nil, nil, tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("Clean() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -188,7 +188,7 @@ func TestCleaner(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := assets.Cleaner(nil, tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := assets.Cleaner(nil, nil, tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("Cleaner() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

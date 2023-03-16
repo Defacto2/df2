@@ -42,9 +42,7 @@ type Record struct {
 }
 
 // Insert the new Demozoo releaser production into the database.
-func (r *Record) Insert(w io.Writer) (sql.Result, error) {
-	db := database.Connect(w)
-	defer db.Close()
+func (r *Record) Insert(db *sql.DB) (sql.Result, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("insert uuid: %w", err)
@@ -69,16 +67,16 @@ func (r *Record) Insert(w io.Writer) (sql.Result, error) {
 
 // Prods adds the Demozoo releasers productions to the database.
 // API: https://demozoo.org/api/v1/releasers/
-func Prods(w io.Writer, p *releases.Productions) error {
+func Prods(db *sql.DB, w io.Writer, p *releases.Productions) error {
 	recs := 0
 	for i, prod := range *p {
 		item := fmt.Sprintf("%d. ", i)
 		fmt.Fprintf(w, "\n%s%s", item, prod.Title)
-		rec := Prod(w, prod)
+		rec := Prod(db, w, prod)
 		if reflect.DeepEqual(rec, Record{}) {
 			continue
 		}
-		res, err := rec.Insert(w)
+		res, err := rec.Insert(db)
 		if err != nil {
 			return err
 		}
@@ -97,8 +95,8 @@ func Prods(w io.Writer, p *releases.Productions) error {
 }
 
 // Prod mutates the raw Demozoo API releaser production data to database ready values.
-func Prod(w io.Writer, prod releases.ProductionV1) Record {
-	dbID, _ := database.DemozooID(w, uint(prod.ID))
+func Prod(db *sql.DB, w io.Writer, prod releases.ProductionV1) Record {
+	dbID, _ := database.DemozooID(db, uint(prod.ID))
 	if dbID > 0 {
 		prod.ExistsInDB = true
 		fmt.Fprintf(w, ": skipped, production already exists")

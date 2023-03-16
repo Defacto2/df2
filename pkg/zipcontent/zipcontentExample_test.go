@@ -8,7 +8,7 @@ import (
 
 func ExampleFix() {
 	const printSummary = false
-	if err := zipcontent.Fix(nil, nil, printSummary); err != nil {
+	if err := zipcontent.Fix(nil, nil, nil, printSummary); err != nil {
 		fmt.Println(err)
 	}
 	// Output:

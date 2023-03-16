@@ -3,6 +3,7 @@ package request
 import (
 	"bufio"
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -35,33 +36,33 @@ type Result struct {
 }
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Flags) DataList(w io.Writer, name, directory string) error {
+func (r Flags) DataList(db *sql.DB, w io.Writer, name, directory string) error {
 	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
 	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}`
 	tpl += `<option value="{{.Name}}" label="{{.Name}}">{{end}}`
-	if err := r.Parse(w, name, directory, tpl); err != nil {
+	if err := r.Parse(db, w, name, directory, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Flags) HTML(w io.Writer, name, directory string) error {
+func (r Flags) HTML(db *sql.DB, w io.Writer, name, directory string) error {
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>`
 	tpl += `{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
-	if err := r.Parse(w, name, directory, tpl); err != nil {
+	if err := r.Parse(db, w, name, directory, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
 }
 
 // Files returns the number of files associated with the named group.
-func (r Flags) Files(w io.Writer, name string) (int, error) {
+func (r Flags) Files(db *sql.DB, name string) (int, error) {
 	if !r.Counts {
 		return 0, nil
 	}
-	total, err := group.Count(w, name)
+	total, err := group.Count(db, name)
 	if err != nil {
 		return 0, fmt.Errorf("files %q: %w", name, err)
 	}
@@ -69,18 +70,18 @@ func (r Flags) Files(w io.Writer, name string) (int, error) {
 }
 
 // Initialism returns the initialism of the named group.
-func (r Flags) Initialism(w io.Writer, name string) (string, error) {
+func (r Flags) Initialism(db *sql.DB, name string) (string, error) {
 	if !r.Initialisms {
 		return "", nil
 	}
-	s, err := acronym.Get(w, name)
+	s, err := acronym.Get(db, name)
 	if err != nil {
 		return "", fmt.Errorf("initialism %q: %w", name, err)
 	}
 	return s, nil
 }
 
-func (r Flags) iterate(w io.Writer, groups ...string) (*[]Result, error) {
+func (r Flags) iterate(db *sql.DB, w io.Writer, groups ...string) (*[]Result, error) {
 	piped := str.Piped()
 	total := len(groups)
 	data := make([]Result, total)
@@ -93,11 +94,11 @@ func (r Flags) iterate(w io.Writer, groups ...string) (*[]Result, error) {
 			str.Progress(w, r.Filter, i+1, total)
 		}
 		lastLetter, hr = group.UseHr(lastLetter, grp)
-		c, err := r.Files(w, grp)
+		c, err := r.Files(db, grp)
 		if err != nil {
 			return nil, fmt.Errorf("iterate files %q: %w", grp, err)
 		}
-		init, err := r.Initialism(w, grp)
+		init, err := r.Initialism(db, grp)
 		if err != nil {
 			return nil, fmt.Errorf("iterate initialism %q: %w", grp, err)
 		}
@@ -116,8 +117,8 @@ func (r Flags) iterate(w io.Writer, groups ...string) (*[]Result, error) {
 // If the named file is empty, the results will be sent to stdout.
 // The HTML returned to stdout is different to the markup saved
 // to a file.
-func (r Flags) Parse(w io.Writer, name, directory, tmpl string) error {
-	groups, total, err := group.List(w, r.Filter)
+func (r Flags) Parse(db *sql.DB, w io.Writer, name, directory, tmpl string) error {
+	groups, total, err := group.List(db, w, r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
@@ -129,7 +130,7 @@ func (r Flags) Parse(w io.Writer, name, directory, tmpl string) error {
 			fmt.Fprintf(w, "%d matching %s records found (%s)\n", total, f, p)
 		}
 	}
-	data, err := r.iterate(w, groups...)
+	data, err := r.iterate(db, w, groups...)
 	if err != nil {
 		return fmt.Errorf("parse iterate: %w", err)
 	}
@@ -196,8 +197,8 @@ func noname(w io.Writer, t *template.Template, data *[]Result) error {
 }
 
 // Print list organisations or groups filtered by a name and summaries the results.
-func Print(w io.Writer, r Flags) (int, error) {
-	grp, total, err := group.List(w, r.Filter)
+func Print(db *sql.DB, w io.Writer, r Flags) (int, error) {
+	grp, total, err := group.List(db, w, r.Filter)
 	if err != nil {
 		return 0, fmt.Errorf("print groups: %w", err)
 	}
@@ -209,7 +210,7 @@ func Print(w io.Writer, r Flags) (int, error) {
 		}
 		s := g
 		if r.Initialisms {
-			if in, err := acronym.Get(w, g); err != nil {
+			if in, err := acronym.Get(db, g); err != nil {
 				return 0, fmt.Errorf("print initialism: %w", err)
 			} else if in != "" {
 				s = fmt.Sprintf("%v [%s]", s, in)
@@ -217,7 +218,7 @@ func Print(w io.Writer, r Flags) (int, error) {
 		}
 		// file totals
 		if r.Counts {
-			c, err := group.Count(w, g)
+			c, err := group.Count(db, g)
 			if err != nil {
 				return 0, fmt.Errorf("print counts: %w", err)
 			}

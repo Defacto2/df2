@@ -51,7 +51,12 @@ records that do not have this expected context.`,
 	Aliases: []string{"a"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcontent.Fix(os.Stdout, log, true); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := zipcontent.Fix(db, os.Stdout, log, true); err != nil {
 			log.Info(fmt.Errorf("archives fix: %w", err))
 		}
 	},
@@ -65,14 +70,19 @@ This includes the formatting and trimming of groups, people, platforms and secti
 	Aliases: []string{"d", "db"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
 		w := os.Stdout
-		if err := database.Fix(w, log); err != nil {
+		if err := database.Fix(db, w, log); err != nil {
 			log.Info(err)
 		}
-		if err := groups.Fix(w); err != nil {
+		if err := groups.Fix(db, w); err != nil {
 			log.Info(err)
 		}
-		if err := people.Fix(w); err != nil {
+		if err := people.Fix(db, w); err != nil {
 			log.Info(err)
 		}
 	},
@@ -84,7 +94,12 @@ var fixDemozooCmd = &cobra.Command{
 	Aliases: []string{"dz"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := demozoo.Fix(os.Stdout); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := demozoo.Fix(db, os.Stdout); err != nil {
 			log.Info(fmt.Errorf("demozoo fix: %w", err))
 		}
 	},
@@ -98,7 +113,12 @@ that are raster images.`,
 	Aliases: []string{"i"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := images.Fix(os.Stdout, log); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := images.Fix(db, os.Stdout, log); err != nil {
 			log.Info(err)
 		}
 	},
@@ -112,7 +132,12 @@ var fixRenGroup = &cobra.Command{
 	Example: `  df2 fix rename "The Group" "New Group Name"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// in the future this command could be adapted to use a --person flag
-		err := run.Rename(os.Stdout, args...)
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		err = run.Rename(db, os.Stdout, args...)
 		if errors.Is(err, run.ErrToFew) {
 			if err := cmd.Usage(); err != nil {
 				log.Fatal(err)
@@ -133,7 +158,12 @@ that are plain text files.`,
 	Aliases: []string{"t", "txt"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := text.Fix(os.Stdout); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := text.Fix(db, os.Stdout); err != nil {
 			log.Info(err)
 		}
 	},
@@ -148,7 +178,12 @@ var fixZipCmmtCmd = &cobra.Command{
 	Aliases: []string{"z"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := zipcmmt.Fix(os.Stdout, zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := zipcmmt.Fix(db, os.Stdout, zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
 			log.Info(err)
 		}
 	},

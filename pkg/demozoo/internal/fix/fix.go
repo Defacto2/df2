@@ -1,6 +1,7 @@
 package fix
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 
@@ -8,13 +9,13 @@ import (
 )
 
 // Fix repairs imported Demozoo data conflicts.
-func Configs(w io.Writer) error {
-	res, err := updateApps(w)
+func Configs(db *sql.DB, w io.Writer) error {
+	res, err := updateApps(db)
 	if err != nil {
 		return fmt.Errorf("demozoo fix: %w", err)
 	}
 	fmt.Fprintln(w, "moved", res, "Demozoo #releaseadvert records to #groupapplication")
-	res, err = updateInstallers(w)
+	res, err = updateInstallers(db)
 	if err != nil {
 		return fmt.Errorf("demozoo fix: %w", err)
 	}
@@ -22,24 +23,24 @@ func Configs(w io.Writer) error {
 	return nil
 }
 
-func updateApps(w io.Writer) (int64, error) {
+func updateApps(db *sql.DB) (int64, error) {
 	var app database.Update
 	app.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%application%'"
 	app.Args = []any{"groupapplication"}
-	count, err := database.Execute(w, app)
+	count, err := database.Execute(db, app)
 	if err != nil {
 		return 0, fmt.Errorf("update applications: %w", err)
 	}
 	return count, nil
 }
 
-func updateInstallers(w io.Writer) (int64, error) {
+func updateInstallers(db *sql.DB) (int64, error) {
 	var inst database.Update
 	inst.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%installer%'"
 	inst.Args = []any{"releaseinstall"}
-	count, err := database.Execute(w, inst)
+	count, err := database.Execute(db, inst)
 	if err != nil {
 		return 0, fmt.Errorf("update installers: %w", err)
 	}

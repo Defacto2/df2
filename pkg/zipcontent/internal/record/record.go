@@ -58,7 +58,7 @@ func New(values []sql.RawBytes, path string) (Record, error) {
 }
 
 // Iterate through each sql rawbyte value.
-func (r *Record) Iterate(w io.Writer, l *zap.SugaredLogger, s *scan.Stats) error {
+func (r *Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, s *scan.Stats) error {
 	if s == nil || s.Values == nil {
 		return ErrStatNil
 	}
@@ -78,7 +78,7 @@ func (r *Record) Iterate(w io.Writer, l *zap.SugaredLogger, s *scan.Stats) error
 			database.DateTime(l, raw)
 		case "filename":
 			fmt.Fprintf(w, "%v", value)
-			if err := r.Read(w, s); err != nil {
+			if err := r.Read(db, w, s); err != nil {
 				return err
 			}
 		default:
@@ -88,7 +88,7 @@ func (r *Record) Iterate(w io.Writer, l *zap.SugaredLogger, s *scan.Stats) error
 }
 
 // Read and save the archive content to the database.
-func (r *Record) Read(w io.Writer, s *scan.Stats) error {
+func (r *Record) Read(db *sql.DB, w io.Writer, s *scan.Stats) error {
 	if s == nil {
 		return ErrStatNil
 	}
@@ -108,7 +108,7 @@ func (r *Record) Read(w io.Writer, s *scan.Stats) error {
 		// otherwise the results of archive.Read will never be saved
 		log.Printf(" %s", err)
 	}
-	updates, err := r.Save(w)
+	updates, err := r.Save(db)
 	if err != nil {
 		log.Printf(" %s", str.X())
 		return err
@@ -164,7 +164,7 @@ func (r *Record) id(w io.Writer, s *scan.Stats) error {
 }
 
 // Save updates the record in the database.
-func (r *Record) Save(w io.Writer) (int64, error) {
+func (r *Record) Save(db *sql.DB) (int64, error) {
 	if r.ID == "" {
 		return 0, ErrID
 	}
@@ -175,8 +175,6 @@ func (r *Record) Save(w io.Writer) (int64, error) {
 	)
 	var err error
 	var update *sql.Stmt
-	db := database.Connect(w)
-	defer db.Close()
 	if r.NFO == "" {
 		update, err = db.Prepare(files)
 	} else {

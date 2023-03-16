@@ -109,7 +109,7 @@ func TestIterate(t *testing.T) {
 				Files: tt.fields.Files,
 				NFO:   tt.fields.NFO,
 			}
-			if err := r.Iterate(nil, nil, tt.args.s); (err != nil) != tt.wantErr {
+			if err := r.Iterate(nil, nil, nil, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("Iterate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -241,7 +241,7 @@ func TestRecord_Read(t *testing.T) {
 				Files: tt.fields.Files,
 				NFO:   tt.fields.NFO,
 			}
-			if err := r.Read(nil, tt.s); (err != nil) != tt.wantErr {
+			if err := r.Read(nil, nil, tt.s); (err != nil) != tt.wantErr {
 				t.Errorf("Record.Read() error = %v, wantErr %v", err, tt.wantErr)
 			} else if tt.name == "test.zip" && err == nil {
 				defer os.Remove(filepath.Join(dir, uuid+".txt"))

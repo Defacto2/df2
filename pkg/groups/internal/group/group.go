@@ -66,12 +66,10 @@ func Get(s string) Filter {
 }
 
 // Count returns the number of file entries associated with a named group.
-func Count(w io.Writer, name string) (int, error) {
+func Count(db *sql.DB, name string) (int, error) {
 	if name == "" {
 		return 0, nil
 	}
-	db := database.Connect(w)
-	defer db.Close()
 	n, count := name, 0
 	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
 		"group_brand_for LIKE '?,%%' OR group_brand_for LIKE '%%, ?,%%' OR "+
@@ -80,18 +78,16 @@ func Count(w io.Writer, name string) (int, error) {
 	if err := row.Scan(&count); err != nil {
 		return 0, fmt.Errorf("count: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
 // List all organisations or groups filtered by s.
-func List(w io.Writer, s string) ([]string, int, error) {
-	db := database.Connect(w)
-	defer db.Close()
+func List(db *sql.DB, w io.Writer, s string) ([]string, int, error) {
 	r, err := SQLSelect(w, Get(s), false)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list statement: %w", err)
 	}
-	total, err := database.Total(w, &r)
+	total, err := database.Total(db, w, &r)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list total: %w", err)
 	}

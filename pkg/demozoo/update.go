@@ -105,12 +105,12 @@ func (r *Record) String(total int) string {
 }
 
 // DoseeMeta generates DOSee related metadata from the file archive.
-func (r *Record) DoseeMeta(w io.Writer) error {
+func (r *Record) DoseeMeta(db *sql.DB, w io.Writer) error {
 	names, err := r.variations()
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	d, err := archive.Demozoo(w, r.FilePath, r.UUID, &names)
+	d, err := archive.Demozoo(db, w, r.FilePath, r.UUID, &names)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
@@ -150,9 +150,7 @@ func (r *Record) FileMeta() error {
 }
 
 // Save the record to the database.
-func (r *Record) Save(w io.Writer) error {
-	db := database.Connect(w)
-	defer db.Close()
+func (r *Record) Save(db *sql.DB) error {
 	query, args := r.Stmt()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -201,8 +199,8 @@ func (r *Record) ZipContent(w io.Writer) (bool, error) {
 }
 
 // InsertProds adds the collection of Demozoo productions to the file database.
-func InsertProds(w io.Writer, p *releases.Productions) error {
-	return insert.Prods(w, p)
+func InsertProds(db *sql.DB, w io.Writer, p *releases.Productions) error {
+	return insert.Prods(db, w, p)
 }
 
 func updates(r *Record) ([]string, []any) {
@@ -348,11 +346,11 @@ func (r *Record) check(w io.Writer) bool {
 	}
 }
 
-func (r *Record) confirm(w io.Writer, code int, status string) (bool, error) {
+func (r *Record) confirm(db *sql.DB, w io.Writer, code int, status string) (bool, error) {
 	const nofound, found, problems = 404, 200, 300
 	if code == nofound {
 		r.WebIDDemozoo = 0
-		if err := r.Save(w); err != nil {
+		if err := r.Save(db); err != nil {
 			return true, fmt.Errorf("confirm: %w", err)
 		}
 		fmt.Fprintf(w, "(%s)\n", download.StatusColor(code, status))
@@ -384,14 +382,14 @@ func (r *Record) lastMod(w io.Writer, head http.Header) {
 	fmt.Fprintf(w, " • %s", t.Format("Jan 06"))
 }
 
-func (r *Record) parse(w io.Writer, l *zap.SugaredLogger, api *prods.ProductionsAPIv1) (bool, error) {
+func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, api *prods.ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
 		if n, _ := api.DownloadLink(); n != "" {
 			fmt.Fprint(w, n)
 			r.Filename = n
-			r.save(w, l)
+			r.save(db, w, l)
 		} else {
 			fmt.Fprintln(w, "could not find a suitable value for the required filename column")
 			return true, nil
@@ -404,23 +402,23 @@ func (r *Record) parse(w io.Writer, l *zap.SugaredLogger, api *prods.Productions
 		if err := r.FileMeta(); err != nil {
 			return true, apiErr(err)
 		}
-		r.save(w, l)
+		r.save(db, w, l)
 		fallthrough
 	case r.FileZipContent == "":
 		if zip, err := r.ZipContent(w); err != nil {
 			return true, apiErr(err)
 		} else if zip {
-			if err := r.DoseeMeta(w); err != nil {
+			if err := r.DoseeMeta(db, w); err != nil {
 				return true, apiErr(err)
 			}
 		}
-		r.save(w, l)
+		r.save(db, w, l)
 	}
 	return false, nil
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(w io.Writer, l *zap.SugaredLogger, st Stat, overwrite bool, storage string) (bool, error) {
+func (r *Record) parseAPI(db *sql.DB, w io.Writer, l *zap.SugaredLogger, st Stat, overwrite bool, storage string) (bool, error) {
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
 		fmt.Fprintln(w, "Clearing filename which is incorrectly set as", r.Filename)
@@ -431,7 +429,7 @@ func (r *Record) parseAPI(w io.Writer, l *zap.SugaredLogger, st Stat, overwrite 
 		return true, fmt.Errorf("parse api fetch: %w", err)
 	}
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err := r.confirm(w, code, status); err != nil {
+	if ok, err := r.confirm(db, w, code, status); err != nil {
 		return true, apiErr(err)
 	} else if !ok {
 		return true, nil
@@ -449,7 +447,7 @@ func (r *Record) parseAPI(w io.Writer, l *zap.SugaredLogger, st Stat, overwrite 
 	if r.Platform == "" {
 		r.platform(&api)
 	}
-	return r.parse(w, l, &api)
+	return r.parse(db, w, l, &api)
 }
 
 func (r *Record) pingPouet(api *prods.ProductionsAPIv1) error {
@@ -488,8 +486,8 @@ func (r *Record) pouet(w io.Writer, api *prods.ProductionsAPIv1) error {
 	return nil
 }
 
-func (r *Record) save(w io.Writer, l *zap.SugaredLogger) {
-	if err := r.Save(w); err != nil {
+func (r *Record) save(db *sql.DB, w io.Writer, l *zap.SugaredLogger) {
+	if err := r.Save(db); err != nil {
 		fmt.Fprintf(w, " %v \n", str.X())
 		l.Errorln(err)
 		return

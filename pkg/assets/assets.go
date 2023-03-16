@@ -2,6 +2,7 @@
 package assets
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -33,9 +34,9 @@ var (
 
 // Clean walks through and scans directories containing UUID files
 // and erases any orphans that cannot be matched to the database.
-func Clean(w io.Writer, dir string, remove, human bool) error {
+func Clean(db *sql.DB, w io.Writer, dir string, remove, human bool) error {
 	d := directories.Init(false)
-	return Cleaner(w, targetfy(dir), &d, remove, human)
+	return Cleaner(db, w, targetfy(dir), &d, remove, human)
 }
 
 func targetfy(s string) Target {
@@ -52,13 +53,13 @@ func targetfy(s string) Target {
 	return -1
 }
 
-func Cleaner(w io.Writer, t Target, d *directories.Dir, remove, human bool) error {
+func Cleaner(db *sql.DB, w io.Writer, t Target, d *directories.Dir, remove, human bool) error {
 	paths := Targets(t, d)
 	if paths == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
 	// connect to the database
-	rows, m, err := CreateUUIDMap(w)
+	rows, m, err := CreateUUIDMap(db)
 	if err != nil {
 		return fmt.Errorf("clean uuid map: %w", err)
 	}
@@ -95,9 +96,7 @@ func Cleaner(w io.Writer, t Target, d *directories.Dir, remove, human bool) erro
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
 // Returns the total number of UUID and a collection of UUIDs.
-func CreateUUIDMap(w io.Writer) (int, database.IDs, error) {
-	db := database.Connect(w)
-	defer db.Close()
+func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
 	// count rows
 	count := 0
 	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {

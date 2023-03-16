@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/database/connect"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
@@ -72,9 +71,7 @@ func (r *Record) String() string {
 }
 
 // approve sets the record to be publically viewable.
-func (r *Record) Approve(w io.Writer) error {
-	db := connect.Connect(w)
-	defer db.Close()
+func (r *Record) Approve(db *sql.DB) error {
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	if err != nil {
 		return fmt.Errorf("record approve prepare: %w", err)
@@ -382,9 +379,7 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func Queries(w io.Writer, l *zap.SugaredLogger, incoming string, v bool) error {
-	db := connect.Connect(w)
-	defer db.Close()
+func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, v bool) error {
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {
 		return fmt.Errorf("queries query: %w", err)
@@ -397,10 +392,10 @@ func Queries(w io.Writer, l *zap.SugaredLogger, incoming string, v bool) error {
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
-	return query(w, l, incoming, v, rows, columns)
+	return query(db, w, l, incoming, v, rows, columns)
 }
 
-func query(w io.Writer, l *zap.SugaredLogger, incoming string, v bool, rows *sql.Rows, columns []string) error {
+func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, v bool, rows *sql.Rows, columns []string) error {
 	x := func() string {
 		return fmt.Sprintf(" %s", str.X())
 	}
@@ -442,7 +437,7 @@ func query(w io.Writer, l *zap.SugaredLogger, incoming string, v bool, rows *sql
 		r.Save = true
 		if r.AutoID(string(values[0])) == 0 {
 			r.Save = false
-		} else if err := r.Approve(w); err != nil {
+		} else if err := r.Approve(db); err != nil {
 			Verbose(w, v, x())
 			l.Errorln(err)
 			r.Save = false

@@ -4,6 +4,7 @@ package archive
 import (
 	"archive/tar"
 	"compress/gzip"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -94,7 +95,7 @@ func Store(files []string, buf io.Writer) []error {
 }
 
 // Demozoo decompresses and parses archives fetched from https://demozoo.org.
-func Demozoo(w io.Writer, src, uuid string, varNames *[]string) (demozoo.Data, error) {
+func Demozoo(db *sql.DB, w io.Writer, src, uuid string, varNames *[]string) (demozoo.Data, error) {
 	dz := demozoo.Data{}
 	if err := database.CheckUUID(uuid); err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
@@ -105,7 +106,7 @@ func Demozoo(w io.Writer, src, uuid string, varNames *[]string) (demozoo.Data, e
 		return demozoo.Data{}, fmt.Errorf("extract demozoo tempdir %q: %w", tempDir, err)
 	}
 	defer os.RemoveAll(tempDir)
-	filename, err := database.GetFile(w, uuid)
+	filename, err := database.GetFile(db, uuid)
 	if err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo lookup id %q: %w", uuid, err)
 	}

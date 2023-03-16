@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 )
@@ -18,10 +17,8 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix(w io.Writer) error {
+func Fix(db *sql.DB, w io.Writer) error {
 	dir := directories.Init(false)
-	db := database.Connect(w)
-	defer db.Close()
 	rows, err := db.Query(fixStmt)
 	if err != nil {
 		return fmt.Errorf("fix db query: %w", err)

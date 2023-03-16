@@ -34,7 +34,7 @@ func TestQuery(t *testing.T) {
 				AllProofs:   tt.fields.AllProofs,
 				HideMissing: tt.fields.HideMissing,
 			}
-			if err := request.Query(nil, nil, tt.id); (err != nil) != tt.wantErr {
+			if err := request.Query(nil, nil, nil, tt.id); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

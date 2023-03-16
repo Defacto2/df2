@@ -87,9 +87,9 @@ type MsDosProducts struct {
 	Finds  int
 }
 
-func (m *MsDosProducts) Get(w io.Writer) error {
+func (m *MsDosProducts) Get(db *sql.DB, w io.Writer) error {
 	d := filter.Productions{Filter: releases.MsDos}
-	api, err := d.Prods(w)
+	api, err := d.Prods(db, w)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
@@ -109,9 +109,9 @@ type WindowsProducts struct {
 	Finds  int
 }
 
-func (m *WindowsProducts) Get(w io.Writer) error {
+func (m *WindowsProducts) Get(db *sql.DB, w io.Writer) error {
 	d := filter.Productions{Filter: releases.Windows}
-	api, err := d.Prods(w)
+	api, err := d.Prods(db, w)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
@@ -124,8 +124,8 @@ func (m *WindowsProducts) Get(w io.Writer) error {
 }
 
 // Fix repairs imported Demozoo data conflicts.
-func Fix(w io.Writer) error {
-	return fix.Configs(w)
+func Fix(db *sql.DB, w io.Writer) error {
+	return fix.Configs(db, w)
 }
 
 // NewRecord initialises a new file record.
@@ -183,19 +183,17 @@ func (r request) String() string {
 }
 
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
-func RefreshMeta(w io.Writer, l *zap.SugaredLogger) error {
-	return refresh(w, l, meta)
+func RefreshMeta(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
+	return refresh(db, w, l, meta)
 }
 
 // RefreshPouet synchronises missing file entries with Demozoo sourced metadata.
-func RefreshPouet(w io.Writer, l *zap.SugaredLogger) error {
-	return refresh(w, l, pouet)
+func RefreshPouet(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
+	return refresh(db, w, l, pouet)
 }
 
-func refresh(w io.Writer, l *zap.SugaredLogger, r request) error { //nolint:cyclop
+func refresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, r request) error { //nolint:cyclop
 	start := time.Now()
-	db := database.Connect(w)
-	defer db.Close()
 	if err := counter(db, w, r); err != nil {
 		return err
 	}
@@ -220,13 +218,13 @@ func refresh(w io.Writer, l *zap.SugaredLogger, r request) error { //nolint:cycl
 	switch r {
 	case meta:
 		for rows.Next() {
-			if err := st.NextRefresh(w, l, Records{rows, scanArgs, values}); err != nil {
+			if err := st.NextRefresh(db, w, l, Records{rows, scanArgs, values}); err != nil {
 				fmt.Fprintf(w, "meta rows: %s\n", err)
 			}
 		}
 	case pouet:
 		for rows.Next() {
-			if err := st.NextPouet(w, l, Records{rows, scanArgs, values}); err != nil {
+			if err := st.NextPouet(db, w, l, Records{rows, scanArgs, values}); err != nil {
 				fmt.Fprintf(w, "meta rows: %s\n", err)
 			}
 		}

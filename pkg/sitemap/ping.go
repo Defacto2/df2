@@ -1,6 +1,7 @@
 package sitemap
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -232,7 +233,7 @@ func AbsPaths(base string) ([28]string, error) {
 }
 
 // AbsPaths returns all the HTML3 static URLs used by the sitemap.
-func AbsPathsH3(w io.Writer, base string) ([]string, error) {
+func AbsPathsH3(db *sql.DB, w io.Writer, base string) ([]string, error) {
 	const root = "html3"
 	urls := urlset.HTML3Path()
 	paths := make([]string, 0, len(urls))
@@ -244,7 +245,7 @@ func AbsPathsH3(w io.Writer, base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to platforms
-	plats, err := Platforms(w)
+	plats, err := Platforms(db, w)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +257,7 @@ func AbsPathsH3(w io.Writer, base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to sections
-	sects, err := Sections(w)
+	sects, err := Sections(db, w)
 	if err != nil {
 		return nil, err
 	}
@@ -297,8 +298,8 @@ func ColorCode(i int) string {
 }
 
 // GetBlocked returns all the primary keys of the records with blocked file downloads.
-func GetBlocked(w io.Writer) (IDs, error) {
-	ids, err := database.GetKeys(w, database.WhereDownloadBlock)
+func GetBlocked(db *sql.DB) (IDs, error) {
+	ids, err := database.GetKeys(db, database.WhereDownloadBlock)
 	if err != nil {
 		return nil, fmt.Errorf("%w: blocked downloads", err)
 	}
@@ -306,8 +307,8 @@ func GetBlocked(w io.Writer) (IDs, error) {
 }
 
 // GetKeys returns all the primary keys of the file records that are public.
-func GetKeys(w io.Writer) (IDs, error) {
-	ids, err := database.GetKeys(w, database.WhereAvailable)
+func GetKeys(db *sql.DB) (IDs, error) {
+	ids, err := database.GetKeys(db, database.WhereAvailable)
 	if err != nil {
 		return nil, fmt.Errorf("%w: keys", err)
 	}
@@ -315,8 +316,8 @@ func GetKeys(w io.Writer) (IDs, error) {
 }
 
 // GetSoftDeleteKeys returns all the primary keys of the file records that are not public and hidden.
-func GetSoftDeleteKeys(w io.Writer) (IDs, error) {
-	ids, err := database.GetKeys(w, database.WhereHidden)
+func GetSoftDeleteKeys(db *sql.DB) (IDs, error) {
+	ids, err := database.GetKeys(db, database.WhereHidden)
 	if err != nil {
 		return nil, fmt.Errorf("%w: hidden keys", err)
 	}
@@ -348,11 +349,11 @@ func FindTitle(b []byte) string {
 }
 
 // RandBlocked returns a randomized count of primary keys for records with blocked file downloads.
-func RandBlocked(w io.Writer, count int) (int, IDs, error) {
+func RandBlocked(db *sql.DB, count int) (int, IDs, error) {
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetBlocked(w)
+	keys, err := GetBlocked(db)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -361,11 +362,11 @@ func RandBlocked(w io.Writer, count int) (int, IDs, error) {
 }
 
 // RandDeleted returns a randomized count of primary keys for hidden file records.
-func RandDeleted(w io.Writer, count int) (int, IDs, error) {
+func RandDeleted(db *sql.DB, count int) (int, IDs, error) {
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetSoftDeleteKeys(w)
+	keys, err := GetSoftDeleteKeys(db)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -374,11 +375,11 @@ func RandDeleted(w io.Writer, count int) (int, IDs, error) {
 }
 
 // RandBlocked returns a randomized count of primary keys for public file records.
-func RandIDs(w io.Writer, count int) (int, IDs, error) {
+func RandIDs(db *sql.DB, count int) (int, IDs, error) {
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetKeys(w)
+	keys, err := GetKeys(db)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -387,11 +388,11 @@ func RandIDs(w io.Writer, count int) (int, IDs, error) {
 }
 
 // Platforms lists the operating systems required by the files.
-func Platforms(w io.Writer) ([]string, error) {
-	return database.Distinct(w, "platform")
+func Platforms(db *sql.DB, w io.Writer) ([]string, error) {
+	return database.Distinct(db, w, "platform")
 }
 
 // Sections lists the categories of files.
-func Sections(w io.Writer) ([]string, error) {
-	return database.Distinct(w, "section")
+func Sections(db *sql.DB, w io.Writer) ([]string, error) {
+	return database.Distinct(db, w, "section")
 }

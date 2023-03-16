@@ -3,6 +3,7 @@ package images
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"image"
@@ -15,7 +16,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
 	"github.com/Defacto2/df2/pkg/images/internal/imagemagick"
@@ -51,10 +51,8 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are images.
-func Fix(w io.Writer, l *zap.SugaredLogger) error {
+func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 	dir := directories.Init(false)
-	db := database.Connect(w)
-	defer db.Close()
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image" ORDER BY id ASC`)
 	if err != nil {
 		return fmt.Errorf("images fix query: %w", err)

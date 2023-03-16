@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/xml"
 	"fmt"
-	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -25,12 +24,10 @@ const (
 )
 
 // Create generates and prints the sitemap.
-func Create(w io.Writer, directory string) error {
+func Create(db *sql.DB, directory string) error {
 	// query
 	id, v := "", &urlset.Set{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
 	var createdat, updatedat sql.NullString
-	db := database.Connect(w)
-	defer db.Close()
 	count, err := nullsDeleteAt(db)
 	if err != nil {
 		return err
@@ -78,7 +75,7 @@ func Create(w io.Writer, directory string) error {
 	if err := createOutput(v); err != nil {
 		return err
 	}
-	return db.Close()
+	return nil
 }
 
 func createOutput(v *urlset.Set) error {

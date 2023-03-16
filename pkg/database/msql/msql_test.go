@@ -3,6 +3,7 @@ package msql_test
 import (
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database/msql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
@@ -10,19 +11,20 @@ import (
 
 func TestConnection_String(t *testing.T) {
 	c := msql.Connection{}
-	assert.Equal(t, "user:password@tcp(localhost:3306)/?allowCleartextPasswords=true&parseTime=true", c.String())
+	assert.Equal(t, ":@tcp(:0)/?allowCleartextPasswords=true&parseTime=true&timeout=5s", c.String())
 	c = msql.Connection{
 		User:      "root",
-		Password:  "qwerty",
-		HostName:  "example.com",
-		HostPort:  3360,
+		Pass:      "qwerty",
+		Host:      "example.com",
+		Port:      3360,
 		NoSSLMode: true,
 	}
-	assert.Equal(t, "root:qwerty@tcp(example.com:3360)/?allowCleartextPasswords=false&parseTime=true", c.String())
+	assert.Equal(t, "root:qwerty@tcp(example.com:3360)/?allowCleartextPasswords=false&parseTime=true&timeout=5s", c.String())
 }
 
-func TestConnectDB(t *testing.T) {
-	got, err := msql.ConnectDB()
+func TestConnect(t *testing.T) {
+	cfg := configger.Defaults()
+	got, err := msql.Connect(cfg)
 	assert.NotNil(t, got)
 	assert.Nil(t, err)
 }

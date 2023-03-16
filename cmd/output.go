@@ -112,8 +112,13 @@ var dataCmd = &cobra.Command{
 	SQL statements that can recreate the database objects and data. These can be
 	used with mysqldump or Adminer to manage content in the MySQL databases.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
 		dbf.SQLDumps = cfg.SQLDumps
-		if err := run.Data(os.Stdout, dbf); err != nil {
+		if err := run.Data(db, os.Stdout, dbf); err != nil {
 			log.Info(err)
 		}
 	},
@@ -130,7 +135,12 @@ heading-2 element containing a relative anchor link to the group's page and name
 The HTML output returned by the cronjob flag includes additional elements for
 the website stylization.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.Groups(os.Stdout, cfg.HTMLExports, gpf); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := run.Groups(db, os.Stdout, cfg.HTMLExports, gpf); err != nil {
 			log.Info(err)
 		}
 	},
@@ -147,7 +157,12 @@ heading-2 element containing a relative anchor link to the person's page and nam
 The HTML output returned by the cronjob flag includes additional elements for
 the website stylization.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := run.People(os.Stdout, cfg.HTMLExports, ppf); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := run.People(db, os.Stdout, cfg.HTMLExports, ppf); err != nil {
 			log.Info(err)
 		}
 	},
@@ -159,7 +174,12 @@ var recentCmd = &cobra.Command{
 	Short:   "JSON snippet generator to list recent additions.",
 	Long:    `JSON snippet generator to list recent additions.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := recent.List(os.Stdout, rcf.Limit, rcf.Compress); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := recent.List(db, rcf.Limit, rcf.Compress); err != nil {
 			log.Info(err)
 		}
 	},
@@ -181,7 +201,12 @@ discover most of the site."
 
 See: https://developers.google.com/search/docs/advanced/sitemaps/overview`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := sitemap.Create(os.Stdout, cfg.HTMLViews); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := sitemap.Create(db, cfg.HTMLViews); err != nil {
 			log.Info(err)
 		}
 	},

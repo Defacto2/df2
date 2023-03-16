@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/shrink"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +20,12 @@ are 'waiting for approval.'`,
 	Aliases: []string{"s"},
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+
 		const delta = 3
 		w := os.Stdout
 		var wg sync.WaitGroup
@@ -30,13 +37,13 @@ are 'waiting for approval.'`,
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Files(w, cfg.IncomingFiles); err != nil {
+			if err := shrink.Files(db, w, cfg.IncomingFiles); err != nil {
 				log.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Previews(w, cfg.IncomingImgs); err != nil {
+			if err := shrink.Previews(db, w, cfg.IncomingImgs); err != nil {
 				log.Error(err)
 			}
 			wg.Done()

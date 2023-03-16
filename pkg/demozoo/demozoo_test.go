@@ -32,7 +32,7 @@ func TestRequest_Query(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := r.Query(nil, nil, tt.id); (err != nil) != tt.wantErr {
+			if err := r.Query(nil, nil, nil, tt.id); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -256,7 +256,7 @@ func TestRecord_doseeMeta_fileMeta(t *testing.T) {
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := r.DoseeMeta(nil); (err != nil) != tt.wantErr {
+			if err := r.DoseeMeta(nil, nil); (err != nil) != tt.wantErr {
 				t.Errorf("Record.doseeMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

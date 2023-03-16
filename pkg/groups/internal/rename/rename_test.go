@@ -22,7 +22,7 @@ func TestClean(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := rename.Clean(nil, tt.name); gotOk != tt.wantOk {
+			if gotOk := rename.Clean(nil, nil, tt.name); gotOk != tt.wantOk {
 				t.Errorf("Clean() = %v, want %v", gotOk, tt.wantOk)
 			}
 		})

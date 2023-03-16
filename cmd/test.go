@@ -6,6 +6,7 @@ import (
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/sitemap"
 	"github.com/spf13/cobra"
@@ -30,7 +31,12 @@ var testGroupNames = &cobra.Command{
 	Short:   "Scans over the various group names and attempts to match possible misnamed duplicates.",
 	Aliases: []string{"n"},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := groups.MatchStdOut(os.Stdout); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		if err := groups.MatchStdOut(db, os.Stdout); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -41,11 +47,16 @@ var testURLsCmd = &cobra.Command{
 	Short:   "Test the website by pinging or downloading a large, select number of URLs.",
 	Aliases: []string{"u"},
 	Run: func(cmd *cobra.Command, args []string) {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
 		base := sitemap.Base
 		if tests.LocalHost {
 			base = sitemap.LocalBase
 		}
-		if err := run.TestSite(os.Stdout, base); err != nil {
+		if err := run.TestSite(db, os.Stdout, base); err != nil {
 			log.Fatal(err)
 		}
 	},

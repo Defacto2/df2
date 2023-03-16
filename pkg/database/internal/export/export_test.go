@@ -55,7 +55,7 @@ func TestFlags_Run(t *testing.T) {
 				Type:     tt.fields.Type,
 				Limit:    tt.fields.Limit,
 			}
-			if err := f.Run(nil); (err != nil) != tt.wantErr {
+			if err := f.Run(nil, nil); (err != nil) != tt.wantErr {
 				t.Errorf("Flags.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			for _, name := range rm {
@@ -99,7 +99,7 @@ func TestFlags_DB(t *testing.T) {
 				Type:     tt.fields.Type,
 				Limit:    tt.fields.Limit,
 			}
-			if err := f.DB(nil); (err != nil) != tt.wantErr {
+			if err := f.DB(nil, nil); (err != nil) != tt.wantErr {
 				t.Errorf("Flags.DB() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

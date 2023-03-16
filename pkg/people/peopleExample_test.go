@@ -7,7 +7,7 @@ import (
 )
 
 func ExampleFix() {
-	if err := people.Fix(nil); err != nil {
+	if err := people.Fix(nil, nil); err != nil {
 		log.Print(err)
 	}
 	// Output:

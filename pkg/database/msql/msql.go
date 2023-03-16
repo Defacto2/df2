@@ -2,9 +2,15 @@ package msql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
+	"net"
+	"net/url"
+	"strings"
 
-	_ "github.com/go-sql-driver/mysql" // MySQL driver.
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -12,66 +18,139 @@ const (
 	Protocol = "tcp"
 	// DriverName of the database.
 	DriverName = "mysql"
+
+	hider = "***"
+)
+
+var (
+	ErrConfig   = errors.New("no connection configuration was provided")
+	ErrConnect  = errors.New("no connection to the mysql database server")
+	ErrNoConn   = errors.New("no pointer to an open database connection")
+	ErrDatabase = errors.New("name of the database to connect is missing")
+	ErrHost     = errors.New("host name of the database server is missing")
+	ErrUser     = errors.New("user for database login is missing")
 )
 
 // Connection details of the MySQL database connection.
 type Connection struct {
-	User     string // User is the database user used to connect to the database.
-	Password string // Password is the password for the database user.
-	HostName string // HostName is the host name of the server. Defaults to localhost.
-	HostPort int    // HostPort is the port number the server is listening on. Defaults to 5432.
+	Host     string // Host is the host name of the server.
+	Port     uint   // Port is the port number the server is listening on.
 	Database string // Database is the database name.
+	User     string // User is the database user used to connect to the database.
+	Pass     string // Pass is the password for the database user.
 	// NoSSLMode connects to the database using an insecure,
 	// plain text connecction using the sslmode=disable param.
 	NoSSLMode bool
+}
+
+func (c *Connection) Check() error {
+	var errs error
+	if c.Host == "" {
+		errs = errors.Join(errs, ErrHost)
+	}
+	if c.Database == "" {
+		errs = errors.Join(errs, ErrDatabase)
+	}
+	if c.User == "" {
+		errs = errors.Join(errs, ErrUser)
+	}
+	if errs != nil {
+		return errs
+	}
+	return nil
 }
 
 // Open opens a MySQL database connection.
 func (c Connection) Open() (*sql.DB, error) {
 	conn, err := sql.Open(DriverName, c.String())
 	if err != nil {
-		return nil, err
+		return nil, c.HidePass(err)
 	}
 	return conn, nil
 }
 
-// String returns a MySQL database connection.
-func (c Connection) String() string {
-	// "user:password@tcp(localhost:5432)/database?sslmode=false"
-	if c.User == "" {
-		c.User = "user"
+// HidePass returns a MySQL database connection error with the user password removed.
+func (c Connection) HidePass(err error) error {
+	if err == nil {
+		return nil
 	}
-	if c.Password == "" {
-		c.Password = "password"
-	}
-	if c.HostName == "" {
-		c.HostName = "localhost"
-	}
-	if c.HostPort < 1 {
-		c.HostPort = 3306
-	}
-	// parseTime=true is required by SQL boiler.
-	return fmt.Sprintf("%s:%s@%s(%s:%d)/%s?allowCleartextPasswords=%t&parseTime=true",
-		c.User,
-		c.Password,
-		Protocol,
-		c.HostName,
-		c.HostPort,
-		c.Database,
-		!c.NoSSLMode,
-	)
+	s := strings.Replace(err.Error(), c.Pass, hider, 1)
+	return fmt.Errorf("mysql connection: %s", s)
 }
 
-// ConnectDB connects to the MySQL database.
-func ConnectDB() (*sql.DB, error) {
+// String returns a MySQL database connection.
+func (c Connection) String() string {
+	login := fmt.Sprintf("%s:%s",
+		c.User,
+		c.Pass)
+	address := fmt.Sprintf("%s(%s:%d)",
+		Protocol,
+		c.Host,
+		c.Port)
+	v := url.Values{}
+	v.Add("allowCleartextPasswords", fmt.Sprint(!c.NoSSLMode))
+	v.Add("timeout", "5s")
+	v.Add("parseTime", "true") // parseTime is required by the SQL boiler pkg.
+
+	// example connector: "user:password@tcp(localhost:5432)/database?sslmode=false"
+	return fmt.Sprintf("%s@%s/%s?%s", login, address, c.Database, v.Encode())
+}
+
+func (c Connection) Ping(db *sql.DB) error {
+	if db == nil {
+		return ErrNoConn
+	}
+	// ping the server to make sure the connection works
+	if err := db.Ping(); err != nil {
+		//fmt.Fprintln(w, color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
+		// filter the password and then print the datasource connection info
+		// to discover more errors, use log.Printf("%T", err)
+		me := &mysql.MySQLError{}
+		nop := &net.OpError{}
+		switch {
+		case errors.As(err, &me):
+			return fmt.Errorf("mysql connection: %w", err)
+		case errors.As(err, &nop):
+			switch nop.Op {
+			case "dial":
+				log.Fatal(fmt.Errorf("database server %v is either down or the %v %v port is blocked: %w",
+					c.Host, Protocol, c.Port, ErrConnect))
+			case "read":
+				log.Fatal(fmt.Errorf("mysql database read: %w", err))
+			case "write":
+				log.Fatal(fmt.Errorf("mysql database write: %w", err))
+			default:
+				log.Fatal(fmt.Errorf("mysql database op: %w", err))
+			}
+		}
+		return fmt.Errorf("mysql database other: %w", err)
+	}
+	return nil
+}
+
+// Connect to the MySQL database.
+func Connect(cfg configger.Config) (*sql.DB, error) {
+	if cfg == (configger.Config{}) {
+		return nil, ErrConfig
+	}
+	// TODO: cfg checks, copied from connection pkg?
+	// TODO: handle nil cfg value to use default
 	dsn := Connection{
-		User:      "root",
-		Password:  "example",
-		Database:  "defacto2-inno",
-		NoSSLMode: true,
+		User:      cfg.DBUser,
+		Pass:      cfg.DBPass,
+		Database:  cfg.DBName,
+		Host:      cfg.DBHost,
+		Port:      cfg.DBPort,
+		NoSSLMode: true, // use IsProd...
+	}
+	if err := dsn.Check(); err != nil {
+		return nil, err
 	}
 	conn, err := dsn.Open()
 	if err != nil {
+		return nil, err
+	}
+	if err := dsn.Ping(conn); err != nil {
 		return nil, err
 	}
 	return conn, nil

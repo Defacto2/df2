@@ -65,7 +65,7 @@ func main() {
 	}
 
 	// Database check
-	db, err := msql.ConnectDB()
+	db, err := msql.Connect(configs)
 	if err != nil {
 		log.Errorf("Could not connect to the mysql database: %s.", err)
 	}

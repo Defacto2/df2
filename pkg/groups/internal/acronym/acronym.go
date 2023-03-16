@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
@@ -45,9 +44,7 @@ func (g *Group) Get() error {
 
 // Get a group's initialism or acronym.
 // For example "Defacto2" would return "df2".
-func Get(w io.Writer, s string) (string, error) {
-	db := database.Connect(w)
-	defer db.Close()
+func Get(db *sql.DB, s string) (string, error) {
 	var i string
 	row := db.QueryRow("SELECT `initialisms` FROM groupnames WHERE `pubname` = ?", s)
 	if err := row.Scan(&i); err != nil &&
@@ -56,7 +53,7 @@ func Get(w io.Writer, s string) (string, error) {
 	} else if err != nil {
 		return "", fmt.Errorf("initialism %q: %w", s, err)
 	}
-	return i, db.Close()
+	return i, nil
 }
 
 // Trim removes a (bracketed initialism) from s.

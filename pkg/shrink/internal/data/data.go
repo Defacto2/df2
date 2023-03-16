@@ -1,6 +1,7 @@
-package sql
+package data
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -81,13 +82,13 @@ const (
 )
 
 // Approve prints the number of records waiting for approval for public display.
-func (cmd Approvals) Approve(w io.Writer) error {
+func (cmd Approvals) Approve(db *sql.DB) error {
 	switch cmd {
 	case Preview, Incoming:
 	default:
 		return ErrUnknown
 	}
-	wait, err := database.Waiting(w)
+	wait, err := database.Waiting(db)
 	if err != nil {
 		return fmt.Errorf("approve count: %w", err)
 	}

@@ -2,6 +2,7 @@
 package groups
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -32,27 +33,27 @@ const htm = ".htm"
 type Request request.Flags
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Request) DataList(w io.Writer, name, directory string) error {
-	return request.Flags(r).DataList(w, name, directory)
+func (r Request) DataList(db *sql.DB, w io.Writer, name, directory string) error {
+	return request.Flags(r).DataList(db, w, name, directory)
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(w io.Writer, name, directory string) error {
-	return request.Flags(r).HTML(w, name, directory)
+func (r Request) HTML(db *sql.DB, w io.Writer, name, directory string) error {
+	return request.Flags(r).HTML(db, w, name, directory)
 }
 
 // Print a list of organisations or groups filtered by a name and summarizes the results.
-func (r Request) Print(w io.Writer) (int, error) {
-	return request.Print(w, request.Flags(r))
+func (r Request) Print(db *sql.DB, w io.Writer) (int, error) {
+	return request.Print(db, w, request.Flags(r))
 }
 
 // Count returns the number of file entries associated with a named group.
-func Count(w io.Writer, name string) (int, error) {
-	return group.Count(w, name)
+func Count(db *sql.DB, name string) (int, error) {
+	return group.Count(db, name)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(w io.Writer, directory string, force bool) error {
+func Cronjob(db *sql.DB, w io.Writer, directory string, force bool) error {
 	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
 		if err := croncheck(tag, htm, directory); err != nil {
@@ -60,7 +61,7 @@ func Cronjob(w io.Writer, directory string, force bool) error {
 		}
 	}
 	for _, tag := range Wheres() {
-		if err := cronjob(w, tag, htm, directory, force); err != nil {
+		if err := cronjob(db, w, tag, htm, directory, force); err != nil {
 			return err
 		}
 	}
@@ -85,11 +86,12 @@ func croncheck(tag, htm, directory string) error {
 	return nil
 }
 
-func cronjob(w io.Writer, tag, htm, directory string, force bool) error {
+// TODO: make args into a struct!
+func cronjob(db *sql.DB, w io.Writer, tag, htm, directory string, force bool) error {
 	f := tag + htm
 	d := directory
 	n := path.Join((d), f)
-	last, err := database.LastUpdate(w)
+	last, err := database.LastUpdate(db)
 	if err != nil {
 		return fmt.Errorf("cronjob lastupdate: %w", err)
 	}
@@ -112,7 +114,7 @@ func cronjob(w io.Writer, tag, htm, directory string, force bool) error {
 		if force {
 			r.Progress = true
 		}
-		if err := r.HTML(w, f, d); err != nil {
+		if err := r.HTML(db, w, f, d); err != nil {
 			return fmt.Errorf("group cronjob html: %w", err)
 		}
 	}
@@ -123,12 +125,10 @@ func cronjob(w io.Writer, tag, htm, directory string, force bool) error {
 // The casing is ignored, but comma separated multi-groups are not matched to their parents.
 // The name "tristar" will match "Tristar" but will not match records using
 // "Tristar, Red Sector Inc".
-func Exact(w io.Writer, name string) (int, error) {
+func Exact(db *sql.DB, name string) (int, error) {
 	if name == "" {
 		return 0, nil
 	}
-	db := database.Connect(w)
-	defer db.Close()
 	n, count := name, 0
 	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
 		"group_brand_by=?", n, n)
@@ -139,15 +139,15 @@ func Exact(w io.Writer, name string) (int, error) {
 }
 
 // Fix any malformed group names found in the database.
-func Fix(w io.Writer) error {
+func Fix(db *sql.DB, w io.Writer) error {
 	// fix group names stored in the files table
-	names, _, err := group.List(w, "")
+	names, _, err := group.List(db, w, "")
 	if err != nil {
 		return err
 	}
 	c, start := 0, time.Now()
 	for _, name := range names {
-		if r := rename.Clean(w, name); r {
+		if r := rename.Clean(db, w, name); r {
 			c++
 		}
 	}
@@ -194,8 +194,8 @@ func Initialism(name string) (string, error) {
 }
 
 // List returns all the distinct groups.
-func List(w io.Writer) ([]string, int, error) {
-	return group.List(w, "")
+func List(db *sql.DB, w io.Writer) ([]string, int, error) {
+	return group.List(db, w, "")
 }
 
 // Slug takes a string and makes it into a URL friendly slug.
@@ -204,8 +204,8 @@ func Slug(s string) string {
 }
 
 // Update replaces all instances of the group name with the new group name.
-func Update(w io.Writer, newName, group string) (int64, error) {
-	return rename.Update(w, newName, group)
+func Update(db *sql.DB, newName, group string) (int64, error) {
+	return rename.Update(db, newName, group)
 }
 
 // Variations creates format variations for a named group.

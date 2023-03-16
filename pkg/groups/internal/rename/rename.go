@@ -1,6 +1,7 @@
 package rename
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"regexp"
@@ -17,14 +18,14 @@ import (
 const space = " "
 
 // Clean a malformed group name and save the fix to the database.
-func Clean(w io.Writer, name string) bool {
+func Clean(db *sql.DB, w io.Writer, name string) bool {
 	fix := CleanStr(name)
 	if fix == name {
 		return false
 	}
 	count, status := int64(0), str.Y()
 	ok := true
-	count, err := Update(w, fix, name)
+	count, err := Update(db, fix, name)
 	if err != nil {
 		status = str.X()
 		ok = false
@@ -126,9 +127,7 @@ func TrimThe(s string) string {
 }
 
 // Update replaces all instances of the group name with a new group name.
-func Update(w io.Writer, newName, group string) (int64, error) {
-	db := database.Connect(w)
-	defer db.Close()
+func Update(db *sql.DB, newName, group string) (int64, error) {
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?," +
 		" group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
 	if err != nil {
@@ -143,7 +142,7 @@ func Update(w io.Writer, newName, group string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("rename rows affected: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
 // FmtExact matches the exact group name to apply a format.

@@ -21,22 +21,20 @@ type Request struct {
 }
 
 // Query parses a single proof with the record id or uuid.
-func (request *Request) Query(w io.Writer, l *zap.SugaredLogger, id string) error {
+func (request *Request) Query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %q: %w", id, err)
 	}
 	request.ByID = id
-	if err := request.Queries(w, l); err != nil {
+	if err := request.Queries(db, w, l); err != nil {
 		return fmt.Errorf("request queries: %w", err)
 	}
 	return nil
 }
 
 // Queries parses all proofs.
-func (request Request) Queries(w io.Writer, l *zap.SugaredLogger) error { //nolint:cyclop,funlen
+func (request Request) Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error { //nolint:cyclop,funlen
 	s := stat.Init()
-	db := database.Connect(w)
-	defer db.Close()
 	rows, err := db.Query(Select(request.ByID))
 	if err != nil {
 		return err
@@ -84,7 +82,7 @@ func (request Request) Queries(w io.Writer, l *zap.SugaredLogger) error { //noli
 		s.Columns = columns
 		s.Overwrite = request.Overwrite
 		s.Values = &values
-		if err := r.Iterate(w, l, s); err != nil {
+		if err := r.Iterate(db, w, l, s); err != nil {
 			return err
 		}
 	}

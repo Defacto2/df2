@@ -49,12 +49,10 @@ func New(values []sql.RawBytes, path string) Record {
 }
 
 // Approve sets the record to be publically viewable.
-func (r Record) Approve(w io.Writer) error {
+func (r Record) Approve(db *sql.DB, w io.Writer) error {
 	if reflect.DeepEqual(r, Record{}) {
 		return ErrNoRec
 	}
-	db := database.Connect(w)
-	defer db.Close()
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	if err != nil {
 		return fmt.Errorf("approve prepare: %w", err)
@@ -75,7 +73,7 @@ func (r Record) Approve(w io.Writer) error {
 }
 
 // Iterate through each stat value.
-func (r Record) Iterate(w io.Writer, l *zap.SugaredLogger, s stat.Proof) error { //nolint:cyclop
+func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, s stat.Proof) error { //nolint:cyclop
 	if reflect.DeepEqual(r, Record{}) {
 		return ErrNoRec
 	}
@@ -99,7 +97,7 @@ func (r Record) Iterate(w io.Writer, l *zap.SugaredLogger, s stat.Proof) error {
 		case "filename":
 			fmt.Fprintf(w, "%v", value)
 		case "file_zip_content":
-			if err := r.Zip(w, l, raw, &s); err != nil {
+			if err := r.Zip(db, w, l, raw, &s); err != nil {
 				return err
 			}
 		default:
@@ -109,9 +107,7 @@ func (r Record) Iterate(w io.Writer, l *zap.SugaredLogger, s stat.Proof) error {
 }
 
 // UpdateZipContent sets the file_zip_content column to match content and platform to "image".
-func UpdateZipContent(w io.Writer, id, filename, content string, items int) error {
-	db := database.Connect(w)
-	defer db.Close()
+func UpdateZipContent(db *sql.DB, w io.Writer, id, filename, content string, items int) error {
 	const q = "UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?"
 	update, err := db.Prepare(q)
 	if err != nil {
@@ -122,7 +118,7 @@ func UpdateZipContent(w io.Writer, id, filename, content string, items int) erro
 		return fmt.Errorf("updatezip exec: %w", err)
 	}
 	fmt.Fprintf(w, "%d items", items)
-	return db.Close()
+	return nil
 }
 
 // Prefix prints the stat count and record Id to stdout.
@@ -135,7 +131,7 @@ func (r Record) Prefix(w io.Writer, s *stat.Proof) {
 }
 
 // Zip reads an archive and saves the content to the database.
-func (r Record) Zip(w io.Writer, l *zap.SugaredLogger, col sql.RawBytes, s *stat.Proof) error {
+func (r Record) Zip(db *sql.DB, w io.Writer, l *zap.SugaredLogger, col sql.RawBytes, s *stat.Proof) error {
 	if reflect.DeepEqual(r, Record{}) {
 		return ErrNoRec
 	}
@@ -146,20 +142,20 @@ func (r Record) Zip(w io.Writer, l *zap.SugaredLogger, col sql.RawBytes, s *stat
 		return nil
 	}
 	fmt.Fprint(w, " • ")
-	if u, err := r.fileZipContent(w); !u {
+	if u, err := r.fileZipContent(db, w); !u {
 		return nil
 	} else if err != nil {
 		return fmt.Errorf("zip content: %w", err)
 	}
 	if err := archive.Proof(w, l, r.File, r.Name, r.UUID); err != nil {
 		return fmt.Errorf("zip proof: %w", err)
-	} else if err := r.Approve(w); err != nil {
+	} else if err := r.Approve(db, w); err != nil {
 		return fmt.Errorf("zip approve: %w", err)
 	}
 	return nil
 }
 
-func (r Record) fileZipContent(w io.Writer) (bool, error) {
+func (r Record) fileZipContent(db *sql.DB, w io.Writer) (bool, error) {
 	if reflect.DeepEqual(r, Record{}) {
 		return false, ErrNoRec
 	}
@@ -167,7 +163,7 @@ func (r Record) fileZipContent(w io.Writer) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if err := UpdateZipContent(w, r.ID, fn, strings.Join(a, "\n"), len(a)); err != nil {
+	if err := UpdateZipContent(db, w, r.ID, fn, strings.Join(a, "\n"), len(a)); err != nil {
 		return false, err
 	}
 	return true, nil

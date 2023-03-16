@@ -2,6 +2,7 @@
 package people
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -40,12 +41,12 @@ type Request struct {
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(w io.Writer, name, directory string) error {
-	return HTML(w, name, directory, r)
+func (r Request) HTML(db *sql.DB, w io.Writer, name, directory string) error {
+	return HTML(db, w, name, directory, r)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(w io.Writer, directory string, force bool) error {
+func Cronjob(db *sql.DB, w io.Writer, directory string, force bool) error {
 	// as the jobs take time, check the locations before querying the database
 	for _, tag := range Wheres() {
 		f := tag + htm
@@ -64,15 +65,15 @@ func Cronjob(w io.Writer, directory string, force bool) error {
 		}
 	}
 	for _, tag := range Wheres() {
-		if err := cronjob(w, directory, tag, force); err != nil {
+		if err := cronjob(db, w, directory, tag, force); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func cronjob(w io.Writer, directory, tag string, force bool) error {
-	last, err := database.LastUpdate(w)
+func cronjob(db *sql.DB, w io.Writer, directory, tag string, force bool) error {
+	last, err := database.LastUpdate(db)
 	if err != nil {
 		return fmt.Errorf("cronjob lastupdate: %w", err)
 	}
@@ -96,7 +97,7 @@ func cronjob(w io.Writer, directory, tag string, force bool) error {
 		if force {
 			r.Progress = true
 		}
-		if err := r.HTML(w, f, directory); err != nil {
+		if err := r.HTML(db, w, f, directory); err != nil {
 			return fmt.Errorf("group cronjob html: %w", err)
 		}
 	}
@@ -104,10 +105,10 @@ func cronjob(w io.Writer, directory, tag string, force bool) error {
 }
 
 // DataList prints an auto-complete list for HTML input elements.
-func DataList(w io.Writer, filename, directory string, r Request) error {
+func DataList(db *sql.DB, w io.Writer, filename, directory string, r Request) error {
 	// <option value="$YN (Syndicate BBS)" label="$YN (Syndicate BBS)">
 	tpl := `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
-	if err := parse(w, filename, directory, tpl, r); err != nil {
+	if err := parse(db, w, filename, directory, tpl, r); err != nil {
 		return fmt.Errorf("datalist: %w", err)
 	}
 	return nil
@@ -124,18 +125,18 @@ func Filters() []string {
 }
 
 // HTML prints a snippet listing links to each person.
-func HTML(w io.Writer, filename, directory string, r Request) error {
+func HTML(db *sql.DB, w io.Writer, filename, directory string, r Request) error {
 	// <h2><a href="/p/ben">Ben</a></h2><hr>
 	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
-	if err := parse(w, filename, directory, tpl, r); err != nil {
+	if err := parse(db, w, filename, directory, tpl, r); err != nil {
 		return fmt.Errorf("html: %w", err)
 	}
 	return nil
 }
 
 // Print lists people filtered by a role and summaries the results.
-func Print(w io.Writer, r Request) error {
-	ppl, total, err := role.List(w, role.Roles(r.Filter))
+func Print(db *sql.DB, w io.Writer, r Request) error {
+	ppl, total, err := role.List(db, w, role.Roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("print request: %w", err)
 	}
@@ -174,8 +175,8 @@ func Roles() string {
 	return strings.Join(Filters(), ",")
 }
 
-func parse(w io.Writer, filename, directory, tpl string, r Request) error {
-	grp, x, err := role.List(w, role.Roles(r.Filter))
+func parse(db *sql.DB, w io.Writer, filename, directory, tpl string, r Request) error {
+	grp, x, err := role.List(db, w, role.Roles(r.Filter))
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
@@ -213,15 +214,15 @@ func parse(w io.Writer, filename, directory, tpl string, r Request) error {
 }
 
 // Fix any malformed group names found in the database.
-func Fix(w io.Writer) error {
+func Fix(db *sql.DB, w io.Writer) error {
 	c, start := 0, time.Now()
 	for _, r := range []role.Role{role.Artists, role.Coders, role.Musicians, role.Writers} {
-		credits, _, err := role.List(w, r)
+		credits, _, err := role.List(db, w, r)
 		if err != nil {
 			return err
 		}
 		for _, credit := range credits {
-			if r := role.Clean(w, credit, r); r {
+			if r := role.Clean(db, w, credit, r); r {
 				c++
 			}
 		}

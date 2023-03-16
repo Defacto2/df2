@@ -1,6 +1,7 @@
 package run
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -40,53 +41,53 @@ var (
 	ErrDZFlag = errors.New("unknown demozoo flag")
 )
 
-func Data(w io.Writer, d database.Flags) error {
+func Data(db *sql.DB, w io.Writer, d database.Flags) error {
 	switch {
 	case d.CronJob:
-		return d.Run(w)
+		return d.Run(db, w)
 	case d.Tables == "all":
-		return d.DB(w)
+		return d.DB(db, w)
 	default:
-		return d.ExportTable(w)
+		return d.ExportTable(db, w)
 	}
 }
 
-func APIs(w io.Writer, l *zap.SugaredLogger, a arg.Apis) error {
+func APIs(db *sql.DB, w io.Writer, l *zap.SugaredLogger, a arg.Apis) error {
 	switch {
 	case a.Refresh:
-		return demozoo.RefreshMeta(w, l)
+		return demozoo.RefreshMeta(db, w, l)
 	case a.Pouet:
-		return demozoo.RefreshPouet(w, l)
+		return demozoo.RefreshPouet(db, w, l)
 	case a.SyncDos:
-		return syncdos(w)
+		return syncdos(db, w)
 	case a.SyncWin:
-		return syncwin(w)
+		return syncwin(db, w)
 	default:
 		return ErrArg
 	}
 }
 
-func Demozoo(w io.Writer, log *zap.SugaredLogger, dzf arg.Demozoo) error {
+func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, dz arg.Demozoo) error {
 	var empty []string
 	r := demozoo.Request{
-		All:       dzf.All,
-		Overwrite: dzf.Overwrite,
+		All:       dz.All,
+		Overwrite: dz.Overwrite,
 	}
 	switch {
-	case dzf.New, dzf.All:
-		return r.Queries(w, log)
-	case dzf.ID != "":
-		return r.Query(w, log, dzf.ID)
-	case dzf.Releaser != 0:
-		return releaser(w, dzf.Releaser)
-	case dzf.Ping != 0:
-		return ping(w, dzf.Ping)
-	case dzf.Download != 0:
-		return download(w, dzf.Download)
-	case len(dzf.Extract) == 1:
-		return extract(w, dzf.Extract[0])
-	case len(dzf.Extract) > 1: // limit to the first 2 flags
-		d, err := archive.Demozoo(w, dzf.Extract[0], dzf.Extract[1], &empty)
+	case dz.New, dz.All:
+		return r.Queries(db, w, l)
+	case dz.ID != "":
+		return r.Query(db, w, l, dz.ID)
+	case dz.Releaser != 0:
+		return releaser(db, w, dz.Releaser)
+	case dz.Ping != 0:
+		return ping(w, dz.Ping)
+	case dz.Download != 0:
+		return download(w, dz.Download)
+	case len(dz.Extract) == 1:
+		return extract(db, w, dz.Extract[0])
+	case len(dz.Extract) > 1: // limit to the first 2 flags
+		d, err := archive.Demozoo(db, w, dz.Extract[0], dz.Extract[1], &empty)
 		if err != nil {
 			return err
 		}
@@ -97,25 +98,25 @@ func Demozoo(w io.Writer, log *zap.SugaredLogger, dzf arg.Demozoo) error {
 	}
 }
 
-func syncdos(w io.Writer) error {
+func syncdos(db *sql.DB, w io.Writer) error {
 	var p demozoo.MsDosProducts
-	if err := p.Get(w); err != nil {
+	if err := p.Get(db, w); err != nil {
 		return err
 	}
 	fmt.Fprintf(w, "There were %d new productions found\n", p.Finds)
 	return nil
 }
 
-func syncwin(w io.Writer) error {
+func syncwin(db *sql.DB, w io.Writer) error {
 	var p demozoo.WindowsProducts
-	if err := p.Get(w); err != nil {
+	if err := p.Get(db, w); err != nil {
 		return err
 	}
 	fmt.Fprintf(w, "There were %d new productions found\n", p.Finds)
 	return nil
 }
 
-func releaser(w io.Writer, id uint) error {
+func releaser(db *sql.DB, w io.Writer, id uint) error {
 	var r demozoo.Releaser
 	if err := r.Get(id); err != nil {
 		return err
@@ -140,7 +141,7 @@ func releaser(w io.Writer, id uint) error {
 	if !prompt.YN(s, true) {
 		return nil
 	}
-	return demozoo.InsertProds(w, &p.API)
+	return demozoo.InsertProds(db, w, &p.API)
 }
 
 func ping(w io.Writer, id uint) error {
@@ -166,13 +167,13 @@ func download(w io.Writer, id uint) error {
 	return nil
 }
 
-func extract(w io.Writer, src string) error {
+func extract(db *sql.DB, w io.Writer, src string) error {
 	var empty []string
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
-	d, err := archive.Demozoo(w, src, id.String(), &empty)
+	d, err := archive.Demozoo(db, w, src, id.String(), &empty)
 	if err != nil {
 		return err
 	}
@@ -180,14 +181,14 @@ func extract(w io.Writer, src string) error {
 	return nil
 }
 
-func Groups(w io.Writer, directory string, gpf arg.Group) error {
+func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
 	switch {
 	case gpf.Cronjob, gpf.Forcejob:
 		force := false
 		if gpf.Forcejob {
 			force = true
 		}
-		if err := groups.Cronjob(w, directory, force); err != nil {
+		if err := groups.Cronjob(db, w, directory, force); err != nil {
 			return err
 		}
 		return nil
@@ -196,18 +197,18 @@ func Groups(w io.Writer, directory string, gpf arg.Group) error {
 	req := groups.Request{Filter: gpf.Filter, Counts: gpf.Counts, Initialisms: gpf.Init, Progress: gpf.Progress}
 	switch gpf.Format {
 	case datal, dl, "d":
-		return req.DataList(w, "", directory)
+		return req.DataList(db, w, "", directory)
 	case htm, "h", "":
-		return req.HTML(w, "", directory)
+		return req.HTML(db, w, "", directory)
 	case txt, "t":
-		if _, err := req.Print(w); err != nil {
+		if _, err := req.Print(db, w); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func New(w io.Writer, l *zap.SugaredLogger) error {
+func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 	i := 0
 	color.Primary.Println("Scans for new submissions and record cleanup")
 	config.Check()
@@ -218,7 +219,7 @@ func New(w io.Writer, l *zap.SugaredLogger) error {
 		Overwrite: false,
 		Refresh:   false,
 	}
-	if err := newDZ.Queries(w, l); err != nil {
+	if err := newDZ.Queries(db, w, l); err != nil {
 		return err
 	}
 	i++
@@ -228,45 +229,45 @@ func New(w io.Writer, l *zap.SugaredLogger) error {
 		AllProofs:   false,
 		HideMissing: false,
 	}
-	if err := newProof.Queries(w, l); err != nil {
+	if err := newProof.Queries(db, w, l); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. scan for empty archives\n", i)
-	if err := zipcontent.Fix(w, l, true); err != nil {
+	if err := zipcontent.Fix(db, w, l, true); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. generate missing images\n", i)
-	if err := images.Fix(w, l); err != nil {
+	if err := images.Fix(db, w, l); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. generate missing text previews\n", i)
-	if err := text.Fix(w); err != nil {
+	if err := text.Fix(db, w); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. fix demozoo data conflicts\n", i)
-	if err := demozoo.Fix(w); err != nil {
+	if err := demozoo.Fix(db, w); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. fix malformed database entries\n", i)
-	if err := database.Fix(w, l); err != nil {
+	if err := database.Fix(db, w, l); err != nil {
 		return err
 	}
-	return groups.Fix(w)
+	return groups.Fix(db, w)
 }
 
-func People(w io.Writer, directory string, pf arg.People) error {
+func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
 	switch {
 	case pf.Cronjob, pf.Forcejob:
 		force := false
 		if pf.Forcejob {
 			force = true
 		}
-		if err := people.Cronjob(w, directory, force); err != nil {
+		if err := people.Cronjob(db, w, directory, force); err != nil {
 			return err
 		}
 		return nil
@@ -279,16 +280,16 @@ func People(w io.Writer, directory string, pf arg.People) error {
 	}
 	switch pf.Format {
 	case datal, dl, "d":
-		return people.DataList(w, "", directory, req)
+		return people.DataList(db, w, "", directory, req)
 	case htm, "h", "":
-		return people.HTML(w, "", directory, req)
+		return people.HTML(db, w, "", directory, req)
 	case txt, "t":
-		return people.Print(w, req)
+		return people.Print(db, w, req)
 	}
 	return nil
 }
 
-func Rename(w io.Writer, args ...string) error {
+func Rename(db *sql.DB, w io.Writer, args ...string) error {
 	const wantedCount = 2
 	switch len(args) {
 	case 0, 1:
@@ -302,7 +303,7 @@ func Rename(w io.Writer, args ...string) error {
 		return nil
 	}
 	oldArg, newArg := args[0], args[1]
-	src, err := groups.Exact(w, oldArg)
+	src, err := groups.Exact(db, oldArg)
 	if err != nil {
 		return err
 	}
@@ -311,7 +312,7 @@ func Rename(w io.Writer, args ...string) error {
 		return nil
 	}
 	newName := groups.Format(newArg)
-	dest, err := groups.Exact(w, newName)
+	dest, err := groups.Exact(db, newName)
 	if err != nil {
 		return err
 	}
@@ -326,7 +327,7 @@ func Rename(w io.Writer, args ...string) error {
 	if b := prompt.YN("Rename the group", false); !b {
 		return nil
 	}
-	i, err := groups.Update(w, newName, oldArg)
+	i, err := groups.Update(db, newName, oldArg)
 	if err != nil {
 		return err
 	}
@@ -334,7 +335,7 @@ func Rename(w io.Writer, args ...string) error {
 	return nil
 }
 
-func TestSite(w io.Writer, base string) error { //nolint:funlen
+func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 	urls, err := sitemap.FileList(base)
 	if err != nil {
 		return err
@@ -343,7 +344,7 @@ func TestSite(w io.Writer, base string) error { //nolint:funlen
 	sitemap.Success.Range(w, urls)
 
 	const pingCount = 10
-	total, ids, err := sitemap.RandIDs(w, pingCount)
+	total, ids, err := sitemap.RandIDs(db, pingCount)
 	if err != nil {
 		return err
 	}
@@ -351,7 +352,7 @@ func TestSite(w io.Writer, base string) error { //nolint:funlen
 	color.Primary.Printf("\nRequesting the <title> of %d random files from %d public records\n", pingCount, total)
 	sitemap.LinkSuccess.Range(w, urls)
 
-	total, ids, err = sitemap.RandIDs(w, pingCount)
+	total, ids, err = sitemap.RandIDs(db, pingCount)
 	if err != nil {
 		return err
 	}
@@ -361,7 +362,7 @@ func TestSite(w io.Writer, base string) error { //nolint:funlen
 	sitemap.Success.RangeFiles(w, urls)
 
 	const hideCount = 2
-	total, ids, err = sitemap.RandDeleted(w, hideCount)
+	total, ids, err = sitemap.RandDeleted(db, hideCount)
 	if err != nil {
 		return err
 	}
@@ -370,7 +371,7 @@ func TestSite(w io.Writer, base string) error { //nolint:funlen
 		"random files from %d disabled records\n", hideCount, total)
 	sitemap.LinkNotFound.Range(w, urls)
 
-	total, ids, err = sitemap.RandBlocked(w, hideCount)
+	total, ids, err = sitemap.RandBlocked(db, hideCount)
 	if err != nil {
 		return err
 	}
@@ -404,7 +405,7 @@ func TestSite(w io.Writer, base string) error { //nolint:funlen
 	color.Primary.Printf("\nRequesting %d static URLs used in the sitemap.xml\n", len(paths))
 	sitemap.Success.Range(w, paths[:])
 
-	html3s, err := sitemap.AbsPathsH3(w, base)
+	html3s, err := sitemap.AbsPathsH3(db, w, base)
 	if err != nil {
 		return err
 	}
