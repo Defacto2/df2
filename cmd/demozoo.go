@@ -29,7 +29,7 @@ There are additional Demozoo commands found under the api command.`,
 			log.Errorln(err)
 		}
 		defer db.Close()
-		err = run.Demozoo(db, os.Stdout, log, dzf)
+		err = run.Demozoo(db, os.Stdout, log, cfg, dzf)
 		switch {
 		case errors.Is(err, run.ErrDZFlag):
 			if err := cmd.Usage(); err != nil {

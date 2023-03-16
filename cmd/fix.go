@@ -56,7 +56,7 @@ records that do not have this expected context.`,
 			log.Fatalln(err)
 		}
 		defer db.Close()
-		if err := zipcontent.Fix(db, os.Stdout, log, true); err != nil {
+		if err := zipcontent.Fix(db, os.Stdout, log, cfg, true); err != nil {
 			log.Info(fmt.Errorf("archives fix: %w", err))
 		}
 	},
@@ -163,7 +163,7 @@ that are plain text files.`,
 			log.Fatalln(err)
 		}
 		defer db.Close()
-		if err := text.Fix(db, os.Stdout); err != nil {
+		if err := text.Fix(db, os.Stdout, cfg); err != nil {
 			log.Info(err)
 		}
 	},
@@ -183,7 +183,7 @@ var fixZipCmmtCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 		defer db.Close()
-		if err := zipcmmt.Fix(db, os.Stdout, zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
+		if err := zipcmmt.Fix(db, os.Stdout, cfg, zcf.ASCII, zcf.Unicode, zcf.OW, true); err != nil {
 			log.Info(err)
 		}
 	},

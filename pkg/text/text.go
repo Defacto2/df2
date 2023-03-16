@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 )
@@ -17,8 +18,8 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix(db *sql.DB, w io.Writer) error {
-	dir := directories.Init(false)
+func Fix(db *sql.DB, w io.Writer, cfg configger.Config) error {
+	dir := directories.Init(cfg, false)
 	rows, err := db.Query(fixStmt)
 	if err != nil {
 		return fmt.Errorf("fix db query: %w", err)
@@ -28,7 +29,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 	defer rows.Close()
 	i, c := 0, 0
 	for rows.Next() {
-		if i, c, err = fixRow(w, i, c, &dir, rows); err != nil {
+		if i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
 			if !errors.Is(err, tf.ErrPNG) {
 				return err
 			}
@@ -41,7 +42,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 	return nil
 }
 
-func fixRow(w io.Writer, i, c int, dir *directories.Dir, rows *sql.Rows) (int, int, error) {
+func fixRow(w io.Writer, cfg configger.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (int, int, error) {
 	var t tf.TextFile
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
@@ -54,12 +55,12 @@ func fixRow(w io.Writer, i, c int, dir *directories.Dir, rows *sql.Rows) (int, i
 	// missing images + source is an archive
 	if !ok && t.Archive() {
 		c++
-		return extract(w, t, i, c, dir)
+		return extract(w, cfg, t, i, c, dir)
 	}
 	// missing images + source is a textfile
 	if !ok {
 		c++
-		if err := t.TextPng(w, c, dir.UUID); err != nil {
+		if err := t.TextPng(w, cfg, c, dir.UUID); err != nil {
 			return i, c, err
 		}
 	}
@@ -71,7 +72,7 @@ func fixRow(w io.Writer, i, c int, dir *directories.Dir, rows *sql.Rows) (int, i
 	return i, c, nil
 }
 
-func extract(w io.Writer, t tf.TextFile, i, c int, dir *directories.Dir) (int, int, error) {
+func extract(w io.Writer, cfg configger.Config, t tf.TextFile, i, c int, dir *directories.Dir) (int, int, error) {
 	err := t.Extract(w, dir)
 	switch {
 	case errors.Is(err, tf.ErrMeUnk):
@@ -82,7 +83,7 @@ func extract(w io.Writer, t tf.TextFile, i, c int, dir *directories.Dir) (int, i
 		fmt.Fprintln(w, t.String(), err)
 		return i, c, nil
 	}
-	if err := t.ExtractedImgs(w, dir.UUID); err != nil {
+	if err := t.ExtractedImgs(w, cfg, dir.UUID); err != nil {
 		fmt.Fprintln(w, t.String(), err)
 	}
 	return i, c, nil

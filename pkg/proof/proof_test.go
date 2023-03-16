@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/proof"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 )
@@ -18,6 +19,7 @@ func TestQuery(t *testing.T) {
 		HideMissing bool
 	}
 	no := fields{false, false, false}
+	cfg := configger.Defaults()
 	tests := []struct {
 		name    string
 		id      string
@@ -34,7 +36,7 @@ func TestQuery(t *testing.T) {
 				AllProofs:   tt.fields.AllProofs,
 				HideMissing: tt.fields.HideMissing,
 			}
-			if err := request.Query(nil, nil, nil, tt.id); (err != nil) != tt.wantErr {
+			if err := request.Query(nil, nil, nil, cfg, tt.id); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

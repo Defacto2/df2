@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/archive"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
@@ -73,7 +74,7 @@ func (r Record) Approve(db *sql.DB, w io.Writer) error {
 }
 
 // Iterate through each stat value.
-func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, s stat.Proof) error { //nolint:cyclop
+func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, s stat.Proof) error { //nolint:cyclop
 	if reflect.DeepEqual(r, Record{}) {
 		return ErrNoRec
 	}
@@ -97,7 +98,7 @@ func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, s stat.Pr
 		case "filename":
 			fmt.Fprintf(w, "%v", value)
 		case "file_zip_content":
-			if err := r.Zip(db, w, l, raw, &s); err != nil {
+			if err := r.Zip(db, w, l, cfg, raw, &s); err != nil {
 				return err
 			}
 		default:
@@ -131,7 +132,7 @@ func (r Record) Prefix(w io.Writer, s *stat.Proof) {
 }
 
 // Zip reads an archive and saves the content to the database.
-func (r Record) Zip(db *sql.DB, w io.Writer, l *zap.SugaredLogger, col sql.RawBytes, s *stat.Proof) error {
+func (r Record) Zip(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, col sql.RawBytes, s *stat.Proof) error {
 	if reflect.DeepEqual(r, Record{}) {
 		return ErrNoRec
 	}
@@ -147,7 +148,7 @@ func (r Record) Zip(db *sql.DB, w io.Writer, l *zap.SugaredLogger, col sql.RawBy
 	} else if err != nil {
 		return fmt.Errorf("zip content: %w", err)
 	}
-	if err := archive.Proof(w, l, r.File, r.Name, r.UUID); err != nil {
+	if err := archive.Proof(w, l, cfg, r.File, r.Name, r.UUID); err != nil {
 		return fmt.Errorf("zip proof: %w", err)
 	} else if err := r.Approve(db, w); err != nil {
 		return fmt.Errorf("zip approve: %w", err)

@@ -23,13 +23,13 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 	Aliases: []string{"c"},
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
-		directories.Init(clf.MakeDirs)
+		directories.Init(cfg, clf.MakeDirs)
 		db, err := msql.Connect(cfg)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		// TODO: make clf aka arg.Clean to a public struct in assets
-		if err := assets.Clean(db, os.Stdout, clf.Target, clf.Delete, clf.Humanise); err != nil {
+		if err := assets.Clean(db, os.Stdout, cfg, clf.Target, clf.Delete, clf.Humanise); err != nil {
 			log.Info(err)
 		}
 	},

@@ -10,7 +10,7 @@ import (
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/archive"
-	"github.com/Defacto2/df2/pkg/config"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/groups"
@@ -67,7 +67,7 @@ func APIs(db *sql.DB, w io.Writer, l *zap.SugaredLogger, a arg.Apis) error {
 	}
 }
 
-func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, dz arg.Demozoo) error {
+func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, dz arg.Demozoo) error {
 	var empty []string
 	r := demozoo.Request{
 		All:       dz.All,
@@ -75,9 +75,9 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, dz arg.Demozoo) erro
 	}
 	switch {
 	case dz.New, dz.All:
-		return r.Queries(db, w, l)
+		return r.Queries(db, w, l, cfg)
 	case dz.ID != "":
-		return r.Query(db, w, l, dz.ID)
+		return r.Query(db, w, l, cfg, dz.ID)
 	case dz.Releaser != 0:
 		return releaser(db, w, dz.Releaser)
 	case dz.Ping != 0:
@@ -85,9 +85,9 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, dz arg.Demozoo) erro
 	case dz.Download != 0:
 		return download(w, dz.Download)
 	case len(dz.Extract) == 1:
-		return extract(db, w, dz.Extract[0])
+		return extract(db, w, cfg, dz.Extract[0])
 	case len(dz.Extract) > 1: // limit to the first 2 flags
-		d, err := archive.Demozoo(db, w, dz.Extract[0], dz.Extract[1], &empty)
+		d, err := archive.Demozoo(db, w, cfg, dz.Extract[0], dz.Extract[1], &empty)
 		if err != nil {
 			return err
 		}
@@ -167,13 +167,13 @@ func download(w io.Writer, id uint) error {
 	return nil
 }
 
-func extract(db *sql.DB, w io.Writer, src string) error {
+func extract(db *sql.DB, w io.Writer, cfg configger.Config, src string) error {
 	var empty []string
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
-	d, err := archive.Demozoo(db, w, src, id.String(), &empty)
+	d, err := archive.Demozoo(db, w, cfg, src, id.String(), &empty)
 	if err != nil {
 		return err
 	}
@@ -208,10 +208,10 @@ func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
 	return nil
 }
 
-func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
+func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) error {
 	i := 0
 	color.Primary.Println("Scans for new submissions and record cleanup")
-	config.Check()
+	//config.Check()
 	i++
 	color.Info.Printf("%d. scan for new demozoo submissions\n", i)
 	newDZ := demozoo.Request{
@@ -219,7 +219,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 		Overwrite: false,
 		Refresh:   false,
 	}
-	if err := newDZ.Queries(db, w, l); err != nil {
+	if err := newDZ.Queries(db, w, l, cfg); err != nil {
 		return err
 	}
 	i++
@@ -229,12 +229,12 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 		AllProofs:   false,
 		HideMissing: false,
 	}
-	if err := newProof.Queries(db, w, l); err != nil {
+	if err := newProof.Queries(db, w, l, cfg); err != nil {
 		return err
 	}
 	i++
 	color.Info.Printf("%d. scan for empty archives\n", i)
-	if err := zipcontent.Fix(db, w, l, true); err != nil {
+	if err := zipcontent.Fix(db, w, l, cfg, true); err != nil {
 		return err
 	}
 	i++
@@ -244,7 +244,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 	}
 	i++
 	color.Info.Printf("%d. generate missing text previews\n", i)
-	if err := text.Fix(db, w); err != nil {
+	if err := text.Fix(db, w, cfg); err != nil {
 		return err
 	}
 	i++

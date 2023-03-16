@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/config"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
@@ -102,7 +102,7 @@ func RemoveWebP(name string) error {
 
 // Vendor is the absolute path to store webpbin vendor downloads.
 func Vendor() string {
-	fp, err := gap.NewScope(gap.User, config.GapUser).CacheDir()
+	fp, err := gap.NewScope(gap.User, configger.GapUser).CacheDir()
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {

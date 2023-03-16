@@ -95,8 +95,8 @@ func ConnInfo(db *sql.DB, cfg configger.Config) string {
 }
 
 // Approve automatically checks and clears file records for live.
-func Approve(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, verbose bool) error {
-	return recd.Queries(db, w, l, incoming, verbose)
+func Approve(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, incoming string, verbose bool) error {
+	return recd.Queries(db, w, l, cfg, incoming, verbose)
 }
 
 // CheckID reports an error message for an incorrect universal unique record id or MySQL auto-generated id.

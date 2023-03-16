@@ -11,6 +11,7 @@ import (
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/assets"
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gookit/color"
@@ -75,10 +76,11 @@ func TestClean(t *testing.T) {
 		{empty, args{}, true},
 		{"good", args{"DOWNLOAD", false, false}, false},
 	}
+	cfg := configger.Defaults()
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := assets.Clean(nil, nil, tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := assets.Clean(nil, nil, cfg, tt.args.t, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("Clean() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -154,7 +156,8 @@ func TestBackup(t *testing.T) {
 		{empty, args{}, true},
 		{"ok", args{&s, list}, false},
 	}
-	d := directories.Init(false)
+	cfg := configger.Defaults()
+	d := directories.Init(cfg, false)
 	d.Backup = os.TempDir() // overwrite /opt/assets/backups
 	color.Enable = false
 	for _, tt := range tests {
@@ -175,7 +178,8 @@ func TestCleaner(t *testing.T) {
 		delete bool
 		human  bool
 	}
-	d := directories.Init(false)
+	cfg := configger.Defaults()
+	d := directories.Init(cfg, false)
 	tests := []struct {
 		name    string
 		args    args
@@ -188,7 +192,7 @@ func TestCleaner(t *testing.T) {
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := assets.Cleaner(nil, nil, tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
+			if err := assets.Cleaner(nil, nil, cfg, tt.args.t, &d, tt.args.delete, tt.args.human); (err != nil) != tt.wantErr {
 				t.Errorf("Cleaner() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -197,7 +201,8 @@ func TestCleaner(t *testing.T) {
 
 func TestIgnoreList(t *testing.T) {
 	var want struct{}
-	d := directories.Init(false)
+	cfg := configger.Defaults()
+	d := directories.Init(cfg, false)
 	color.Enable = false
 	if got := scan.IgnoreList("", &d)["blank.png"]; !reflect.DeepEqual(got, want) {
 		t.Errorf("IgnoreList() = %v, want %v", got, want)
@@ -215,11 +220,12 @@ func TestTargets(t *testing.T) {
 		{"", assets.Image, 2},
 		{"error", -1, 0},
 	}
-	d := directories.Init(false)
+	cfg := configger.Defaults()
+	d := directories.Init(cfg, false)
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := assets.Targets(tt.target, &d); len(got) != tt.want {
+			if got := assets.Targets(cfg, tt.target, &d); len(got) != tt.want {
 				t.Errorf("Targets() = %v, want %v", got, tt.want)
 			}
 		})

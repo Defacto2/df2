@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 )
 
@@ -13,7 +14,7 @@ func TestInit(t *testing.T) {
 		wantUUID  = "/opt/assets/downloads"
 	)
 	t.Run("flat", func(t *testing.T) {
-		if got := directories.Init(createDir); got.UUID != wantUUID {
+		if got := directories.Init(configger.Defaults(), createDir); got.UUID != wantUUID {
 			t.Errorf("Init() = %v, want %v", got.UUID, wantUUID)
 		}
 	})
@@ -48,7 +49,7 @@ func TestFiles(t *testing.T) {
 		wantUUID = "/opt/assets/downloads/myname"
 	)
 	t.Run("flat", func(t *testing.T) {
-		if got := directories.Files(name); got.UUID != wantUUID {
+		if got := directories.Files(configger.Defaults(), name); got.UUID != wantUUID {
 			t.Errorf("Init() = %v, want %v", got.UUID, wantUUID)
 		}
 	})

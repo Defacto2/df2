@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logger"
@@ -21,12 +22,12 @@ type Request struct {
 }
 
 // Query parses a single Demozoo entry.
-func (r *Request) Query(db *sql.DB, w io.Writer, log *zap.SugaredLogger, id string) error {
+func (r *Request) Query(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg configger.Config, id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("query id %s: %w", id, err)
 	}
 	r.ByID = id
-	if err := r.Queries(db, w, log); err != nil {
+	if err := r.Queries(db, w, log, cfg); err != nil {
 		return fmt.Errorf("query queries: %w", err)
 	}
 	return nil
@@ -35,14 +36,14 @@ func (r *Request) Query(db *sql.DB, w io.Writer, log *zap.SugaredLogger, id stri
 // Queries parses all new proofs.
 // Overwrite will replace existing assets such as images.
 // All parses every Demozoo entry, not just records waiting for approval.
-func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger) error { //nolint:cyclop,funlen
+func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg configger.Config) error { //nolint:cyclop,funlen
 	var st Stat
 	stmt, start := selectByID(r.ByID), time.Now()
 	values, scanArgs, rows, err := values(db, stmt)
 	if err != nil {
 		return err
 	}
-	storage := directories.Init(false).UUID
+	storage := directories.Init(cfg, false).UUID
 	if err = st.sumTotal(Records{rows, scanArgs, values}, r); err != nil {
 		return fmt.Errorf("queries sumtotal: %w", err)
 	}
@@ -72,7 +73,7 @@ func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger) error 
 		if update := rec.check(w); !update {
 			continue
 		}
-		if skip, err := rec.parseAPI(db, w, log, st, r.Overwrite, storage); err != nil {
+		if skip, err := rec.parseAPI(db, w, log, cfg, st, r.Overwrite, storage); err != nil {
 			log.Errorf("queries parseapi: %w", err)
 			continue
 		} else if skip {

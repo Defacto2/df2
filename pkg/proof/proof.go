@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
@@ -21,20 +22,20 @@ type Request struct {
 }
 
 // Query parses a single proof with the record id or uuid.
-func (request *Request) Query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, id string) error {
+func (request *Request) Query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, id string) error {
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("request query id %q: %w", id, err)
 	}
 	request.ByID = id
-	if err := request.Queries(db, w, l); err != nil {
+	if err := request.Queries(db, w, l, cfg); err != nil {
 		return fmt.Errorf("request queries: %w", err)
 	}
 	return nil
 }
 
 // Queries parses all proofs.
-func (request Request) Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error { //nolint:cyclop,funlen
-	s := stat.Init()
+func (request Request) Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) error { //nolint:cyclop,funlen
+	s := stat.Init(cfg)
 	rows, err := db.Query(Select(request.ByID))
 	if err != nil {
 		return err
@@ -82,7 +83,7 @@ func (request Request) Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger) er
 		s.Columns = columns
 		s.Overwrite = request.Overwrite
 		s.Values = &values
-		if err := r.Iterate(db, w, l, s); err != nil {
+		if err := r.Iterate(db, w, l, cfg, s); err != nil {
 			return err
 		}
 	}

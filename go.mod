@@ -37,7 +37,6 @@ require (
 	golang.org/x/image v0.6.0
 	golang.org/x/sys v0.6.0
 	golang.org/x/text v0.8.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -79,4 +78,5 @@ require (
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

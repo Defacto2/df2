@@ -11,7 +11,6 @@ import (
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
-	"github.com/Defacto2/df2/pkg/config"
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/gookit/color"
@@ -45,7 +44,7 @@ var rootCmd = &cobra.Command{
 			log.Fatalln(err)
 		}
 		defer db.Close()
-		if err := run.New(db, os.Stdout, log); err != nil {
+		if err := run.New(db, os.Stdout, log, cfg); err != nil {
 			log.Fatalln(err)
 		}
 	},
@@ -66,7 +65,7 @@ func Execute(log *zap.SugaredLogger, c configger.Config) error {
 		}
 		return nil
 	}
-	config.Check()
+	//config.Check()
 	return nil
 }
 

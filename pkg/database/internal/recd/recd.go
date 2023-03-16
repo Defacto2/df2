@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
@@ -379,7 +380,7 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, v bool) error {
+func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, incoming string, v bool) error {
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {
 		return fmt.Errorf("queries query: %w", err)
@@ -392,10 +393,10 @@ func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, v b
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
-	return query(db, w, l, incoming, v, rows, columns)
+	return query(db, w, l, cfg, incoming, v, rows, columns)
 }
 
-func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, v bool, rows *sql.Rows, columns []string) error {
+func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, incoming string, v bool, rows *sql.Rows, columns []string) error {
 	x := func() string {
 		return fmt.Sprintf(" %s", str.X())
 	}
@@ -404,7 +405,7 @@ func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, incoming string, v boo
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	dir := directories.Init(false)
+	dir := directories.Init(cfg, false)
 	// fetch the rows
 	var r Record
 	r.C = 0

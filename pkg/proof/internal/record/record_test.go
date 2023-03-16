@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 )
@@ -105,6 +106,7 @@ func TestRecord_Iterate(t *testing.T) {
 		Columns: []string{"id", "createdat", "filename", "file_zip_content"},
 		Values:  &vals2,
 	}
+	cfg := configger.Defaults()
 	type args struct {
 		s stat.Proof
 	}
@@ -127,7 +129,7 @@ func TestRecord_Iterate(t *testing.T) {
 				File: tt.fields.File,
 				Name: tt.fields.Name,
 			}
-			if err := r.Iterate(nil, nil, nil, tt.args.s); (err != nil) != tt.wantErr {
+			if err := r.Iterate(nil, nil, nil, cfg, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("Record.Iterate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -186,6 +188,7 @@ func TestRecord_Zip(t *testing.T) {
 	okay := stat.Proof{
 		Overwrite: true,
 	}
+	cfg := configger.Defaults()
 	tests := []struct {
 		name    string
 		fields  fields
@@ -206,7 +209,7 @@ func TestRecord_Zip(t *testing.T) {
 				File: tt.fields.File,
 				Name: tt.fields.Name,
 			}
-			if err := r.Zip(nil, nil, nil, tt.args.col, tt.args.s); (err != nil) != tt.wantErr {
+			if err := r.Zip(nil, nil, nil, cfg, tt.args.col, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("Record.Zip() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

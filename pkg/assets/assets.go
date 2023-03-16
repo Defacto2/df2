@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/dustin/go-humanize"
@@ -34,9 +35,9 @@ var (
 
 // Clean walks through and scans directories containing UUID files
 // and erases any orphans that cannot be matched to the database.
-func Clean(db *sql.DB, w io.Writer, dir string, remove, human bool) error {
-	d := directories.Init(false)
-	return Cleaner(db, w, targetfy(dir), &d, remove, human)
+func Clean(db *sql.DB, w io.Writer, cfg configger.Config, dir string, remove, human bool) error {
+	d := directories.Init(cfg, false)
+	return Cleaner(db, w, cfg, targetfy(dir), &d, remove, human)
 }
 
 func targetfy(s string) Target {
@@ -53,8 +54,8 @@ func targetfy(s string) Target {
 	return -1
 }
 
-func Cleaner(db *sql.DB, w io.Writer, t Target, d *directories.Dir, remove, human bool) error {
-	paths := Targets(t, d)
+func Cleaner(db *sql.DB, w io.Writer, cfg configger.Config, t Target, d *directories.Dir, remove, human bool) error {
+	paths := Targets(cfg, t, d)
 	if paths == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
@@ -125,9 +126,9 @@ func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
 	return total, uuids, db.Close()
 }
 
-func Targets(t Target, d *directories.Dir) []string {
+func Targets(cfg configger.Config, t Target, d *directories.Dir) []string {
 	if d.Base == "" {
-		reset := directories.Init(false)
+		reset := directories.Init(cfg, false)
 		d = &reset
 	}
 	var paths []string

@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories/internal/create"
-	"github.com/spf13/viper"
 )
 
 var ErrNoDir = errors.New("dir structure cannot be nil")
@@ -43,27 +43,14 @@ type Dir struct {
 }
 
 // Init initialises the subdirectories and UUID structure.
-func Init(create bool) Dir {
-	if viper.GetString("directory.root") == "" {
-		viper.SetDefault("directory.000", "/opt/assets/000")
-		viper.SetDefault("directory.400", "/opt/assets/400")
-		viper.SetDefault("directory.backup", "/opt/assets/backups")
-		viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
-		viper.SetDefault("directory.html", "")
-		viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
-		viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
-		viper.SetDefault("directory.root", "/opt/assets")
-		viper.SetDefault("directory.sql", "/opt/assets/sql")
-		viper.SetDefault("directory.uuid", "/opt/assets/downloads")
-		viper.SetDefault("directory.views", "/opt/assets/views")
-	}
+func Init(cfg configger.Config, create bool) Dir {
 	var d Dir
-	d.Img000 = viper.GetString("directory.000")
-	d.Img400 = viper.GetString("directory.400")
-	d.Backup = viper.GetString("directory.backup")
-	d.Emu = viper.GetString("directory.emu")
-	d.Base = viper.GetString("directory.root")
-	d.UUID = viper.GetString("directory.uuid")
+	d.Img000 = cfg.Images
+	d.Img400 = cfg.Thumbs
+	d.Backup = cfg.Backups
+	d.Emu = cfg.Emulator
+	d.Base = cfg.WebRoot
+	d.UUID = cfg.Downloads
 	if create {
 		if err := createDirectories(&d); err != nil {
 			log.Print(err)
@@ -99,8 +86,8 @@ func ArchiveExt(name string) bool {
 }
 
 // Files initialises the full path filenames for a UUID.
-func Files(name string) Dir {
-	dirs := Init(false)
+func Files(cfg configger.Config, name string) Dir {
+	dirs := Init(cfg, false)
 	dirs.UUID = filepath.Join(dirs.UUID, name)
 	dirs.Emu = filepath.Join(dirs.Emu, name)
 	dirs.Img000 = filepath.Join(dirs.Img000, name)

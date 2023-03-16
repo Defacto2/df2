@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/text/internal/img"
 )
 
@@ -72,6 +73,7 @@ func Test_generate(t *testing.T) {
 	gif := filepath.Join(d, "test.gif")
 	txt := filepath.Join(d, "test.txt")
 	config(t)
+	cfg := configger.Defaults()
 	ud, err := filepath.Abs(uuidDir)
 	if err != nil {
 		t.Error(err)
@@ -94,7 +96,7 @@ func Test_generate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := img.Generate(nil, tt.args.name, tt.args.id, tt.args.amiga)
+			err := img.Generate(nil, cfg, tt.args.name, tt.args.id, tt.args.amiga)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -3,12 +3,13 @@ package file_test
 import (
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
 )
 
 func TestIsDir(t *testing.T) {
-	dir := directories.Init(false)
+	dir := directories.Init(configger.Defaults(), false)
 	tests := []struct {
 		name string
 		i    file.Image

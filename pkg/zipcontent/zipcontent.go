@@ -7,14 +7,15 @@ import (
 	"io"
 	"log"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
 	"go.uber.org/zap"
 )
 
 // Fix the content of zip archives within in the database.
-func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, summary bool) error { //nolint:cyclop
-	s := scan.Init()
+func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, summary bool) error { //nolint:cyclop
+	s := scan.Init(cfg)
 	rows, err := db.Query(where())
 	if err != nil {
 		return err

@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
 	"github.com/Defacto2/df2/pkg/images/internal/imagemagick"
@@ -52,7 +53,7 @@ const (
 
 // Fix generates any missing assets from downloads that are images.
 func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
-	dir := directories.Init(false)
+	dir := directories.Init(configger.Defaults(), false)
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image" ORDER BY id ASC`)
 	if err != nil {
 		return fmt.Errorf("images fix query: %w", err)
@@ -115,7 +116,7 @@ func Generate(w io.Writer, l *zap.SugaredLogger, name, id string, remove bool) e
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		return fmt.Errorf("generate stat %q: %w", name, err)
 	}
-	f := directories.Files(id)
+	f := directories.Files(configger.Defaults(), id)
 	// these funcs use dependencies that are not thread safe
 	// convert to png
 	pngDest, webpDest := NewExt(f.Img000, _png), NewExt(f.Img000, webp)

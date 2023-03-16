@@ -29,7 +29,7 @@ This is the default df2 command when used without any flags or arguments.
 			log.Fatalln(err)
 		}
 		defer db.Close()
-		if err := run.New(db, os.Stdout, log); err != nil {
+		if err := run.New(db, os.Stdout, log, cfg); err != nil {
 			log.Fatalln(err)
 		}
 	},

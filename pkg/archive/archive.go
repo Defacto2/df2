@@ -16,6 +16,7 @@ import (
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
 	"github.com/Defacto2/df2/pkg/archive/internal/file"
 	"github.com/Defacto2/df2/pkg/archive/internal/task"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
@@ -95,7 +96,7 @@ func Store(files []string, buf io.Writer) []error {
 }
 
 // Demozoo decompresses and parses archives fetched from https://demozoo.org.
-func Demozoo(db *sql.DB, w io.Writer, src, uuid string, varNames *[]string) (demozoo.Data, error) {
+func Demozoo(db *sql.DB, w io.Writer, cfg configger.Config, src, uuid string, varNames *[]string) (demozoo.Data, error) {
 	dz := demozoo.Data{}
 	if err := database.CheckUUID(uuid); err != nil {
 		return demozoo.Data{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
@@ -120,7 +121,7 @@ func Demozoo(db *sql.DB, w io.Writer, src, uuid string, varNames *[]string) (dem
 	if nfo := demozoo.NFO(src, zips, varNames); nfo != "" {
 		if src == "" {
 			dz.NFO = nfo
-		} else if err := demozoo.MoveText(w, filepath.Join(tempDir, nfo), uuid); err != nil {
+		} else if err := demozoo.MoveText(w, cfg, filepath.Join(tempDir, nfo), uuid); err != nil {
 			return demozoo.Data{}, fmt.Errorf("extract demozo move nfo: %w", err)
 		}
 	}
@@ -196,7 +197,7 @@ func nfoFile(f demozoo.Finds, file, fn, base, ext string) demozoo.Finds {
 // src is the path to the file including the uuid filename.
 // filename is the original archive filename, usually kept in the database.
 // uuid is used to rename the extracted assets such as image previews.
-func Proof(w io.Writer, l *zap.SugaredLogger, src, filename, uuid string) error {
+func Proof(w io.Writer, l *zap.SugaredLogger, cfg configger.Config, src, filename, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
 		return fmt.Errorf("archive uuid %q: %w", uuid, err)
 	}
@@ -219,7 +220,7 @@ func Proof(w io.Writer, l *zap.SugaredLogger, src, filename, uuid string) error 
 		}
 	}
 	if n := tx.Name; n != "" {
-		f := directories.Files(uuid)
+		f := directories.Files(cfg, uuid)
 		if _, err := file.Move(n, f.UUID+txt); err != nil {
 			return fmt.Errorf("archive filemove %q: %w", n, err)
 		}

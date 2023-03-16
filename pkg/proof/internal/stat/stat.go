@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logger"
 )
@@ -23,8 +24,8 @@ type Proof struct {
 	start     time.Time       // processing time
 }
 
-func Init() Proof {
-	dir := directories.Init(false)
+func Init(cfg configger.Config) Proof {
+	dir := directories.Init(cfg, false)
 	return Proof{
 		Base:     logger.SprintPath(dir.UUID),
 		BasePath: dir.UUID,

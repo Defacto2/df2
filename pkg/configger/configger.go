@@ -13,7 +13,10 @@ import (
 	"github.com/gookit/color"
 )
 
-const EnvPrefix = "DF2_"
+const (
+	EnvPrefix = "DF2_"
+	GapUser   = "df2"
+)
 
 // Config environment overrides for the Defacto2 tool.
 // There are no envDefault attributes in this struct,
@@ -86,7 +89,6 @@ func Options() env.Options {
 // TODO: move cmd/root/readIn to here and use the home path as envDefault?
 // TODO: use the dir path colouriser to display paths
 // TODO: database/internal/connect/connect.go (also remove func defaults())
-// TODO: search for `viper` and replace all viper.GetString funcs etc.
 // TODO: replace dir../dir...go Init() func.
 
 func (c Config) String() string { //nolint:funlen
@@ -209,16 +211,4 @@ func types(t reflect.Type) string {
 // 		if err != nil {
 // 			log.Fatal(err)
 // 		}
-// 		viper.AddConfigPath(home)
-// 		viper.SetConfigName(config.Config.Name)
-// 	default:
-// 		viper.SetConfigFile(cf)
-// 	}
-// 	// read in environment variables that match
-// 	viper.AutomaticEnv()
-// 	// if a config file is found, read it in
-// 	if err := viper.ReadInConfig(); err != nil {
-// 		config.Config.Errors = true
-// 		return
-// 	}
 // }

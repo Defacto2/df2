@@ -35,11 +35,11 @@ photos and text NFO files.`,
 		w := os.Stdout
 		switch {
 		case proofs.ID != "":
-			if err := r.Query(db, w, log, proofs.ID); err != nil {
+			if err := r.Query(db, w, log, cfg, proofs.ID); err != nil {
 				log.Error(err)
 			}
 		default:
-			if err := r.Queries(db, w, log); err != nil {
+			if err := r.Queries(db, w, log, cfg); err != nil {
 				log.Error(err)
 			}
 		}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/archive"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/Defacto2/df2/pkg/str"
@@ -130,7 +131,7 @@ func (t *TextFile) Extract(w io.Writer, dir *directories.Dir) error {
 }
 
 // ExtractedImgs generates PNG and Webp image assets from a textfile extracted from an archive.
-func (t *TextFile) ExtractedImgs(w io.Writer, dir string) error {
+func (t *TextFile) ExtractedImgs(w io.Writer, cfg configger.Config, dir string) error {
 	j := filepath.Join(dir, t.UUID) + txt
 	n, err := filepath.Abs(j)
 	if err != nil {
@@ -143,14 +144,14 @@ func (t *TextFile) ExtractedImgs(w io.Writer, dir string) error {
 		return fmt.Errorf("extractedimgs: %s: %w", t.UUID, err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(w, n, t.UUID, amiga); err != nil {
+	if err := img.Generate(w, cfg, n, t.UUID, amiga); err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
 	return nil
 }
 
 // TextPng generates PNG format image assets from a textfile.
-func (t *TextFile) TextPng(w io.Writer, c int, dir string) error {
+func (t *TextFile) TextPng(w io.Writer, cfg configger.Config, c int, dir string) error {
 	fmt.Fprintf(w, "%d. %v", c, t)
 	name := filepath.Join(dir, t.UUID)
 	if _, err := os.Stat(name); os.IsNotExist(err) {
@@ -160,7 +161,7 @@ func (t *TextFile) TextPng(w io.Writer, c int, dir string) error {
 		return fmt.Errorf("txtpng: %w", err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(w, name, t.UUID, amiga); err != nil {
+	if err := img.Generate(w, cfg, name, t.UUID, amiga); err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
 	fmt.Fprintln(w)

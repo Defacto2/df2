@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 	"github.com/gookit/color"
@@ -53,10 +54,11 @@ func TestExist(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	cfg := configger.Defaults()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// attempts to find "815783a6-dd34-4ec8-9527-cdbdaaab612d.png" in both dirs
-			dir := directories.Init(false)
+			dir := directories.Init(cfg, false)
 			dir.Img000 = filepath.Clean(path.Join(wd, "../../../../tests/uuid/"))
 			dir.Img400 = filepath.Clean(path.Join(wd, "../../../../tests/uuid/"))
 			if tt.name == "missingdir" {
@@ -179,6 +181,7 @@ func TestTextFile_Extract(t *testing.T) {
 func TestTextFile_ExtractedImgs(t *testing.T) {
 	d := config(t)
 	dir := filepath.Join(textDir, "extracted")
+	cfg := configger.Defaults()
 	type fields struct {
 		ID   uint
 		UUID string
@@ -201,7 +204,7 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := tr.ExtractedImgs(nil, tt.dir); (err != nil) != tt.wantErr {
+			if err := tr.ExtractedImgs(nil, cfg, tt.dir); (err != nil) != tt.wantErr {
 				t.Errorf("TextFile.ExtractedImgs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			defer os.Remove(filepath.Join(d, uuid+".png"))
@@ -213,6 +216,7 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 func TestImages(t *testing.T) {
 	color.Enable = false
 	d := config(t)
+	cfg := configger.Defaults()
 	type fields struct {
 		UUID string
 	}
@@ -235,7 +239,7 @@ func TestImages(t *testing.T) {
 			tr := &tf.TextFile{
 				UUID: tt.fields.UUID,
 			}
-			if err := tr.TextPng(nil, tt.args.c, tt.args.dir); (err != nil) != tt.wantPngErr {
+			if err := tr.TextPng(nil, cfg, tt.args.c, tt.args.dir); (err != nil) != tt.wantPngErr {
 				t.Errorf("TextFile.TextPng() error = %v, wantErr %v", err, tt.wantPngErr)
 				return
 			}

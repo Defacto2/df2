@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/gookit/color"
@@ -19,6 +20,7 @@ func TestRequest_Query(t *testing.T) {
 		Overwrite: false,
 		Refresh:   false,
 	}
+	cfg := configger.Defaults()
 	tests := []struct {
 		name    string
 		id      string
@@ -32,7 +34,7 @@ func TestRequest_Query(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := r.Query(nil, nil, nil, tt.id); (err != nil) != tt.wantErr {
+			if err := r.Query(nil, nil, nil, cfg, tt.id); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -250,13 +252,14 @@ func TestRecord_doseeMeta_fileMeta(t *testing.T) {
 		{"id", fields{ID: "22884"}, true},
 		{"uuid", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, true}, // because physical files are missing
 	}
+	cfg := configger.Defaults()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &demozoo.Record{
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := r.DoseeMeta(nil, nil); (err != nil) != tt.wantErr {
+			if err := r.DoseeMeta(nil, nil, cfg); (err != nil) != tt.wantErr {
 				t.Errorf("Record.doseeMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/archive"
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/insert"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
@@ -105,12 +106,12 @@ func (r *Record) String(total int) string {
 }
 
 // DoseeMeta generates DOSee related metadata from the file archive.
-func (r *Record) DoseeMeta(db *sql.DB, w io.Writer) error {
+func (r *Record) DoseeMeta(db *sql.DB, w io.Writer, cfg configger.Config) error {
 	names, err := r.variations(db)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	d, err := archive.Demozoo(db, w, r.FilePath, r.UUID, &names)
+	d, err := archive.Demozoo(db, w, cfg, r.FilePath, r.UUID, &names)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
@@ -382,7 +383,7 @@ func (r *Record) lastMod(w io.Writer, head http.Header) {
 	fmt.Fprintf(w, " • %s", t.Format("Jan 06"))
 }
 
-func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, api *prods.ProductionsAPIv1) (bool, error) {
+func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, api *prods.ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
@@ -408,7 +409,7 @@ func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, api *prods
 		if zip, err := r.ZipContent(w); err != nil {
 			return true, apiErr(err)
 		} else if zip {
-			if err := r.DoseeMeta(db, w); err != nil {
+			if err := r.DoseeMeta(db, w, cfg); err != nil {
 				return true, apiErr(err)
 			}
 		}
@@ -418,7 +419,7 @@ func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, api *prods
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(db *sql.DB, w io.Writer, l *zap.SugaredLogger, st Stat, overwrite bool, storage string) (bool, error) {
+func (r *Record) parseAPI(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, st Stat, overwrite bool, storage string) (bool, error) {
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
 		fmt.Fprintln(w, "Clearing filename which is incorrectly set as", r.Filename)
@@ -447,7 +448,7 @@ func (r *Record) parseAPI(db *sql.DB, w io.Writer, l *zap.SugaredLogger, st Stat
 	if r.Platform == "" {
 		r.platform(&api)
 	}
-	return r.parse(db, w, l, &api)
+	return r.parse(db, w, l, cfg, &api)
 }
 
 func (r *Record) pingPouet(api *prods.ProductionsAPIv1) error {

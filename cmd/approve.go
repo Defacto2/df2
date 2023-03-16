@@ -26,7 +26,7 @@ var approveCmd = &cobra.Command{
 		defer db.Close()
 		w := os.Stdout
 		// TODO: move approve args into a struct
-		if err := database.Approve(db, w, log, cfg.IncomingFiles, appr.Verbose); err != nil {
+		if err := database.Approve(db, w, log, cfg, cfg.IncomingFiles, appr.Verbose); err != nil {
 			log.Info(err)
 		}
 		if err := database.Fix(db, w, log); err != nil {

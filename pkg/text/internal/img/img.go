@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/dustin/go-humanize"
@@ -29,14 +30,14 @@ const (
 )
 
 // Generate a collection of site images.
-func Generate(w io.Writer, name, uuid string, amiga bool) error {
+func Generate(w io.Writer, cfg configger.Config, name, uuid string, amiga bool) error {
 	stdout := func(s string) {
 		fmt.Fprintf(w, "  %s", s)
 	}
 	const note = `
 this command requires the installation of AnsiLove/C
 installation instructions: https://github.com/ansilove/ansilove`
-	f := directories.Files(uuid)
+	f := directories.Files(cfg, uuid)
 	o := f.Img000 + png
 	s, err := MakePng(name, f.Img000, amiga)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {

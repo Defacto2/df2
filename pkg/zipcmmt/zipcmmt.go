@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/zipcmmt/internal/cmmt"
 )
@@ -15,9 +16,9 @@ const (
 	fixStmt   = `SELECT id, uuid, filename, filesize, file_magic_type FROM files WHERE filename LIKE "%.zip"`
 )
 
-func Fix(db *sql.DB, w io.Writer, ascii, unicode, overwrite, summary bool) error {
+func Fix(db *sql.DB, w io.Writer, cfg configger.Config, ascii, unicode, overwrite, summary bool) error {
 	start := time.Now()
-	dir := directories.Init(false)
+	dir := directories.Init(cfg, false)
 	rows, err := db.Query(fixStmt)
 	if err != nil {
 		return fmt.Errorf("%s, db query: %w", errPrefix, err)
