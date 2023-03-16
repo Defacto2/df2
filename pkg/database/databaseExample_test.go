@@ -9,12 +9,6 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 )
 
-func ExampleInit() {
-	init := database.Init()
-	fmt.Print(init.Port)
-	// Output: 3306
-}
-
 func ExampleConnect() {
 	cfg := configger.Defaults()
 	db, err := database.Connect(cfg)
@@ -24,21 +18,6 @@ func ExampleConnect() {
 	defer db.Close()
 	fmt.Print(db.Stats().WaitCount)
 	// Output: 0
-}
-
-func ExampleConnErr() {
-	db, err := database.ConnErr()
-	if err != nil {
-		fmt.Print(err)
-	}
-	defer db.Close()
-	// Output:
-}
-
-func ExampleConnInfo() {
-	s := database.ConnInfo()
-	fmt.Print(s)
-	// Output:
 }
 
 func ExampleColTypes() {

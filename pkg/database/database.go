@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"net"
 	"os"
 	"path"
 	"regexp"
@@ -17,12 +16,10 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/configger"
-	"github.com/Defacto2/df2/pkg/database/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/export"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
 	"github.com/Defacto2/df2/pkg/database/internal/update"
 	"github.com/Defacto2/df2/pkg/database/msql"
-	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
 	"go.uber.org/zap"
@@ -86,61 +83,15 @@ func (t Table) String() string {
 	return [...]string{"files", "groupnames", "netresources", "users"}[t]
 }
 
-// Init initialises the database connection using stored settings.
-func Init() connect.Connection {
-	return connect.Init()
-}
-
 // Connect will connect to the database and handle any errors.
 func Connect(cfg configger.Config) (*sql.DB, error) {
 	// In the future this could use either psql or msql.
 	return msql.Connect(cfg)
 }
 
-// ConnErr will connect to the database or return any errors.
-func ConnErr() (*sql.DB, error) {
-	c := connect.Init()
-	db, err := sql.Open("mysql", c.String())
-	if err != nil {
-		e := strings.Replace(err.Error(), c.Pass, hide, 1)
-		return nil, fmt.Errorf("mysql open error: %s: %w", e, ErrConnect)
-	}
-	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("mysql ping error: %w", err)
-	}
-	return db, nil
-}
-
 // ConnInfo will connect to the database and return any errors.
-func ConnInfo() string {
-	c := connect.Init()
-	db, err := sql.Open("mysql", c.String())
-	defer func() {
-		db.Close()
-	}()
-	if err != nil {
-		return strings.Replace(err.Error(), c.Pass, hide, 1)
-	}
-	err = db.Ping()
-	if err == nil {
-		return ""
-	}
-	me := &mysql.MySQLError{}
-	if ok := errors.As(err, &me); ok {
-		e := strings.Replace(err.Error(), c.User, color.Primary.Sprint(c.User), 1)
-		return fmt.Sprintf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e))
-	}
-	nop := &net.OpError{}
-	if ok := errors.As(err, &nop); ok {
-		if strings.Contains(err.Error(), "connect: connection refused") {
-			return fmt.Sprintf("%s '%v' %s",
-				color.Danger.Sprint("database server"),
-				color.Primary.Sprint(c.Server),
-				color.Danger.Sprint("is either down or the port is blocked"))
-		}
-		return color.Danger.Sprint(err)
-	}
-	return ""
+func ConnInfo(db *sql.DB, cfg configger.Config) string {
+	return msql.Info(db, cfg)
 }
 
 // Approve automatically checks and clears file records for live.

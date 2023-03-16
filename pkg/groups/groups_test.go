@@ -26,7 +26,7 @@ func TestVariations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVars, err := groups.Variations(tt.args.name)
+			gotVars, err := groups.Variations(nil, tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Variations() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -87,7 +87,13 @@ var configInfoCmd = &cobra.Command{
 	Aliases: []string{"i"},
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := config.Info(os.Stdout, log, conf.InfoSize); err != nil {
+		db, err := database.Connect(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer db.Close()
+		info := database.ConnInfo(db, cfg)
+		if err := config.Info(os.Stdout, log, info, conf.InfoSize); err != nil {
 			log.Infof("config info: %w\n", err)
 		}
 	},
@@ -115,7 +121,6 @@ the command to list the available seettings.`,
 }
 
 func init() { //nolint:gochecknoinits
-	database.Init()
 	directories.Init(false)
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Settings:"})

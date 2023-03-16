@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	"github.com/Defacto2/df2/pkg/database"
 )
 
 type Group struct {
@@ -15,12 +13,7 @@ type Group struct {
 }
 
 // Fix deletes any malformed initialisms in the database and returns the number of rows affected.
-func Fix() (int64, error) {
-	db, err := database.ConnErr()
-	if err != nil {
-		return 0, fmt.Errorf("fix connect: %w", err)
-	}
-	defer db.Close()
+func Fix(db *sql.DB) (int64, error) {
 	row, err := db.Exec("DELETE FROM `groupnames` WHERE `pubname`=? OR `initialisms`=?", "", "")
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return 0, fmt.Errorf("fix exec: %w", err)
@@ -29,14 +22,9 @@ func Fix() (int64, error) {
 }
 
 // Get the initialism for the named group.
-func (g *Group) Get() error {
-	db, err := database.ConnErr()
-	if err != nil {
-		return fmt.Errorf("get connect: %w", err)
-	}
-	defer db.Close()
+func (g *Group) Get(db *sql.DB) error {
 	row := db.QueryRow("SELECT `initialisms` FROM `groupnames` WHERE `pubname`=?", g.Name)
-	if err = row.Scan(&g.Initialism); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err := row.Scan(&g.Initialism); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("get row scan: %w", err)
 	}
 	return db.Close()

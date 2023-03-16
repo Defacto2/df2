@@ -74,7 +74,7 @@ func main() {
 	// print the compile and version details
 	if progInfo() {
 		cmd.Brand(log, brand)
-		s, err := cmd.ProgInfo(version)
+		s, err := cmd.ProgInfo(db, version)
 		if err != nil {
 			log.Error(err)
 			return

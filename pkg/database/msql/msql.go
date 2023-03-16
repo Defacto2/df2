@@ -11,6 +11,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/go-sql-driver/mysql"
+	"github.com/gookit/color"
 )
 
 const (
@@ -154,4 +155,27 @@ func Connect(cfg configger.Config) (*sql.DB, error) {
 		return nil, err
 	}
 	return conn, nil
+}
+
+func Info(db *sql.DB, cfg configger.Config) string {
+	err := db.Ping()
+	if err == nil {
+		return ""
+	}
+	me := &mysql.MySQLError{}
+	if ok := errors.As(err, &me); ok {
+		e := strings.Replace(err.Error(), cfg.DBUser, color.Primary.Sprint(cfg.DBUser), 1)
+		return fmt.Sprintf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e))
+	}
+	nop := &net.OpError{}
+	if ok := errors.As(err, &nop); ok {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			return fmt.Sprintf("%s '%v' %s",
+				color.Danger.Sprint("database server"),
+				color.Primary.Sprintf("tcp(%s:%d)", cfg.DBHost, cfg.DBPort),
+				color.Danger.Sprint("is either down or the port is blocked"))
+		}
+		return color.Danger.Sprint(err)
+	}
+	return ""
 }

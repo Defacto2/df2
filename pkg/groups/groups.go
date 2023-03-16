@@ -161,7 +161,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 	}
 	// fix initialisms stored in the groupnames table
 	fmt.Fprint(w, " and...\n")
-	i, err := acronym.Fix()
+	i, err := acronym.Fix(db)
 	if err != nil {
 		return err
 	}
@@ -185,9 +185,9 @@ func Format(name string) string {
 }
 
 // Initialism returns a named group initialism or acronym.
-func Initialism(name string) (string, error) {
+func Initialism(db *sql.DB, name string) (string, error) {
 	g := acronym.Group{Name: name}
-	if err := g.Get(); err != nil {
+	if err := g.Get(db); err != nil {
 		return "", fmt.Errorf("initialism %q: %w", name, err)
 	}
 	return g.Initialism, nil
@@ -209,7 +209,7 @@ func Update(db *sql.DB, newName, group string) (int64, error) {
 }
 
 // Variations creates format variations for a named group.
-func Variations(name string) ([]string, error) {
+func Variations(db *sql.DB, name string) ([]string, error) {
 	if name == "" {
 		return []string{}, nil
 	}
@@ -228,7 +228,7 @@ func Variations(name string) ([]string, error) {
 	if d := strings.Join(s, "."); name != d {
 		vars = append(vars, d)
 	}
-	if init, err := Initialism(name); err == nil && init != "" {
+	if init, err := Initialism(db, name); err == nil && init != "" {
 		vars = append(vars, strings.ToLower(init))
 	} else if err != nil {
 		return nil, fmt.Errorf("variations %q: %w", name, err)

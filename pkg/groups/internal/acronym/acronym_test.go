@@ -78,7 +78,7 @@ func TestGroup_Get(t *testing.T) {
 				Name:       tt.fields.Name,
 				Initialism: tt.fields.Initialism,
 			}
-			if err := g.Get(); (err != nil) != tt.wantErr {
+			if err := g.Get(nil); (err != nil) != tt.wantErr {
 				t.Errorf("Group.Get() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -106,7 +106,7 @@ func (r *Record) String(total int) string {
 
 // DoseeMeta generates DOSee related metadata from the file archive.
 func (r *Record) DoseeMeta(db *sql.DB, w io.Writer) error {
-	names, err := r.variations()
+	names, err := r.variations(db)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
@@ -502,17 +502,17 @@ func (r *Record) title(w io.Writer, api *prods.ProductionsAPIv1) {
 	}
 }
 
-func (r *Record) variations() ([]string, error) {
+func (r *Record) variations(db *sql.DB) ([]string, error) {
 	names := []string{}
 	if r.GroupBy != "" {
-		v, err := groups.Variations(r.GroupBy)
+		v, err := groups.Variations(db, r.GroupBy)
 		if err != nil {
 			return nil, fmt.Errorf("record group by variations: %w", err)
 		}
 		names = append(names, v...)
 	}
 	if r.GroupFor != "" {
-		v, err := groups.Variations(r.GroupFor)
+		v, err := groups.Variations(db, r.GroupFor)
 		if err != nil {
 			return nil, fmt.Errorf("record group for variations: %w", err)
 		}

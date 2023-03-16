@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
@@ -21,7 +20,7 @@ import (
 const colon = ":"
 
 // Info prints the content of a configuration file.
-func Info(w io.Writer, l *zap.SugaredLogger, sizes bool) error {
+func Info(w io.Writer, l *zap.SugaredLogger, db string, sizes bool) error {
 	fmt.Fprint(w, "\nDefault configurations in use when no flags are given.\n\n")
 	sets, err := yaml.Marshal(viper.AllSettings())
 	if err != nil {
@@ -29,7 +28,6 @@ func Info(w io.Writer, l *zap.SugaredLogger, sizes bool) error {
 	}
 	fmt.Fprintf(w, "%v%v %v\n", color.Cyan.Sprint("config file"), color.Red.Sprint(colon), Filepath())
 	Check()
-	db := database.ConnInfo()
 	scanner := bufio.NewScanner(strings.NewReader(string(sets)))
 	for scanner.Scan() {
 		s := strings.Split(scanner.Text(), colon)

@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"bytes"
+	"database/sql"
 	"fmt"
 	"os"
 	"os/exec"
@@ -183,12 +184,12 @@ func Vers(version string) string {
 }
 
 // ProgInfo returns the response for the -version flag.
-func ProgInfo(version string) (string, error) {
+func ProgInfo(db *sql.DB, version string) (string, error) {
 	bin, err := configger.BinPath()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
-	l := check()
+	l := check(db)
 	data := ProgData{
 		Database:   colorize(l["db"]),
 		Ansilove:   colorize(l["ansilove"]),
@@ -226,12 +227,12 @@ func ProgInfo(version string) (string, error) {
 type lookups = map[string]string
 
 // check looks up the collection of dependencies and database connection.
-func check() lookups {
+func check(db *sql.DB) lookups {
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
 		miss       = "missing"
-		db         = "db"
+		d          = "db"
 	)
 	l := lookups{
 		"db":       disconnect,
@@ -247,11 +248,11 @@ func check() lookups {
 		"unzip":    miss,
 		"zipinfo":  miss,
 	}
-	if err := database.ConnInfo(); err == "" {
-		l[db] = ok
+	if err := database.ConnInfo(db, cfg); err == "" {
+		l[d] = ok
 	}
 	for file := range l {
-		if file == db {
+		if file == d {
 			continue
 		}
 		if _, err := exec.LookPath(file); err == nil {
