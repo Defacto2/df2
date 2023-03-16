@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var apis arg.Apis
+var apis arg.APIs
 
 // apisCmd represents the demozoo command.
 var apisCmd = &cobra.Command{

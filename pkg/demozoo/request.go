@@ -43,7 +43,11 @@ func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg co
 	if err != nil {
 		return err
 	}
-	storage := directories.Init(cfg, false).UUID
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return err
+	}
+	storage := dir.UUID
 	if err = st.sumTotal(Records{rows, scanArgs, values}, r); err != nil {
 		return fmt.Errorf("queries sumtotal: %w", err)
 	}

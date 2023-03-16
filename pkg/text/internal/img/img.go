@@ -37,7 +37,10 @@ func Generate(w io.Writer, cfg configger.Config, name, uuid string, amiga bool) 
 	const note = `
 this command requires the installation of AnsiLove/C
 installation instructions: https://github.com/ansilove/ansilove`
-	f := directories.Files(cfg, uuid)
+	f, err := directories.Files(cfg, uuid)
+	if err != nil {
+		return err
+	}
 	o := f.Img000 + png
 	s, err := MakePng(name, f.Img000, amiga)
 	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {

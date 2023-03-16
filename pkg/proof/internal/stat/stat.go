@@ -24,13 +24,16 @@ type Proof struct {
 	start     time.Time       // processing time
 }
 
-func Init(cfg configger.Config) Proof {
-	dir := directories.Init(cfg, false)
+func Init(cfg configger.Config) (Proof, error) {
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return Proof{}, err
+	}
 	return Proof{
 		Base:     logger.SprintPath(dir.UUID),
 		BasePath: dir.UUID,
 		start:    time.Now(),
-	}
+	}, nil
 }
 
 // Summary of the proofs.

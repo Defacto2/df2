@@ -19,7 +19,10 @@ const (
 
 // Fix generates any missing assets from downloads that are text based.
 func Fix(db *sql.DB, w io.Writer, cfg configger.Config) error {
-	dir := directories.Init(cfg, false)
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return err
+	}
 	rows, err := db.Query(fixStmt)
 	if err != nil {
 		return fmt.Errorf("fix db query: %w", err)

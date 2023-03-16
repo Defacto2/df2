@@ -41,6 +41,14 @@ func main() {
 	// Logger (use the development log until the environment vars are parsed)
 	log := logger.Development().Sugar()
 
+	// Panic recovery to close any active connections and to log the problem.
+	defer func() {
+		if i := recover(); i != nil {
+			//debug.PrintStack()
+			log.DPanicln(i)
+		}
+	}()
+
 	// Environment configuration
 	configs := configger.Defaults()
 	if err := env.Parse(
@@ -64,14 +72,30 @@ func main() {
 		color.Enable = false
 	}
 
+	// Execute help and exit
+	if help() {
+		if err := cmd.Execute(log, configs); err != nil {
+			log.Error(err)
+			defer os.Exit(1)
+		}
+		return
+	}
+
 	// Database check
 	db, err := msql.Connect(configs)
 	if err != nil {
 		log.Errorf("Could not connect to the mysql database: %s.", err)
 	}
-	defer db.Close()
+	defer func() {
+		if !configs.IsProduction {
+			log.Infoln("Closed the tcp connection to the database.")
+		}
+		if err := db.Close(); err != nil {
+			log.Errorln(err)
+		}
+	}()
 
-	// print the compile and version details
+	// Print the compile and version details
 	if progInfo() {
 		cmd.Brand(log, brand)
 		s, err := cmd.ProgInfo(db, version)
@@ -83,13 +107,13 @@ func main() {
 		return
 	}
 
-	// suppress stdout except when requesting help
-	if quiet() && !help() {
+	// Suppress stdout
+	if quiet() {
 		os.Stdout, _ = os.OpenFile(os.DevNull, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		defer os.Stdout.Close()
 	}
 
-	// cobra flag library
+	// Execute the cobra flag library
 	if err := cmd.Execute(log, configs); err != nil {
 		log.Error(err)
 		defer os.Exit(1)

@@ -157,7 +157,10 @@ func TestBackup(t *testing.T) {
 		{"ok", args{&s, list}, false},
 	}
 	cfg := configger.Defaults()
-	d := directories.Init(cfg, false)
+	d, err := directories.Init(cfg, false)
+	if err != nil {
+		t.Error(err)
+	}
 	d.Backup = os.TempDir() // overwrite /opt/assets/backups
 	color.Enable = false
 	for _, tt := range tests {
@@ -179,7 +182,10 @@ func TestCleaner(t *testing.T) {
 		human  bool
 	}
 	cfg := configger.Defaults()
-	d := directories.Init(cfg, false)
+	d, err := directories.Init(cfg, false)
+	if err != nil {
+		t.Error(err)
+	}
 	tests := []struct {
 		name    string
 		args    args
@@ -202,7 +208,10 @@ func TestCleaner(t *testing.T) {
 func TestIgnoreList(t *testing.T) {
 	var want struct{}
 	cfg := configger.Defaults()
-	d := directories.Init(cfg, false)
+	d, err := directories.Init(cfg, false)
+	if err != nil {
+		t.Error(err)
+	}
 	color.Enable = false
 	if got := scan.IgnoreList("", &d)["blank.png"]; !reflect.DeepEqual(got, want) {
 		t.Errorf("IgnoreList() = %v, want %v", got, want)
@@ -221,11 +230,14 @@ func TestTargets(t *testing.T) {
 		{"error", -1, 0},
 	}
 	cfg := configger.Defaults()
-	d := directories.Init(cfg, false)
+	d, err := directories.Init(cfg, false)
+	if err != nil {
+		t.Error(err)
+	}
 	color.Enable = false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := assets.Targets(cfg, tt.target, &d); len(got) != tt.want {
+			if got, _ := assets.Targets(cfg, tt.target, &d); len(got) != tt.want {
 				t.Errorf("Targets() = %v, want %v", got, tt.want)
 			}
 		})

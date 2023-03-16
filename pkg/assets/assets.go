@@ -36,7 +36,10 @@ var (
 // Clean walks through and scans directories containing UUID files
 // and erases any orphans that cannot be matched to the database.
 func Clean(db *sql.DB, w io.Writer, cfg configger.Config, dir string, remove, human bool) error {
-	d := directories.Init(cfg, false)
+	d, err := directories.Init(cfg, false)
+	if err != nil {
+		return err
+	}
 	return Cleaner(db, w, cfg, targetfy(dir), &d, remove, human)
 }
 
@@ -55,7 +58,10 @@ func targetfy(s string) Target {
 }
 
 func Cleaner(db *sql.DB, w io.Writer, cfg configger.Config, t Target, d *directories.Dir, remove, human bool) error {
-	paths := Targets(cfg, t, d)
+	paths, err := Targets(cfg, t, d)
+	if err != nil {
+		return err
+	}
 	if paths == nil {
 		return fmt.Errorf("check target %q: %w", t, ErrTarget)
 	}
@@ -126,9 +132,12 @@ func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
 	return total, uuids, db.Close()
 }
 
-func Targets(cfg configger.Config, t Target, d *directories.Dir) []string {
+func Targets(cfg configger.Config, t Target, d *directories.Dir) ([]string, error) {
 	if d.Base == "" {
-		reset := directories.Init(cfg, false)
+		reset, err := directories.Init(cfg, false)
+		if err != nil {
+			return nil, err
+		}
 		d = &reset
 	}
 	var paths []string
@@ -142,5 +151,5 @@ func Targets(cfg configger.Config, t Target, d *directories.Dir) []string {
 	case Image:
 		paths = append(paths, d.Img000, d.Img400)
 	}
-	return paths
+	return paths, nil
 }

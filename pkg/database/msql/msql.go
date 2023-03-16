@@ -103,7 +103,7 @@ func (c Connection) Ping(db *sql.DB) error {
 	}
 	// ping the server to make sure the connection works
 	if err := db.Ping(); err != nil {
-		//fmt.Fprintln(w, color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
+		// fmt.Fprintln(w, color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
 		// filter the password and then print the datasource connection info
 		// to discover more errors, use log.Printf("%T", err)
 		me := &mysql.MySQLError{}

@@ -32,9 +32,7 @@ import (
 	_ "golang.org/x/image/webp" // register WebP decoding.
 )
 
-var (
-	ErrFormat = errors.New("unsupported image format")
-)
+var ErrFormat = errors.New("unsupported image format")
 
 const (
 	WebpMaxSize int         = 16383 // WebpMaxSize is the maximum pixel dimension of an webp image.
@@ -53,7 +51,10 @@ const (
 
 // Fix generates any missing assets from downloads that are images.
 func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
-	dir := directories.Init(configger.Defaults(), false)
+	dir, err := directories.Init(configger.Defaults(), false)
+	if err != nil {
+		return err
+	}
 	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image" ORDER BY id ASC`)
 	if err != nil {
 		return fmt.Errorf("images fix query: %w", err)
@@ -116,7 +117,10 @@ func Generate(w io.Writer, l *zap.SugaredLogger, name, id string, remove bool) e
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		return fmt.Errorf("generate stat %q: %w", name, err)
 	}
-	f := directories.Files(configger.Defaults(), id)
+	f, err := directories.Files(configger.Defaults(), id)
+	if err != nil {
+		return err
+	}
 	// these funcs use dependencies that are not thread safe
 	// convert to png
 	pngDest, webpDest := NewExt(f.Img000, _png), NewExt(f.Img000, webp)

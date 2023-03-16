@@ -36,12 +36,21 @@ const (
 )
 
 var (
-	ErrToFew  = errors.New("too few arguments given")
-	ErrArg    = errors.New("unknown args flag")
-	ErrDZFlag = errors.New("unknown demozoo flag")
+	ErrToFew   = errors.New("too few arguments given")
+	ErrArg     = errors.New("unknown args flag")
+	ErrNothing = errors.New("had nothing to do")
+
+	ErrDB  = errors.New("database handle pointer cannot be nil")
+	ErrZap = errors.New("zap logger cannot be nil")
 )
 
 func Data(db *sql.DB, w io.Writer, d database.Flags) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	switch {
 	case d.CronJob:
 		return d.Run(db, w)
@@ -52,7 +61,16 @@ func Data(db *sql.DB, w io.Writer, d database.Flags) error {
 	}
 }
 
-func APIs(db *sql.DB, w io.Writer, l *zap.SugaredLogger, a arg.Apis) error {
+func APIs(db *sql.DB, w io.Writer, l *zap.SugaredLogger, a arg.APIs) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if l == nil {
+		return ErrZap
+	}
 	switch {
 	case a.Refresh:
 		return demozoo.RefreshMeta(db, w, l)
@@ -62,12 +80,20 @@ func APIs(db *sql.DB, w io.Writer, l *zap.SugaredLogger, a arg.Apis) error {
 		return syncdos(db, w)
 	case a.SyncWin:
 		return syncwin(db, w)
-	default:
-		return ErrArg
 	}
+	return nil
 }
 
 func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, dz arg.Demozoo) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if l == nil {
+		return ErrZap
+	}
 	var empty []string
 	r := demozoo.Request{
 		All:       dz.All,
@@ -94,7 +120,7 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 		fmt.Fprintln(w, d)
 		return nil
 	default:
-		return ErrDZFlag
+		return fmt.Errorf("demozoo %w", ErrNothing)
 	}
 }
 
@@ -182,6 +208,12 @@ func extract(db *sql.DB, w io.Writer, cfg configger.Config, src string) error {
 }
 
 func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	switch {
 	case gpf.Cronjob, gpf.Forcejob:
 		force := false
@@ -204,16 +236,27 @@ func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
 		if _, err := req.Print(db, w); err != nil {
 			return err
 		}
+		return nil
 	}
-	return nil
+	return ErrNothing
 }
 
 func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if l == nil {
+		return ErrZap
+	}
 	i := 0
-	color.Primary.Println("Scans for new submissions and record cleanup")
-	//config.Check()
+	s := color.Primary.Sprint("Scans for new submissions and record cleanup")
+	fmt.Fprintln(w, s)
 	i++
-	color.Info.Printf("%d. scan for new demozoo submissions\n", i)
+	s = color.Info.Sprintf("%d. scan for new demozoo submissions\n", i)
+	fmt.Fprintln(w, s)
 	newDZ := demozoo.Request{
 		All:       false,
 		Overwrite: false,
@@ -223,7 +266,8 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 		return err
 	}
 	i++
-	color.Info.Printf("%d. scan for new proof submissions\n", i)
+	s = color.Info.Sprintf("%d. scan for new proof submissions\n", i)
+	fmt.Fprintln(w, s)
 	newProof := proof.Request{
 		Overwrite:   false,
 		AllProofs:   false,
@@ -233,27 +277,32 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 		return err
 	}
 	i++
-	color.Info.Printf("%d. scan for empty archives\n", i)
+	s = color.Info.Sprintf("%d. scan for empty archives\n", i)
+	fmt.Fprintln(w, s)
 	if err := zipcontent.Fix(db, w, l, cfg, true); err != nil {
 		return err
 	}
 	i++
-	color.Info.Printf("%d. generate missing images\n", i)
+	s = color.Info.Sprintf("%d. generate missing images\n", i)
+	fmt.Fprintln(w, s)
 	if err := images.Fix(db, w, l); err != nil {
 		return err
 	}
 	i++
-	color.Info.Printf("%d. generate missing text previews\n", i)
+	s = color.Info.Sprintf("%d. generate missing text previews\n", i)
+	fmt.Fprintln(w, s)
 	if err := text.Fix(db, w, cfg); err != nil {
 		return err
 	}
 	i++
-	color.Info.Printf("%d. fix demozoo data conflicts\n", i)
+	s = color.Info.Sprintf("%d. fix demozoo data conflicts\n", i)
+	fmt.Fprintln(w, s)
 	if err := demozoo.Fix(db, w); err != nil {
 		return err
 	}
 	i++
-	color.Info.Printf("%d. fix malformed database entries\n", i)
+	s = color.Info.Sprintf("%d. fix malformed database entries\n", i)
+	fmt.Fprintln(w, s)
 	if err := database.Fix(db, w, l); err != nil {
 		return err
 	}

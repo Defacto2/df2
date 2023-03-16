@@ -122,7 +122,10 @@ func MoveText(w io.Writer, cfg configger.Config, src, uuid string) error {
 	if err := database.CheckUUID(uuid); err != nil {
 		return fmt.Errorf("movetext check uuid %q: %w", uuid, err)
 	}
-	f := directories.Files(cfg, uuid)
+	f, err := directories.Files(cfg, uuid)
+	if err != nil {
+		return fmt.Errorf("movetext directory: %w", err)
+	}
 	size, err := file.Move(src, f.UUID+txt)
 	if err != nil {
 		return fmt.Errorf("movetext filemove %q: %w", src, err)

@@ -58,7 +58,7 @@ func TestExist(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// attempts to find "815783a6-dd34-4ec8-9527-cdbdaaab612d.png" in both dirs
-			dir := directories.Init(cfg, false)
+			dir, _ := directories.Init(cfg, false)
 			dir.Img000 = filepath.Clean(path.Join(wd, "../../../../tests/uuid/"))
 			dir.Img400 = filepath.Clean(path.Join(wd, "../../../../tests/uuid/"))
 			if tt.name == "missingdir" {

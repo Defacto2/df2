@@ -15,7 +15,10 @@ import (
 
 // Fix the content of zip archives within in the database.
 func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, summary bool) error { //nolint:cyclop
-	s := scan.Init(cfg)
+	s, err := scan.Init(cfg)
+	if err != nil {
+		return err
+	}
 	rows, err := db.Query(where())
 	if err != nil {
 		return err

@@ -1,9 +1,11 @@
 package arg_test
 
 import (
+	"io"
 	"testing"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_options(t *testing.T) {
@@ -29,26 +31,13 @@ func Test_options(t *testing.T) {
 }
 
 func TestInvalid(t *testing.T) {
-	type args struct {
-		arg  string
-		args []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"empty", args{}, true},
-		{"args", args{
-			arg:  "abc",
-			args: []string{"abc", "def"},
-		}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := arg.Invalid(nil, tt.args.arg, tt.args.args...); (err != nil) != tt.wantErr {
-				t.Errorf("Invalid() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	args := []string{"abc", "def"}
+	err := arg.Invalid(nil, "", []string{}...)
+	assert.NotNil(t, err)
+	err = arg.Invalid(io.Discard, "", []string{}...)
+	assert.NotNil(t, err)
+	err = arg.Invalid(io.Discard, "", args...)
+	assert.NotNil(t, err)
+	err = arg.Invalid(io.Discard, "abc", args...)
+	assert.Nil(t, err)
 }

@@ -23,13 +23,19 @@ type Stats struct {
 }
 
 // Init initializes the archive scan statistics.
-func Init(cfg configger.Config) Stats {
-	dir := directories.Init(cfg, false)
-	return Stats{BasePath: dir.UUID, start: time.Now()}
+func Init(cfg configger.Config) (Stats, error) {
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return Stats{}, err
+	}
+	return Stats{BasePath: dir.UUID, start: time.Now()}, nil
 }
 
 // Summary prints the number of archive scanned.
 func (s *Stats) Summary(w io.Writer) {
+	if w == nil {
+		w = io.Discard
+	}
 	total := s.Count - s.Missing
 	if total == 0 {
 		fmt.Fprint(w, "nothing to do")

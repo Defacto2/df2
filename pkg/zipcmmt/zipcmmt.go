@@ -18,7 +18,10 @@ const (
 
 func Fix(db *sql.DB, w io.Writer, cfg configger.Config, ascii, unicode, overwrite, summary bool) error {
 	start := time.Now()
-	dir := directories.Init(cfg, false)
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return err
+	}
 	rows, err := db.Query(fixStmt)
 	if err != nil {
 		return fmt.Errorf("%s, db query: %w", errPrefix, err)

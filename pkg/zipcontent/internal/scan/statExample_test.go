@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleStats_Summary() {
-	s := scan.Init(configger.Defaults())
+	s, _ := scan.Init(configger.Defaults())
 	s.Summary(os.Stdout)
 	// Output: nothing to do
 	// ───────────────────────────────────────────────────

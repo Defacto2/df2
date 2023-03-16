@@ -9,7 +9,7 @@ import (
 )
 
 func TestIsDir(t *testing.T) {
-	dir := directories.Init(configger.Defaults(), false)
+	dir, _ := directories.Init(configger.Defaults(), false)
 	tests := []struct {
 		name string
 		i    file.Image

@@ -26,5 +26,41 @@
 			"defer db.Close()",
 		],
 		"description": "Create a database connection db variable"
-	}
+	},
+	"db is nil check": {
+		"scope": "go",
+		"prefix": "ifdb",
+		"body": [
+			"if db == nil {",
+			"return ErrDB",
+			"}",
+		],
+	},
+	"t error":{
+		"scope": "go",
+		"prefix": "terr",
+		"body": [
+			"if err != nil {",
+			"t.Error(err)",
+			"}",
+		],
+	},
+	"l zap logger is nil check":{
+		"scope": "go",
+		"prefix": "ifzap",
+		"body": [
+			"if l == nil {",
+			"return ErrZap",
+			"}",
+		],
+	},
+	"w writer is nil check":{
+		"scope": "go",
+		"prefix": "ifw",
+		"body": [
+			"if w == nil {",
+			"w = io.Discard",
+			"}",
+		],
+	},
 }

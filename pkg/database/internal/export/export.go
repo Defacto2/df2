@@ -21,7 +21,8 @@ import (
 var (
 	ErrColType  = errors.New("the value type is not usable with the mysql column")
 	ErrNoTable  = errors.New("unknown database table")
-	ErrNoMethod = errors.New("unknown database export type")
+	ErrMethod   = errors.New("unknown database export type")
+	ErrNoMethod = errors.New("no database export type provided")
 )
 
 // A database table.
@@ -214,13 +215,16 @@ func (f *Flags) fileName() string {
 }
 
 func (f *Flags) method() error {
+	if f.Type == "" {
+		return fmt.Errorf("method %w:", ErrNoMethod)
+	}
 	switch strings.ToLower(f.Type) {
 	case cr, "c":
 		f.Method = Create
 	case up, "u":
 		f.Method = Insert
 	default:
-		return fmt.Errorf("method %w", ErrNoMethod)
+		return fmt.Errorf("method %w: %s", ErrMethod, f.Type)
 	}
 	return nil
 }

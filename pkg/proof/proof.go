@@ -35,7 +35,10 @@ func (request *Request) Query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg
 
 // Queries parses all proofs.
 func (request Request) Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) error { //nolint:cyclop,funlen
-	s := stat.Init(cfg)
+	s, err := stat.Init(cfg)
+	if err != nil {
+		return err
+	}
 	rows, err := db.Query(Select(request.ByID))
 	if err != nil {
 		return err

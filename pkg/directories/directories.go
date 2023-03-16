@@ -4,7 +4,6 @@ package directories
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -14,7 +13,10 @@ import (
 	"github.com/Defacto2/df2/pkg/directories/internal/create"
 )
 
-var ErrNoDir = errors.New("dir structure cannot be nil")
+var (
+	ErrDir   = errors.New("directory cannot be an empty value")
+	ErrNoDir = errors.New("dir structure cannot be nil")
+)
 
 const (
 	// Archives.
@@ -43,23 +45,41 @@ type Dir struct {
 }
 
 // Init initialises the subdirectories and UUID structure.
-func Init(cfg configger.Config, create bool) Dir {
+func Init(cfg configger.Config, create bool) (Dir, error) {
 	var d Dir
 	d.Img000 = cfg.Images
+	if cfg.Images == "" {
+		return Dir{}, fmt.Errorf("%w cfg.images", ErrDir)
+	}
 	d.Img400 = cfg.Thumbs
+	if cfg.Thumbs == "" {
+		return Dir{}, fmt.Errorf("%w cfg.thumbs", ErrDir)
+	}
 	d.Backup = cfg.Backups
+	if cfg.Backups == "" {
+		return Dir{}, fmt.Errorf("%w cfg.backups", ErrDir)
+	}
 	d.Emu = cfg.Emulator
+	if cfg.Emulator == "" {
+		return Dir{}, fmt.Errorf("%w cfg.emulator", ErrDir)
+	}
 	d.Base = cfg.WebRoot
+	if cfg.WebRoot == "" {
+		return Dir{}, fmt.Errorf("%w cfg.webroot", ErrDir)
+	}
 	d.UUID = cfg.Downloads
+	if cfg.Downloads == "" {
+		return Dir{}, fmt.Errorf("%w cfg.downloads", ErrDir)
+	}
 	if create {
 		if err := createDirectories(&d); err != nil {
-			log.Print(err)
+			return Dir{}, err
 		}
 		if err := PlaceHolders(&d); err != nil {
-			log.Print(err)
+			return Dir{}, err
 		}
 	}
-	return d
+	return d, nil
 }
 
 // createDirectories generates a series of UUID subdirectories.
@@ -86,13 +106,16 @@ func ArchiveExt(name string) bool {
 }
 
 // Files initialises the full path filenames for a UUID.
-func Files(cfg configger.Config, name string) Dir {
-	dirs := Init(cfg, false)
+func Files(cfg configger.Config, name string) (Dir, error) {
+	dirs, err := Init(cfg, false)
+	if err != nil {
+		return Dir{}, err
+	}
 	dirs.UUID = filepath.Join(dirs.UUID, name)
 	dirs.Emu = filepath.Join(dirs.Emu, name)
 	dirs.Img000 = filepath.Join(dirs.Img000, name)
 	dirs.Img400 = filepath.Join(dirs.Img400, name)
-	return dirs
+	return dirs, nil
 }
 
 // PlaceHolders generates a collection placeholder files in the UUID subdirectories.

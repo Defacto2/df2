@@ -124,7 +124,7 @@ func (c Config) String() string { //nolint:funlen
 	b := new(strings.Builder)
 	w := tabwriter.NewWriter(b, minwidth, tabwidth, padding, padchar, flags)
 
-	var style = lipgloss.NewStyle().
+	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("228")).
 		PaddingLeft(2).

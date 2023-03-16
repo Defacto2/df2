@@ -11,10 +11,16 @@ import (
 	"github.com/gookit/color"
 )
 
-var ErrNoCmd = errors.New("no command argument was provided")
+var (
+	ErrNoCmd = errors.New("no command argument was provided")
+)
 
 func Targets() []string {
-	return []string{"all", "download", "emulation", "image"}
+	return []string{
+		"all",
+		"download",
+		"emulation",
+		"image"}
 }
 
 type Approve struct {
@@ -34,7 +40,7 @@ type Config struct {
 	Overwrite bool
 }
 
-type Apis struct {
+type APIs struct {
 	Refresh bool
 	Pouet   bool
 	SyncDos bool
@@ -106,6 +112,9 @@ func Invalid(w io.Writer, arg string, args ...string) error {
 	if arg == "" {
 		return ErrNoCmd
 	}
+	if w == nil {
+		w = io.Discard
+	}
 	s := ""
 	if len(args) == 0 {
 		s = fmt.Sprintf("%s %s", color.Warn.Sprint("invalid command"),
@@ -122,9 +131,12 @@ func Invalid(w io.Writer, arg string, args ...string) error {
 }
 
 // FilterFlag compairs the value of the filter flag against the list of slice values.
-func FilterFlag(w io.Writer, t any, flag, val string) {
+func FilterFlag(w io.Writer, t any, flag, val string) error {
 	if val == "" {
-		return
+		return nil
+	}
+	if w == nil {
+		w = io.Discard
 	}
 	if t, ok := t.([]string); ok {
 		sup := false
@@ -135,7 +147,7 @@ func FilterFlag(w io.Writer, t any, flag, val string) {
 			}
 		}
 		if sup {
-			return
+			return nil
 		}
 		fmt.Fprintf(w, "%s %s\n%s %s\n", color.Warn.Sprintf("unsupported --%s flag value", flag),
 			color.Bold.Sprintf("%q", val),
@@ -143,6 +155,7 @@ func FilterFlag(w io.Writer, t any, flag, val string) {
 			color.Primary.Sprint(strings.Join(t, ",")))
 		os.Exit(1)
 	}
+	return nil
 }
 
 func CleanOpts(a ...string) string {

@@ -31,7 +31,7 @@ There are additional Demozoo commands found under the api command.`,
 		defer db.Close()
 		err = run.Demozoo(db, os.Stdout, log, cfg, dzf)
 		switch {
-		case errors.Is(err, run.ErrDZFlag):
+		case errors.Is(err, run.ErrNothing):
 			if err := cmd.Usage(); err != nil {
 				log.Fatal(err)
 			}

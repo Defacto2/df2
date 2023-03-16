@@ -19,9 +19,11 @@ import (
 )
 
 var (
-	ErrCmd  = errors.New("invalid command, please use one of the available commands")
-	ErrID   = errors.New("invalid id or uuid specified")
-	ErrNoID = errors.New("requires an id or uuid argument")
+	ErrCfg    = errors.New("config cannot be empty")
+	ErrCmd    = errors.New("invalid command, please use one of the available commands")
+	ErrID     = errors.New("invalid id or uuid specified")
+	ErrLogger = errors.New("logger cannot be nil")
+	ErrNoID   = errors.New("requires an id or uuid argument")
 )
 
 var (
@@ -54,6 +56,12 @@ var rootCmd = &cobra.Command{
 // sets the appropriate flags. It is called by main.main() and only needs
 // to be called once in the rootCmd.
 func Execute(log *zap.SugaredLogger, c configger.Config) error {
+	if log == nil {
+		return ErrLogger
+	}
+	if c == (configger.Config{}) {
+		return ErrCfg
+	}
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	cfg = c
 	if err := rootCmd.Execute(); err != nil {
@@ -65,7 +73,7 @@ func Execute(log *zap.SugaredLogger, c configger.Config) error {
 		}
 		return nil
 	}
-	//config.Check()
+	// config.Check()
 	return nil
 }
 

@@ -405,7 +405,10 @@ func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, 
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	dir := directories.Init(cfg, false)
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return err
+	}
 	// fetch the rows
 	var r Record
 	r.C = 0

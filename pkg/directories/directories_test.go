@@ -14,7 +14,7 @@ func TestInit(t *testing.T) {
 		wantUUID  = "/opt/assets/downloads"
 	)
 	t.Run("flat", func(t *testing.T) {
-		if got := directories.Init(configger.Defaults(), createDir); got.UUID != wantUUID {
+		if got, _ := directories.Init(configger.Defaults(), createDir); got.UUID != wantUUID {
 			t.Errorf("Init() = %v, want %v", got.UUID, wantUUID)
 		}
 	})
@@ -49,7 +49,7 @@ func TestFiles(t *testing.T) {
 		wantUUID = "/opt/assets/downloads/myname"
 	)
 	t.Run("flat", func(t *testing.T) {
-		if got := directories.Files(configger.Defaults(), name); got.UUID != wantUUID {
+		if got, _ := directories.Files(configger.Defaults(), name); got.UUID != wantUUID {
 			t.Errorf("Init() = %v, want %v", got.UUID, wantUUID)
 		}
 	})

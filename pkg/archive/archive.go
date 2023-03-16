@@ -220,7 +220,10 @@ func Proof(w io.Writer, l *zap.SugaredLogger, cfg configger.Config, src, filenam
 		}
 	}
 	if n := tx.Name; n != "" {
-		f := directories.Files(cfg, uuid)
+		f, err := directories.Files(cfg, uuid)
+		if err != nil {
+			return fmt.Errorf("archive config: %w", err)
+		}
 		if _, err := file.Move(n, f.UUID+txt); err != nil {
 			return fmt.Errorf("archive filemove %q: %w", n, err)
 		}
