@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var clf arg.Clean
+var clean arg.Clean
 
 // cleanCmd represents the clean command.
 var cleanCmd = &cobra.Command{
@@ -23,30 +23,36 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 	Aliases: []string{"c"},
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
-		directories.Init(cfg, clf.MakeDirs)
+		directories.Init(cfg, clean.MakeDirs)
 		db, err := msql.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
-		// TODO: make clf aka arg.Clean to a public struct in assets
-		if err := assets.Clean(db, os.Stdout, cfg, clf.Target, clf.Delete, clf.Humanise); err != nil {
-			log.Info(err)
+		defer db.Close()
+		c := assets.Clean{
+			Name:   clean.Target,
+			Remove: clean.Delete,
+			Human:  clean.Humanise,
+			Config: cfg,
+		}
+		if err := c.Walk(db, os.Stdout); err != nil {
+			logr.Error(err)
 		}
 	},
 }
 
 func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(cleanCmd)
-	cleanCmd.Flags().StringVarP(&clf.Target, "target", "t", "all",
+	cleanCmd.Flags().StringVarP(&clean.Target, "target", "t", "all",
 		"which file section to clean"+arg.CleanOpts(arg.Targets()...))
-	cleanCmd.Flags().BoolVarP(&clf.Delete, "delete", "x", false,
+	cleanCmd.Flags().BoolVarP(&clean.Delete, "delete", "x", false,
 		"erase all discovered files to free up drive space")
-	cleanCmd.Flags().BoolVar(&clf.Humanise, "humanise", true,
+	cleanCmd.Flags().BoolVar(&clean.Humanise, "humanise", true,
 		"humanise file sizes and date times")
-	cleanCmd.Flags().BoolVar(&clf.MakeDirs, "makedirs", false,
+	cleanCmd.Flags().BoolVar(&clean.MakeDirs, "makedirs", false,
 		"generate uuid directories and placeholder files")
 	cleanCmd.Flags().SortFlags = false
 	if err := cleanCmd.Flags().MarkHidden("makedirs"); err != nil {
-		log.Info(err)
+		logr.Error(err)
 	}
 }

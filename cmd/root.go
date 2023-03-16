@@ -13,6 +13,7 @@ import (
 	"github.com/Defacto2/df2/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -27,9 +28,9 @@ var (
 )
 
 var (
-	cfg configger.Config   // Enviroment variables for configuration.
-	flg arg.Execute        // Global, command line flags.
-	log *zap.SugaredLogger // Zap sugared logger for printing and storing.
+	cfg  configger.Config   // Enviroment variables for configuration.
+	flg  arg.Execute        // Global, command line flags.
+	logr *zap.SugaredLogger // Zap sugared logger for printing and storing.
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -43,11 +44,11 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := run.New(db, os.Stdout, log, cfg); err != nil {
-			log.Fatalln(err)
+		if err := run.New(db, os.Stdout, logr, cfg); err != nil {
+			logr.Fatal(err)
 		}
 	},
 }
@@ -65,7 +66,7 @@ func Execute(log *zap.SugaredLogger, c configger.Config) error {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	cfg = c
 	if err := rootCmd.Execute(); err != nil {
-		log.Warn(err)
+		logr.Warnln(err)
 		if e := err.Error(); strings.Contains(e, "required flag(s) \"name\"") {
 			fmt.Fprintln(os.Stdout,
 				"see Examples for usage or run to list setting choices:",
@@ -78,6 +79,10 @@ func Execute(log *zap.SugaredLogger, c configger.Config) error {
 }
 
 func init() { //nolint:gochecknoinits
+	// as init runs before anything, check for logger to avoid panics
+	if logr == nil {
+		logr = logger.Production().Sugar()
+	}
 	cobra.OnInitialize()
 	rootCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Admin:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "group2", Title: "Drive:"})
@@ -91,6 +96,6 @@ func init() { //nolint:gochecknoinits
 	rootCmd.PersistentFlags().BoolVar(&flg.Panic, "panic", false,
 		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
-		log.Fatal(err)
+		logr.Fatal(err)
 	}
 }

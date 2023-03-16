@@ -21,7 +21,7 @@
 		"body": [
 			"db, err := database.Connect(cfg)",
 			"if err != nil {",
-			"  log.Fatalln(err)",
+			"  log.Fatal(err)",
 			"}",
 			"defer db.Close()",
 		],

@@ -380,7 +380,7 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, incoming string, v bool) error {
+func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, v bool) error {
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {
 		return fmt.Errorf("queries query: %w", err)
@@ -393,10 +393,10 @@ func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
-	return query(db, w, l, cfg, incoming, v, rows, columns)
+	return query(db, w, l, cfg, v, rows, columns)
 }
 
-func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, incoming string, v bool, rows *sql.Rows, columns []string) error {
+func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, v bool, rows *sql.Rows, columns []string) error {
 	x := func() string {
 		return fmt.Sprintf(" %s", str.X())
 	}
@@ -434,7 +434,7 @@ func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, 
 			continue
 		}
 		r.UUID = string(values[1])
-		if ok := r.Check(w, incoming, values, &dir); !ok {
+		if ok := r.Check(w, cfg.IncomingFiles, values, &dir); !ok {
 			Verbose(w, v, x())
 			continue
 		}

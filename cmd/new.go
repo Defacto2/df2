@@ -26,11 +26,11 @@ This is the default df2 command when used without any flags or arguments.
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := run.New(db, os.Stdout, log, cfg); err != nil {
-			log.Fatalln(err)
+		if err := run.New(db, os.Stdout, logr, cfg); err != nil {
+			logr.Error(err)
 		}
 	},
 }

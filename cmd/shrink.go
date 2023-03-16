@@ -22,7 +22,7 @@ are 'waiting for approval.'`,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 
@@ -32,19 +32,19 @@ are 'waiting for approval.'`,
 		wg.Add(delta)
 		go func() {
 			if err := shrink.SQL(w, cfg.SQLDumps); err != nil {
-				log.Error(err)
+				logr.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
 			if err := shrink.Files(db, w, cfg.IncomingFiles); err != nil {
-				log.Error(err)
+				logr.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
 			if err := shrink.Previews(db, w, cfg.IncomingImgs); err != nil {
-				log.Error(err)
+				logr.Error(err)
 			}
 			wg.Done()
 		}()

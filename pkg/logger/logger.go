@@ -32,12 +32,13 @@ func Production() *zap.Logger {
 	core := zapcore.NewTee(
 		zapcore.NewCore(cliEncoder, zapcore.AddSync(os.Stdout), defaultLogLevel),
 	)
-	return zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	return zap.New(core, zap.AddCaller())
 }
 
 func console() zapcore.Encoder {
 	config := zap.NewDevelopmentEncoderConfig()
-	config.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05")
+	config.EncodeCaller = nil
+	config.EncodeTime = nil
 	config.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	return zapcore.NewConsoleEncoder(config)
 }

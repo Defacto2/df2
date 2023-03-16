@@ -21,22 +21,22 @@ var lookupCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Errorln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		if len(args) == 0 {
 			if err := cmd.Usage(); err != nil {
-				log.Fatal(err)
+				logr.Fatal(err)
 			}
 		}
 		for _, a := range args {
 			if err := database.CheckID(a); err != nil {
-				log.Infof("%s: %s\n", ErrID, a)
+				logr.Infof("%s: %s\n", ErrID, a)
 				continue
 			}
 			id, err := database.GetID(db, a)
 			if err != nil {
-				log.Info(err)
+				logr.Info(err)
 				continue
 			}
 			fmt.Fprintf(os.Stdout, "https://defacto2.net/f/%v\n",

@@ -28,19 +28,33 @@ const (
 )
 
 var (
+	ErrDB        = errors.New("database handle pointer cannot be nil")
 	ErrStructNil = errors.New("structure cannot be nil")
 	ErrPathEmpty = errors.New("path cannot be empty")
 	ErrTarget    = errors.New("unknown target")
 )
 
-// Clean walks through and scans directories containing UUID files
+type Clean struct {
+	Name   string // Named section to clean.
+	Remove bool   // Remove any orphaned files from the directories.
+	Human  bool   // Use humanized, binary size values.
+	Config configger.Config
+}
+
+// Walk through and scans directories containing UUID files
 // and erases any orphans that cannot be matched to the database.
-func Clean(db *sql.DB, w io.Writer, cfg configger.Config, dir string, remove, human bool) error {
-	d, err := directories.Init(cfg, false)
+func (c Clean) Walk(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	d, err := directories.Init(c.Config, false)
 	if err != nil {
 		return err
 	}
-	return Cleaner(db, w, cfg, targetfy(dir), &d, remove, human)
+	return c.Walker(db, w, targetfy(c.Name), &d)
 }
 
 func targetfy(s string) Target {
@@ -57,8 +71,14 @@ func targetfy(s string) Target {
 	return -1
 }
 
-func Cleaner(db *sql.DB, w io.Writer, cfg configger.Config, t Target, d *directories.Dir, remove, human bool) error {
-	paths, err := Targets(cfg, t, d)
+func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	paths, err := Targets(c.Config, t, d)
 	if err != nil {
 		return err
 	}
@@ -76,8 +96,8 @@ func Cleaner(db *sql.DB, w io.Writer, cfg configger.Config, t Target, d *directo
 	for p := range paths {
 		s := scan.Scan{
 			Path:   paths[p],
-			Delete: remove,
-			Human:  human,
+			Delete: c.Remove,
+			Human:  c.Human,
 			M:      m,
 		}
 		if err := sum.Calculate(w, s, d); err != nil {
@@ -93,7 +113,7 @@ func Cleaner(db *sql.DB, w io.Writer, cfg configger.Config, t Target, d *directo
 	}
 	if len(paths) > 1 && sum.Bytes > 0 {
 		pts := fmt.Sprintf("%v B", sum.Bytes)
-		if human {
+		if c.Human {
 			pts = humanize.Bytes(uint64(sum.Bytes))
 		}
 		fmt.Fprintf(w, "%v drive space consumed\n", pts)

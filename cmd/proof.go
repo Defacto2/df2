@@ -29,18 +29,18 @@ photos and text NFO files.`,
 		}
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		w := os.Stdout
 		switch {
 		case proofs.ID != "":
-			if err := r.Query(db, w, log, cfg, proofs.ID); err != nil {
-				log.Error(err)
+			if err := r.Query(db, w, logr, cfg, proofs.ID); err != nil {
+				logr.Error(err)
 			}
 		default:
-			if err := r.Queries(db, w, log, cfg); err != nil {
-				log.Error(err)
+			if err := r.Queries(db, w, logr, cfg); err != nil {
+				logr.Error(err)
 			}
 		}
 	},

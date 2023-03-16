@@ -38,14 +38,14 @@ var outputCmd = &cobra.Command{
 		if len(args) == 0 {
 			fmt.Fprintf(os.Stdout, "%s\n\n", ErrNoOutput)
 			if err := cmd.Usage(); err != nil {
-				log.Fatal(err)
+				logr.Fatal(err)
 			}
-			os.Exit(0)
+			return
 		}
 		if err := cmd.Usage(); err != nil {
-			log.Fatal(err)
+			logr.Fatal(err)
 		}
-		log.Warnf("output cmd %q: %w", args[0], ErrCmd)
+		logr.Errorf("%q subcommand for output is an %w", args[0], ErrCmd)
 	},
 }
 
@@ -68,7 +68,7 @@ func init() { //nolint:gochecknoinits
 	dataCmd.Flags().StringVarP(&dbf.Type, "type", "y", "update",
 		"database export type\noptions: create or update")
 	if err := dataCmd.Flags().MarkHidden("parallel"); err != nil {
-		log.Fatal(err)
+		logr.Fatal(err)
 	}
 	outputCmd.AddCommand(groupCmd)
 	groupCmd.Flags().StringVarP(&gpf.Filter, "filter", "f", "",
@@ -114,12 +114,12 @@ var dataCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		dbf.SQLDumps = cfg.SQLDumps
 		if err := run.Data(db, os.Stdout, dbf); err != nil {
-			log.Info(err)
+			logr.Error(err)
 		}
 	},
 }
@@ -137,11 +137,11 @@ the website stylization.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		if err := run.Groups(db, os.Stdout, cfg.HTMLExports, gpf); err != nil {
-			log.Info(err)
+			logr.Error(err)
 		}
 	},
 }
@@ -159,11 +159,11 @@ the website stylization.` + notUsed,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		if err := run.People(db, os.Stdout, cfg.HTMLExports, ppf); err != nil {
-			log.Info(err)
+			logr.Error(err)
 		}
 	},
 }
@@ -176,11 +176,11 @@ var recentCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		if err := recent.List(db, rcf.Limit, rcf.Compress); err != nil {
-			log.Info(err)
+			logr.Error(err)
 		}
 	},
 }
@@ -203,11 +203,11 @@ See: https://developers.google.com/search/docs/advanced/sitemaps/overview`,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		if err := sitemap.Create(db, cfg.HTMLViews); err != nil {
-			log.Info(err)
+			logr.Error(err)
 		}
 	},
 }

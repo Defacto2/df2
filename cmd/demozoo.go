@@ -26,17 +26,17 @@ There are additional Demozoo commands found under the api command.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Errorln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
-		err = run.Demozoo(db, os.Stdout, log, cfg, dzf)
+		err = run.Demozoo(db, os.Stdout, logr, cfg, dzf)
 		switch {
 		case errors.Is(err, run.ErrNothing):
 			if err := cmd.Usage(); err != nil {
-				log.Fatal(err)
+				logr.Fatal(err)
 			}
 		case err != nil:
-			log.Fatal(err)
+			logr.Error(err)
 		}
 	},
 }
@@ -61,10 +61,10 @@ func init() { //nolint:gochecknoinits
 		`extracts and parses an archived file
 requires two flags: --extract [filename] --extract [uuid]`)
 	if err := demozooCmd.MarkFlagFilename("extract"); err != nil {
-		log.Fatal(err)
+		logr.Error(err)
 	}
 	if err := demozooCmd.Flags().MarkHidden("extract"); err != nil {
-		log.Fatal(err)
+		logr.Error(err)
 	}
 	demozooCmd.Flags().SortFlags = false
 }

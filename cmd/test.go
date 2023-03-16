@@ -21,7 +21,7 @@ var testCmd = &cobra.Command{
 	GroupID: "group3",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Usage(); err != nil {
-			log.Fatal(err)
+			logr.Fatal(err)
 		}
 	},
 }
@@ -33,11 +33,11 @@ var testGroupNames = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		if err := groups.MatchStdOut(db, os.Stdout); err != nil {
-			log.Fatal(err)
+			logr.Error(err)
 		}
 	},
 }
@@ -49,7 +49,7 @@ var testURLsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		base := sitemap.Base
@@ -57,7 +57,7 @@ var testURLsCmd = &cobra.Command{
 			base = sitemap.LocalBase
 		}
 		if err := run.TestSite(db, os.Stdout, base); err != nil {
-			log.Fatal(err)
+			logr.Error(err)
 		}
 	},
 }

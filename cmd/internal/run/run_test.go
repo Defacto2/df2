@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"io"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
@@ -92,6 +91,6 @@ func TestRename(t *testing.T) {
 func TestTestSite(t *testing.T) {
 	err := TestSite(nil, nil, "")
 	assert.NotNil(t, err)
-	err = TestSite(db, os.Stdout, "")
-	assert.NotNil(t, err)
+	err = TestSite(db, io.Discard, "")
+	assert.Nil(t, err)
 }

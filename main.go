@@ -19,6 +19,7 @@ limitations under the License.
 import (
 	_ "embed"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"strings"
@@ -29,6 +30,7 @@ import (
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/caarlos0/env/v7"
 	"github.com/gookit/color"
+	"go.uber.org/zap"
 )
 
 //go:embed cmd/defacto2.txt
@@ -38,14 +40,19 @@ var brand []byte
 var version string
 
 func main() {
-	// Logger (use the development log until the environment vars are parsed)
-	log := logger.Development().Sugar()
+	// Logger (use a preset config until env are read)
+	l, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("can't initialize zap logger: %v", err)
+	}
+	defer l.Sync()
+	logr := l.Sugar()
 
 	// Panic recovery to close any active connections and to log the problem.
 	defer func() {
 		if i := recover(); i != nil {
 			//debug.PrintStack()
-			log.DPanicln(i)
+			logr.DPanic(i)
 		}
 	}()
 
@@ -53,7 +60,7 @@ func main() {
 	configs := configger.Defaults()
 	if err := env.Parse(
 		&configs, configger.Options()); err != nil {
-		log.Fatalf("Environment variable probably contains an invalid value: %s.", err)
+		logr.Fatalf("Environment variable probably contains an invalid value: %s.", err)
 	}
 
 	// Go runtime customizations
@@ -62,20 +69,21 @@ func main() {
 	}
 
 	// Setup the production logger
-	if configs.IsProduction {
-		log = logger.Production().Sugar()
+	if !configs.IsProduction {
+		logr = logger.Production().Sugar()
 	}
 
 	// Configuration sanity checks
-	configs.Checks(log)
+	configs.Checks(logr)
 	if ascii() {
 		color.Enable = false
 	}
 
 	// Execute help and exit
 	if help() {
-		if err := cmd.Execute(log, configs); err != nil {
-			log.Error(err)
+		if err := cmd.Execute(logr, configs); err != nil {
+			logr.Error(err)
+			// use defer to close any open connections
 			defer os.Exit(1)
 		}
 		return
@@ -84,27 +92,27 @@ func main() {
 	// Database check
 	db, err := msql.Connect(configs)
 	if err != nil {
-		log.Errorf("Could not connect to the mysql database: %s.", err)
+		logr.Errorf("Could not connect to the mysql database: %s.", err)
 	}
 	defer func() {
 		if !configs.IsProduction {
-			log.Infoln("Closed the tcp connection to the database.")
+			logr.Info("Closed the tcp connection to the database.")
 		}
 		if err := db.Close(); err != nil {
-			log.Errorln(err)
+			logr.Error(err)
 		}
 	}()
 
 	// Print the compile and version details
 	if progInfo() {
 		w := os.Stdout
-		cmd.Brand(w, log, brand)
+		cmd.Brand(w, logr, brand)
 		s, err := cmd.ProgInfo(db, version)
 		if err != nil {
-			log.Error(err)
+			logr.Error(err)
 			return
 		}
-		fmt.Fprintln(w, s)
+		fmt.Fprint(w, s)
 		return
 	}
 
@@ -115,8 +123,8 @@ func main() {
 	}
 
 	// Execute the cobra flag library
-	if err := cmd.Execute(log, configs); err != nil {
-		log.Errorln(err)
+	if err := cmd.Execute(logr, configs); err != nil {
+		logr.Error(err)
 		defer os.Exit(1)
 	}
 }

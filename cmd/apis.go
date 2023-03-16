@@ -26,17 +26,17 @@ require the parsing of 10,000s of records.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
-		err = run.APIs(db, os.Stdout, log, apis)
+		err = run.APIs(db, os.Stdout, logr, apis)
 		switch {
 		case errors.Is(err, run.ErrArg):
 			if err := cmd.Usage(); err != nil {
-				log.Fatalln(err)
+				logr.Fatal(err)
 			}
 		case err != nil:
-			log.Fatalln(err)
+			logr.Error(err)
 		}
 	},
 }

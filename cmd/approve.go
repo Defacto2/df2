@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var appr arg.Approve
+var approve arg.Approve
 
 var approveCmd = &cobra.Command{
 	Use:     "approve",
@@ -21,28 +21,27 @@ var approveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := database.Connect(cfg)
 		if err != nil {
-			log.Fatalln(err)
+			logr.Fatal(err)
 		}
 		defer db.Close()
 		w := os.Stdout
-		// TODO: move approve args into a struct
-		if err := database.Approve(db, w, log, cfg, cfg.IncomingFiles, appr.Verbose); err != nil {
-			log.Info(err)
+		if err := database.Approve(db, w, logr, cfg, approve.Verbose); err != nil {
+			logr.Error(err)
 		}
-		if err := database.Fix(db, w, log); err != nil {
-			log.Info(err)
+		if err := database.Fix(db, w, logr); err != nil {
+			logr.Error(err)
 		}
 		if err := groups.Fix(db, w); err != nil {
-			log.Info(err)
+			logr.Error(err)
 		}
 		if err := people.Fix(db, w); err != nil {
-			log.Info(err)
+			logr.Error(err)
 		}
 	},
 }
 
 func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(approveCmd)
-	approveCmd.Flags().BoolVar(&appr.Verbose, "verbose", false,
+	approveCmd.Flags().BoolVar(&approve.Verbose, "verbose", false,
 		"display all file records that qualify to go public")
 }
