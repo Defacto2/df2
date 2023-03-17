@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ErrDir   = errors.New("directory cannot be an empty value")
-	ErrNoDir = errors.New("dir structure cannot be nil")
+	ErrDir = errors.New("directory cannot be an empty value")
+	ErrNil = errors.New("directories structure pointer cannot be nil")
 )
 
 const (
@@ -121,7 +121,7 @@ func Files(cfg configger.Config, name string) (Dir, error) {
 // PlaceHolders generates a collection placeholder files in the UUID subdirectories.
 func PlaceHolders(dir *Dir) error {
 	if dir == nil {
-		return fmt.Errorf("placeholder: %w", ErrNoDir)
+		return fmt.Errorf("placeholder: %w", ErrNil)
 	}
 	const oneMB, halfMB, twoFiles, nineFiles = 1000000, 500000, 2, 9
 	if err := create.Holders(dir.UUID, oneMB, nineFiles); err != nil {

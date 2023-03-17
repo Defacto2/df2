@@ -28,10 +28,7 @@ const (
 )
 
 var (
-	ErrDB        = errors.New("database handle pointer cannot be nil")
-	ErrStructNil = errors.New("structure cannot be nil")
-	ErrPathEmpty = errors.New("path cannot be empty")
-	ErrTarget    = errors.New("unknown target")
+	ErrDB = errors.New("database handle pointer cannot be nil")
 )
 
 type Clean struct {
@@ -75,6 +72,9 @@ func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) err
 	if db == nil {
 		return ErrDB
 	}
+	if d == nil {
+		return directories.ErrNil
+	}
 	if w == nil {
 		w = io.Discard
 	}
@@ -83,22 +83,22 @@ func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) err
 		return err
 	}
 	if paths == nil {
-		return fmt.Errorf("check target %q: %w", t, ErrTarget)
+		return fmt.Errorf("assets walker target check %q: %w", t, scan.ErrTarget)
 	}
 	// connect to the database
-	rows, m, err := CreateUUIDMap(db)
+	rows, ids, err := CreateUUIDMap(db)
 	if err != nil {
-		return fmt.Errorf("clean uuid map: %w", err)
+		return fmt.Errorf("assets walkter uuid map: %w", err)
 	}
 	fmt.Fprintln(w, "The following files do not match any UUIDs in the database")
 	// parse directories
-	var sum scan.Results
+	sum := scan.Results{}
 	for p := range paths {
 		s := scan.Scan{
 			Path:   paths[p],
 			Delete: c.Remove,
 			Human:  c.Human,
-			M:      m,
+			IDs:    ids,
 		}
 		if err := sum.Calculate(w, s, d); err != nil {
 			return fmt.Errorf("clean sum calculate: %w", err)
@@ -112,11 +112,11 @@ func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) err
 			sum.Fails)
 	}
 	if len(paths) > 1 && sum.Bytes > 0 {
-		pts := fmt.Sprintf("%v B", sum.Bytes)
+		s := fmt.Sprintf("%v B", sum.Bytes)
 		if c.Human {
-			pts = humanize.Bytes(uint64(sum.Bytes))
+			s = humanize.Bytes(uint64(sum.Bytes))
 		}
-		fmt.Fprintf(w, "%v drive space consumed\n", pts)
+		fmt.Fprintf(w, "%v drive space consumed\n", s)
 	}
 	return nil
 }
@@ -124,6 +124,9 @@ func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) err
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
 // Returns the total number of UUID and a collection of UUIDs.
 func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
+	if db == nil {
+		return 0, nil, ErrDB
+	}
 	// count rows
 	count := 0
 	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
@@ -149,10 +152,13 @@ func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
 		uuids[uuid] = database.Empty{}
 		total++
 	}
-	return total, uuids, db.Close()
+	return total, uuids, nil
 }
 
 func Targets(cfg configger.Config, t Target, d *directories.Dir) ([]string, error) {
+	if d == nil {
+		return nil, directories.ErrNil
+	}
 	if d.Base == "" {
 		reset, err := directories.Init(cfg, false)
 		if err != nil {
@@ -160,7 +166,7 @@ func Targets(cfg configger.Config, t Target, d *directories.Dir) ([]string, erro
 		}
 		d = &reset
 	}
-	var paths []string
+	paths := []string{}
 	switch t {
 	case All:
 		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400)
@@ -170,6 +176,8 @@ func Targets(cfg configger.Config, t Target, d *directories.Dir) ([]string, erro
 		paths = append(paths, d.Emu)
 	case Image:
 		paths = append(paths, d.Img000, d.Img400)
+	default:
+		return nil, scan.ErrTarget
 	}
 	return paths, nil
 }

@@ -1,65 +1,18 @@
 package assets_test
 
 import (
-	"io/fs"
-	"os"
-	"path/filepath"
-	"reflect"
-	"sync"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/assets"
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gookit/color"
+	"github.com/stretchr/testify/assert"
 )
 
 const empty = "empty"
-
-// createTempDir creates a temporary directory and copies some test images into it.
-// dir is the absolute directory path while sum is the sum total of bytes copied.
-// Returns the sum of bytes written and the created directory path.
-func createTempDir() (int64, string, error) {
-	// make dir
-	dir, err := os.MkdirTemp(os.TempDir(), "test-addtardir")
-	if err != nil {
-		return 0, "", err
-	}
-	// copy files
-	src, err := filepath.Abs("../../tests/images")
-	if err != nil {
-		return 0, dir, err
-	}
-	imgs := []string{"test.gif", "test.png", "test.jpg"}
-	done, sum := make(chan error), int64(0)
-	var mu sync.Mutex
-	for _, f := range imgs {
-		go func(f string) {
-			mu.Lock()
-			sum, err = archive.Copy(filepath.Join(src, f), filepath.Join(dir, f))
-			if err != nil {
-				mu.Unlock()
-				done <- err
-			}
-			mu.Unlock()
-			done <- nil
-		}(f)
-	}
-	done1, done2, done3 := <-done, <-done, <-done
-	if done1 != nil {
-		return 0, dir, done1
-	}
-	if done2 != nil {
-		return 0, dir, done2
-	}
-	if done3 != nil {
-		return 0, dir, done3
-	}
-	return sum, dir, nil
-}
 
 func TestClean(t *testing.T) {
 	type args struct {
@@ -120,67 +73,6 @@ func TestCreateUUIDMap(t *testing.T) {
 	}
 }
 
-func TestBackup(t *testing.T) {
-	_, dir, err := createTempDir()
-	if err != nil {
-		t.Error(err)
-	}
-	_, uuids, err := assets.CreateUUIDMap(nil)
-	if err != nil {
-		t.Error(err)
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Error(err)
-	}
-	list := make([]fs.FileInfo, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		info, err := entry.Info()
-		if err != nil {
-			t.Error(err)
-		}
-		list = append(list, info)
-	}
-	s := scan.Scan{
-		Path:   dir,
-		Delete: false,
-		Human:  true,
-		M:      uuids,
-	}
-	type args struct {
-		s    *scan.Scan
-		list []os.FileInfo
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{empty, args{}, true},
-		{"ok", args{&s, list}, false},
-	}
-	cfg := configger.Defaults()
-	d, err := directories.Init(cfg, false)
-	if err != nil {
-		t.Error(err)
-	}
-	d.Backup = os.TempDir() // overwrite /opt/assets/backups
-	color.Enable = false
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := scan.Backup(nil, tt.args.s, &d, nil, tt.args.list); (err != nil) != tt.wantErr {
-				t.Errorf("backup() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-	if err := os.RemoveAll(dir); err != nil {
-		t.Error(err)
-	}
-}
-
 func TestCleaner(t *testing.T) {
 	type args struct {
 		t      assets.Target
@@ -216,17 +108,17 @@ func TestCleaner(t *testing.T) {
 	}
 }
 
-func TestIgnoreList(t *testing.T) {
-	var want struct{}
-	cfg := configger.Defaults()
-	d, err := directories.Init(cfg, false)
-	if err != nil {
-		t.Error(err)
-	}
-	color.Enable = false
-	if got := scan.IgnoreList("", &d)["blank.png"]; !reflect.DeepEqual(got, want) {
-		t.Errorf("IgnoreList() = %v, want %v", got, want)
-	}
+func TestSkip(t *testing.T) {
+	f, err := scan.Skip("", nil)
+	assert.NotNil(t, err)
+	assert.Equal(t, scan.Files{}, f)
+
+	d, err := directories.Init(configger.Defaults(), false)
+	assert.Nil(t, err)
+	f, err = scan.Skip("", &d)
+	assert.Nil(t, err)
+	_, ok := f["blank.png"]
+	assert.Equal(t, true, ok)
 }
 
 func TestTargets(t *testing.T) {
