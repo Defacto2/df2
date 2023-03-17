@@ -134,7 +134,7 @@ func (s Scan) scanPath(w io.Writer, d *directories.Dir) (Results, error) {
 		}
 	}
 	// list and if requested, delete orphaned files
-	stat, err := parse(&s, skip, &list)
+	stat, err := parse(w, &s, skip, &list)
 	if err != nil {
 		return stat, fmt.Errorf("scan path parse: %w", err)
 	}
@@ -281,7 +281,10 @@ type item struct {
 }
 
 // parse is used by scanPath to remove matched orphans.
-func parse(s *Scan, ignore Files, list *[]os.FileInfo) (Results, error) {
+func parse(w io.Writer, s *Scan, ignore Files, list *[]os.FileInfo) (Results, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	const padding = 2
 	stat := Results{Count: 0, Fails: 0, Bytes: 0}
 	for _, file := range *list {
@@ -293,7 +296,7 @@ func parse(s *Scan, ignore Files, list *[]os.FileInfo) (Results, error) {
 		}
 		i := item{human: s.Human, name: file.Name()}
 		uuid := strings.TrimSuffix(i.name, filepath.Ext(i.name))
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', 0)
+		tw := tabwriter.NewWriter(w, 0, 0, padding, ' ', 0)
 		if _, ok := s.IDs[uuid]; !ok {
 			stat.totals(file)
 			if s.Delete {
@@ -304,10 +307,10 @@ func parse(s *Scan, ignore Files, list *[]os.FileInfo) (Results, error) {
 			i.mod(file)
 			i.size(file)
 			i.bits(file)
-			fmt.Fprintf(w, "%v\t%v %v\t%v\t%v\t%v\n",
+			fmt.Fprintf(tw, "%v\t%v %v\t%v\t%v\t%v\n",
 				i.cnt, i.flag, i.name, i.fs, i.fm, i.mt)
 		}
-		if err := w.Flush(); err != nil {
+		if err := tw.Flush(); err != nil {
 			return stat, fmt.Errorf("parse tabwriter flush: %w", err)
 		}
 	}

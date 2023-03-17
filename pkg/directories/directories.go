@@ -49,27 +49,27 @@ func Init(cfg configger.Config, create bool) (Dir, error) {
 	var d Dir
 	d.Img000 = cfg.Images
 	if cfg.Images == "" {
-		return Dir{}, fmt.Errorf("%w cfg.images", ErrDir)
+		return Dir{}, fmt.Errorf("init %w cfg.images", ErrDir)
 	}
 	d.Img400 = cfg.Thumbs
 	if cfg.Thumbs == "" {
-		return Dir{}, fmt.Errorf("%w cfg.thumbs", ErrDir)
+		return Dir{}, fmt.Errorf("init %w cfg.thumbs", ErrDir)
 	}
 	d.Backup = cfg.Backups
 	if cfg.Backups == "" {
-		return Dir{}, fmt.Errorf("%w cfg.backups", ErrDir)
+		return Dir{}, fmt.Errorf("init %w cfg.backups", ErrDir)
 	}
 	d.Emu = cfg.Emulator
 	if cfg.Emulator == "" {
-		return Dir{}, fmt.Errorf("%w cfg.emulator", ErrDir)
+		return Dir{}, fmt.Errorf("init %w cfg.emulator", ErrDir)
 	}
 	d.Base = cfg.WebRoot
 	if cfg.WebRoot == "" {
-		return Dir{}, fmt.Errorf("%w cfg.webroot", ErrDir)
+		return Dir{}, fmt.Errorf("init %w cfg.webroot", ErrDir)
 	}
 	d.UUID = cfg.Downloads
 	if cfg.Downloads == "" {
-		return Dir{}, fmt.Errorf("%w cfg.downloads", ErrDir)
+		return Dir{}, fmt.Errorf("init %w cfg.downloads", ErrDir)
 	}
 	if create {
 		if err := createDirectories(&d); err != nil {

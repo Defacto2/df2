@@ -1,11 +1,13 @@
 package assets_test
 
 import (
+	"io"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/assets"
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gookit/color"
@@ -15,97 +17,74 @@ import (
 const empty = "empty"
 
 func TestClean(t *testing.T) {
-	type args struct {
-		t      string
-		delete bool
-		human  bool
+	c := assets.Clean{}
+	err := c.Walk(nil, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = c.Walk(db, io.Discard)
+	assert.NotNil(t, err)
+
+	c = assets.Clean{
+		Name:   "invalid",
+		Remove: false,
+		Human:  false,
+		Config: configger.Defaults(),
 	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"bad", args{"invalid", false, false}, true},
-		{empty, args{}, true},
-		{"good", args{"DOWNLOAD", false, false}, false},
+	err = c.Walk(db, io.Discard)
+	assert.NotNil(t, err)
+
+	const ok = "DOWNLOAD"
+	c = assets.Clean{
+		Name:   ok,
+		Remove: false,
+		Human:  false,
+		Config: configger.Defaults(),
 	}
-	cfg := configger.Defaults()
-	color.Enable = false
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := assets.Clean{
-				Name:   tt.args.t,
-				Remove: tt.args.delete,
-				Human:  tt.args.human,
-				Config: cfg,
-			}
-			if err := c.Walk(nil, nil); (err != nil) != tt.wantErr {
-				t.Errorf("Clean() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	err = c.Walk(db, io.Discard)
+	assert.Nil(t, err)
 }
 
 func TestCreateUUIDMap(t *testing.T) {
-	tests := []struct {
-		name      string
-		wantTotal bool
-		wantUuids bool
-		wantErr   bool
-	}{
-		{"", true, true, false},
-	}
-	color.Enable = false
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotTotal, gotUuids, err := assets.CreateUUIDMap(nil)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateUUIDMap() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if (gotTotal > 0) != tt.wantTotal {
-				t.Errorf("CreateUUIDMap() gotTotal = %v, want %v", gotTotal, tt.wantTotal)
-			}
-			if (len(gotUuids) > 0) != tt.wantUuids {
-				t.Errorf("CreateUUIDMap() gotUuids = %v, want %v", len(gotUuids), tt.wantUuids)
-			}
-		})
-	}
+	i, ids, err := assets.CreateUUIDMap(nil)
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	assert.Equal(t, database.IDs(nil), ids)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	i, ids, err = assets.CreateUUIDMap(db)
+	assert.Nil(t, err)
+	assert.Greater(t, i, 0)
+	assert.NotEqual(t, database.IDs(nil), ids)
 }
 
-func TestCleaner(t *testing.T) {
-	type args struct {
-		t      assets.Target
-		delete bool
-		human  bool
+func TestWalker(t *testing.T) {
+	c := assets.Clean{}
+	err := c.Walker(nil, nil, -1, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = c.Walker(db, io.Discard, -1, nil)
+	assert.NotNil(t, err)
+
+	d, err := directories.Init(configger.Defaults(), false)
+	assert.Nil(t, err)
+	err = c.Walker(db, io.Discard, -1, &d)
+	assert.NotNil(t, err)
+
+	c = assets.Clean{
+		Remove: false,
+		Human:  false,
+		Config: configger.Defaults(),
 	}
-	cfg := configger.Defaults()
-	d, err := directories.Init(cfg, false)
-	if err != nil {
-		t.Error(err)
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"bad", args{-1, false, false}, true},
-		{empty, args{}, false},
-		{"good", args{assets.Download, false, false}, false},
-	}
-	color.Enable = false
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := assets.Clean{
-				Remove: tt.args.delete,
-				Human:  tt.args.human,
-				Config: cfg,
-			}
-			if err := c.Walker(nil, nil, tt.args.t, &d); (err != nil) != tt.wantErr {
-				t.Errorf("Cleaner() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	err = c.Walker(db, io.Discard, assets.Download, &d)
+	assert.Nil(t, err)
 }
 
 func TestSkip(t *testing.T) {
