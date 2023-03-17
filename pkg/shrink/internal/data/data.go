@@ -22,8 +22,6 @@ var (
 	ErrApprove  = errors.New("cannot shrink files as there are database records waiting for public approval")
 	ErrDel      = errors.New("delete errors")
 	ErrArcStore = errors.New("archive store error")
-	ErrSQLComp  = errors.New("sql compress errors")
-	ErrSQLDel   = errors.New("sql delete errors")
 	ErrUnknown  = errors.New("unknown command")
 )
 
@@ -227,35 +225,24 @@ func storer(files []string, filename, partial string) error {
 	}
 	defer store.Close()
 
-	if errs := archive.Store(files, store); errs != nil {
-		for i, err := range errs {
-			log.Printf("error #%d: %s\n", i+1, err)
-		}
-		return fmt.Errorf("%w: %d %s", ErrArcStore, len(errs), partial)
+	if err := archive.Store(store, files); err != nil {
+		return fmt.Errorf("%w: %s", ErrArcStore, partial)
 	}
-
-	if errs := archive.Delete(files); errs != nil {
-		for i, err := range errs {
-			log.Printf("error #%d: %s\n", i+1, err)
-		}
-		return fmt.Errorf("%w: %d %s", ErrDel, len(errs), strings.ToLower(partial))
-	}
-
-	return nil
+	return archive.Delete(files)
 }
 
 // Compress the collection of files into a named archive.
-func Compress(w io.Writer, name string, files []string) error {
-	tgz, err := os.Create(name)
+func Compress(w io.Writer, files []string, name string) error {
+	if w == nil {
+		w = io.Discard
+	}
+	f, err := os.Create(name)
 	if err != nil {
 		return fmt.Errorf("sql create: %w", err)
 	}
-	defer tgz.Close()
-	if errs := archive.Compress(files, tgz); errs != nil {
-		for i, err := range errs {
-			log.Printf("error #%d: %s\n", i+1, err)
-		}
-		return fmt.Errorf("%w: %d", ErrSQLComp, len(errs))
+	defer f.Close()
+	if err := archive.Compress(f, files); err != nil {
+		return err
 	}
 	fmt.Fprintln(w, "SQL archiving is complete.")
 	return nil
@@ -265,7 +252,7 @@ func sqlProcess(w io.Writer, files []string) error {
 	n := time.Now()
 	name := filepath.Join(SaveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz",
 		n.Year(), n.Month(), n.Day()))
-	if err := Compress(w, name, files); err != nil {
+	if err := Compress(w, files, name); err != nil {
 		return err
 	}
 	return Remove(w, files)
@@ -273,11 +260,11 @@ func sqlProcess(w io.Writer, files []string) error {
 
 // Remove files from the host file system.
 func Remove(w io.Writer, files []string) error {
-	if errs := archive.Delete(files); errs != nil {
-		for i, err := range errs {
-			log.Printf("error #%d: %s\n", i+1, err)
-		}
-		return fmt.Errorf("%w: %d", ErrSQLDel, len(errs))
+	if w == nil {
+		w = io.Discard
+	}
+	if err := archive.Delete(files); err != nil {
+		return err
 	}
 	fmt.Fprintln(w, "SQL freeing up space is complete.")
 	return nil

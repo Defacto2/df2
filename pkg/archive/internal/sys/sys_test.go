@@ -1,8 +1,11 @@
 package sys_test
 
 import (
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -138,6 +141,12 @@ func TestReadr(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gots, got, err := sys.Readr(nil, tt.args.src, tt.args.filename)
+			// special case for macos which doesn't have easy access to arj.
+			if runtime.GOOS == "darwin" {
+				if errors.Is(err, exec.ErrNotFound) {
+					return
+				}
+			}
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -171,8 +180,8 @@ func TestArjItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.s, func(t *testing.T) {
-			if got := sys.ArjItem(tt.s); got != tt.want {
-				t.Errorf("ArjItem() = %v, want %v", got, tt.want)
+			if got := sys.ARJItem(tt.s); got != tt.want {
+				t.Errorf("ARJItem() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -207,7 +216,14 @@ func TestExtract(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			name := filepath.Base(tt.args.src)
-			if err := sys.Extract(name, tt.args.src, tt.args.targets, tt.args.dest); (err != nil) != tt.wantErr {
+			err := sys.Extract(name, tt.args.src, tt.args.targets, tt.args.dest)
+			// special case for macos which doesn't have easy access to arj.
+			if runtime.GOOS == "darwin" {
+				if errors.Is(err, exec.ErrNotFound) {
+					return
+				}
+			}
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Extract() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

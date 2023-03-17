@@ -8,11 +8,26 @@ import (
 	"github.com/Defacto2/df2/pkg/archive/internal/arc"
 	"github.com/Defacto2/df2/pkg/archive/internal/sys"
 	"github.com/mholt/archiver"
+	"github.com/stretchr/testify/assert"
 )
 
 func testDir(name string) string {
 	dir, _ := os.Getwd()
 	return filepath.Join(dir, "..", "..", "..", "..", "tests", name)
+}
+
+func TestWalkr(t *testing.T) {
+	err := arc.Walkr("", "", nil)
+	assert.NotNil(t, err)
+	// test panic
+	err = arc.Walkr(testDir("demozoo/test.tar"), "test.tar", nil)
+	assert.NotNil(t, err)
+
+	err = arc.Walkr(testDir("demozoo/test.zip"), "test.zip",
+		func(f archiver.File) error {
+			return nil
+		})
+	assert.Nil(t, err)
 }
 
 func TestConfigure(t *testing.T) {

@@ -1,42 +1,46 @@
 package file_test
 
 import (
-	"log"
+	"archive/tar"
+	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/archive/internal/file"
+	"github.com/stretchr/testify/assert"
 )
 
 func join(s string) string {
-	return filepath.Join(dir, s)
+	x := filepath.Join("text", s)
+	return testDir(x)
 }
 
-const dir = "../../../../tests/text"
+func testDir(name string) string {
+	dir, _ := os.Getwd()
+	return filepath.Join(dir, "..", "..", "..", "..", "tests", name)
+}
+
+func TestAdd(t *testing.T) {
+	err := file.Add(nil, "")
+	assert.NotNil(t, err)
+	err = file.Add(nil, testDir("file-does-not-exists"))
+	assert.NotNil(t, err)
+
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	err = file.Add(tw, testDir("text/test.png"))
+	assert.Nil(t, err)
+	err = file.Add(tw, testDir("text/test.txt"))
+	assert.Nil(t, err)
+}
 
 func TestDir(t *testing.T) {
-	tempDir, err := os.MkdirTemp(os.TempDir(), "test-dir")
-	if err != nil {
-		t.Error(err)
-	}
-	tests := []struct {
-		name    string
-		wantErr bool
-	}{
-		{"", true},
-		{tempDir, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := file.Dir(nil, tt.name); (err != nil) != tt.wantErr {
-				t.Errorf("Dir() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-	if err := os.RemoveAll(tempDir); err != nil {
-		log.Print(err)
-	}
+	err := file.Dir(nil, "")
+	assert.NotNil(t, err)
+	err = file.Dir(io.Discard, testDir(""))
+	assert.Nil(t, err)
 }
 
 func TestMove(t *testing.T) {

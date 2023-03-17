@@ -11,7 +11,10 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 )
 
-var ErrSameArgs = errors.New("name and dest cannot be the same")
+var (
+	ErrSameArgs = errors.New("name and dest cannot be the same")
+	ErrWriter   = errors.New("writer must be a file object")
+)
 
 const (
 	CreateMode = 0o666
@@ -19,30 +22,33 @@ const (
 
 // Add a file to the tar writer.
 func Add(tw *tar.Writer, src string) error {
+	if tw == nil {
+		return fmt.Errorf("archive add file to tar: %w", ErrWriter)
+	}
 	file, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("open: %w", err)
+		return fmt.Errorf("open archive add file to tar: %w", err)
 	}
 	defer file.Close()
 
 	info, err := file.Stat()
 	if err != nil {
-		return fmt.Errorf("stat: %w", err)
+		return fmt.Errorf("stat archive add file to tar: %w", err)
 	}
 
 	header, err := tar.FileInfoHeader(info, info.Name())
 	if err != nil {
-		return fmt.Errorf("info: %w", err)
+		return fmt.Errorf("info archive add file to tar: %w", err)
 	}
 	// https://golang.org/src/archive/tar/common.go?#L626
 	header.Name = src
 
 	if err = tw.WriteHeader(header); err != nil {
-		return fmt.Errorf("header: %w", err)
+		return fmt.Errorf("header archive add file to tar: %w", err)
 	}
 
 	if _, err = io.Copy(tw, file); err != nil {
-		return fmt.Errorf("copy: %w", err)
+		return fmt.Errorf("copy archive add file to tar: %w", err)
 	}
 
 	return nil
@@ -67,22 +73,28 @@ func Copy(name, dest string) (int64, error) {
 	return written, dst.Close()
 }
 
-// Dir lists the content of a directory.
+// Dir writes the content of a directory to the writer.
 func Dir(w io.Writer, name string) error {
+	if w == nil {
+		w = io.Discard
+	}
 	files, err := os.ReadDir(name)
 	if err != nil {
 		return fmt.Errorf("dir read name %q: %w", name, err)
 	}
-	for _, file := range files {
-		f, err := file.Info()
+	for _, f := range files {
+		fi, err := f.Info()
 		if err != nil {
-			return fmt.Errorf("dir failure with %q: %w", f, err)
+			return fmt.Errorf("dir failure with %q: %w", fi, err)
 		}
-		mime, err := mimetype.DetectFile(name + "/" + f.Name())
+		if fi.IsDir() {
+			continue
+		}
+		mime, err := mimetype.DetectFile(name + "/" + fi.Name())
 		if err != nil {
-			return fmt.Errorf("dir mime failure on %q: %w", f, err)
+			return fmt.Errorf("dir mime failure on %q: %w", fi, err)
 		}
-		fmt.Fprintln(w, f.Name(), humanize.Bytes(uint64(f.Size())), mime)
+		fmt.Fprintln(w, fi.Name(), humanize.Bytes(uint64(fi.Size())), mime)
 	}
 	return nil
 }

@@ -42,6 +42,9 @@ const (
 	// UpdateID is a user id to use with the updatedby column.
 	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 
+	// TestID is a generic UUID that can be used for unit tests.
+	TestID = "00000000-0000-0000-0000-000000000000"
+
 	hide = "****"
 	Null = "NULL"
 
@@ -99,19 +102,19 @@ func Approve(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 	return recd.Queries(db, w, l, cfg, verbose)
 }
 
-// CheckID reports an error message for an incorrect universal unique record id or MySQL auto-generated id.
-func CheckID(s string) error {
-	if !IsUUID(s) && !IsID(s) {
+// CheckID checks the syntax of the universal unique record id or MySQL auto-generated id.
+func CheckID(id string) error {
+	if !IsUUID(id) && !IsID(id) {
 		return fmt.Errorf("invalid id, it needs to be an auto-generated MySQL id or an uuid: %w", ErrSynID)
 	}
 	return nil
 }
 
-// CheckUUID reports an error message for an incorrect universal unique record id.
-func CheckUUID(s string) error {
-	if !IsUUID(s) {
+// CheckUUID checks the syntax of the universal unique record id.
+func CheckUUID(uuid string) error {
+	if !IsUUID(uuid) {
 		const example = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", s, example, ErrSynUUID)
+		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", uuid, example, ErrSynUUID)
 	}
 	return nil
 }

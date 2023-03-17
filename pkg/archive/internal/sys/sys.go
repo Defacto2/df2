@@ -1,3 +1,5 @@
+// Package sys uses programs installed to the host operating system
+// to handle miscellaneous archives not usable with the Go packages.
 package sys
 
 import (
@@ -13,22 +15,22 @@ import (
 )
 
 var (
-	ErrMagic    = errors.New("no unsupport for magic file type")
-	ErrProg     = errors.New("archive program error")
-	ErrReadr    = errors.New("system could not read the file archive")
-	ErrTypeOut  = errors.New("magic file program result is empty")
-	ErrSilent   = errors.New("archiver program silently failed, it return no output or errors")
-	ErrWrongExt = errors.New("filename has the wrong file extension")
-	ErrUnknExt  = errors.New("the archive uses an unsupported file extension")
+	ErrMagic      = errors.New("no unsupport for magic file type")
+	ErrProg       = errors.New("archive program error")
+	ErrReadr      = errors.New("system could not read the file archive")
+	ErrTypeOut    = errors.New("magic file program result is empty")
+	ErrSilent     = errors.New("archiver program silently failed, it return no output or errors")
+	ErrWrongExt   = errors.New("filename has the wrong file extension")
+	ErrUnknownExt = errors.New("the archive uses an unsupported file extension")
 )
 
 const (
 	// permitted archives on the site:
 	// 7z,arc,ark,arj,cab,gz,lha,lzh,rar,tar,tar.gz,zip.
-	arjext = ".arj" // Archived by Robert Jung
-	lhaext = ".lha" // LHarc by Haruyasu Yoshizaki (Yoshi)
-	rarext = ".rar" // Roshal ARchive by Alexander Roshal
-	zipext = ".zip" // Phil Katz's ZIP for MSDOS systems
+	arjx = ".arj" // Archived by Robert Jung
+	lhax = ".lha" // LHarc by Haruyasu Yoshizaki (Yoshi)
+	rarx = ".rar" // Roshal ARchive by Alexander Roshal
+	zipx = ".zip" // Phil Katz's ZIP for MSDOS systems
 )
 
 // MagicExt uses the Linux file program to determine the src archive file type.
@@ -51,12 +53,12 @@ func MagicExt(src string) (string, error) {
 	}
 	magics := map[string]string{
 		"7-zip archive data":    ".7z",
-		"arj archive data":      arjext,
+		"arj archive data":      arjx,
 		"bzip2 compressed data": ".tar.bz2",
 		"gzip compressed data":  ".tar.gz",
 		"rar archive data":      ".rar",
 		"posix tar archive":     ".tar",
-		"zip archive data":      zipext,
+		"zip archive data":      zipx,
 	}
 	s := strings.Split(strings.ToLower(string(out)), ",")
 	magic := strings.TrimSpace(s[0])
@@ -66,7 +68,7 @@ func MagicExt(src string) (string, error) {
 		}
 	}
 	if MagicLHA(magic) {
-		return lhaext, nil
+		return lhax, nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrMagic, magic)
 }
@@ -119,15 +121,14 @@ func Readr(w io.Writer, src, filename string) ([]string, string, error) {
 		// retry using correct filename extension
 		return []string{}, ext, fmt.Errorf("system reader: %w", ErrWrongExt)
 	}
-	ext = strings.ToLower(ext)
-	switch ext {
-	case arjext:
-		return ArjReader(src)
-	case lhaext:
-		return LhaReader(src)
-	case rarext:
+	switch strings.ToLower(ext) {
+	case arjx:
+		return ARJReader(src)
+	case lhax:
+		return LHAReader(src)
+	case rarx:
 		return RarReader(src)
-	case zipext:
+	case zipx:
 		return ZipReader(w, src)
 	}
 	return []string{}, "", fmt.Errorf("system reader: %w", ErrReadr)
@@ -140,20 +141,21 @@ func Readr(w io.Writer, src, filename string) ([]string, string, error) {
 func Extract(filename, src, targets, dest string) error {
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext {
-	case arjext:
-		return ArjExtract(src, targets, dest)
-	case lhaext:
-		return LhaExtract(src, targets, dest)
-	case zipext:
+	case arjx:
+		return ARJExtract(src, targets, dest)
+	case lhax:
+		return LHAExtract(src, targets, dest)
+	case zipx:
 		return ZipExtract(src, targets, dest)
 	default:
-		return ErrUnknExt
+		return ErrUnknownExt
 	}
 }
 
-// ArjExtract extracts the targets from the src ARJ archive
+// ARJExtract extracts the targets from the src ARJ archive
 // to the dest directory using the Linux arj program.
-func ArjExtract(src, targets, dest string) error {
+func ARJExtract(src, targets, dest string) error {
+	// note: only use arj, as unarj offers limited functionality
 	prog, err := exec.LookPath("arj")
 	if err != nil {
 		return fmt.Errorf("arj extract: %w", err)
@@ -174,11 +176,11 @@ func ArjExtract(src, targets, dest string) error {
 	return nil
 }
 
-// LhaExtract extracts the targets from the src LHA/LZH archive
+// LHAExtract extracts the targets from the src LHA/LZH archive
 // to the dest directory using a Linux lha program.
 // Either jlha-utils or lhasa work.
 // Targets with spaces in their names are ignored by the program.
-func LhaExtract(src, targets, dest string) error {
+func LHAExtract(src, targets, dest string) error {
 	prog, err := exec.LookPath("lha")
 	if err != nil {
 		return fmt.Errorf("lha extract: %w", err)
@@ -248,9 +250,9 @@ func ZipExtract(src, targets, dest string) error {
 	return nil
 }
 
-// ArjReader returns the content of the src ARJ archive.
+// ARJReader returns the content of the src ARJ archive.
 // There is an internal limit of 999 items.
-func ArjReader(src string) ([]string, string, error) {
+func ARJReader(src string) ([]string, string, error) {
 	prog, err := exec.LookPath("arj")
 	if err != nil {
 		return nil, "", fmt.Errorf("arj reader: %w", err)
@@ -273,18 +275,18 @@ func ArjReader(src string) ([]string, string, error) {
 	files := []string{}
 	const start = len("001) ")
 	for _, s := range outs {
-		if !ArjItem(s) {
+		if !ARJItem(s) {
 			continue
 		}
 		files = append(files, s[start:])
 	}
 	// append empty value to match the other readers
 	files = append(files, "")
-	return files, arjext, nil
+	return files, arjx, nil
 }
 
 // ArjItem returns true if the string is a row from an ARJ list.
-func ArjItem(s string) bool {
+func ARJItem(s string) bool {
 	const minLen = 6
 	if len(s) < minLen {
 		return false
@@ -299,8 +301,8 @@ func ArjItem(s string) bool {
 	return true
 }
 
-// LhaReader returns the content of the src LHA/LZH archive.
-func LhaReader(src string) ([]string, string, error) {
+// LHAReader returns the content of the src LHA/LZH archive.
+func LHAReader(src string) ([]string, string, error) {
 	prog, err := exec.LookPath("lha")
 	if err != nil {
 		return nil, "", fmt.Errorf("lha reader: %w", err)
@@ -344,7 +346,7 @@ func LhaReader(src string) ([]string, string, error) {
 	}
 	// append empty value to match the other readers
 	files = append(files, "")
-	return files, lhaext, nil
+	return files, lhax, nil
 }
 
 // RarReader returns the content of the src RAR archive.
@@ -370,11 +372,14 @@ func RarReader(src string) ([]string, string, error) {
 		return nil, "", ErrReadr
 	}
 	files := strings.Split(string(out), "\n")
-	return files, rarext, nil
+	return files, rarx, nil
 }
 
 // ZipReader returns the content of the src ZIP archive.
 func ZipReader(w io.Writer, src string) ([]string, string, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	prog, err := exec.LookPath("zipinfo")
 	if err != nil {
 		return nil, "", fmt.Errorf("zipinfo reader: %w", err)
@@ -393,7 +398,7 @@ func ZipReader(w io.Writer, src string) ([]string, string, error) {
 		// handle broken zips that still contain some valid files
 		if b.String() != "" && len(out) > 0 {
 			fmt.Fprint(w, strings.ReplaceAll(b.String(), "\n", " "))
-			return files, zipext, nil
+			return files, zipx, nil
 		}
 		// otherwise the zipinfo threw an error
 		return nil, "", fmt.Errorf("%q: %w", src, err)
@@ -401,5 +406,5 @@ func ZipReader(w io.Writer, src string) ([]string, string, error) {
 	if len(out) == 0 {
 		return nil, "", ErrReadr
 	}
-	return files, zipext, nil
+	return files, zipx, nil
 }

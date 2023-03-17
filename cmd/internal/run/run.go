@@ -113,7 +113,13 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 	case len(dz.Extract) == 1:
 		return extract(db, w, cfg, dz.Extract[0])
 	case len(dz.Extract) > 1: // limit to the first 2 flags
-		d, err := archive.Demozoo(db, w, cfg, dz.Extract[0], dz.Extract[1], &empty)
+		zoo := archive.Demozoo{
+			Source:   dz.Extract[0],
+			UUID:     dz.Extract[1],
+			VarNames: &empty,
+			Config:   cfg,
+		}
+		d, err := zoo.Decompress(db, w)
 		if err != nil {
 			return err
 		}
@@ -199,7 +205,13 @@ func extract(db *sql.DB, w io.Writer, cfg configger.Config, src string) error {
 	if err != nil {
 		return err
 	}
-	d, err := archive.Demozoo(db, w, cfg, src, id.String(), &empty)
+	dz := archive.Demozoo{
+		Source:   src,
+		UUID:     id.String(),
+		VarNames: &empty,
+		Config:   cfg,
+	}
+	d, err := dz.Decompress(db, w)
 	if err != nil {
 		return err
 	}

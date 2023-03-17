@@ -3,7 +3,6 @@ package arc
 import (
 	"errors"
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -13,6 +12,7 @@ import (
 var (
 	ErrNoCustom = errors.New("does not support customization")
 	ErrWalkrFmt = errors.New("format specified by archive filename is not a walker format")
+	ErrPanic    = errors.New("mholt panic with the archive")
 )
 
 // Configure interface for the archiver,
@@ -61,7 +61,7 @@ func Configure(f any) error {
 		*archiver.Xz:
 		return nil
 	default:
-		return fmt.Errorf("configure %v: %w", f, ErrNoCustom)
+		return fmt.Errorf("arc configure %v: %w", f, ErrNoCustom)
 	}
 	return nil
 }
@@ -70,21 +70,23 @@ func Configure(f any) error {
 // The archive format is chosen implicitly.
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
-func Walkr(src, filename string, walkFn archiver.WalkFunc) error {
+func Walkr(src, filename string, walkFn archiver.WalkFunc) (err error) {
 	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("walkr paniced with %s in archive %s: %v\n", filename, filepath.Base(src), r)
+		if e := recover(); e != nil {
+			err = fmt.Errorf("%w %s while extracting %s: %v", ErrPanic, filepath.Base(src), filename, e)
 		}
 	}()
-	filename = strings.ToLower(filename)
-	a, err := archiver.ByExtension(filename)
+	name := strings.ToLower(filename)
+	a, err := archiver.ByExtension(name)
 	if err != nil {
-		return fmt.Errorf("walkr byextension %q: %w", filename, err)
+		return fmt.Errorf("arc walkr byextension %q: %w", name, err)
 	}
-	if w, ok := a.(archiver.Walker); !ok {
-		return fmt.Errorf("walkr %s (%T): %w", filename, a, ErrWalkrFmt)
-	} else if err := w.Walk(src, walkFn); err != nil {
-		return fmt.Errorf("walkr %q: %w", filepath.Base(src), err)
+	w, ok := a.(archiver.Walker)
+	if !ok {
+		return fmt.Errorf("arc walkr %s (%T): %w", name, a, ErrWalkrFmt)
+	}
+	if err := w.Walk(src, walkFn); err != nil {
+		return fmt.Errorf("arc walkr %q: %w", filepath.Base(src), err)
 	}
 	return nil
 }

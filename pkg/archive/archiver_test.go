@@ -67,7 +67,7 @@ func TestUnarchiver(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := archive.Unarchiver(tt.args.source, tt.args.filename, tt.args.destination); (err != nil) != tt.wantErr {
+			if err := archive.Unarchiver(tt.args.source, tt.args.destination, tt.args.filename); (err != nil) != tt.wantErr {
 				t.Errorf("Unarchiver() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

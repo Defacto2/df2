@@ -1,6 +1,10 @@
 package archive_test
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -9,7 +13,9 @@ import (
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/archive/internal/content"
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
-	"github.com/gabriel-vasile/mimetype"
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
+	"github.com/stretchr/testify/assert"
 )
 
 func testDir(name string) string {
@@ -17,83 +23,72 @@ func testDir(name string) string {
 	return filepath.Join(dir, "..", "..", "tests", name)
 }
 
+func TestCompress(t *testing.T) {
+	err := archive.Compress(nil, nil)
+	assert.NotNil(t, err)
+
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	err = archive.Compress(gw, nil)
+	assert.Nil(t, err)
+
+	files := []string{"nothing", "nilfile"}
+	err = archive.Compress(gw, files)
+	assert.NotNil(t, err)
+}
+
+func TestDelete(t *testing.T) {
+	err := archive.Delete(nil)
+	assert.Nil(t, err)
+
+	files := []string{"nothing", "nilfile"}
+	err = archive.Delete(files)
+	assert.NotNil(t, err)
+}
+
+func TestStore(t *testing.T) {
+	err := archive.Store(nil, nil)
+	assert.NotNil(t, err)
+
+	var buf bytes.Buffer
+	gw := tar.NewWriter(&buf)
+	err = archive.Store(gw, nil)
+	assert.Nil(t, err)
+
+	files := []string{"nothing", "nilfile"}
+	err = archive.Store(gw, files)
+	assert.NotNil(t, err)
+}
+
 func TestMIME(t *testing.T) {
-	type fields struct {
-		name       string
-		ext        string
-		path       string
-		mime       *mimetype.MIME
-		size       int64
-		executable bool
-		textfile   bool
+	f := content.File{}
+	err := f.MIME()
+	assert.NotNil(t, err)
+	f = content.File{
+		Ext:  ".txt",
+		Path: testDir("text/test.txt"),
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{"text", fields{}, true},
-		{"text", fields{ext: ".txt", path: testDir("text/test.txt")}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &content.File{
-				Name:       tt.fields.name,
-				Ext:        tt.fields.ext,
-				Path:       tt.fields.path,
-				Mime:       tt.fields.mime,
-				Size:       tt.fields.size,
-				Executable: tt.fields.executable,
-				Textfile:   tt.fields.textfile,
-			}
-			if err := c.MIME(); (err != nil) != tt.wantErr {
-				t.Errorf("MIME() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	err = f.MIME()
+	assert.Nil(t, err)
 }
 
 func TestRead(t *testing.T) {
-	type args struct {
-		archive  string
-		filename string
-	}
-	tests := []struct {
-		name      string
-		args      args
-		wantFiles []string
-		wantFile  string
-		wantErr   bool
-	}{
-		{"empty", args{"", ""}, nil, "", true},
-		{
-			"invalid rar ext",
-			args{testDir("demozoo/test.invalid.ext.rar"), "test.invalid.ext.rar"},
-			[]string{"test.png", "test.txt"},
-			"test.invalid.ext.zip", false,
-		},
-		{
-			"zip",
-			args{testDir("demozoo/test.zip"), "test.zip"},
-			[]string{"test.png", "test.txt"},
-			"test.zip", false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, gotFile, err := archive.Read(nil, tt.args.archive, tt.args.filename)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotFile != tt.wantFile {
-				t.Errorf("Read() = %v, want %v", gotFile, tt.wantFile)
-			}
-			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
-				t.Errorf("Read() = %v, want %v", gotFiles, tt.wantFiles)
-			}
-		})
-	}
+	f, s, err := archive.Read(nil, "", "")
+	assert.Len(t, f, 0)
+	assert.Equal(t, "", s)
+	assert.NotNil(t, err)
+
+	src := testDir("demozoo/test.invalid.ext.rar")
+	f, s, err = archive.Read(io.Discard, src, "test.invalid.ext.rar")
+	assert.Len(t, f, 2)
+	assert.Equal(t, "test.invalid.ext.zip", s)
+	assert.Nil(t, err)
+
+	src = testDir("demozoo/test.zip")
+	f, s, err = archive.Read(io.Discard, src, "test.zip")
+	assert.Len(t, f, 2)
+	assert.Equal(t, "test.zip", s)
+	assert.Nil(t, err)
 }
 
 func TestRestore(t *testing.T) {
@@ -196,4 +191,35 @@ func TestNFO(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDemozoo_Decompress(t *testing.T) {
+	dz := archive.Demozoo{}
+	_, err := dz.Decompress(nil, nil)
+	assert.NotNil(t, err)
+
+	cfg := configger.Defaults()
+	db, err := database.Connect(cfg)
+	assert.Nil(t, err)
+	defer db.Close()
+	dz = archive.Demozoo{
+		Source: testDir("demozoo/test.zip"),
+		UUID:   database.TestID,
+		Config: cfg,
+	}
+	_, err = dz.Decompress(db, nil)
+	assert.Nil(t, err)
+}
+
+func TestExtractor(t *testing.T) {
+	err := archive.Extractor("", "", "test.txt", os.TempDir())
+	assert.NotNil(t, err)
+	tmp, err := os.MkdirTemp(os.TempDir(), "df2-extractor-test")
+	assert.Nil(t, err)
+	defer os.Remove(tmp)
+	err = archive.Extractor(
+		"test.zip",
+		testDir("demozoo/test.zip"), "", tmp)
+	assert.Nil(t, err)
+
 }

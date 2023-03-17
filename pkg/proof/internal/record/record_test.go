@@ -209,7 +209,7 @@ func TestRecord_Zip(t *testing.T) {
 				File: tt.fields.File,
 				Name: tt.fields.Name,
 			}
-			if err := r.Zip(nil, nil, nil, cfg, tt.args.col, tt.args.s); (err != nil) != tt.wantErr {
+			if err := r.Zip(nil, nil, cfg, tt.args.col, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("Record.Zip() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

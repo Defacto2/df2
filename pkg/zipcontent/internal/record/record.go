@@ -138,7 +138,7 @@ func (r *Record) Nfo(w io.Writer, s *scan.Stats) error {
 			return err1
 		}
 		defer os.RemoveAll(tmp)
-		if err2 := archive.Extractor(r.File, r.Name, r.NFO, tmp); err2 != nil {
+		if err2 := archive.Extractor(r.Name, r.File, r.NFO, tmp); err2 != nil {
 			return err2
 		}
 		src := filepath.Join(tmp, r.NFO)

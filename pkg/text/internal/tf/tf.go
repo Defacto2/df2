@@ -120,7 +120,7 @@ func (t *TextFile) Extract(w io.Writer, dir *directories.Dir) error {
 	}
 	tmp, src := os.TempDir(), filepath.Join(dir.UUID, t.UUID)
 	dest := filepath.Join(tmp, s[0])
-	if err1 := archive.Extractor(src, t.Name, s[0], tmp); err1 != nil {
+	if err1 := archive.Extractor(t.Name, src, s[0], tmp); err1 != nil {
 		return err1
 	}
 	if err = os.Rename(dest, src+txt); err != nil {

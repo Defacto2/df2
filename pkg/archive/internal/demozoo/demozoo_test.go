@@ -1,10 +1,14 @@
 package demozoo_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/archive/internal/content"
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestData(t *testing.T) {
@@ -60,12 +64,6 @@ func TestDOS(t *testing.T) {
 		com = ".com"
 		exe = ".exe"
 	)
-	type args struct {
-		name  string
-		files content.Contents
-	}
-	var empty content.Contents
-	var e []string
 	f1 := content.File{
 		Ext:        com,
 		Name:       "hi.com",
@@ -81,33 +79,46 @@ func TestDOS(t *testing.T) {
 		Name:       "random.exe",
 		Executable: true,
 	}
-	ff1 := make(content.Contents)
-	ff1[0] = f1
-	ff2 := make(content.Contents)
-	ff2[0] = f1
-	ff2[1] = f2
-	ff3 := make(content.Contents)
-	ff3[0] = f1
-	ff3[1] = f2
-	ff3[2] = f3
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"empty", args{"", empty}, ""},
-		{"empty zip", args{"hi.zip", empty}, ""},
-		{"1 file", args{"hi.zip", ff1}, "hi.com"},
-		{"2 file", args{"hi.zip", ff2}, "hi.exe"},
-		{"3 file", args{"hi.zip", ff2}, "hi.exe"},
+	t1 := content.Contents{
+		0: f1,
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := demozoo.DOS(nil, tt.args.name, tt.args.files, &e); got != tt.want {
-				t.Errorf("DOS() = %v, want %v", got, tt.want)
-			}
-		})
+	t2 := content.Contents{
+		0: f1,
+		1: f2,
 	}
+	t3 := content.Contents{
+		0: f1,
+		1: f2,
+		2: f3,
+	}
+	t4 := content.Contents{
+		0: f3,
+	}
+	vars := []string{"random"}
+	none := []string{}
+
+	f := demozoo.DOS(nil, "", nil, nil)
+	assert.Equal(t, "", f)
+	f = demozoo.DOS(nil, "hi.zip", t1, &vars)
+	assert.Equal(t, "hi.com", f)
+	f = demozoo.DOS(nil, "hi.zip", t2, &vars)
+	assert.Equal(t, "hi.exe", f)
+	f = demozoo.DOS(nil, "hi.zip", t3, &vars)
+	assert.Equal(t, "hi.exe", f)
+	f = demozoo.DOS(nil, "hi.zip", t4, &vars)
+	assert.Equal(t, "random.exe", f)
+	f = demozoo.DOS(nil, "hi.zip", t4, &none)
+	assert.Equal(t, "random.exe", f)
+}
+
+func Test_MoveText(t *testing.T) {
+	err := demozoo.MoveText(nil, configger.Config{}, "", "")
+	assert.ErrorIs(t, err, demozoo.ErrNoSrc)
+	tmp := os.TempDir()
+	err = demozoo.MoveText(nil, configger.Defaults(), tmp, "")
+	assert.NotNil(t, err)
+	err = demozoo.MoveText(nil, configger.Defaults(), tmp, database.TestID)
+	assert.Nil(t, err)
 }
 
 func Test_NFO(t *testing.T) {

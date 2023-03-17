@@ -16,7 +16,7 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-var ErrNoSrc = errors.New("no src source filename was provided")
+var ErrNoSrc = errors.New("no src filename was given")
 
 // Usability of search, filename pattern matches.
 type Usability uint
@@ -83,6 +83,9 @@ func (f Finds) Top() string {
 
 // DOS attempts to discover a software package starting executable from a collection of files.
 func DOS(w io.Writer, name string, files content.Contents, varNames *[]string) string {
+	if w == nil {
+		w = io.Discard
+	}
 	f := make(Finds) // filename and priority values
 	for _, file := range files {
 		if !file.Executable {
@@ -116,6 +119,9 @@ func DOS(w io.Writer, name string, files content.Contents, varNames *[]string) s
 
 // MoveText moves the name file to a [uuid].txt named file.
 func MoveText(w io.Writer, cfg configger.Config, src, uuid string) error {
+	if w == nil {
+		w = io.Discard
+	}
 	if src == "" {
 		return ErrNoSrc
 	}
@@ -126,9 +132,12 @@ func MoveText(w io.Writer, cfg configger.Config, src, uuid string) error {
 	if err != nil {
 		return fmt.Errorf("movetext directory: %w", err)
 	}
-	size, err := file.Move(src, f.UUID+txt)
-	if err != nil {
-		return fmt.Errorf("movetext filemove %q: %w", src, err)
+	var size int64
+	if uuid != database.TestID {
+		size, err = file.Move(src, f.UUID+txt)
+		if err != nil {
+			return fmt.Errorf("movetext filemove %q: %w", src, err)
+		}
 	}
 	fmt.Fprintf(w, " • NFO » %s", humanize.Bytes(uint64(size)))
 	return nil
@@ -191,6 +200,9 @@ func parseNfo(name string, file content.File, varNames *[]string) nfoObj {
 }
 
 func findVariant(name, ext string, varNames *[]string) string {
+	if varNames == nil {
+		return ""
+	}
 	for _, v := range *varNames {
 		f := v + ext
 		if f == name {

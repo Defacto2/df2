@@ -111,7 +111,13 @@ func (r *Record) DoseeMeta(db *sql.DB, w io.Writer, cfg configger.Config) error 
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	d, err := archive.Demozoo(db, w, cfg, r.FilePath, r.UUID, &names)
+	dz := archive.Demozoo{
+		Source:   r.FilePath,
+		UUID:     r.UUID,
+		VarNames: &names,
+		Config:   cfg,
+	}
+	d, err := dz.Decompress(db, w)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}

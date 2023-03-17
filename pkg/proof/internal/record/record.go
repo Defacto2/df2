@@ -98,7 +98,7 @@ func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg confi
 		case "filename":
 			fmt.Fprintf(w, "%v", value)
 		case "file_zip_content":
-			if err := r.Zip(db, w, l, cfg, raw, &s); err != nil {
+			if err := r.Zip(db, w, cfg, raw, &s); err != nil {
 				return err
 			}
 		default:
@@ -132,7 +132,7 @@ func (r Record) Prefix(w io.Writer, s *stat.Proof) {
 }
 
 // Zip reads an archive and saves the content to the database.
-func (r Record) Zip(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, col sql.RawBytes, s *stat.Proof) error {
+func (r Record) Zip(db *sql.DB, w io.Writer, cfg configger.Config, col sql.RawBytes, s *stat.Proof) error {
 	if reflect.DeepEqual(r, Record{}) {
 		return ErrNoRec
 	}
@@ -148,9 +148,16 @@ func (r Record) Zip(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger
 	} else if err != nil {
 		return fmt.Errorf("zip content: %w", err)
 	}
-	if err := archive.Proof(w, l, cfg, r.File, r.Name, r.UUID); err != nil {
+	proof := archive.Proof{
+		Source: r.File,
+		Name:   r.Name,
+		UUID:   r.UUID,
+		Config: cfg,
+	}
+	if err := proof.Decompress(w); err != nil {
 		return fmt.Errorf("zip proof: %w", err)
-	} else if err := r.Approve(db, w); err != nil {
+	}
+	if err := r.Approve(db, w); err != nil {
 		return fmt.Errorf("zip approve: %w", err)
 	}
 	return nil
