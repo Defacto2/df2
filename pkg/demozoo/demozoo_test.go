@@ -2,6 +2,7 @@ package demozoo_test
 
 import (
 	"database/sql"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -9,36 +10,40 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/gookit/color"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func TestRequest_Query(t *testing.T) {
-	r := demozoo.Request{
+	r := demozoo.Request{}
+	err := r.Query(nil, nil, "")
+	assert.NotNil(t, err)
+	l, err := zap.NewProduction()
+	assert.Nil(t, err)
+	r = demozoo.Request{
 		All:       false,
 		Overwrite: false,
 		Refresh:   false,
+		Config:    configger.Defaults(),
+		Logger:    l.Sugar(),
 	}
-	cfg := configger.Defaults()
-	tests := []struct {
-		name    string
-		id      string
-		wantErr bool
-	}{
-		{"empty", "", true},
-		{"invalid", "abcde", true},
-		{"not demozoo", "1", false},
-		{"demozoo by id", "22884", false},
-		{"demozoo by uuid", "0d4777a3-181a-4ce4-bcf2-2093b48be83b", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := r.Query(nil, nil, nil, cfg, tt.id); (err != nil) != tt.wantErr {
-				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.Query(db, io.Discard, "")
+	assert.NotNil(t, err)
+	err = r.Query(db, io.Discard, "qwerty")
+	assert.NotNil(t, err, "invalid id")
+	err = r.Query(db, io.Discard, "1")
+	assert.Nil(t, err, "record doesn't have a Demozoo association")
+	err = r.Query(db, io.Discard, "22884")
+	assert.Nil(t, err, "record has a Demozoo association")
+	err = r.Query(db, io.Discard, "0d4777a3-181a-4ce4-bcf2-2093b48be83b")
+	assert.Nil(t, err, "record by uuid has a Demozoo association")
 }
 
 // TODO: replace remote testing with a local mock.
@@ -159,7 +164,7 @@ func values() []sql.RawBytes {
 	return v
 }
 
-func Test_newRecord(t *testing.T) {
+func TestNewRecord(t *testing.T) {
 	type args struct {
 		c      int
 		values []sql.RawBytes
@@ -185,7 +190,7 @@ func Test_newRecord(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotR, gotErr := demozoo.NewRecord(nil, tt.args.c, tt.args.values)
+			gotR, gotErr := demozoo.NewRecord(tt.args.c, tt.args.values)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("newRecord() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
@@ -208,37 +213,22 @@ func Test_newRecord(t *testing.T) {
 	}
 }
 
-func TestRecord_download(t *testing.T) {
-	type fields struct {
-		UUID string
-	}
-	type args struct {
-		overwrite bool
-		api       prods.ProductionsAPIv1
-		st        demozoo.Stat
-	}
-	tests := []struct {
-		name     string
-		fields   fields
-		args     args
-		wantSkip bool
-	}{
-		{"empty", fields{}, args{}, true},
-		{"okay", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, args{}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &demozoo.Record{
-				UUID: tt.fields.UUID,
-			}
-			if gotSkip := r.Download(nil, nil, tt.args.overwrite, &tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
-				t.Errorf("Record.download() = %v, want %v", gotSkip, tt.wantSkip)
-			}
-		})
-	}
+func TestRecord_Download(t *testing.T) {
+	r := demozoo.Record{}
+	st := demozoo.Stat{}
+	err := r.Download(nil, nil, st, false)
+	assert.NotNil(t, err)
+
+	api := prods.ProductionsAPIv1{}
+	err = r.Download(io.Discard, &api, st, false)
+	assert.NotNil(t, err)
+
+	r = demozoo.Record{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}
+	err = r.Download(io.Discard, &api, st, false)
+	assert.NotNil(t, err)
 }
 
-func TestRecord_doseeMeta_fileMeta(t *testing.T) {
+func TestRecord_DoseeMeta(t *testing.T) {
 	type fields struct {
 		ID   string
 		UUID string
@@ -427,41 +417,43 @@ func TestZipContent(t *testing.T) {
 }
 
 func TestFileExist(t *testing.T) {
-	pwd, err := os.Getwd()
-	if err != nil {
-		t.Error(err)
-	}
-	pwd = filepath.Join(pwd, "..", "..")
-	type fields struct {
-		count   int
-		missing int
-		total   int
-	}
+	wd, err := os.Getwd()
+	assert.Nil(t, err)
+	pwd := filepath.Join(wd, "..", "..")
+	st := demozoo.Stat{}
+	b, err := st.FileExist(nil)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+
 	r := demozoo.Record{}
-	tests := []struct {
-		name        string
-		fields      fields
-		path        string
-		wantMissing bool
-	}{
-		{name: "empty", path: "", wantMissing: true},
-		{name: "missing", path: "/this/dir/does/not/exist", wantMissing: true},
-		{name: "7z", path: filepath.Join(pwd, "tests", "demozoo", "test.7z"), wantMissing: false},
-		{name: "zip", path: filepath.Join(pwd, "tests", "demozoo", "test.zip"), wantMissing: false},
+	b, err = st.FileExist(&r)
+	assert.Nil(t, err)
+	assert.Equal(t, false, b)
+	assert.Equal(t, 1, st.Missing)
+
+	r = demozoo.Record{
+		FilePath: "/this/does/not/exist",
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			st := &demozoo.Stat{
-				Count:   tt.fields.count,
-				Missing: tt.fields.missing,
-				Total:   tt.fields.total,
-			}
-			r.FilePath = tt.path
-			if gotMissing := st.FileExist(&r); gotMissing != tt.wantMissing {
-				t.Errorf("FileExist() = %v, want %v", gotMissing, tt.wantMissing)
-			}
-		})
+	b, err = st.FileExist(&r)
+	assert.Nil(t, err)
+	assert.Equal(t, false, b)
+	assert.Equal(t, 2, st.Missing)
+
+	r = demozoo.Record{
+		FilePath: pwd,
 	}
+	b, err = st.FileExist(&r)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+	assert.Equal(t, 2, st.Missing)
+
+	r = demozoo.Record{
+		FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"),
+	}
+	b, err = st.FileExist(&r)
+	assert.Nil(t, err)
+	assert.Equal(t, true, b)
+	assert.Equal(t, 2, st.Missing)
 }
 
 func TestRecord_String(t *testing.T) {

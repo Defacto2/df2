@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"database/sql"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,10 +20,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-)
-
-var (
-	ErrDB = errors.New("database handle pointer cannot be nil")
 )
 
 // ProgData is used for holding the version flag template data.
@@ -199,7 +194,7 @@ func Vers(version string) string {
 // ProgInfo returns the response for the -version flag.
 func ProgInfo(db *sql.DB, version string) (string, error) {
 	if db == nil {
-		return "", fmt.Errorf("proginfo: %w", ErrDB)
+		return "", fmt.Errorf("proginfo: %w", database.ErrDB)
 	}
 	bin, err := configger.BinPath()
 	if err != nil {
@@ -248,7 +243,7 @@ type lookups = map[string]string
 // check looks up the collection of dependencies and database connection.
 func check(db *sql.DB) (lookups, error) {
 	if db == nil {
-		return nil, fmt.Errorf("check: %w", ErrDB)
+		return nil, fmt.Errorf("check: %w", database.ErrDB)
 	}
 	const (
 		disconnect = "disconnect"

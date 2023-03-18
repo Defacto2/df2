@@ -75,7 +75,8 @@ func (r *Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, s *scan.
 				return err
 			}
 		case "createdat":
-			database.DateTime(l, raw)
+			// TODO: unsure of purpose, check error
+			database.DateTime(raw)
 		case "filename":
 			fmt.Fprintf(w, "%v", value)
 			if err := r.Read(db, w, s); err != nil {

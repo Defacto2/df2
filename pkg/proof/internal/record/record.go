@@ -94,7 +94,8 @@ func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg confi
 		case "id":
 			r.Prefix(w, &s)
 		case "createdat":
-			database.DateTime(l, raw)
+			// TODO: unsure of purpose, need to handle err
+			database.DateTime(raw)
 		case "filename":
 			fmt.Fprintf(w, "%v", value)
 		case "file_zip_content":

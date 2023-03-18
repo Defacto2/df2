@@ -10,6 +10,12 @@ import (
 
 // Fix repairs imported Demozoo data conflicts.
 func Configs(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	res, err := updateApps(db)
 	if err != nil {
 		return fmt.Errorf("demozoo fix: %w", err)
@@ -24,7 +30,10 @@ func Configs(db *sql.DB, w io.Writer) error {
 }
 
 func updateApps(db *sql.DB) (int64, error) {
-	var app database.Update
+	if db == nil {
+		return 0, database.ErrDB
+	}
+	app := database.Update{}
 	app.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%application%'"
 	app.Args = []any{"groupapplication"}
@@ -36,7 +45,10 @@ func updateApps(db *sql.DB) (int64, error) {
 }
 
 func updateInstallers(db *sql.DB) (int64, error) {
-	var inst database.Update
+	if db == nil {
+		return 0, database.ErrDB
+	}
+	inst := database.Update{}
 	inst.Query = "UPDATE files SET section=? WHERE `section` = \"releaseadvert\" " +
 		"AND `web_id_demozoo` IS NOT NULL AND `record_title` LIKE '%installer%'"
 	inst.Args = []any{"releaseinstall"}

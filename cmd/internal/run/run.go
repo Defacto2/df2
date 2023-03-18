@@ -39,14 +39,12 @@ var (
 	ErrToFew   = errors.New("too few arguments given")
 	ErrArg     = errors.New("unknown args flag")
 	ErrNothing = errors.New("had nothing to do")
-
-	ErrDB  = errors.New("database handle pointer cannot be nil")
-	ErrZap = errors.New("zap logger cannot be nil")
+	ErrZap     = errors.New("zap logger cannot be nil")
 )
 
 func Data(db *sql.DB, w io.Writer, d database.Flags) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
@@ -61,21 +59,18 @@ func Data(db *sql.DB, w io.Writer, d database.Flags) error {
 	}
 }
 
-func APIs(db *sql.DB, w io.Writer, l *zap.SugaredLogger, a arg.APIs) error {
+func APIs(db *sql.DB, w io.Writer, a arg.APIs) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
 	}
-	if l == nil {
-		return ErrZap
-	}
 	switch {
 	case a.Refresh:
-		return demozoo.RefreshMeta(db, w, l)
+		return demozoo.RefreshMeta(db, w)
 	case a.Pouet:
-		return demozoo.RefreshPouet(db, w, l)
+		return demozoo.RefreshPouet(db, w)
 	case a.SyncDos:
 		return syncdos(db, w)
 	case a.SyncWin:
@@ -86,7 +81,7 @@ func APIs(db *sql.DB, w io.Writer, l *zap.SugaredLogger, a arg.APIs) error {
 
 func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, dz arg.Demozoo) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
@@ -98,12 +93,14 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 	r := demozoo.Request{
 		All:       dz.All,
 		Overwrite: dz.Overwrite,
+		Config:    cfg,
+		Logger:    l,
 	}
 	switch {
 	case dz.New, dz.All:
-		return r.Queries(db, w, l, cfg)
+		return r.Queries(db, w)
 	case dz.ID != "":
-		return r.Query(db, w, l, cfg, dz.ID)
+		return r.Query(db, w, dz.ID)
 	case dz.Releaser != 0:
 		return releaser(db, w, dz.Releaser)
 	case dz.Ping != 0:
@@ -221,7 +218,7 @@ func extract(db *sql.DB, w io.Writer, cfg configger.Config, src string) error {
 
 func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
@@ -252,7 +249,7 @@ func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
 
 func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
@@ -270,8 +267,10 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 		All:       false,
 		Overwrite: false,
 		Refresh:   false,
+		Config:    cfg,
+		Logger:    l,
 	}
-	if err := newDZ.Queries(db, w, l, cfg); err != nil {
+	if err := newDZ.Queries(db, w); err != nil {
 		return err
 	}
 	i++
@@ -320,7 +319,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 
 func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
@@ -352,7 +351,7 @@ func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
 
 func Rename(db *sql.DB, w io.Writer, args ...string) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
@@ -404,7 +403,7 @@ func Rename(db *sql.DB, w io.Writer, args ...string) error {
 
 func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard

@@ -3,6 +3,7 @@ package demozoo
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -16,16 +17,20 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releaser"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
-	"go.uber.org/zap"
 )
 
-// Product is a demozoo production.
+var (
+	ErrRequest = errors.New("unknown request value")
+)
+
+// Product is a Demozoo production item.
 type Product struct {
-	Code   int
-	Status string
-	API    prods.ProductionsAPIv1
+	Code   int                    // Code is the HTTP status.
+	Status string                 // Status is the HTTP status.
+	API    prods.ProductionsAPIv1 // API v1 for a Demozoo production.
 }
 
+// Get a Demozoo production.
 func (p *Product) Get(id uint) error {
 	d := prod.Production{ID: int64(id)}
 	api, err := d.Get()
@@ -38,13 +43,14 @@ func (p *Product) Get(id uint) error {
 	return nil
 }
 
-// Releaser is a demozoo scener or group.
+// Releaser is a Demozoo scener or group.
 type Releaser struct {
-	Code   int
-	Status string
-	API    releaser.ReleaserV1
+	Code   int                 // Code is the HTTP status.
+	Status string              // Status is the HTTP status.
+	API    releaser.ReleaserV1 // API v1 for a Demozoo releaser.
 }
 
+// Get a Demozoo scener or group.
 func (r *Releaser) Get(id uint) error {
 	d := releaser.Releaser{ID: int64(id)}
 	api, err := d.Get()
@@ -57,13 +63,14 @@ func (r *Releaser) Get(id uint) error {
 	return nil
 }
 
-// ReleaserProducts are the productions of a demozoo releaser.
+// ReleaserProducts are the productions of a Demozoo releaser.
 type ReleaserProducts struct {
-	Code   int
-	Status string
-	API    releases.Productions
+	Code   int                  // Code is the HTTP status.
+	Status string               // Status is the HTTP status.
+	API    releases.Productions // API for the Demozoo productions.
 }
 
+// Get the productions of a Demozoo scener or group.
 func (r *ReleaserProducts) Get(id uint) error {
 	d := releaser.Releaser{ID: int64(id)}
 	api, err := d.Prods()
@@ -76,18 +83,25 @@ func (r *ReleaserProducts) Get(id uint) error {
 	return nil
 }
 
-// MsDosProducts are productions that match platforms id 4, MS-DOS.
+// MsDosProducts are Demozoo productions that match platforms id 4, MS-DOS.
 // Productions with the tag "lost" are skipped.
 // Productions created on or newer than 1 Jan. 2000 are skipped.
 type MsDosProducts struct {
-	Code   int
-	Status string
-	API    []releases.ProductionV1
-	Count  int
-	Finds  int
+	Code   int                     // Code is the HTTP status.
+	Status string                  // Status is the HTTP status.
+	API    []releases.ProductionV1 // API v1 for a Demozoo production.
+	Count  int                     // Count the total productions.
+	Finds  int                     // Finds are the number of usable productions.
 }
 
+// Get all the productions on Demozoo that are for the MS-DOS platform.
 func (m *MsDosProducts) Get(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	d := filter.Productions{Filter: releases.MsDos}
 	api, err := d.Prods(db, w)
 	if err != nil {
@@ -101,15 +115,23 @@ func (m *MsDosProducts) Get(db *sql.DB, w io.Writer) error {
 	return nil
 }
 
+// WindowsProducts are Demozoo productions that match the Windows platform.
 type WindowsProducts struct {
-	Code   int
-	Status string
-	API    []releases.ProductionV1
-	Count  int
-	Finds  int
+	Code   int                     // Code is the HTTP status.
+	Status string                  // Status is the HTTP status.
+	API    []releases.ProductionV1 // API v1 for a Demozoo production.
+	Count  int                     // Count the total productions.
+	Finds  int                     // Finds are the number of usable productions.
 }
 
+// Get all the productions on Demozoo that are for the Windows platform.
 func (m *WindowsProducts) Get(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	d := filter.Productions{Filter: releases.Windows}
 	api, err := d.Prods(db, w)
 	if err != nil {
@@ -123,13 +145,19 @@ func (m *WindowsProducts) Get(db *sql.DB, w io.Writer) error {
 	return nil
 }
 
-// Fix repairs imported Demozoo data conflicts.
+// Fix any Demozoo data import conflicts.
 func Fix(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	return fix.Configs(db, w)
 }
 
 // NewRecord initialises a new file record.
-func NewRecord(l *zap.SugaredLogger, c int, values []sql.RawBytes) (Record, error) {
+func NewRecord(count int, values []sql.RawBytes) (Record, error) {
 	const sep, want = ",", 21
 	if l := len(values); l < want {
 		return Record{}, fmt.Errorf("new records = %d, want %d: %w", l, want, ErrTooFew)
@@ -139,16 +167,14 @@ func NewRecord(l *zap.SugaredLogger, c int, values []sql.RawBytes) (Record, erro
 	const webidpouet, groupbrandfor, groupbrandby, recordtitle, section = 12, 13, 14, 15, 16
 	const creditillustration, creditaudio, creditprogram, credittext = 17, 18, 19, 20
 	r := Record{
-		Count: c,
+		Count: count,
 		ID:    string(values[id]),
 		UUID:  string(values[uuid]),
 		// deletedat placeholder
-		CreatedAt: database.DateTime(l, values[createdat]),
-		Filename:  string(values[filename]),
-		Filesize:  string(values[filesize]),
+		Filename: string(values[filename]),
+		Filesize: string(values[filesize]),
 		// web_id_demozoo placeholder
 		FileZipContent: string(values[filezipcontent]),
-		UpdatedAt:      database.DateTime(l, values[updatedat]),
 		Platform:       string(values[platform]),
 		Sum384:         string(values[fileintegritystrong]),
 		SumMD5:         string(values[fileintegrityweak]),
@@ -162,6 +188,16 @@ func NewRecord(l *zap.SugaredLogger, c int, values []sql.RawBytes) (Record, erro
 		CreditCode:  strings.Split(string(values[creditprogram]), sep),
 		CreditText:  strings.Split(string(values[credittext]), sep),
 	}
+	ca, err := database.DateTime(values[createdat])
+	if err != nil {
+		return Record{}, fmt.Errorf("create date for new record %d: %w", count, err)
+	}
+	r.CreatedAt = ca
+	ua, err := database.DateTime(values[updatedat])
+	if err != nil {
+		return Record{}, fmt.Errorf("update date for new record %d: %w", count, err)
+	}
+	r.UpdatedAt = ua
 	if i, err := strconv.Atoi(string(values[webiddemozoo])); err == nil {
 		r.WebIDDemozoo = uint(i)
 	}
@@ -183,16 +219,27 @@ func (r request) String() string {
 }
 
 // RefreshMeta synchronises missing file entries with Demozoo sourced metadata.
-func RefreshMeta(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
-	return refresh(db, w, l, meta)
+func RefreshMeta(db *sql.DB, w io.Writer) error {
+	return refresh(db, w, meta)
 }
 
 // RefreshPouet synchronises missing file entries with Demozoo sourced metadata.
-func RefreshPouet(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
-	return refresh(db, w, l, pouet)
+func RefreshPouet(db *sql.DB, w io.Writer) error {
+	return refresh(db, w, pouet)
 }
 
-func refresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, r request) error { //nolint:cyclop
+func refresh(db *sql.DB, w io.Writer, r request) error { //nolint:cyclop
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	switch r {
+	case meta, pouet: // ok
+	default:
+		return ErrRequest
+	}
 	start := time.Now()
 	if err := counter(db, w, r); err != nil {
 		return err
@@ -204,27 +251,27 @@ func refresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, r request) error { /
 		return fmt.Errorf("meta rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	columns, err := rows.Columns()
+	cols, err := rows.Columns()
 	if err != nil {
 		return fmt.Errorf("meta columns: %w", err)
 	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]any, len(values))
+	values := make([]sql.RawBytes, len(cols))
+	args := make([]any, len(values))
 	for i := range values {
-		scanArgs[i] = &values[i]
+		args[i] = &values[i]
 	}
 	// fetch the rows
 	var st Stat
 	switch r {
 	case meta:
 		for rows.Next() {
-			if err := st.NextRefresh(db, w, l, Records{rows, scanArgs, values}); err != nil {
+			if err := st.NextRefresh(db, w, Records{rows, args, values}); err != nil {
 				fmt.Fprintf(w, "meta rows: %s\n", err)
 			}
 		}
 	case pouet:
 		for rows.Next() {
-			if err := st.NextPouet(db, w, l, Records{rows, scanArgs, values}); err != nil {
+			if err := st.NextPouet(db, w, Records{rows, args, values}); err != nil {
 				fmt.Fprintf(w, "meta rows: %s\n", err)
 			}
 		}
@@ -234,13 +281,24 @@ func refresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, r request) error { /
 }
 
 func counter(db *sql.DB, w io.Writer, r request) error {
-	var cnt int
-	stmt := count()
-	if r == pouet {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	cnt := 0
+	stmt := ""
+	switch r {
+	case meta:
+		stmt = countDemozoo()
+	case pouet:
 		stmt = countPouet()
+	default:
+		return ErrRequest
 	}
 	if err := db.QueryRow(stmt).Scan(&cnt); err != nil {
-		return fmt.Errorf("count query: %w", err)
+		return fmt.Errorf("counter row query: %w", err)
 	}
 	fmt.Fprintf(w, "There are %d records with %s links\n", cnt, r)
 	return nil

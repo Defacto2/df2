@@ -42,11 +42,11 @@ func TestRun(t *testing.T) {
 }
 
 func TestAPIs(t *testing.T) {
-	err := APIs(nil, nil, nil, arg.APIs{})
+	err := APIs(nil, nil, arg.APIs{})
 	assert.NotNil(t, err)
-	err = APIs(db, nil, nil, arg.APIs{})
+	err = APIs(db, nil, arg.APIs{})
 	assert.NotNil(t, err)
-	err = APIs(db, io.Discard, l, arg.APIs{})
+	err = APIs(db, io.Discard, arg.APIs{})
 	assert.Nil(t, err)
 }
 

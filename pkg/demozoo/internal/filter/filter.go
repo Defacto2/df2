@@ -15,25 +15,28 @@ import (
 	"github.com/Defacto2/df2/pkg/download"
 )
 
-const maxTries = 5
+const (
+	domain   = "defacto2.net"
+	maxTries = 5
+)
 
 // Productions API production request.
 type Productions struct {
 	Filter     releases.Filter
-	Count      int           // Total productions
-	Finds      int           // Found productions to add
-	Timeout    time.Duration // HTTP request timeout in seconds (default 5)
-	Link       string        // URL link to send the request
-	StatusCode int           // received HTTP statuscode
-	Status     string        // received HTTP status
+	Count      int           // Count the total productions.
+	Finds      int           // Finds are the number of productions to use.
+	Timeout    time.Duration // Timeout in seconds for the HTTP request (default 5).
+	Link       string        // Link URL to receive the request.
+	StatusCode int           // StatusCode received by the HTTP request.
+	Status     string        // Status received by the HTTP request.
 }
 
-// Production List result.
+// ProductionList result.
 type ProductionList struct {
-	Count    int                     `json:"count"`    // Total productions
-	Next     string                  `json:"next"`     // URL for the next page
-	Previous interface{}             `json:"previous"` // URL for the previous page
-	Results  []releases.ProductionV1 `json:"results"`
+	Count    int                     `json:"count"`    // Count the total productions.
+	Next     string                  `json:"next"`     // Next page URL.
+	Previous interface{}             `json:"previous"` // Previous page object.
+	Results  []releases.ProductionV1 `json:"results"`  // Results of the productions.
 }
 
 func empty() []releases.ProductionV1 {
@@ -42,16 +45,21 @@ func empty() []releases.ProductionV1 {
 
 // Prods gets all the productions of a releaser and normalises the results.
 func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, error) { //nolint:funlen
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	const endOfRecords, maxPage = "", 1000
-	var next []releases.ProductionV1
-	var dz ProductionList
-	totalFinds := 0
+	dz := ProductionList{}
+	finds := 0
 
-	url, err := p.Filter.URL(0)
+	link, err := p.Filter.URL(0)
 	if err != nil {
 		return empty(), err
 	}
-	req := download.Request{Link: url}
+	req := download.Request{Link: link}
 	fmt.Fprintf(w, "Fetching the first 100 of many records from Demozoo\n")
 	tries := 0
 	for {
@@ -64,7 +72,6 @@ func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, e
 		}
 		break
 	}
-
 	p.Status = req.Status
 	p.StatusCode = req.StatusCode
 	if len(req.Read) > 0 {
@@ -74,28 +81,36 @@ func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, e
 	}
 	p.Count = dz.Count
 	fmt.Fprintf(w, "There are %d %s production matches\n", dz.Count, p.Filter)
-	finds, prods := Filter(db, w, dz.Results)
-	pp(w, 1, finds)
-	nu, page := dz.Next, 1
+	rels, err := Filter(db, w, dz.Results)
+	if err != nil {
+		return nil, err
+	}
+	f := len(rels)
+	pp(w, 1, f)
+	np, page := dz.Next, 1
 	for {
 		page++
-		next, nu, err = Next(nu)
+		rel, next, err := Next(np)
 		if err != nil {
 			return empty(), err
 		}
-		finds, next = Filter(db, w, next)
-		totalFinds += finds
-		pp(w, page, finds)
-		prods = append(prods, next...)
-		if nu == endOfRecords {
+		rel, err = Filter(db, w, rel)
+		if err != nil {
+			return nil, err
+		}
+		f = len(rel)
+		finds += f
+		pp(w, page, f)
+		rels = append(rels, rel...)
+		if next == endOfRecords {
 			break
 		}
 		if page > maxPage {
 			break
 		}
 	}
-	p.Finds = totalFinds
-	return prods, nil
+	p.Finds = finds
+	return rels, nil
 }
 
 func pp(w io.Writer, page, finds int) {
@@ -111,8 +126,8 @@ func pp(w io.Writer, page, finds int) {
 }
 
 // Next gets all the next page of productions.
-func Next(url string) ([]releases.ProductionV1, string, error) {
-	req := download.Request{Link: url}
+func Next(link string) ([]releases.ProductionV1, string, error) {
+	req := download.Request{Link: link}
 	tries := 0
 	for {
 		tries++
@@ -124,7 +139,7 @@ func Next(url string) ([]releases.ProductionV1, string, error) {
 		}
 		break
 	}
-	var dz ProductionList
+	dz := ProductionList{}
 	if len(req.Read) > 0 {
 		if err := json.Unmarshal(req.Read, &dz); err != nil {
 			return empty(), "", fmt.Errorf("filter data json unmarshal: %w", err)
@@ -133,11 +148,17 @@ func Next(url string) ([]releases.ProductionV1, string, error) {
 	return dz.Results, dz.Next, nil
 }
 
-// Filter productions removes any records that are not suitable for Defacto2.
-func Filter(db *sql.DB, w io.Writer, p []releases.ProductionV1) (int, []releases.ProductionV1) {
+// Filter removes any productions that are not suitable for Defacto2.
+func Filter(db *sql.DB, w io.Writer, prods []releases.ProductionV1) ([]releases.ProductionV1, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	finds := 0
-	var prods []releases.ProductionV1 //nolint:prealloc
-	for _, prod := range p {
+	p := []releases.ProductionV1{}
+	for _, prod := range prods {
 		if !prodType(prod.Types) {
 			continue
 		}
@@ -160,14 +181,20 @@ func Filter(db *sql.DB, w io.Writer, p []releases.ProductionV1) (int, []releases
 			fmt.Fprintln(w, err)
 			continue
 		}
-		fmt.Fprintf(w, "%d. (%d) %s\n", finds+1, prod.ID, prod.Title)
 		finds++
-		prods = append(prods, prod)
+		fmt.Fprintf(w, "%d. (%d) %s\n", finds, prod.ID, prod.Title)
+		p = append(p, prod)
 	}
-	return finds, prods
+	return p, nil
 }
 
 func sync(db *sql.DB, w io.Writer, demozooID, recordID int) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	i, err := update(db, demozooID, recordID)
 	if err != nil {
 		fmt.Fprintf(w, " Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
@@ -180,7 +207,7 @@ func sync(db *sql.DB, w io.Writer, demozooID, recordID int) error {
 }
 
 func update(db *sql.DB, demozooID, recordID int) (int64, error) {
-	var up database.Update
+	up := database.Update{}
 	up.Query = "UPDATE files SET web_id_demozoo=? WHERE `id` = ?"
 	up.Args = []any{demozooID, recordID}
 	count, err := database.Execute(db, up)
@@ -192,8 +219,7 @@ func update(db *sql.DB, demozooID, recordID int) (int64, error) {
 
 // linked returns the Defacto2 URL linked to a Demozoo ID that points to a download or external link.
 func linked(id int) (string, error) {
-	const domain = "defacto2.net"
-	var p prod.Production
+	p := prod.Production{}
 	p.ID = int64(id)
 	api, err := p.Get()
 	if err != nil {

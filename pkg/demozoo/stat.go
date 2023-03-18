@@ -2,6 +2,7 @@ package demozoo
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,41 +16,59 @@ import (
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
-	"go.uber.org/zap"
 )
 
-// Stat are the remote query statistics.
+var (
+	ErrDir       = errors.New("filepath points to a directory")
+	ErrOverwrite = errors.New("overwrite is false, but an existing download exists and cannot be overwritten")
+	ErrDownload  = errors.New("no suitable downloads found")
+	ErrProdAPI   = errors.New("productions api pointer cannot be nil")
+	ErrRecord    = errors.New("pointer to the record cannot be nil")
+	ErrUUID      = errors.New("uuid is empty and cannot be used")
+)
+
+// Stat is statistics for the remote query.
 type Stat struct {
-	Count   int
-	Fetched int
-	Missing int
-	Total   int
-	ByID    string
+	Count   int    //
+	Fetched int    //
+	Missing int    //
+	Total   int    //
+	ByID    string //
 }
 
-// FileExist returns false if the FilePath of the record points to a missing file.
-func (st *Stat) FileExist(r *Record) bool {
-	if s, err := os.Stat(r.FilePath); os.IsNotExist(err) || s.IsDir() {
-		st.Missing++
-		return true
+// FileExist returns false when the record FilePath points to a non-existant file.
+func (st *Stat) FileExist(r *Record) (bool, error) {
+	if r == nil {
+		return false, ErrRecord
 	}
-	return false
+	s, err := os.Stat(r.FilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			st.Missing++
+			return false, nil
+		}
+		return false, err
+	}
+	if s.IsDir() {
+		return false, ErrDir
+	}
+	return true, nil
 }
 
 // Records contain more than one Record.
 type Records struct {
-	Rows     *sql.Rows
-	ScanArgs []any
-	Values   []sql.RawBytes
+	Rows     *sql.Rows      //
+	ScanArgs []any          //
+	Values   []sql.RawBytes //
 }
 
 // NextRefresh iterates over the Records to update sync their Demozoo data to the database.
-func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, rec Records) error {
+func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
 	st.Count++
-	r, err := NewRecord(l, st.Count, rec.Values)
+	r, err := NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 1: %w", err)
 	}
@@ -73,7 +92,7 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, rec R
 	a := api.Authors()
 	r.authors(w, &a)
 	var nr Record
-	nr, err = NewRecord(l, st.Count, rec.Values)
+	nr, err = NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 2: %w", err)
 	}
@@ -90,12 +109,12 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, l *zap.SugaredLogger, rec R
 }
 
 // NextPouet iterates over the linked Demozoo records and sync any linked Pouet data to the local files table.
-func (st *Stat) NextPouet(db *sql.DB, w io.Writer, l *zap.SugaredLogger, rec Records) error {
+func (st *Stat) NextPouet(db *sql.DB, w io.Writer, rec Records) error {
 	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
 	st.Count++
-	r, err := NewRecord(l, st.Count, rec.Values)
+	r, err := NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 1: %w", err)
 	}
@@ -119,7 +138,7 @@ func (st *Stat) NextPouet(db *sql.DB, w io.Writer, l *zap.SugaredLogger, rec Rec
 		return fmt.Errorf("next refresh: %w", err)
 	}
 	var nr Record
-	nr, err = NewRecord(l, st.Count, rec.Values)
+	nr, err = NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 2: %w", err)
 	}
@@ -192,32 +211,39 @@ func (st *Stat) sumTotal(rec Records, req Request) error {
 }
 
 // Download the first available remote file linked in the Demozoo production record.
-func (r *Record) Download(w io.Writer, l *zap.SugaredLogger,
-	overwrite bool, api *prods.ProductionsAPIv1, st Stat,
-) bool {
-	if st.FileExist(r) || overwrite {
-		if r.UUID == "" {
-			fmt.Fprint(w, color.Error.Sprint("UUID is empty, cannot continue"))
-			return true
-		}
-		name, link := api.DownloadLink()
-		if link == "" {
-			fmt.Fprint(w, color.Note.Sprint("no suitable downloads found"))
-			return true
-		}
-		const OK = 200
-		logger.Printcrf(w, "%s%s %s", r.String(st.Total), color.Primary.Sprint(link), download.StatusColor(OK, "200 OK"))
-		head, err := download.GetSave(w, r.FilePath, link)
-		if err != nil {
-			l.Errorln(err)
-			return true
-		}
-		logger.Printcrf(w, r.String(st.Total))
-		fmt.Fprintf(w, "• %s", name)
-		r.downloadReset(name)
-		r.lastMod(w, head)
+func (r *Record) Download(w io.Writer, api *prods.ProductionsAPIv1, st Stat, overwrite bool) error {
+	if api == nil {
+		return ErrProdAPI
 	}
-	return false
+	if w == nil {
+		w = io.Discard
+	}
+	exist, err := st.FileExist(r)
+	if err != nil {
+		return err
+	}
+	if exist && !overwrite {
+		return ErrOverwrite
+	}
+	if r.UUID == "" {
+		return ErrUUID
+	}
+	name, link := api.DownloadLink()
+	if link == "" {
+		return ErrDownload
+	}
+	const OK = 200
+	logger.Printcrf(w, "%s%s %s", r.String(st.Total), color.Primary.Sprint(link),
+		download.StatusColor(OK, "200 OK"))
+	head, err := download.GetSave(w, r.FilePath, link)
+	if err != nil {
+		return err
+	}
+	logger.Printcrf(w, r.String(st.Total))
+	fmt.Fprintf(w, "• %s", name)
+	r.downloadReset(name)
+	r.lastMod(w, head)
+	return nil
 }
 
 func (r *Record) downloadReset(name string) {

@@ -87,7 +87,9 @@ func TestDateTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := strings.TrimSpace(database.DateTime(nil, tt.args.value)); got != tt.want {
+			got, _ := database.DateTime(tt.args.value)
+			// TODO: handle err
+			if strings.TrimSpace(got) != tt.want {
 				t.Errorf("DateTime() = %q, want %q", got, tt.want)
 			}
 		})

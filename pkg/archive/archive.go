@@ -31,7 +31,6 @@ const (
 
 var (
 	ErrArchive = errors.New("format specified by source filename is not an archive format")
-	ErrDB      = errors.New("database handle pointer cannot be nil")
 	ErrDir     = errors.New("is a directory")
 	ErrFile    = errors.New("no such file")
 	ErrWriter  = errors.New("writer must be a file object")
@@ -106,7 +105,7 @@ type Demozoo struct {
 // Demozoo decompresses and parses archives fetched from https://demozoo.org.
 func (z Demozoo) Decompress(db *sql.DB, w io.Writer) (demozoo.Data, error) {
 	if db == nil {
-		return demozoo.Data{}, ErrDB
+		return demozoo.Data{}, database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard

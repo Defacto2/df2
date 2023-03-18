@@ -28,6 +28,7 @@ import (
 var (
 	ErrColType  = errors.New("the value type is not usable with the mysql column")
 	ErrConnect  = errors.New("could not connect to the mysql database server")
+	ErrDB       = errors.New("database handle pointer cannot be nil")
 	ErrNoID     = errors.New("unique id is does not exist in the database table")
 	ErrSynID    = errors.New("id is not a valid id or uuid value")
 	ErrSynUUID  = errors.New("id is not a valid uuid")
@@ -171,20 +172,19 @@ func nullable(s *sql.ColumnType) string {
 }
 
 // DateTime colours and formats a date and time string.
-func DateTime(l *zap.SugaredLogger, raw sql.RawBytes) string {
+func DateTime(raw sql.RawBytes) (string, error) {
 	v := string(raw)
 	if v == "" {
-		return ""
+		return "", nil
 	}
 	t, err := time.Parse(Datetime, v)
 	if err != nil {
-		l.Errorln(err)
-		return "?"
+		return "?", err
 	}
 	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
-		return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 2006 ")))
+		return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 2006 "))), nil
 	}
-	return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 15:04")))
+	return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 15:04"))), nil
 }
 
 // Distinct returns a unique list of values from the table column.

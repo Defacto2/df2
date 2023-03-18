@@ -389,14 +389,14 @@ func (r *Record) lastMod(w io.Writer, head http.Header) {
 	fmt.Fprintf(w, " • %s", t.Format("Jan 06"))
 }
 
-func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, api *prods.ProductionsAPIv1) (bool, error) {
+func (r *Record) parse(db *sql.DB, w io.Writer, cfg configger.Config, api *prods.ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
 		// handle an unusual case where filename is missing but all other metadata exists
 		if n, _ := api.DownloadLink(); n != "" {
 			fmt.Fprint(w, n)
 			r.Filename = n
-			r.save(db, w, l)
+			r.save(db, w)
 		} else {
 			fmt.Fprintln(w, "could not find a suitable value for the required filename column")
 			return true, nil
@@ -409,7 +409,7 @@ func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg config
 		if err := r.FileMeta(); err != nil {
 			return true, apiErr(err)
 		}
-		r.save(db, w, l)
+		r.save(db, w)
 		fallthrough
 	case r.FileZipContent == "":
 		if zip, err := r.ZipContent(w); err != nil {
@@ -419,7 +419,7 @@ func (r *Record) parse(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg config
 				return true, apiErr(err)
 			}
 		}
-		r.save(db, w, l)
+		r.save(db, w)
 	}
 	return false, nil
 }
@@ -445,7 +445,8 @@ func (r *Record) parseAPI(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg con
 		return true, apiErr(err)
 	}
 	r.FilePath = filepath.Join(storage, r.UUID)
-	if skip := r.Download(w, l, overwrite, &api, st); skip {
+	if err := r.Download(w, &api, st, overwrite); err != nil {
+		l.Error(err) //TODO temp, in future return err
 		return true, nil
 	}
 	if update := r.check(w); !update {
@@ -454,7 +455,7 @@ func (r *Record) parseAPI(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg con
 	if r.Platform == "" {
 		r.platform(&api)
 	}
-	return r.parse(db, w, l, cfg, &api)
+	return r.parse(db, w, cfg, &api)
 }
 
 func (r *Record) pingPouet(api *prods.ProductionsAPIv1) error {
@@ -493,13 +494,19 @@ func (r *Record) pouet(w io.Writer, api *prods.ProductionsAPIv1) error {
 	return nil
 }
 
-func (r *Record) save(db *sql.DB, w io.Writer, l *zap.SugaredLogger) {
+func (r *Record) save(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	if err := r.Save(db); err != nil {
 		fmt.Fprintf(w, " %v \n", str.X())
-		l.Errorln(err)
-		return
+		return err
 	}
 	fmt.Fprintf(w, " 💾%v", str.Y())
+	return nil
 }
 
 func (r *Record) title(w io.Writer, api *prods.ProductionsAPIv1) {

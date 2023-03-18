@@ -3,7 +3,6 @@ package assets
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -27,10 +26,6 @@ const (
 	Image                   // Image and thumbnail files.
 )
 
-var (
-	ErrDB = errors.New("database handle pointer cannot be nil")
-)
-
 type Clean struct {
 	Name   string // Named section to clean.
 	Remove bool   // Remove any orphaned files from the directories.
@@ -42,7 +37,7 @@ type Clean struct {
 // and erases any orphans that cannot be matched to the database.
 func (c Clean) Walk(db *sql.DB, w io.Writer) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
@@ -70,7 +65,7 @@ func targetfy(s string) Target {
 
 func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) error {
 	if db == nil {
-		return ErrDB
+		return database.ErrDB
 	}
 	if d == nil {
 		return directories.ErrNil
@@ -125,7 +120,7 @@ func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) err
 // Returns the total number of UUID and a collection of UUIDs.
 func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
 	if db == nil {
-		return 0, nil, ErrDB
+		return 0, nil, database.ErrDB
 	}
 	// count rows
 	count := 0

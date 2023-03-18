@@ -29,7 +29,7 @@ require the parsing of 10,000s of records.`,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		err = run.APIs(db, os.Stdout, logr, apis)
+		err = run.APIs(db, os.Stdout, apis)
 		switch {
 		case errors.Is(err, run.ErrArg):
 			if err := cmd.Usage(); err != nil {

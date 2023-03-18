@@ -2,6 +2,7 @@ package demozoo
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -13,21 +14,33 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	ErrLogger = errors.New("zap logger cannot be nil")
+)
+
 // Request Demozoo entries.
 type Request struct {
 	All       bool   // Parse all demozoo entries.
 	Overwrite bool   // Overwrite any existing files.
 	Refresh   bool   // Refresh all demozoo entries.
 	ByID      string // Filter by ID.
+	Config    configger.Config
+	Logger    *zap.SugaredLogger
 }
 
 // Query parses a single Demozoo entry.
-func (r *Request) Query(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg configger.Config, id string) error {
+func (r *Request) Query(db *sql.DB, w io.Writer, id string) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	if err := database.CheckID(id); err != nil {
 		return fmt.Errorf("query id %s: %w", id, err)
 	}
 	r.ByID = id
-	if err := r.Queries(db, w, log, cfg); err != nil {
+	if err := r.Queries(db, w); err != nil {
 		return fmt.Errorf("query queries: %w", err)
 	}
 	return nil
@@ -36,19 +49,28 @@ func (r *Request) Query(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg con
 // Queries parses all new proofs.
 // Overwrite will replace existing assets such as images.
 // All parses every Demozoo entry, not just records waiting for approval.
-func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg configger.Config) error { //nolint:cyclop,funlen
-	var st Stat
+func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
+	if db == nil {
+		return database.ErrDB
+	}
+	if r.Logger == nil {
+		return ErrLogger
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	stmt, start := selectByID(r.ByID), time.Now()
-	values, scanArgs, rows, err := values(db, stmt)
+	values, args, rows, err := values(db, stmt)
 	if err != nil {
 		return err
 	}
-	dir, err := directories.Init(cfg, false)
+	dir, err := directories.Init(r.Config, false)
 	if err != nil {
 		return err
 	}
 	storage := dir.UUID
-	if err = st.sumTotal(Records{rows, scanArgs, values}, r); err != nil {
+	st := Stat{}
+	if err = st.sumTotal(Records{rows, args, values}, r); err != nil {
 		return fmt.Errorf("queries sumtotal: %w", err)
 	}
 	queriesTotal(w, st.Total)
@@ -62,23 +84,23 @@ func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg co
 	defer rows.Close()
 	for rows.Next() {
 		st.Fetched++
-		if skip, err := st.nextResult(Records{rows, scanArgs, values}, r); err != nil {
-			log.Errorf("queries nextrow: %w", err)
+		if skip, err := st.nextResult(Records{rows, args, values}, r); err != nil {
+			r.Logger.Errorf("queries nextrow: %w", err)
 			continue
 		} else if skip {
 			continue
 		}
-		rec, err := NewRecord(log, st.Count, values)
+		rec, err := NewRecord(st.Count, values)
 		if err != nil {
-			log.Errorf("queries new: %w", err)
+			r.Logger.Errorf("queries new: %w", err)
 			continue
 		}
 		logger.Printcrf(w, rec.String(st.Total))
 		if update := rec.check(w); !update {
 			continue
 		}
-		if skip, err := rec.parseAPI(db, w, log, cfg, st, r.Overwrite, storage); err != nil {
-			log.Errorf("queries parseapi: %w", err)
+		if skip, err := rec.parseAPI(db, w, r.Logger, r.Config, st, r.Overwrite, storage); err != nil {
+			r.Logger.Errorf("queries parseapi: %w", err)
 			continue
 		} else if skip {
 			continue
@@ -86,7 +108,7 @@ func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg co
 		if st.Total == 0 {
 			break
 		}
-		rec.save(db, w, log)
+		rec.save(db, w)
 	}
 	if r.ByID != "" {
 		st.ByID = r.ByID
@@ -101,6 +123,9 @@ func (r Request) Queries(db *sql.DB, w io.Writer, log *zap.SugaredLogger, cfg co
 }
 
 func values(db *sql.DB, stmt string) ([]sql.RawBytes, []any, *sql.Rows, error) {
+	if db == nil {
+		return nil, nil, nil, database.ErrDB
+	}
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("queries query 1: %w", err)
@@ -108,19 +133,22 @@ func values(db *sql.DB, stmt string) ([]sql.RawBytes, []any, *sql.Rows, error) {
 		return nil, nil, nil, fmt.Errorf("queries rows 1: %w", rows.Err())
 	}
 	defer rows.Close()
-	columns, err := rows.Columns()
+	cols, err := rows.Columns()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("queries columns: %w", err)
 	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]any, len(values))
+	values := make([]sql.RawBytes, len(cols))
+	args := make([]any, len(values))
 	for i := range values {
-		scanArgs[i] = &values[i]
+		args[i] = &values[i]
 	}
-	return values, scanArgs, rows, nil
+	return values, args, rows, nil
 }
 
 func queriesTotal(w io.Writer, total int) {
+	if w == nil {
+		w = io.Discard
+	}
 	if total == 0 {
 		fmt.Fprintln(w, "nothing to do")
 		return
@@ -128,7 +156,7 @@ func queriesTotal(w io.Writer, total int) {
 	fmt.Fprintln(w, "Total records", total)
 }
 
-// Skip the Request?
+// Skip the Request.
 func (r Request) skip() bool {
 	if !r.All && !r.Refresh && !r.Overwrite {
 		return true

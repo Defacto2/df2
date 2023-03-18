@@ -15,7 +15,10 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrNoQuery = errors.New("query statement is empty")
+var (
+	ErrNoQuery = errors.New("query statement is empty")
+	ErrProd    = errors.New("productions pointer cannot be nil")
+)
 
 const (
 	sep     = ","
@@ -43,6 +46,9 @@ type Record struct {
 
 // Insert the new Demozoo releaser production into the database.
 func (r *Record) Insert(db *sql.DB) (sql.Result, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("insert uuid: %w", err)
@@ -67,12 +73,24 @@ func (r *Record) Insert(db *sql.DB) (sql.Result, error) {
 
 // Prods adds the Demozoo releasers productions to the database.
 // API: https://demozoo.org/api/v1/releasers/
-func Prods(db *sql.DB, w io.Writer, p *releases.Productions) error {
+func Prods(db *sql.DB, w io.Writer, prods *releases.Productions) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if prods == nil {
+		return ErrProd
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	recs := 0
-	for i, prod := range *p {
+	for i, prod := range *prods {
 		item := fmt.Sprintf("%d. ", i)
 		fmt.Fprintf(w, "\n%s%s", item, prod.Title)
-		rec := Prod(db, w, prod)
+		rec, err := Prod(db, w, prod)
+		if err != nil {
+			return err
+		}
 		if reflect.DeepEqual(rec, Record{}) {
 			continue
 		}
@@ -95,12 +113,21 @@ func Prods(db *sql.DB, w io.Writer, p *releases.Productions) error {
 }
 
 // Prod mutates the raw Demozoo API releaser production data to database ready values.
-func Prod(db *sql.DB, w io.Writer, prod releases.ProductionV1) Record {
-	dbID, _ := database.DemozooID(db, uint(prod.ID))
-	if dbID > 0 {
+func Prod(db *sql.DB, w io.Writer, prod releases.ProductionV1) (Record, error) {
+	if db == nil {
+		return Record{}, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	id, err := database.DemozooID(db, uint(prod.ID))
+	if err != nil {
+		return Record{}, err
+	}
+	if id > 0 {
 		prod.ExistsInDB = true
 		fmt.Fprintf(w, ": skipped, production already exists")
-		return Record{}
+		return Record{}, nil
 	}
 
 	p, t := "", ""
@@ -120,7 +147,7 @@ func Prod(db *sql.DB, w io.Writer, prod releases.ProductionV1) Record {
 			s += " " + t
 		}
 		fmt.Fprintf(w, ": skipped, unsuitable production [%s]", strings.TrimSpace(s))
-		return Record{}
+		return Record{}, nil
 	}
 	fmt.Fprintf(w, " [%s/%s]", platform, section)
 
@@ -131,25 +158,22 @@ func Prod(db *sql.DB, w io.Writer, prod releases.ProductionV1) Record {
 	if b != "" {
 		fmt.Fprintf(w, " by: %s", b)
 	}
-
 	y, m, d := prod.Released()
-
-	var rec Record
-	rec.WebIDDemozoo = uint(prod.ID)
-	rec.Title = strings.TrimSpace(prod.Title)
-	rec.Platform = platform
-	rec.Section = section
-	rec.GroupFor = a
-	rec.GroupBy = b
-	rec.IssuedYear = uint16(y)
-	rec.IssuedMonth = uint8(m)
-	rec.IssuedDay = uint8(d)
-	return rec
+	return Record{
+		WebIDDemozoo: uint(prod.ID),
+		Title:        strings.TrimSpace(prod.Title),
+		Platform:     platform,
+		Section:      section,
+		GroupFor:     a,
+		GroupBy:      b,
+		IssuedYear:   uint16(y),
+		IssuedMonth:  uint8(m),
+		IssuedDay:    uint8(d),
+	}, nil
 }
 
 // stmt creates the SQL prepare statement and values to insert a new Demozoo releaser production.
 func (r *Record) stmt(id uuid.UUID) (string, []any, error) {
-	var args []any
 	set, args := inserts(r)
 	if len(set) == 0 {
 		return "", args, ErrNoQuery
@@ -166,7 +190,6 @@ func (r *Record) stmt(id uuid.UUID) (string, []any, error) {
 	args = append(args, []any{now}...)
 	set = append(set, "deletedat")
 	args = append(args, []any{now}...)
-
 	vals := strings.Split(strings.TrimSpace(strings.Repeat("? ", len(args))), " ")
 	query := "INSERT INTO files (" + strings.Join(set, sep) + ") VALUES (" + strings.Join(vals, sep) + ")"
 	return query, args, nil
@@ -218,8 +241,7 @@ func inserts(r *Record) ([]string, []any) {
 }
 
 func credits(r *Record) ([]string, []any) {
-	var args []any
-	set := []string{}
+	args, set := []any{}, []string{}
 	if len(r.CreditText) > 0 {
 		set = append(set, "credit_text")
 		j := strings.Join(r.CreditText, sep)
