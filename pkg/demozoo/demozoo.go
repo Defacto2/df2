@@ -21,6 +21,7 @@ import (
 
 var (
 	ErrRequest = errors.New("unknown request value")
+	ErrValues  = errors.New("too few record values")
 )
 
 // Product is a Demozoo production item.
@@ -160,7 +161,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 func NewRecord(count int, values []sql.RawBytes) (Record, error) {
 	const sep, want = ",", 21
 	if l := len(values); l < want {
-		return Record{}, fmt.Errorf("new records = %d, want %d: %w", l, want, ErrTooFew)
+		return Record{}, fmt.Errorf("new records = %d, want %d: %w", l, want, ErrValues)
 	}
 	const id, uuid, createdat, filename, filesize, webiddemozoo = 0, 1, 3, 4, 5, 6
 	const filezipcontent, updatedat, platform, fileintegritystrong, fileintegrityweak = 7, 8, 9, 10, 11

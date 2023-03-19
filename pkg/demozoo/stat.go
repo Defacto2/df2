@@ -97,11 +97,15 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
 		return nil
 	}
 	if err = r.pouet(w, &api); err != nil {
-		return fmt.Errorf("next refresh: %w", err)
+		return fmt.Errorf("next pouet: %w", err)
 	}
-	r.title(w, &api)
+	if err := r.title(w, &api); err != nil {
+		return fmt.Errorf("next title: %w", err)
+	}
 	a := api.Authors()
-	r.authors(w, &a)
+	if err := r.authors(w, &a); err != nil {
+		return err
+	}
 	nr, err := NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 2: %w", err)
@@ -276,8 +280,7 @@ func (r *Record) Download(w io.Writer, api *prods.ProductionsAPIv1, st Stat, ove
 	logger.Printcrf(w, r.String(st.Total))
 	fmt.Fprintf(w, "• %s", name)
 	r.downloadReset(name)
-	r.lastMod(w, head)
-	return nil
+	return r.lastMod(w, head)
 }
 
 func (r *Record) downloadReset(name string) {

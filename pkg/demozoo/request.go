@@ -99,10 +99,8 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 		if update := rec.check(w); !update {
 			continue
 		}
-		if skip, err := rec.parseAPI(db, w, r.Logger, r.Config, st, r.Overwrite, storage); err != nil {
+		if err := rec.parseAPI(db, w, r.Config, st, r.Overwrite, storage); err != nil {
 			r.Logger.Errorf("queries parseapi: %w", err)
-			continue
-		} else if skip {
 			continue
 		}
 		if st.Total == 0 {
