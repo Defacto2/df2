@@ -1,7 +1,7 @@
 package create
 
 import (
-	"crypto/rand"
+	"bytes"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -17,13 +17,10 @@ var (
 const (
 	dirMode  fs.FileMode = 0o755
 	fileMode fs.FileMode = 0o644
-
-	// random characters used by randString().
-	random = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321 .!?"
 )
 
-// Dir creates a UUID subdirectory in the directory path.
-func Dir(path string) error {
+// MkDir creates a UUID subdirectory in the directory path.
+func MkDir(path string) error {
 	src, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		if err = os.MkdirAll(path, dirMode); err != nil {
@@ -52,12 +49,7 @@ func Holder(path string, size int, prefix uint) error {
 	if _, err := os.Stat(fn); err == nil {
 		return nil // don't overwrite existing files
 	}
-	r, err := RandString(size)
-	if err != nil {
-		return fmt.Errorf("create holder file: %w", err)
-	}
-	text := []byte(r)
-	if err := os.WriteFile(fn, text, fileMode); err != nil {
+	if err := os.WriteFile(fn, Zeros(size), fileMode); err != nil {
 		return fmt.Errorf("write create holder file %q: %w", fn, err)
 	}
 	return nil
@@ -77,16 +69,7 @@ func Holders(path string, size int, count uint) error {
 	return nil
 }
 
-// RandString generates a random string of n characters.
-func RandString(n int) (string, error) {
-	s, r := make([]rune, n), []rune(random)
-	for i := range s {
-		p, err := rand.Prime(rand.Reader, len(r))
-		if err != nil {
-			return "", fmt.Errorf("random string n %d: %w", n, err)
-		}
-		x, y := p.Uint64(), uint64(len(r))
-		s[i] = r[x%y]
-	}
-	return string(s), nil
+// Zeros generates a string of n x 0 characters.
+func Zeros(n int) []byte {
+	return bytes.Repeat([]byte("0"), n)
 }

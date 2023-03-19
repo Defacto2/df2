@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/configger"
@@ -36,62 +35,85 @@ const (
 
 // Dir is the collection of directories pointing to specific files.
 type Dir struct {
-	Img000 string // Img000 hold screen captures and previews.
-	Img400 string // Img400 hold 400x400 squared thumbnails.
-	Backup string // Backup archives or previously removed files.
-	Emu    string // Emu are the DOSee emulation files.
+	Img000 string // Img000 contain record screenshots and previews.
+	Img400 string // Img400 contain 400x squared thumbnails of the screenshots.
+	Backup string // Backup archives for SQL data and previously removed files.
+	Emu    string // Emu has the DOSee emulation files.
 	Base   string // Base or root directory path, the parent of these other subdirectories.
 	UUID   string // UUID file downloads.
 }
 
 // Init initialises the subdirectories and UUID structure.
 func Init(cfg configger.Config, create bool) (Dir, error) {
-	var d Dir
-	d.Img000 = cfg.Images
+	d := Dir{
+		Img000: cfg.Images,
+		Img400: cfg.Thumbs,
+		Backup: cfg.Backups,
+		Emu:    cfg.Emulator,
+		Base:   cfg.WebRoot,
+		UUID:   cfg.Downloads,
+	}
 	if cfg.Images == "" {
 		return Dir{}, fmt.Errorf("init %w cfg.images", ErrDir)
 	}
-	d.Img400 = cfg.Thumbs
 	if cfg.Thumbs == "" {
 		return Dir{}, fmt.Errorf("init %w cfg.thumbs", ErrDir)
 	}
-	d.Backup = cfg.Backups
 	if cfg.Backups == "" {
 		return Dir{}, fmt.Errorf("init %w cfg.backups", ErrDir)
 	}
-	d.Emu = cfg.Emulator
 	if cfg.Emulator == "" {
 		return Dir{}, fmt.Errorf("init %w cfg.emulator", ErrDir)
 	}
-	d.Base = cfg.WebRoot
 	if cfg.WebRoot == "" {
 		return Dir{}, fmt.Errorf("init %w cfg.webroot", ErrDir)
 	}
-	d.UUID = cfg.Downloads
 	if cfg.Downloads == "" {
 		return Dir{}, fmt.Errorf("init %w cfg.downloads", ErrDir)
 	}
-	if create {
-		if err := createDirectories(&d); err != nil {
-			return Dir{}, err
-		}
-		if err := PlaceHolders(&d); err != nil {
-			return Dir{}, err
-		}
+	if !create {
+		return d, nil
+	}
+	if err := createDirectories(&d); err != nil {
+		return Dir{}, err
+	}
+	if err := PlaceHolders(&d); err != nil {
+		return Dir{}, err
 	}
 	return d, nil
 }
 
 // createDirectories generates a series of UUID subdirectories.
 func createDirectories(dir *Dir) error {
-	v := reflect.ValueOf(dir)
-	// iterate through the D struct values
-	for i := 0; i < v.NumField(); i++ {
-		if d := fmt.Sprintf("%v", v.Field(i).Interface()); d != "" {
-			if err := create.Dir(d); err != nil {
-				return fmt.Errorf("create directory: %w", err)
-			}
+	if dir == nil {
+		return fmt.Errorf("create directories: %w", ErrNil)
+	}
+	mkdir := func(path string) error {
+		if path == "" {
+			return nil
 		}
+		if err := create.MkDir(path); err != nil {
+			return fmt.Errorf("create directory: %w", err)
+		}
+		return nil
+	}
+	if err := mkdir(dir.Img000); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Img400); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Backup); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Emu); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Base); err != nil {
+		return err
+	}
+	if err := mkdir(dir.UUID); err != nil {
+		return err
 	}
 	return nil
 }
@@ -121,7 +143,7 @@ func Files(cfg configger.Config, name string) (Dir, error) {
 // PlaceHolders generates a collection placeholder files in the UUID subdirectories.
 func PlaceHolders(dir *Dir) error {
 	if dir == nil {
-		return fmt.Errorf("placeholder: %w", ErrNil)
+		return fmt.Errorf("place holders: %w", ErrNil)
 	}
 	const oneMB, halfMB, twoFiles, nineFiles = 1000000, 500000, 2, 9
 	if err := create.Holders(dir.UUID, oneMB, nineFiles); err != nil {

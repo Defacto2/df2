@@ -91,6 +91,29 @@ func Defaults() Config {
 	return init
 }
 
+// MockDirs returns the directory paths but with the temporary directory as root.
+// This is intended for directories unit tests.
+func MockDirs() Config {
+	tmp := filepath.Join(os.TempDir(), "df2-mocker")
+	assets := filepath.Join(tmp, "assets-defacto2")
+	webRoot := filepath.Join(tmp, "github", "Defacto2-2020", "ROOT")
+	incoming := filepath.Join(webRoot, "incoming", "user_submissions")
+	return Config{
+		// directory paths
+		WebRoot:       webRoot,
+		Downloads:     filepath.Join(assets, "downloads"),
+		Images:        filepath.Join(assets, "images000"),
+		Thumbs:        filepath.Join(assets, "images400"),
+		Backups:       filepath.Join(webRoot, "files", "backups"),
+		Emulator:      filepath.Join(webRoot, "files", "emularity.zip"),
+		HTMLExports:   filepath.Join(webRoot, "files", "html"),
+		HTMLViews:     filepath.Join(webRoot, "views"),
+		IncomingFiles: filepath.Join(incoming, "files"),
+		IncomingImgs:  filepath.Join(incoming, "previews"),
+		SQLDumps:      filepath.Join(tmp, "backup"),
+	}
+}
+
 func Options() env.Options {
 	return env.Options{
 		Prefix: EnvPrefix,
