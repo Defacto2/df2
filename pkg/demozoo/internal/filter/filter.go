@@ -22,13 +22,13 @@ const (
 
 // Productions API production request.
 type Productions struct {
-	Filter     releases.Filter
-	Count      int           // Count the total productions.
-	Finds      int           // Finds are the number of productions to use.
-	Timeout    time.Duration // Timeout in seconds for the HTTP request (default 5).
-	Link       string        // Link URL to receive the request.
-	StatusCode int           // StatusCode received by the HTTP request.
-	Status     string        // Status received by the HTTP request.
+	Filter  releases.Filter
+	Count   int           // Count the total productions.
+	Finds   int           // Finds are the number of productions to use.
+	Link    string        // Link URL to receive the request.
+	Code    int           // Code received by the HTTP request.
+	Status  string        // Status received by the HTTP request.
+	Timeout time.Duration // Timeout in seconds for the HTTP request (default 5).
 }
 
 // ProductionList result.
@@ -44,14 +44,15 @@ func empty() []releases.ProductionV1 {
 }
 
 // Prods gets all the productions of a releaser and normalises the results.
-func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, error) { //nolint:funlen
+// The maxPage are the maximum number of API pages to iterate, but if set to 0 it will default to 1000.
+func (p *Productions) Prods(db *sql.DB, w io.Writer, maxPage int) ([]releases.ProductionV1, error) { //nolint:funlen
 	if db == nil {
 		return nil, database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
 	}
-	const endOfRecords, maxPage = "", 1000
+	const endOfRecords = ""
 	dz := ProductionList{}
 	finds := 0
 
@@ -73,7 +74,7 @@ func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, e
 		break
 	}
 	p.Status = req.Status
-	p.StatusCode = req.StatusCode
+	p.Code = req.Code
 	if len(req.Read) > 0 {
 		if err := json.Unmarshal(req.Read, &dz); err != nil {
 			return empty(), fmt.Errorf("filter data json unmarshal: %w", err)
@@ -86,8 +87,11 @@ func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, e
 		return nil, err
 	}
 	f := len(rels)
-	pp(w, 1, f)
+	wp(w, f, 1)
 	np, page := dz.Next, 1
+	if maxPage < 1 {
+		maxPage = 1000
+	}
 	for {
 		page++
 		rel, next, err := Next(np)
@@ -100,7 +104,7 @@ func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, e
 		}
 		f = len(rel)
 		finds += f
-		pp(w, page, f)
+		wp(w, f, page)
 		rels = append(rels, rel...)
 		if next == endOfRecords {
 			break
@@ -113,7 +117,7 @@ func (p *Productions) Prods(db *sql.DB, w io.Writer) ([]releases.ProductionV1, e
 	return rels, nil
 }
 
-func pp(w io.Writer, page, finds int) {
+func wp(w io.Writer, finds, page int) {
 	if finds == 0 {
 		fmt.Fprintf(w, "   Page %d, no new records found\n", page)
 		return

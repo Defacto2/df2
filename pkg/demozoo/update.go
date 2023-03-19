@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"database/sql"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -66,16 +67,16 @@ func (c Category) String() string {
 // Record update for an item in the "file" table of the database.
 type Record struct {
 	Count          int
-	FilePath       string // absolute path to file
-	ID             string // MySQL auto increment id
-	UUID           string // record unique id
+	FilePath       string // FilePath is an absolute path to the file download.
+	ID             string // ID is the database auto increment id.
+	UUID           string // UUID is the record's unique id.
 	Filename       string
 	Filesize       string
 	FileZipContent string
 	CreatedAt      string
 	UpdatedAt      string
-	SumMD5         string // file download MD5 hash
-	Sum384         string // file download SHA384 hash
+	SumMD5         string // SumMD5 is the file download MD5 hash.
+	Sum384         string // Sum384 is the file download SHA hash.
 	Readme         string
 	DOSeeBinary    string
 	Platform       string
@@ -87,9 +88,9 @@ type Record struct {
 	CreditCode     []string
 	CreditArt      []string
 	CreditAudio    []string
-	WebIDDemozoo   uint // demozoo production id
-	WebIDPouet     uint
-	LastMod        time.Time // file download last modified time
+	WebIDDemozoo   uint      // WebIDDemozoo is a Demozoo ID associated with the record.
+	WebIDPouet     uint      // WebIDPouet is a Pouet ID associated with the record.
+	LastMod        time.Time // LastMod is the last modified time value of the file download.
 }
 
 func (r *Record) String(total int) string {
@@ -392,15 +393,19 @@ func (r *Record) lastMod(w io.Writer, head http.Header) {
 func (r *Record) parse(db *sql.DB, w io.Writer, cfg configger.Config, api *prods.ProductionsAPIv1) (bool, error) {
 	switch {
 	case r.Filename == "":
+		dw := io.Discard
+		if flag.Lookup("test.v") != nil {
+			dw = os.Stdout
+		}
 		// handle an unusual case where filename is missing but all other metadata exists
-		if n, _ := api.DownloadLink(); n != "" {
-			fmt.Fprint(w, n)
-			r.Filename = n
-			r.save(db, w)
-		} else {
+		n, _ := api.DownloadLink(dw)
+		if n == "" {
 			fmt.Fprintln(w, "could not find a suitable value for the required filename column")
 			return true, nil
 		}
+		fmt.Fprint(w, n)
+		r.Filename = n
+		r.save(db, w)
 		fallthrough
 	case
 		r.Filesize == "",
@@ -412,9 +417,11 @@ func (r *Record) parse(db *sql.DB, w io.Writer, cfg configger.Config, api *prods
 		r.save(db, w)
 		fallthrough
 	case r.FileZipContent == "":
-		if zip, err := r.ZipContent(w); err != nil {
+		zip, err := r.ZipContent(w)
+		if err != nil {
 			return true, apiErr(err)
-		} else if zip {
+		}
+		if zip {
 			if err := r.DoseeMeta(db, w, cfg); err != nil {
 				return true, apiErr(err)
 			}

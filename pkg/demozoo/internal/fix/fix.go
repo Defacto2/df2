@@ -18,12 +18,12 @@ func Configs(db *sql.DB, w io.Writer) error {
 	}
 	res, err := updateApps(db)
 	if err != nil {
-		return fmt.Errorf("demozoo fix: %w", err)
+		return fmt.Errorf("demozoo app fix: %w", err)
 	}
 	fmt.Fprintln(w, "moved", res, "Demozoo #releaseadvert records to #groupapplication")
 	res, err = updateInstallers(db)
 	if err != nil {
-		return fmt.Errorf("demozoo fix: %w", err)
+		return fmt.Errorf("demozoo installer fix: %w", err)
 	}
 	fmt.Fprintln(w, "moved", res, "Demozoo #releaseadvert records to #releaseinstall")
 	return nil

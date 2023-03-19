@@ -64,12 +64,18 @@ func SprintPath(name string) string {
 
 // Printcr otherwise erases the current line and writes to standard output.
 func Printcr(w io.Writer, a ...any) {
+	if w == nil {
+		w = io.Discard
+	}
 	fmt.Fprintf(w, "\r%s\r", strings.Repeat(" ", int(terminal.Size())))
 	fmt.Fprint(w, a...)
 }
 
 // Printcrf erases the current line and formats according to a format specifier.
 func Printcrf(w io.Writer, format string, a ...any) {
+	if w == nil {
+		w = io.Discard
+	}
 	fmt.Fprintf(w, "\r%s\r%s",
 		strings.Repeat(" ", int(terminal.Size())),
 		fmt.Sprintf(format, a...))

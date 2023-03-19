@@ -27,9 +27,9 @@ const (
 
 // Record contains the values for a new Demozoo releaser production to be added to the database file table.
 type Record struct {
-	WebIDDemozoo uint   // Demozoo production id
-	ID           string // MySQL auto increment id
-	UUID         string // record unique id
+	WebIDDemozoo uint   // Demozoo production ID.
+	ID           string // MySQL auto increment ID.
+	UUID         string // Unique ID for the record.
 	Title        string
 	Platform     string
 	Section      string

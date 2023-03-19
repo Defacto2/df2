@@ -3,6 +3,7 @@ package demozoo
 import (
 	"database/sql"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -24,16 +25,17 @@ var (
 	ErrDownload  = errors.New("no suitable downloads found")
 	ErrProdAPI   = errors.New("productions api pointer cannot be nil")
 	ErrRecord    = errors.New("pointer to the record cannot be nil")
+	ErrRecords   = errors.New("pointer to the rows of records cannot be nil")
 	ErrUUID      = errors.New("uuid is empty and cannot be used")
 )
 
-// Stat is statistics for the remote query.
+// Stat are statistics for the remote query.
 type Stat struct {
-	Count   int    //
-	Fetched int    //
-	Missing int    //
-	Total   int    //
-	ByID    string //
+	Count   int    // Count records.
+	Fetched int    // Fetched records.
+	Missing int    // Missing files.
+	Total   int    // Total files.
+	ByID    string // ByID filtering.
 }
 
 // FileExist returns false when the record FilePath points to a non-existant file.
@@ -57,14 +59,23 @@ func (st *Stat) FileExist(r *Record) (bool, error) {
 
 // Records contain more than one Record.
 type Records struct {
-	Rows     *sql.Rows      //
-	ScanArgs []any          //
-	Values   []sql.RawBytes //
+	Rows   *sql.Rows      // Rows is the result of a query.
+	Args   []any          // Args are data types.
+	Values []sql.RawBytes // Values are byte encoded values.
 }
 
 // NextRefresh iterates over the Records to update sync their Demozoo data to the database.
 func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
-	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
+	if db == nil {
+		return database.ErrDB
+	}
+	if rec.Rows == nil {
+		return ErrRecords
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if err := rec.Rows.Scan(rec.Args...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
 	st.Count++
@@ -78,7 +89,7 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
 	if err != nil {
 		return fmt.Errorf("next fetch: %w", err)
 	}
-	var ok bool
+	ok := false
 	code, status, api := f.Code, f.Status, f.API
 	if ok, err = r.confirm(db, w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
@@ -91,8 +102,7 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
 	r.title(w, &api)
 	a := api.Authors()
 	r.authors(w, &a)
-	var nr Record
-	nr, err = NewRecord(st.Count, rec.Values)
+	nr, err := NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 2: %w", err)
 	}
@@ -110,7 +120,16 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
 
 // NextPouet iterates over the linked Demozoo records and sync any linked Pouet data to the local files table.
 func (st *Stat) NextPouet(db *sql.DB, w io.Writer, rec Records) error {
-	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
+	if db == nil {
+		return database.ErrDB
+	}
+	if rec.Rows == nil {
+		return ErrRecords
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if err := rec.Rows.Scan(rec.Args...); err != nil {
 		return fmt.Errorf("next scan: %w", err)
 	}
 	st.Count++
@@ -122,12 +141,12 @@ func (st *Stat) NextPouet(db *sql.DB, w io.Writer, rec Records) error {
 		return nil
 	}
 	logger.Printcrf(w, r.String(0))
-	var f Product
+	f := Product{}
 	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
 		return fmt.Errorf("next fetch: %w", err)
 	}
-	var ok bool
+	ok := false
 	code, status, api := f.Code, f.Status, f.API
 	if ok, err = r.confirm(db, w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
@@ -137,8 +156,7 @@ func (st *Stat) NextPouet(db *sql.DB, w io.Writer, rec Records) error {
 	if err = r.pouet(w, &api); err != nil {
 		return fmt.Errorf("next refresh: %w", err)
 	}
-	var nr Record
-	nr, err = NewRecord(st.Count, rec.Values)
+	nr, err := NewRecord(st.Count, rec.Values)
 	if err != nil {
 		return fmt.Errorf("next record 2: %w", err)
 	}
@@ -156,7 +174,10 @@ func (st *Stat) NextPouet(db *sql.DB, w io.Writer, rec Records) error {
 
 // nextResult checks for the next new record.
 func (st *Stat) nextResult(rec Records, req Request) (bool, error) {
-	if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
+	if rec.Rows == nil {
+		return false, ErrRecords
+	}
+	if err := rec.Rows.Scan(rec.Args...); err != nil {
 		return false, fmt.Errorf("next result rows scan: %w", err)
 	}
 	n, err := database.IsDemozoo(rec.Values)
@@ -171,6 +192,9 @@ func (st *Stat) nextResult(rec Records, req Request) (bool, error) {
 }
 
 func (st Stat) printer(w io.Writer) {
+	if w == nil {
+		w = io.Discard
+	}
 	if st.Count == 0 {
 		if st.Fetched == 0 {
 			fmt.Fprintf(w, "id %q does not have an associated Demozoo link\n", st.ByID)
@@ -184,6 +208,9 @@ func (st Stat) printer(w io.Writer) {
 }
 
 func (st Stat) summary(w io.Writer, elapsed time.Duration) {
+	if w == nil {
+		w = io.Discard
+	}
 	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.Count, elapsed.Seconds())
 	fmt.Fprintln(w, strings.Repeat("─", len(t)))
 	fmt.Fprintln(w, t)
@@ -194,8 +221,11 @@ func (st Stat) summary(w io.Writer, elapsed time.Duration) {
 
 // sumTotal calculates the total number of conditional rows.
 func (st *Stat) sumTotal(rec Records, req Request) error {
+	if rec.Rows == nil {
+		return ErrRecords
+	}
 	for rec.Rows.Next() {
-		if err := rec.Rows.Scan(rec.ScanArgs...); err != nil {
+		if err := rec.Rows.Scan(rec.Args...); err != nil {
 			return fmt.Errorf("sum total rows scan: %w", err)
 		}
 		n, err := database.IsDemozoo(rec.Values)
@@ -228,7 +258,11 @@ func (r *Record) Download(w io.Writer, api *prods.ProductionsAPIv1, st Stat, ove
 	if r.UUID == "" {
 		return ErrUUID
 	}
-	name, link := api.DownloadLink()
+	dw := io.Discard
+	if flag.Lookup("test.v") != nil {
+		dw = os.Stdout
+	}
+	name, link := api.DownloadLink(dw)
 	if link == "" {
 		return ErrDownload
 	}

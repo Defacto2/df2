@@ -1,31 +1,27 @@
 package prods_test
 
 import (
+	"io"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProductionsAPIv1_Download(t *testing.T) {
+	p := prods.ProductionsAPIv1{}
+	err := p.Download(nil, prods.DownloadsAPIv1{})
+	assert.NotNil(t, err)
+
+	p = example1
+	err = p.Download(io.Discard, prods.DownloadsAPIv1{})
+	assert.NotNil(t, err)
+
 	dl := prods.DownloadsAPIv1{
 		LinkClass: "SceneOrgFile",
 		URL:       "https://files.scene.org/view/parties/2000/ambience00/demo/feestje.zip",
 	}
-	tests := []struct {
-		name    string
-		p       prods.ProductionsAPIv1
-		l       prods.DownloadsAPIv1
-		wantErr bool
-	}{
-		{"empty", prods.ProductionsAPIv1{}, prods.DownloadsAPIv1{}, true},
-		{"example1", example1, prods.DownloadsAPIv1{}, true},
-		{"example1 dl", example1, dl, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.p.Download(nil, tt.l); (err != nil) != tt.wantErr {
-				t.Errorf("ProductionsAPIv1.Download() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	p = example1
+	err = p.Download(io.Discard, dl)
+	assert.Nil(t, err)
 }

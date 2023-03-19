@@ -37,7 +37,7 @@ func (p *Product) Get(id uint) error {
 	if err != nil {
 		return fmt.Errorf("get product id %d: %w", id, err)
 	}
-	p.Code = d.StatusCode
+	p.Code = d.Code
 	p.Status = d.Status
 	p.API = api
 	return nil
@@ -57,7 +57,7 @@ func (r *Releaser) Get(id uint) error {
 	if err != nil {
 		return fmt.Errorf("get releaser id %d: %w", id, err)
 	}
-	r.Code = d.StatusCode
+	r.Code = d.Code
 	r.Status = d.Status
 	r.API = api
 	return nil
@@ -77,7 +77,7 @@ func (r *ReleaserProducts) Get(id uint) error {
 	if err != nil {
 		return fmt.Errorf("get releaser prods id %d: %w", id, err)
 	}
-	r.Code = d.StatusCode
+	r.Code = d.Code
 	r.Status = d.Status
 	r.API = api
 	return nil
@@ -103,11 +103,11 @@ func (m *MsDosProducts) Get(db *sql.DB, w io.Writer) error {
 		w = io.Discard
 	}
 	d := filter.Productions{Filter: releases.MsDos}
-	api, err := d.Prods(db, w)
+	api, err := d.Prods(db, w, 0)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
-	m.Code = d.StatusCode
+	m.Code = d.Code
 	m.Status = d.Status
 	m.Count = d.Count
 	m.Finds = d.Finds
@@ -133,11 +133,11 @@ func (m *WindowsProducts) Get(db *sql.DB, w io.Writer) error {
 		w = io.Discard
 	}
 	d := filter.Productions{Filter: releases.Windows}
-	api, err := d.Prods(db, w)
+	api, err := d.Prods(db, w, 0)
 	if err != nil {
 		return fmt.Errorf("get msdos prods: %w", err)
 	}
-	m.Code = d.StatusCode
+	m.Code = d.Code
 	m.Status = d.Status
 	m.Count = d.Count
 	m.Finds = d.Finds
@@ -241,7 +241,7 @@ func refresh(db *sql.DB, w io.Writer, r request) error { //nolint:cyclop
 		return ErrRequest
 	}
 	start := time.Now()
-	if err := counter(db, w, r); err != nil {
+	if err := Counter(db, w, r); err != nil {
 		return err
 	}
 	rows, err := db.Query(selectByID(""))
@@ -280,7 +280,8 @@ func refresh(db *sql.DB, w io.Writer, r request) error { //nolint:cyclop
 	return nil
 }
 
-func counter(db *sql.DB, w io.Writer, r request) error {
+// Counter prints to the writer the number of records with links to the request.
+func Counter(db *sql.DB, w io.Writer, r request) error {
 	if db == nil {
 		return database.ErrDB
 	}

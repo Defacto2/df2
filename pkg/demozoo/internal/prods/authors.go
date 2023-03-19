@@ -10,20 +10,20 @@ type Authors struct {
 
 // Authors parses Demozoo authors and reclassifies them into Defacto2 people rolls.
 func (p *ProductionsAPIv1) Authors() Authors {
-	var a Authors
-	for _, n := range p.Credits {
-		if n.Nick.Releaser.IsGroup {
+	a := Authors{}
+	for _, c := range p.Credits {
+		if c.Nick.Releaser.IsGroup {
 			continue
 		}
-		switch category(n.Category) {
+		switch category(c.Category) {
 		case Text:
-			a.Text = append(a.Text, n.Nick.Name)
+			a.Text = append(a.Text, c.Nick.Name)
 		case Code:
-			a.Code = append(a.Code, n.Nick.Name)
+			a.Code = append(a.Code, c.Nick.Name)
 		case Graphics:
-			a.Art = append(a.Art, n.Nick.Name)
+			a.Art = append(a.Art, c.Nick.Name)
 		case Music:
-			a.Audio = append(a.Audio, n.Nick.Name)
+			a.Audio = append(a.Audio, c.Nick.Name)
 		case Magazine:
 			// do nothing.
 		}

@@ -1,11 +1,14 @@
 package demozoo_test
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +20,93 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
+
+func TestStat_NextRefresh(t *testing.T) {
+	s := demozoo.Stat{}
+	err := s.NextRefresh(nil, nil, demozoo.Records{})
+	assert.NotNil(t, err)
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = s.NextRefresh(db, io.Discard, demozoo.Records{})
+	assert.NotNil(t, err)
+}
+
+func TestStat_NewPouet(t *testing.T) {
+	s := demozoo.Stat{}
+	err := s.NextPouet(nil, nil, demozoo.Records{})
+	assert.NotNil(t, err)
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = s.NextPouet(db, io.Discard, demozoo.Records{})
+	assert.NotNil(t, err)
+}
+
+func TestCounter(t *testing.T) {
+	err := demozoo.Counter(nil, nil, 0)
+	assert.NotNil(t, err)
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	w := strings.Builder{}
+	err = demozoo.Counter(db, &w, 0)
+	assert.Nil(t, err)
+	assert.Contains(t, w.String(), "records with Demozoo links")
+	err = demozoo.Counter(db, &w, 1)
+	assert.Nil(t, err)
+	assert.Contains(t, w.String(), "records with Pouet links")
+	err = demozoo.Counter(db, &w, 1000)
+	assert.NotNil(t, err)
+}
+
+func TestProduct_Get(t *testing.T) {
+	p := demozoo.Product{}
+	err := p.Get(0)
+	assert.NotNil(t, err)
+	err = p.Get(1)
+	assert.Nil(t, err)
+	assert.NotEmpty(t, p.API)
+}
+
+func TestReleaser_Get(t *testing.T) {
+	p := demozoo.Releaser{}
+	err := p.Get(0)
+	assert.NotNil(t, err)
+	err = p.Get(1)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		assert.Nil(t, err)
+		assert.NotEmpty(t, p.API)
+	}
+}
+
+func TestReleaserProducts_Get(t *testing.T) {
+	p := demozoo.ReleaserProducts{}
+	err := p.Get(0)
+	assert.NotNil(t, err)
+	err = p.Get(1)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		assert.Nil(t, err)
+		assert.NotEmpty(t, p.API)
+	}
+}
+
+func TestMsDosProducts_Get(t *testing.T) {
+	p := demozoo.MsDosProducts{}
+	err := p.Get(nil, nil)
+	assert.NotNil(t, err)
+}
+
+func TestWindowsProducts_Get(t *testing.T) {
+	p := demozoo.WindowsProducts{}
+	err := p.Get(nil, nil)
+	assert.NotNil(t, err)
+}
+
+func TestFix(t *testing.T) {
+	err := demozoo.Fix(nil, nil)
+	assert.NotNil(t, err)
+}
 
 func TestRequest_Query(t *testing.T) {
 	r := demozoo.Request{}
@@ -229,6 +319,16 @@ func TestRecord_Download(t *testing.T) {
 }
 
 func TestRecord_DoseeMeta(t *testing.T) {
+	r := demozoo.Record{}
+	conf := configger.Defaults()
+	err := r.DoseeMeta(nil, nil, conf)
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf)
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.DoseeMeta(nil, nil, conf)
+	assert.NotNil(t, err)
+
 	type fields struct {
 		ID   string
 		UUID string

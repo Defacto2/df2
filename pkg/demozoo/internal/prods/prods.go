@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,9 +15,7 @@ import (
 )
 
 const (
-	cd  = "Content-Disposition"
-	cls = "PouetProduction"
-	df2 = "defacto2.net"
+	pouet = "PouetProduction"
 )
 
 // ProductionsAPIv1 productions API v1.
@@ -101,71 +98,74 @@ func (p *ProductionsAPIv1) JSON() ([]byte, error) {
 	return js, nil
 }
 
-// PouetID returns the ID value used by Pouet's which prod URL syntax
-// and its HTTP status code.
+// PouetID returns the ID value used by Pouet's "which prod" URL query
+// and if ping is enabled, the recieved HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID(ping bool) (int, int, error) {
+func (p *ProductionsAPIv1) PouetID(ping bool) (id int, code int, err error) {
 	for _, l := range p.ExternalLinks {
-		if l.LinkClass != cls {
+		if l.LinkClass != pouet {
 			continue
 		}
 		id, err := Parse(l.URL)
 		if err != nil {
 			return 0, 0, fmt.Errorf("pouet id parse: %w", err)
 		}
-		if ping {
-			resp, err := download.PingHead(l.URL)
-			if err != nil {
-				return 0, 0, fmt.Errorf("pouet id ping: %w", err)
-			}
-			resp.Body.Close()
-			return id, resp.StatusCode, nil
+		if !ping {
+			return id, 0, nil
 		}
-		return id, 0, nil
+		resp, err := download.PingHead(l.URL)
+		if err != nil {
+			return 0, 0, fmt.Errorf("pouet id ping: %w", err)
+		}
+		resp.Body.Close()
+		return id, resp.StatusCode, nil
 	}
 	return 0, 0, nil
 }
 
-// Print to stdout the production API results as tabbed JSON.
+// Print to the writer the production API results as tabbed JSON.
 func (p *ProductionsAPIv1) Print(w io.Writer) error {
+	if w == nil {
+		w = io.Discard
+	}
 	js, err := json.MarshalIndent(&p, "", "  ")
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	fmt.Fprintln(w, js)
+	fmt.Fprintf(w, "%s\n", js)
 	return nil
 }
 
 // Filename is obtained from the http header metadata.
 func Filename(h http.Header) string {
-	gh := h.Get(cd)
-	if gh == "" {
+	head := h.Get("Content-Disposition")
+	if head == "" {
 		return ""
 	}
-	rh := strings.Split(gh, ";")
+	vals := strings.Split(head, ";")
 	const want = 2
-	for _, v := range rh {
-		r := strings.Split(v, "=")
-		r[0] = strings.TrimSpace(r[0])
-		if len(r) != want {
+	for _, v := range vals {
+		s := strings.Split(v, "=")
+		s[0] = strings.TrimSpace(s[0])
+		if len(s) != want {
 			continue
 		}
-		switch r[0] {
+		switch s[0] {
 		case "filename*", "filename":
-			return r[1]
+			return s[1]
 		}
 	}
 	return ""
 }
 
 // Mutate applies fixes to known problematic URLs.
-func Mutate(u *url.URL) *url.URL {
+func Mutate(u *url.URL) (*url.URL, error) {
 	if u == nil {
 		s, err := url.Parse("")
 		if err != nil {
-			log.Print(fmt.Errorf("mutate url parse: %w", err))
+			return nil, fmt.Errorf("mutate url parse: %w", err)
 		}
-		return s
+		return s, nil
 	}
 	switch u.Hostname() {
 	case "files.scene.org":
@@ -178,7 +178,7 @@ func Mutate(u *url.URL) *url.URL {
 		}
 	default:
 	}
-	return u
+	return u, nil
 }
 
 // Parse takes a Pouet prod URL and extracts the ID.

@@ -2,6 +2,7 @@ package prods_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -10,34 +11,37 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 )
 
+var ErrVal = errors.New("unknown value")
+
 const (
-	testDir  = "../../../../tests/json/"
-	channel1 = 1
-	channel2 = 2
-	channel3 = 3
+	ch1 = 1
+	ch2 = 2
+	ch3 = 3
 )
+
+var testDir = filepath.Join("..", "..", "..", "..", "tests", "json")
 
 var example1, example2, example3 prods.ProductionsAPIv1 //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
-	c1 := make(chan prods.ProductionsAPIv1)
-	c2 := make(chan prods.ProductionsAPIv1)
-	c3 := make(chan prods.ProductionsAPIv1)
-	go loadExample(channel1, c1)
-	go loadExample(channel2, c2)
-	go loadExample(channel3, c3)
-	example1, example2, example3 = <-c1, <-c2, <-c3
+	v1 := make(chan prods.ProductionsAPIv1)
+	v2 := make(chan prods.ProductionsAPIv1)
+	v3 := make(chan prods.ProductionsAPIv1)
+	go loadExample(ch1, v1)
+	go loadExample(ch2, v2)
+	go loadExample(ch3, v3)
+	example1, example2, example3 = <-v1, <-v2, <-v3
 }
 
 // loadExample data from Demozoo.
 func loadExample(r int, c chan prods.ProductionsAPIv1) {
-	var name string
+	name := ""
 	switch r {
-	case channel1:
+	case ch1:
 		name = "1"
-	case channel2:
+	case ch2:
 		name = "188796"
-	case channel3:
+	case ch3:
 		name = "267300"
 	default:
 		log.Print(fmt.Errorf("load r %d: %w", r, ErrVal))
@@ -50,7 +54,7 @@ func loadExample(r int, c chan prods.ProductionsAPIv1) {
 	if err != nil {
 		log.Print(err)
 	}
-	var dz prods.ProductionsAPIv1
+	dz := prods.ProductionsAPIv1{}
 	if err := json.Unmarshal(data, &dz); err != nil {
 		log.Print(fmt.Errorf("load json unmarshal: %w", err))
 	}

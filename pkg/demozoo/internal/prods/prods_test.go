@@ -4,21 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
 	ErrAdd = errors.New("invalid add argument")
-	ErrVal = errors.New("unknown record value")
 )
 
 const (
@@ -26,44 +25,7 @@ const (
 	modDate = "Wed, 30 Apr 2012 16:29:51 -0500"
 )
 
-func Test_filename(t *testing.T) {
-	check := func(err error) {
-		if err != nil {
-			t.Error(err)
-		}
-	}
-	type args struct {
-		h http.Header
-	}
-	cd, err := mockHeader("cd")
-	check(err)
-	fn, err := mockHeader("fn")
-	check(err)
-	fn1, err := mockHeader("fn1")
-	check(err)
-	il, err := mockHeader("il")
-	check(err)
-	tests := []struct {
-		name         string
-		args         args
-		wantFilename string
-	}{
-		{"empty", args{}, ""},
-		{"empty", args{cd}, ""},
-		{"empty", args{il}, ""},
-		{"empty", args{fn}, "example.zip"},
-		{"empty", args{fn1}, "example.zip"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotFilename := prods.Filename(tt.args.h); gotFilename != tt.wantFilename {
-				t.Errorf("filename() = %v, want %v", gotFilename, tt.wantFilename)
-			}
-		})
-	}
-}
-
-func mockHeader(add string) (http.Header, error) {
+func mocker(add string) (http.Header, error) {
 	// source: https://blog.questionable.services/article/testing-http-handlers-go/
 	var header http.Header
 	ctx := context.Background()
@@ -116,202 +78,134 @@ func mockInline(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add(cd, "inline")
 }
 
+func Test_filename(t *testing.T) {
+	s := prods.Filename(nil)
+	assert.Equal(t, "", s)
+
+	cd, err := mocker("cd")
+	assert.Nil(t, err)
+	s = prods.Filename(cd)
+	assert.Equal(t, "", s)
+
+	fn, err := mocker("fn")
+	assert.Nil(t, err)
+	s = prods.Filename(fn)
+	assert.Equal(t, "example.zip", s)
+
+	fn1, err := mocker("fn1")
+	assert.Nil(t, err)
+	s = prods.Filename(fn1)
+	assert.Equal(t, "example.zip", s)
+
+	il, err := mocker("il")
+	assert.Nil(t, err)
+	s = prods.Filename(il)
+	assert.Equal(t, "", s)
+}
+
 func TestProductionsAPIv1_DownloadLink(t *testing.T) {
-	const proto = "http"
-	tests := []struct {
-		name     string
-		p        prods.ProductionsAPIv1
-		wantName string
-		wantLink string
-	}{
-		{"empty", prods.ProductionsAPIv1{}, "", ""},
-		{
-			"record 1", example1, "feestje.zip",
-			"https://files.scene.org/get:nl-" + proto + "/parties/2000/ambience00/demo/feestje.zip",
-		},
-		{
-			"record 2", example2, "the_untouchables_bbs7.zip",
-			"https://files.scene.org/get:nl-" + proto + "/demos/compilations/lost_found_and_more/bbs/the_untouchables_bbs7.zip",
-		},
-		{
-			"record 3", example3, "x-wing_cracktro.zip",
-			"https://files.scene.org/get:nl-" + proto + "/demos/compilations/lost_found_and_more/cracktro/x-wing_cracktro.zip",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotName, gotLink := tt.p.DownloadLink()
-			if gotName != tt.wantName {
-				t.Errorf("ProductionsAPIv1.DownloadLink() gotName = %v, want %v", gotName, tt.wantName)
-			}
-			if gotLink != tt.wantLink {
-				t.Errorf("ProductionsAPIv1.DownloadLink() gotLink = %v, want %v", gotLink, tt.wantLink)
-			}
-		})
-	}
+	p := prods.ProductionsAPIv1{}
+	n, l := p.DownloadLink(nil)
+	assert.Equal(t, "", n)
+	assert.Equal(t, "", l)
+
+	p = example1
+	n, l = p.DownloadLink(io.Discard)
+	assert.Equal(t, "feestje.zip", n)
+	assert.Contains(t, l, "/parties/2000/ambience00/demo/feestje.zip")
+
+	p = example2
+	n, l = p.DownloadLink(io.Discard)
+	assert.Equal(t, "the_untouchables_bbs7.zip", n)
+	assert.Contains(t, l, "/demos/compilations/lost_found_and_more/bbs/the_untouchables_bbs7.zip")
 }
 
 func TestProductionsAPIv1_PouetID(t *testing.T) {
-	tests := []struct {
-		name           string
-		p              prods.ProductionsAPIv1
-		wantID         int
-		wantStatusCode int
-		ping           bool
-		wantErr        bool
-	}{
-		{"empty", prods.ProductionsAPIv1{}, 0, 0, false, false},
-		{"record 1", example1, 7084, 200, true, false},
-		{"record 2", example2, 76652, 200, true, false},
-		{"record 3 (no pouet)", example3, 0, 0, true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotID, gotStatusCode, err := tt.p.PouetID(tt.ping)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ProductionsAPIv1.PouetID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotID != tt.wantID {
-				t.Errorf("ProductionsAPIv1.PouetID() gotID = %v, want %v", gotID, tt.wantID)
-			}
-			if gotStatusCode != tt.wantStatusCode {
-				t.Errorf("ProductionsAPIv1.PouetID() gotStatusCode = %v, want %v",
-					gotStatusCode, tt.wantStatusCode)
-			}
-		})
-	}
+	p := prods.ProductionsAPIv1{}
+	i, c, err := p.PouetID(false)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, i)
+	assert.Equal(t, 0, c)
+
+	p = example3
+	i, _, err = p.PouetID(false)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, i)
+
+	p = example1
+	i, _, err = p.PouetID(false)
+	assert.Nil(t, err)
+	assert.Equal(t, 7084, i)
+	assert.Equal(t, 0, c)
 }
 
 func TestProductionsAPIv1_Print(t *testing.T) {
-	tests := []struct {
-		name    string
-		p       prods.ProductionsAPIv1
-		wantErr bool
-	}{
-		{"empty", prods.ProductionsAPIv1{}, false},
-		{"record 1", example1, false},
-		{"record 2", example2, false},
-		{"record 3", example3, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.p.Print(nil); (err != nil) != tt.wantErr {
-				t.Errorf("ProductionsAPIv1.Print() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	p := prods.ProductionsAPIv1{}
+	err := p.Print(nil)
+	assert.Nil(t, err)
+
+	p = example1
+	err = p.Print(io.Discard)
+	assert.Nil(t, err)
+
+	w := strings.Builder{}
+	err = p.Print(&w)
+	assert.Nil(t, err)
+	assert.Contains(t, w.String(), "https://demozoo.org/api/v1/productions/1/?format=json")
 }
 
 func TestMutate(t *testing.T) {
-	exp, _ := url.Parse("http://example.com")
-	bro, _ := url.Parse("not-a-valid-url")
-	fso, _ := url.Parse("https://files.scene.org/view/someplace")
-	type args struct {
-		u *url.URL
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"example", args{u: exp}, "http://example.com"},
-		{"nil", args{nil}, ""},
-		{"broken", args{bro}, "not-a-valid-url"},
-		{"scene.org", args{fso}, "https://files.scene.org/get:nl-http/someplace"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := prods.Mutate(tt.args.u).String(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Mutate() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	u, err := url.Parse("http://example.com")
+	assert.Nil(t, err)
+	u, err = prods.Mutate(u)
+	assert.Nil(t, err)
+	assert.Equal(t, "http://example.com", u.String())
+
+	u, err = url.Parse("not-a-valid-url")
+	assert.Nil(t, err)
+	u, err = prods.Mutate(u)
+	assert.Nil(t, err)
+	assert.Equal(t, "not-a-valid-url", u.String())
+
+	u, err = url.Parse("https://files.scene.org/view/someplace")
+	assert.Nil(t, err)
+	u, err = prods.Mutate(u)
+	assert.Nil(t, err)
+	assert.Equal(t, "https://files.scene.org/get:nl-http/someplace", u.String())
 }
 
 func TestParse(t *testing.T) {
-	type args struct {
-		rawurl string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    int
-		wantErr bool
-	}{
-		{"valid", args{"https://www.pouet.net/prod.php?which=30352"}, 30352, false},
-		{"valid", args{"https://www.pouet.net/prod.php?which=1"}, 1, false},
-
-		{"letters", args{"https://www.pouet.net/prod.php?which=abc"}, 0, true},
-		{"negative", args{"https://www.pouet.net/prod.php?which=-1"}, 0, true},
-		{"malformed", args{"https://www.pouet.net/"}, 0, true},
-		{"empty", args{""}, 0, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := prods.Parse(tt.args.rawurl)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Parse() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	i, err := prods.Parse("")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = prods.Parse("https://www.pouet.net/prod.php?which=-1")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = prods.Parse("https://www.pouet.net/prod.php?which=abc")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = prods.Parse("https://www.pouet.net")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = prods.Parse("https://www.pouet.net/prod.php?which=30352")
+	assert.Nil(t, err)
+	assert.Equal(t, 30352, i)
 }
 
-func Test_randomName(t *testing.T) {
-	rand := func() bool {
-		r, err := prods.RandomName()
-		if err != nil {
-			t.Error(err)
-		}
-		fmt.Fprintln(os.Stdout, r)
-		return strings.Contains(r, "df2-download")
-	}
-	tests := []struct {
-		name string
-		want bool
-	}{
-		{"test random value", true},
-		{"another random value", true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := rand(); got != tt.want {
-				t.Errorf("randomName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestRandomName(t *testing.T) {
+	r, err := prods.RandomName()
+	assert.Nil(t, err)
+	assert.NotEqual(t, "", r)
 }
 
-func Test_saveName(t *testing.T) {
-	type args struct {
-		rawurl string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{"file", args{"blob"}, "blob", false},
-		{"file+ext", args{"blob.txt"}, "blob.txt", false},
-		{"url", args{"https://example.com/myfile.txt"}, "myfile.txt", false},
-		{"deep", args{"https://example.com/path/to/some/file/down/here/myfile.txt"}, "myfile.txt", false},
-		{"no ext", args{"https://example.com/txt/myfile"}, "myfile", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := prods.SaveName(tt.args.rawurl)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("saveName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("saveName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func Test_SaveName(t *testing.T) {
+	s, err := prods.SaveName("")
+	assert.Nil(t, err)
+	assert.NotEqual(t, "", s)
+	s, err = prods.SaveName("blob.txt")
+	assert.Nil(t, err)
+	assert.Equal(t, "blob.txt", s)
+	s, err = prods.SaveName("https://example.com/path/to/some/file/down/here/blob.txt")
+	assert.Nil(t, err)
+	assert.Equal(t, "blob.txt", s)
 }

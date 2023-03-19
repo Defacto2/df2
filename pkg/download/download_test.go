@@ -19,11 +19,11 @@ func testTemp() string {
 func TestRequest_Body(t *testing.T) {
 	const timeout = 3
 	type fields struct {
-		Link       string
-		Timeout    time.Duration
-		Read       []byte
-		StatusCode int
-		Status     string
+		Link    string
+		Timeout time.Duration
+		Read    []byte
+		Code    int
+		Status  string
 	}
 	tests := []struct {
 		name    string
@@ -39,11 +39,11 @@ func TestRequest_Body(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &download.Request{
-				Link:       tt.fields.Link,
-				Timeout:    tt.fields.Timeout,
-				Read:       tt.fields.Read,
-				StatusCode: tt.fields.StatusCode,
-				Status:     tt.fields.Status,
+				Link:    tt.fields.Link,
+				Timeout: tt.fields.Timeout,
+				Read:    tt.fields.Read,
+				Code:    tt.fields.Code,
+				Status:  tt.fields.Status,
 			}
 			if err := r.Body(); (err != nil) != tt.wantErr {
 				t.Errorf("Request.Body() error = %v, wantErr %v", err, tt.wantErr)

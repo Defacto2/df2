@@ -20,11 +20,11 @@ import (
 
 // Request a HTTP download.
 type Request struct {
-	Link       string        // URL to request.
-	Timeout    time.Duration // Timeout duration (5 * time.Second).
-	Read       []byte        // HTTP body data received.
-	StatusCode int           // HTTP statuscode received.
-	Status     string        // HTTP status received.
+	Link    string        // URL to request.
+	Timeout time.Duration // Timeout duration (5 * time.Second).
+	Read    []byte        // HTTP body data received.
+	Code    int           // HTTP statuscode received.
+	Status  string        // HTTP status received.
 }
 
 const (
@@ -64,7 +64,7 @@ func (r *Request) Body() error {
 	}
 	defer res.Body.Close()
 	r.Status = res.Status
-	r.StatusCode = res.StatusCode
+	r.Code = res.StatusCode
 	r.Read, err = io.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("body readall: %w", err)

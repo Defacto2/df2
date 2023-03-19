@@ -33,7 +33,7 @@ func (u Update) Execute(db *sql.DB) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("update execute rows affected: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
 type Column string
