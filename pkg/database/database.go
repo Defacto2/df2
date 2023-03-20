@@ -209,8 +209,9 @@ func Distinct(db *sql.DB, w io.Writer, value string) ([]string, error) {
 }
 
 // FileUpdate reports if the named file is newer than the database time.
-// True is always returned when the named file does not exist.
-func FileUpdate(name string, db time.Time) (bool, error) {
+// True is always returned when the named file does not exist or
+// whenever it is 0 bytes in size.
+func FileUpdate(name string, src time.Time) (bool, error) {
 	f, err := os.Stat(name)
 	if os.IsNotExist(err) {
 		return true, nil
@@ -218,7 +219,10 @@ func FileUpdate(name string, db time.Time) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("file update stat %q: %w", name, err)
 	}
-	return !f.ModTime().UTC().After(db.UTC()), nil
+	if f.Size() == 0 {
+		return true, nil
+	}
+	return !f.ModTime().UTC().After(src.UTC()), nil
 }
 
 type Update update.Update
@@ -395,6 +399,9 @@ func IsUUID(s string) bool {
 
 // LastUpdate reports the time when the files database was last modified.
 func LastUpdate(db *sql.DB) (time.Time, error) {
+	if db == nil {
+		return time.Time{}, ErrDB
+	}
 	row := db.QueryRow(SelUpdate)
 	t := time.Time{}
 	if err := row.Scan(&t); err != nil {

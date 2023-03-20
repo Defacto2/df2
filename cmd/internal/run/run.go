@@ -1,11 +1,15 @@
 package run
 
 import (
+	"bufio"
 	"database/sql"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
@@ -13,6 +17,7 @@ import (
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"
+	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/Defacto2/df2/pkg/people"
@@ -216,28 +221,24 @@ func extract(db *sql.DB, w io.Writer, cfg configger.Config, src string) error {
 	return nil
 }
 
-func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
+func Groups(db *sql.DB, w, dest io.Writer, gro arg.Group) error {
 	if db == nil {
 		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
 	}
-	switch {
-	case gpf.Cronjob, gpf.Forcejob:
-		force := false
-		if gpf.Forcejob {
-			force = true
-		}
-		return groups.Cronjob(db, w, directory, force)
+	req := groups.Request{
+		Filter:      gro.Filter,
+		Counts:      gro.Counts,
+		Initialisms: gro.Init,
+		Progress:    gro.Progress,
 	}
-	arg.FilterFlag(w, groups.Wheres(), "filter", gpf.Filter)
-	req := groups.Request{Filter: gpf.Filter, Counts: gpf.Counts, Initialisms: gpf.Init, Progress: gpf.Progress}
-	switch gpf.Format {
+	switch gro.Format {
 	case datal, dl, "d":
-		return req.DataList(db, w, "", directory)
+		return req.DataList(db, w, dest)
 	case htm, "h", "":
-		return req.HTML(db, w, "", directory)
+		return req.HTML(db, w, dest)
 	case txt, "t":
 		if _, err := req.Print(db, w); err != nil {
 			return err
@@ -245,6 +246,61 @@ func Groups(db *sql.DB, w io.Writer, directory string, gpf arg.Group) error {
 		return nil
 	}
 	return ErrNothing
+}
+
+func GroupCron(db *sql.DB, w io.Writer, cfg configger.Config, gro arg.Group) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+
+	ow := false
+	if gro.Forcejob {
+		ow = true
+	}
+	dir := cfg.HTMLExports
+	if _, err := os.Stat(dir); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("html export directory does not exist: %w: %s", err, dir)
+		}
+	}
+	for _, tag := range groups.Tags() {
+		name := fmt.Sprintf("%s.htm", tag)
+		path := filepath.Join(dir, name)
+		if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+			if err1 := directories.Touch(path); err1 != nil {
+				return fmt.Errorf("cronjob: %w: %s", err1, path)
+			}
+		}
+		last, err := database.LastUpdate(db)
+		if err != nil {
+			return fmt.Errorf("cronjob last update: %w", err)
+		}
+		update := true
+		if !ow {
+			update, err = database.FileUpdate(path, last)
+		}
+		switch {
+		case err != nil:
+			return fmt.Errorf("cronjob file update: %w", err)
+		case !update:
+			fmt.Fprintf(w, "%s has nothing to update (%s)\n", tag, path)
+			continue
+		default:
+		}
+		f, err := os.Create(path) // file is always truncated
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		dest := bufio.NewWriter(f)
+		if err := groups.Cronjob(db, w, dest, tag, ow); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) error {

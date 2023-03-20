@@ -60,9 +60,9 @@ func TestDemozoo(t *testing.T) {
 }
 
 func TestGroups(t *testing.T) {
-	err := Groups(nil, nil, "", arg.Group{})
+	err := Groups(nil, nil, nil, arg.Group{})
 	assert.NotNil(t, err)
-	err = Groups(db, io.Discard, "", arg.Group{})
+	err = Groups(db, io.Discard, io.Discard, arg.Group{})
 	assert.Nil(t, err)
 }
 

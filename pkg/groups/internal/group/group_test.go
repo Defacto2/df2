@@ -1,11 +1,71 @@
 package group_test
 
 import (
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestFilter(t *testing.T) {
+	f := group.BBS
+	assert.Equal(t, "bbs", f.String())
+	f = group.FTP
+	assert.Equal(t, "ftp", f.String())
+	f = group.Group
+	assert.Equal(t, "group", f.String())
+	f = group.Magazine
+	assert.Equal(t, "magazine", f.String())
+	f = group.None
+	assert.Equal(t, "", f.String())
+	f = 999
+	assert.Equal(t, "", f.String())
+
+	r := group.Get("BBS")
+	assert.Equal(t, group.BBS, r)
+}
+
+func TestCount(t *testing.T) {
+	i, err := group.Count(nil, "")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	i, err = group.Count(db, "")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = group.Count(db, "qwertyuiopqwertyuiop")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = group.Count(db, "Defacto2")
+	assert.Nil(t, err)
+	assert.Greater(t, i, 0)
+}
+
+func TestList(t *testing.T) {
+	s, i, err := group.List(nil, nil, "")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	assert.Len(t, s, 0)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	s, i, err = group.List(db, io.Discard, "")
+	assert.Nil(t, err)
+	assert.Greater(t, i, 0)
+	assert.Greater(t, len(s), 0)
+
+	s, i, err = group.List(db, io.Discard, "bbs")
+	assert.Nil(t, err)
+	assert.Greater(t, i, 0)
+	assert.Greater(t, len(s), 0)
+}
 
 func TestSQLWhere(t *testing.T) {
 	t.Helper()
@@ -92,36 +152,6 @@ func TestSQLSelect(t *testing.T) {
 	}
 }
 
-func TestList(t *testing.T) {
-	tests := []struct {
-		name      string
-		wantTotal bool
-		wantErr   bool
-	}{
-		{"bbs", true, false},
-		{"ftp", true, false},
-		{"magazine", true, false},
-		{"group", true, false},
-		{"", true, false},
-		{"error", false, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotGroups, gotTotal, err := group.List(nil, nil, tt.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if (len(gotGroups) > 0) != tt.wantTotal {
-				t.Errorf("List() gotGroups count = %v, want >= %v", len(gotGroups) > 0, tt.wantTotal)
-			}
-			if (gotTotal > 0) != tt.wantTotal {
-				t.Errorf("List() gotTotal = %v, want >= %v", gotTotal > 0, tt.wantTotal)
-			}
-		})
-	}
-}
-
 func TestSlug(t *testing.T) {
 	type args struct {
 		name string
@@ -140,30 +170,6 @@ func TestSlug(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := group.Slug(tt.args.name); got != tt.want {
 				t.Errorf("Slug() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestCount(t *testing.T) {
-	tests := []struct {
-		name      string
-		wantCount bool
-		wantErr   bool
-	}{
-		{"", false, false},
-		{"abcdefgh", false, false},
-		{"Defacto2", true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotCount, err := group.Count(nil, tt.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Count() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if (gotCount > 0) != tt.wantCount {
-				t.Errorf("Count() = %v, want %v", gotCount, tt.wantCount)
 			}
 		})
 	}

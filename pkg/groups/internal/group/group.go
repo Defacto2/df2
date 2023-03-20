@@ -67,6 +67,9 @@ func Get(s string) Filter {
 
 // Count returns the number of file entries associated with a named group.
 func Count(db *sql.DB, name string) (int, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	if name == "" {
 		return 0, nil
 	}
@@ -81,9 +84,15 @@ func Count(db *sql.DB, name string) (int, error) {
 	return count, nil
 }
 
-// List all organisations or groups filtered by s.
-func List(db *sql.DB, w io.Writer, s string) ([]string, int, error) {
-	r, err := SQLSelect(w, Get(s), false)
+// List all organisations or groups filtered by the named string.
+func List(db *sql.DB, w io.Writer, name string) ([]string, int, error) {
+	if db == nil {
+		return nil, 0, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	r, err := SQLSelect(w, Get(name), false)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list statement: %w", err)
 	}
@@ -99,7 +108,7 @@ func List(db *sql.DB, w io.Writer, s string) ([]string, int, error) {
 		return nil, 0, fmt.Errorf("list rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	var grp sql.NullString
+	grp := sql.NullString{}
 	groups := []string{}
 	for rows.Next() {
 		if err = rows.Scan(&grp); err != nil {
@@ -115,6 +124,9 @@ func List(db *sql.DB, w io.Writer, s string) ([]string, int, error) {
 
 // SQLSelect returns a complete SQL WHERE statement where the groups are filtered.
 func SQLSelect(w io.Writer, f Filter, includeSoftDeletes bool) (string, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	where, err := SQLWhere(w, f, includeSoftDeletes)
 	if err != nil {
 		return "", fmt.Errorf("sql select %q: %w", f.String(), err)
@@ -136,6 +148,9 @@ func SQLSelect(w io.Writer, f Filter, includeSoftDeletes bool) (string, error) {
 
 // SQLWhere returns a partial SQL WHERE statement where groups are filtered.
 func SQLWhere(w io.Writer, f Filter, includeSoftDeletes bool) (string, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	deleted := includeSoftDeletes
 	s, err := SQLFilter(f)
 	if err != nil {
@@ -161,7 +176,7 @@ func SQLWhere(w io.Writer, f Filter, includeSoftDeletes bool) (string, error) {
 
 // SQLFilter returns a partial SQL WHERE statement to filter groups.
 func SQLFilter(f Filter) (string, error) {
-	var s string
+	s := ""
 	switch f {
 	case None:
 		return "", nil

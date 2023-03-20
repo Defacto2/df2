@@ -1,32 +1,37 @@
 package rename_test
 
 import (
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestClean(t *testing.T) {
-	tests := []struct {
-		name   string
-		wantOk bool
-	}{
-		{"", false},
-		{"Defacto2", false},
-		{"defacto2", true},
-		{"d-e-f-a-c-t-o-2", true},
-		{"d_f", true},
-		{"D2", false},
-		{"this is the group,the group is this", true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := rename.Clean(nil, nil, tt.name); gotOk != tt.wantOk {
-				t.Errorf("Clean() = %v, want %v", gotOk, tt.wantOk)
-			}
-		})
-	}
+	_, err := rename.Clean(nil, nil, "")
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	_, err = rename.Clean(db, io.Discard, "")
+	assert.Nil(t, err)
+	b, err := rename.Clean(db, io.Discard, "Defacto2")
+	assert.Nil(t, err)
+	assert.Equal(t, false, b)
+	b, err = rename.Clean(db, io.Discard, "d-e-f-a-c-t-o-2")
+	assert.Nil(t, err)
+	assert.Equal(t, true, b)
+}
+
+func TestFmtSyntax(t *testing.T) {
+	s := rename.FmtSyntax("")
+	assert.Equal(t, "", s)
+	s = rename.FmtSyntax("hello&&&&world")
+	assert.Equal(t, "hello & world", s)
 }
 
 func TestCleanStr(t *testing.T) {
@@ -132,4 +137,21 @@ func TestFmtByName(t *testing.T) {
 	assert.Equal(t, "RZSoft FTP", s)
 	s = rename.FmtByName("Hashx")
 	assert.Equal(t, "Hash X", s)
+}
+
+func TestFormat(t *testing.T) {
+	s := rename.Format("")
+	assert.Equal(t, "", s)
+	s = rename.Format("mydox")
+	assert.Equal(t, "MyDox", s)
+	s = rename.Format("myfxp")
+	assert.Equal(t, "MyFXP", s)
+	s = rename.Format("myiso")
+	assert.Equal(t, "MyISO", s)
+	s = rename.Format("mynfo")
+	assert.Equal(t, "MyNFO", s)
+	s = rename.Format("pc-my")
+	assert.Equal(t, "PC-My", s)
+	s = rename.Format("lsdstuff")
+	assert.Equal(t, "LSDStuff", s)
 }

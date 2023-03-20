@@ -1,22 +1,22 @@
 package request
 
 import (
-	"bufio"
-	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
 	"github.com/Defacto2/df2/pkg/str"
 )
+
+var ErrPointer = errors.New("pointer value cannot be nil")
 
 // Flags for group functions.
 type Flags struct {
@@ -32,26 +32,45 @@ type Result struct {
 	Name       string // Name of the group.
 	Count      int    // Count file totals.
 	Initialism string // Initialism or acronym.
-	Hr         bool   // Inject a HR element to separate a collection of groups.
+	HR         bool   // Inject a HR element to separate a collection of groups.
 }
 
-// DataList prints an auto-complete list for HTML input elements.
-func (r Flags) DataList(db *sql.DB, w io.Writer, name, directory string) error {
+// DataList saves an auto-complete list for HTML input elements to the dest file path.
+func (r Flags) DataList(db *sql.DB, w, dest io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if dest == nil {
+		dest = io.Discard
+	}
 	// <option value="Bitchin ANSI Design" label="BAD (Bitchin ANSI Design)">
 	tpl := `{{range .}}{{if .Initialism}}<option value="{{.Name}}" label="{{.Initialism}} ({{.Name}})">{{end}}`
 	tpl += `<option value="{{.Name}}" label="{{.Name}}">{{end}}`
-	if err := r.Parse(db, w, name, directory, tpl); err != nil {
+	if err := r.Parse(db, w, dest, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Flags) HTML(db *sql.DB, w io.Writer, name, directory string) error {
+// If dest is empty the results will be send to stdout.
+func (r Flags) HTML(db *sql.DB, w, dest io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if dest == nil {
+		dest = io.Discard
+	}
 	// <h2><a href="/g/13-omens">13 OMENS</a> 13O</h2><hr>
-	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>`
+	tpl := `{{range .}}{{if .HR}}<hr>{{end}}<h2><a href="/g/{{.ID}}">{{.Name}}</a>`
 	tpl += `{{if .Initialism}} ({{.Initialism}}){{end}}{{if .Count}} <small>({{.Count}})</small>{{end}}</h2>{{end}}`
-	if err := r.Parse(db, w, name, directory, tpl); err != nil {
+	if err := r.Parse(db, w, dest, tpl); err != nil {
 		return fmt.Errorf("template: %w", err)
 	}
 	return nil
@@ -59,6 +78,9 @@ func (r Flags) HTML(db *sql.DB, w io.Writer, name, directory string) error {
 
 // Files returns the number of files associated with the named group.
 func (r Flags) Files(db *sql.DB, name string) (int, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	if !r.Counts {
 		return 0, nil
 	}
@@ -71,6 +93,9 @@ func (r Flags) Files(db *sql.DB, name string) (int, error) {
 
 // Initialism returns the initialism of the named group.
 func (r Flags) Initialism(db *sql.DB, name string) (string, error) {
+	if db == nil {
+		return "", database.ErrDB
+	}
 	if !r.Initialisms {
 		return "", nil
 	}
@@ -82,6 +107,12 @@ func (r Flags) Initialism(db *sql.DB, name string) (string, error) {
 }
 
 func (r Flags) iterate(db *sql.DB, w io.Writer, groups ...string) (*[]Result, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	piped := str.Piped()
 	total := len(groups)
 	data := make([]Result, total)
@@ -107,30 +138,38 @@ func (r Flags) iterate(db *sql.DB, w io.Writer, groups ...string) (*[]Result, er
 			Name:       grp,
 			Count:      c,
 			Initialism: init,
-			Hr:         hr,
+			HR:         hr,
 		}
 	}
 	return &data, nil
 }
 
 // Parse the group template and save it to the named file.
-// If the named file is empty, the results will be sent to stdout.
+// If the dest is empty, the results will be sent to stdout.
 // The HTML returned to stdout is different to the markup saved
 // to a file.
-func (r Flags) Parse(db *sql.DB, w io.Writer, name, directory, tmpl string) error {
-	groups, total, err := group.List(db, w, r.Filter)
+func (r Flags) Parse(db *sql.DB, w, dest io.Writer, tmpl string) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if dest == nil {
+		dest = io.Discard
+	}
+	list, count, err := group.List(db, w, r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
 	if !str.Piped() {
 		if f := r.Filter; f == "" {
-			fmt.Fprintln(w, total, "matching (all) records found")
+			fmt.Fprintln(w, count, "matching (all) records found")
 		} else {
-			p := path.Join(directory, name)
-			fmt.Fprintf(w, "%d matching %s records found (%s)\n", total, f, p)
+			fmt.Fprintf(w, "%d matching %s records found (%s)\n", count, f, dest)
 		}
 	}
-	data, err := r.iterate(db, w, groups...)
+	data, err := r.iterate(db, w, list...)
 	if err != nil {
 		return fmt.Errorf("parse iterate: %w", err)
 	}
@@ -138,35 +177,34 @@ func (r Flags) Parse(db *sql.DB, w io.Writer, name, directory, tmpl string) erro
 	if err != nil {
 		return fmt.Errorf("parse template: %w", err)
 	}
-	if name == "" {
-		return noname(w, t, data)
+	if dest == os.Stdout {
+		return t.Execute(dest, &data)
 	}
-	return r.parse(name, directory, total, t, data)
+	return r.parse(t, data, dest, count)
 }
 
-func (r Flags) parse(name, directory string, total int, t *template.Template, data *[]Result) error {
+func (r Flags) parse(t *template.Template, data *[]Result, dest io.Writer, count int) error {
+	if t == nil {
+		return fmt.Errorf("%w: t templte", ErrPointer)
+	}
+	if data == nil {
+		return fmt.Errorf("%w: data result", ErrPointer)
+	}
+	if dest == nil {
+		dest = io.Discard
+	}
 	switch group.Get(r.Filter) {
 	case group.BBS, group.FTP, group.Group, group.Magazine:
-		html := path.Join(directory, name)
-		f, err := os.Create(html)
-		if err != nil {
-			if _, _ = os.Stat(directory); errors.Is(err, os.ErrNotExist) {
-				return fmt.Errorf("parse create: parent directory is missing: %w", err)
-			}
-			return fmt.Errorf("parse create: %w", err)
-		}
-		defer f.Close()
-		if _, err = f.WriteString(r.prependHTML(total)); err != nil {
-			return fmt.Errorf("prepend writestring: %w", err)
-		}
-		// html template
-		if err = t.Execute(f, &data); err != nil {
+		// f, err := os.OpenFile(dest, os.O_CREATE, 0666)
+		// if err != nil {
+		// 	return fmt.Errorf("parse open: %w", err)
+		// }
+		// defer f.Close()
+		fmt.Fprint(dest, r.prependHTML(count))
+		if err := t.Execute(dest, &data); err != nil {
 			return fmt.Errorf("parse execute: %w", err)
 		}
-		// append html
-		if _, err := f.WriteString("</div>\n"); err != nil {
-			return fmt.Errorf("append writestring: %w", err)
-		}
+		fmt.Fprintln(dest, "</div>")
 	case group.None:
 		return fmt.Errorf("parse %q: %w", r.Filter, group.ErrFilter)
 	}
@@ -183,21 +221,14 @@ func (r Flags) prependHTML(total int) string {
 	return s
 }
 
-func noname(w io.Writer, t *template.Template, data *[]Result) error {
-	var buf bytes.Buffer
-	wr := bufio.NewWriter(&buf)
-	if err := t.Execute(wr, &data); err != nil {
-		return fmt.Errorf("parse execute: %w", err)
-	}
-	if err := wr.Flush(); err != nil {
-		return fmt.Errorf("parse flush: %w", err)
-	}
-	fmt.Fprintln(w, buf.String())
-	return nil
-}
-
 // Print list organisations or groups filtered by a name and summaries the results.
 func Print(db *sql.DB, w io.Writer, r Flags) (int, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	grp, total, err := group.List(db, w, r.Filter)
 	if err != nil {
 		return 0, fmt.Errorf("print groups: %w", err)

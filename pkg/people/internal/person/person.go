@@ -19,7 +19,7 @@ var ErrFilter = errors.New("invalid filter used")
 type Person struct {
 	ID   string // ID used in URLs to link to the person.
 	Nick string // Nick of the person.
-	Hr   bool   // Inject a HR element to separate a collection of groups.
+	HR   bool   // Inject a HR element to separate a collection of groups.
 }
 
 type Persons []Person

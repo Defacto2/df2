@@ -127,7 +127,7 @@ func Filters() []string {
 // HTML prints a snippet listing links to each person.
 func HTML(db *sql.DB, w io.Writer, filename, directory string, r Request) error {
 	// <h2><a href="/p/ben">Ben</a></h2><hr>
-	tpl := `{{range .}}{{if .Hr}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
+	tpl := `{{range .}}{{if .HR}}<hr>{{end}}<h2><a href="/p/{{.ID}}">{{.Nick}}</a></h2>{{end}}`
 	if err := parse(db, w, filename, directory, tpl, r); err != nil {
 		return fmt.Errorf("html: %w", err)
 	}
@@ -207,7 +207,7 @@ func parse(db *sql.DB, w io.Writer, filename, directory, tpl string, r Request) 
 		data[i] = person.Person{
 			ID:   groups.Slug(n),
 			Nick: n,
-			Hr:   hr,
+			HR:   hr,
 		}
 	}
 	return data.Template(w, filename, directory, tpl, r.Filter)

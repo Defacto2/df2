@@ -72,7 +72,7 @@ func init() { //nolint:gochecknoinits
 	}
 	outputCmd.AddCommand(groupCmd)
 	groupCmd.Flags().StringVarP(&gro.Filter, "filter", "f", "",
-		"filter groups (default all)\noptions: "+strings.Join(groups.Wheres(), ","))
+		"filter groups (default all)\noptions: "+strings.Join(groups.Tags(), ","))
 	groupCmd.Flags().BoolVarP(&gro.Counts, "count", "c", false,
 		"display the file totals for each group (SLOW)")
 	groupCmd.Flags().BoolVarP(&gro.Progress, "progress", "p", true,
@@ -135,13 +135,24 @@ heading-2 element containing a relative anchor link to the group's page and name
 The HTML output returned by the cronjob flag includes additional elements for
 the website stylization.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		w := os.Stdout
+		if err := arg.FilterFlag(w, groups.Tags(), "filter", gro.Filter); err != nil {
+			logr.Error(err)
+		}
 		db, err := database.Connect(cfg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := run.Groups(db, os.Stdout, cfg.HTMLExports, gro); err != nil {
-			logr.Error(err)
+		switch {
+		case gro.Cronjob, gro.Forcejob:
+			if err := run.GroupCron(db, w, cfg, gro); err != nil {
+				logr.Error(err)
+			}
+		default:
+			if err := run.Groups(db, w, w, gro); err != nil {
+				logr.Error(err)
+			}
 		}
 	},
 }

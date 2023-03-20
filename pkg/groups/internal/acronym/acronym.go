@@ -5,15 +5,37 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/Defacto2/df2/pkg/database"
 )
+
+var ErrName = errors.New("group name cannot be empty")
 
 type Group struct {
 	Name       string
 	Initialism string
 }
 
+// Get the initialism for the named group.
+func (g *Group) Get(db *sql.DB) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if g.Name == "" {
+		return ErrName
+	}
+	row := db.QueryRow("SELECT `initialisms` FROM `groupnames` WHERE `pubname`=?", g.Name)
+	if err := row.Scan(&g.Initialism); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("get row scan: %w", err)
+	}
+	return nil
+}
+
 // Fix deletes any malformed initialisms in the database and returns the number of rows affected.
 func Fix(db *sql.DB) (int64, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	row, err := db.Exec("DELETE FROM `groupnames` WHERE `pubname`=? OR `initialisms`=?", "", "")
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return 0, fmt.Errorf("fix exec: %w", err)
@@ -21,19 +43,13 @@ func Fix(db *sql.DB) (int64, error) {
 	return row.RowsAffected()
 }
 
-// Get the initialism for the named group.
-func (g *Group) Get(db *sql.DB) error {
-	row := db.QueryRow("SELECT `initialisms` FROM `groupnames` WHERE `pubname`=?", g.Name)
-	if err := row.Scan(&g.Initialism); err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("get row scan: %w", err)
-	}
-	return db.Close()
-}
-
 // Get a group's initialism or acronym.
 // For example "Defacto2" would return "df2".
 func Get(db *sql.DB, s string) (string, error) {
-	var i string
+	if db == nil {
+		return "", database.ErrDB
+	}
+	i := ""
 	row := db.QueryRow("SELECT `initialisms` FROM groupnames WHERE `pubname` = ?", s)
 	if err := row.Scan(&i); err != nil &&
 		strings.Contains(err.Error(), "no rows in result set") {

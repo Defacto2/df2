@@ -1,11 +1,27 @@
 package groups_test
 
 import (
+	"io"
 	"reflect"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestRequest_DataList(t *testing.T) {
+	r := groups.Request{}
+	err := r.DataList(nil, nil, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.DataList(db, io.Discard, nil)
+	assert.NotNil(t, err)
+}
 
 func TestVariations(t *testing.T) {
 	type args struct {

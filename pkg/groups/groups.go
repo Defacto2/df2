@@ -6,14 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
-	"os"
-	"path"
 	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
@@ -22,103 +18,81 @@ import (
 )
 
 var (
-	ErrCJDir  = errors.New("cronjob directory does not exist")
-	ErrCJFile = errors.New("cronjob file to save html does not exist")
-	ErrCfg    = errors.New("the directory.html setting is empty")
+	ErrCronDir = errors.New("cronjob directory does not exist")
+	ErrHTMLDir = errors.New("the directory.html setting is empty")
 )
-
-const htm = ".htm"
 
 // Request flags for group functions.
 type Request request.Flags
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Request) DataList(db *sql.DB, w io.Writer, name, directory string) error {
-	return request.Flags(r).DataList(db, w, name, directory)
+func (r Request) DataList(db *sql.DB, w, dest io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if dest == nil {
+		dest = io.Discard
+	}
+	return request.Flags(r).DataList(db, w, dest)
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(db *sql.DB, w io.Writer, name, directory string) error {
-	return request.Flags(r).HTML(db, w, name, directory)
+func (r Request) HTML(db *sql.DB, w, dest io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if dest == nil {
+		dest = io.Discard
+	}
+	return request.Flags(r).HTML(db, w, dest)
 }
 
 // Print a list of organisations or groups filtered by a name and summarizes the results.
 func (r Request) Print(db *sql.DB, w io.Writer) (int, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	return request.Print(db, w, request.Flags(r))
 }
 
 // Count returns the number of file entries associated with a named group.
 func Count(db *sql.DB, name string) (int, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	return group.Count(db, name)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(db *sql.DB, w io.Writer, directory string, force bool) error {
-	// as the jobs take time, check the locations before querying the database
-	for _, tag := range Wheres() {
-		if err := croncheck(tag, htm, directory); err != nil {
-			return err
-		}
+func Cronjob(db *sql.DB, w, dest io.Writer, tag string, force bool) error {
+	if db == nil {
+		return database.ErrDB
 	}
-	for _, tag := range Wheres() {
-		if err := cronjob(db, w, tag, htm, directory, force); err != nil {
-			return err
-		}
+	if w == nil {
+		w = io.Discard
 	}
-	return nil
-}
-
-func croncheck(tag, htm, directory string) error {
-	f := tag + htm
-	d := directory
-	n := path.Join((d), f)
-	if d == "" {
-		return fmt.Errorf("cronjob: %w", ErrCfg)
+	if dest == nil {
+		dest = io.Discard
 	}
-	if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("cronjob: %w: %s", ErrCJDir, d)
+	r := request.Flags{
+		Filter:      tag,
+		Counts:      true,
+		Initialisms: true,
+		Progress:    false,
 	}
-	if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
-		if err1 := directories.Touch(n); err1 != nil {
-			return fmt.Errorf("cronjob: %w: %s", err1, n)
-		}
+	if force {
+		r.Progress = true
 	}
-	return nil
-}
-
-// TODO: make args into a struct!
-func cronjob(db *sql.DB, w io.Writer, tag, htm, directory string, force bool) error {
-	f := tag + htm
-	d := directory
-	n := path.Join((d), f)
-	last, err := database.LastUpdate(db)
-	if err != nil {
-		return fmt.Errorf("cronjob lastupdate: %w", err)
-	}
-	update := true
-	if !force {
-		update, err = database.FileUpdate(n, last)
-	}
-	switch {
-	case err != nil:
-		return fmt.Errorf("cronjob fileupdate: %w", err)
-	case !update:
-		fmt.Fprintf(w, "%s has nothing to update (%s)\n", tag, n)
-	default:
-		r := request.Flags{
-			Filter:      tag,
-			Counts:      true,
-			Initialisms: true,
-			Progress:    false,
-		}
-		if force {
-			r.Progress = true
-		}
-		if err := r.HTML(db, w, f, d); err != nil {
-			return fmt.Errorf("group cronjob html: %w", err)
-		}
-	}
-	return nil
+	return r.HTML(db, w, dest)
 }
 
 // Exact returns the number of file entries that match an exact named group.
@@ -126,6 +100,9 @@ func cronjob(db *sql.DB, w io.Writer, tag, htm, directory string, force bool) er
 // The name "tristar" will match "Tristar" but will not match records using
 // "Tristar, Red Sector Inc".
 func Exact(db *sql.DB, name string) (int, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	if name == "" {
 		return 0, nil
 	}
@@ -140,6 +117,12 @@ func Exact(db *sql.DB, name string) (int, error) {
 
 // Fix any malformed group names found in the database.
 func Fix(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	// fix group names stored in the files table
 	names, _, err := group.List(db, w, "")
 	if err != nil {
@@ -147,7 +130,11 @@ func Fix(db *sql.DB, w io.Writer) error {
 	}
 	c, start := 0, time.Now()
 	for _, name := range names {
-		if r := rename.Clean(db, w, name); r {
+		r, err := rename.Clean(db, w, name)
+		if err == nil {
+			return err
+		}
+		if r {
 			c++
 		}
 	}
@@ -186,6 +173,9 @@ func Format(name string) string {
 
 // Initialism returns a named group initialism or acronym.
 func Initialism(db *sql.DB, name string) (string, error) {
+	if db == nil {
+		return "", database.ErrDB
+	}
 	g := acronym.Group{Name: name}
 	if err := g.Get(db); err != nil {
 		return "", fmt.Errorf("initialism %q: %w", name, err)
@@ -205,13 +195,19 @@ func Slug(s string) string {
 
 // Update replaces all instances of the group name with the new group name.
 func Update(db *sql.DB, newName, group string) (int64, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	return rename.Update(db, newName, group)
 }
 
 // Variations creates format variations for a named group.
 func Variations(db *sql.DB, name string) ([]string, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	if name == "" {
-		return []string{}, nil
+		return nil, nil
 	}
 	name = strings.ToLower(name)
 	vars := []string{name}
@@ -236,8 +232,8 @@ func Variations(db *sql.DB, name string) ([]string, error) {
 	return vars, nil
 }
 
-// Wheres are group categories.
-func Wheres() []string {
+// Tags are the group categories.
+func Tags() []string {
 	return []string{
 		group.BBS.String(),
 		group.FTP.String(),

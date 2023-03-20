@@ -18,21 +18,27 @@ import (
 const space = " "
 
 // Clean a malformed group name and save the fix to the database.
-func Clean(db *sql.DB, w io.Writer, name string) bool {
+func Clean(db *sql.DB, w io.Writer, name string) (bool, error) {
+	if db == nil {
+		return false, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	fix := CleanStr(name)
 	if fix == name {
-		return false
+		return false, nil
 	}
-	count, status := int64(0), str.Y()
-	ok := true
+	status := str.Y()
 	count, err := Update(db, fix, name)
+	success := true
 	if err != nil {
 		status = str.X()
-		ok = false
+		success = false
 	}
 	fmt.Fprintf(w, "%s %q %s %s (%d)\n",
 		status, name, color.Question.Sprint("⟫"), color.Info.Sprint(fix), count)
-	return ok
+	return success, nil
 }
 
 // CleanStr fixes the malformed string.
