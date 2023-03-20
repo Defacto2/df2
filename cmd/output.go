@@ -137,7 +137,7 @@ the website stylization.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		w := os.Stdout
 		if err := arg.FilterFlag(w, groups.Tags(), "filter", gro.Filter); err != nil {
-			logr.Error(err)
+			os.Exit(1)
 		}
 		db, err := database.Connect(cfg)
 		if err != nil {

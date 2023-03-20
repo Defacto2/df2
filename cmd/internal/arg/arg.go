@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strings"
 
@@ -12,7 +11,8 @@ import (
 )
 
 var (
-	ErrNoCmd = errors.New("no command argument was provided")
+	ErrFlagValue = errors.New("value for flag is not valid")
+	ErrNoCmd     = errors.New("no command argument was provided")
 )
 
 func Targets() []string {
@@ -153,7 +153,7 @@ func FilterFlag(w io.Writer, t any, flag, val string) error {
 			color.Bold.Sprintf("%q", val),
 			color.Warn.Sprint("available flag values"),
 			color.Primary.Sprint(strings.Join(t, ",")))
-		os.Exit(1)
+		return ErrFlagValue
 	}
 	return nil
 }

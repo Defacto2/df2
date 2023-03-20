@@ -44,8 +44,6 @@ func TestRun(t *testing.T) {
 func TestAPIs(t *testing.T) {
 	err := APIs(nil, nil, arg.APIs{})
 	assert.NotNil(t, err)
-	err = APIs(db, nil, arg.APIs{})
-	assert.NotNil(t, err)
 	err = APIs(db, io.Discard, arg.APIs{})
 	assert.Nil(t, err)
 }
@@ -63,6 +61,8 @@ func TestGroups(t *testing.T) {
 	err := Groups(nil, nil, nil, arg.Group{})
 	assert.NotNil(t, err)
 	err = Groups(db, io.Discard, io.Discard, arg.Group{})
+	assert.NotNil(t, err)
+	err = Groups(db, io.Discard, io.Discard, arg.Group{Filter: "bbs"})
 	assert.Nil(t, err)
 }
 

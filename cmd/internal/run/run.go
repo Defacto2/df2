@@ -41,8 +41,8 @@ const (
 )
 
 var (
+	ErrArg     = errors.New("argument is unsupported")
 	ErrToFew   = errors.New("too few arguments given")
-	ErrArg     = errors.New("unknown args flag")
 	ErrNothing = errors.New("had nothing to do")
 	ErrZap     = errors.New("zap logger cannot be nil")
 )
@@ -94,7 +94,7 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 	if l == nil {
 		return ErrZap
 	}
-	var empty []string
+	empty := []string{}
 	r := demozoo.Request{
 		All:       dz.All,
 		Overwrite: dz.Overwrite,
@@ -133,7 +133,7 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 }
 
 func syncdos(db *sql.DB, w io.Writer) error {
-	var p demozoo.MsDosProducts
+	p := demozoo.MsDosProducts{}
 	if err := p.Get(db, w); err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func syncdos(db *sql.DB, w io.Writer) error {
 }
 
 func syncwin(db *sql.DB, w io.Writer) error {
-	var p demozoo.WindowsProducts
+	p := demozoo.WindowsProducts{}
 	if err := p.Get(db, w); err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func syncwin(db *sql.DB, w io.Writer) error {
 }
 
 func releaser(db *sql.DB, w io.Writer, id uint) error {
-	var r demozoo.Releaser
+	r := demozoo.Releaser{}
 	if err := r.Get(id); err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func releaser(db *sql.DB, w io.Writer, id uint) error {
 	if r.Code != statusOk {
 		return nil
 	}
-	var p demozoo.ReleaserProducts
+	p := demozoo.ReleaserProducts{}
 	if err := p.Get(id); err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func releaser(db *sql.DB, w io.Writer, id uint) error {
 }
 
 func ping(w io.Writer, id uint) error {
-	var f demozoo.Product
+	f := demozoo.Product{}
 	err := f.Get(id)
 	if err != nil {
 		return err
@@ -195,7 +195,7 @@ func ping(w io.Writer, id uint) error {
 }
 
 func download(w io.Writer, id uint) error {
-	var f demozoo.Product
+	f := demozoo.Product{}
 	if err := f.Get(id); err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func download(w io.Writer, id uint) error {
 }
 
 func extract(db *sql.DB, w io.Writer, cfg configger.Config, src string) error {
-	var empty []string
+	empty := []string{}
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return err
@@ -259,7 +259,6 @@ func GroupCron(db *sql.DB, w io.Writer, cfg configger.Config, gro arg.Group) err
 	if w == nil {
 		w = io.Discard
 	}
-
 	ow := false
 	if gro.Forcejob {
 		ow = true
@@ -379,7 +378,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 	return groups.Fix(db, w)
 }
 
-func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
+func People(db *sql.DB, w io.Writer, directory string, f arg.People) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -387,20 +386,25 @@ func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
 		w = io.Discard
 	}
 	switch {
-	case pf.Cronjob, pf.Forcejob:
+	case f.Cronjob, f.Forcejob:
 		force := false
-		if pf.Forcejob {
+		if f.Forcejob {
 			force = true
 		}
 		return people.Cronjob(db, w, directory, force)
 	}
 	fmtflags := [7]string{datal, htm, txt, dl, "d", "h", "t"}
-	arg.FilterFlag(w, people.Filters(), "filter", pf.Filter)
-	var req people.Flags
-	if arg.FilterFlag(w, fmtflags, "format", pf.Format); pf.Format != "" {
-		req = people.Flags{Filter: pf.Filter, Progress: pf.Progress}
+	if err := arg.FilterFlag(w, people.Filters(), "filter", f.Filter); err != nil {
+		return err
 	}
-	switch pf.Format {
+	req := people.Flags{}
+	if err := arg.FilterFlag(w, fmtflags, "format", f.Format); err != nil {
+		return err
+	}
+	if f.Format != "" {
+		req = people.Flags{Filter: f.Filter, Progress: f.Progress}
+	}
+	switch f.Format {
 	case datal, dl, "d":
 		return people.DataList(db, w, "", req)
 	case htm, "h", "":
@@ -523,10 +527,10 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 	fmt.Fprint(w, s)
 	sitemap.NotFound.RangeFiles(w, urls)
 
-	invalidIDs := []int{-99999999, -1, 0, 99999999}
-	urls = sitemap.IDs(invalidIDs).JoinPaths(base, sitemap.File)
-	invalidElms := []string{"-", "womble-bomble", "<script>", "1+%48*1"}
-	for _, elm := range invalidElms {
+	badIDs := []int{-99999999, -1, 0, 99999999}
+	urls = sitemap.IDs(badIDs).JoinPaths(base, sitemap.File)
+	badElms := []string{"-", "womble-bomble", "<script>", "1+%48*1"}
+	for _, elm := range badElms {
 		r, err := url.JoinPath(base, sitemap.File.String(), elm)
 		if err != nil {
 			return err
