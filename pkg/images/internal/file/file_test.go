@@ -1,29 +1,39 @@
 package file_test
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/directories"
+	"github.com/Defacto2/df2/pkg/images"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestIsDir(t *testing.T) {
-	dir, _ := directories.Init(configger.Defaults(), false)
-	tests := []struct {
-		name string
-		i    file.Image
-		want bool
-	}{
-		{"not exist", file.Image{UUID: "false id"}, false},
+func testDir() string {
+	dir, _ := os.Getwd()
+	return filepath.Join(dir, "..", "..", "..", "..", "tests", "images")
+}
+
+func TestImage(t *testing.T) {
+	i := file.Image{}
+	assert.Equal(t, "(0)  0 B ", i.String())
+	i = file.Image{
+		ID:   9345,
+		Name: "myphoto.jpg",
+		Size: 654174,
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.i.IsDir(&dir); got != tt.want {
-				t.Errorf("IsDir() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	assert.Equal(t, "(9345) myphoto.jpg 654 kB ", i.String())
+	assert.Equal(t, true, i.IsExt())
+	b, err := i.IsDir(nil)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+	d := directories.Dir{}
+	b, err = i.IsDir(&d)
+	assert.Nil(t, err)
+	assert.Equal(t, false, b)
 }
 
 func TestIsExt(t *testing.T) {
@@ -45,4 +55,39 @@ func TestIsExt(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCheck(t *testing.T) {
+	b := file.Check("", nil)
+	assert.Equal(t, false, b)
+	err := errors.New("check err")
+	b = file.Check("", err)
+	assert.Equal(t, false, b)
+	b = file.Check(filepath.Join(testDir(), "test.iff"), nil)
+	assert.Equal(t, true, b)
+}
+
+func TestRemove(t *testing.T) {
+	err := file.Remove(false, "")
+	assert.Nil(t, err)
+	err = file.Remove(true, "")
+	assert.NotNil(t, err)
+
+	src := filepath.Join(testDir(), "test.iff")
+	dst := filepath.Join(os.TempDir(), "test-check-test.iff")
+	err = images.Copy(dst, src)
+	assert.Nil(t, err)
+	err = file.Remove(true, dst)
+	assert.Nil(t, err)
+
+	src = filepath.Join(testDir(), "test-0byte.000")
+	err = directories.Touch(src)
+	assert.Nil(t, err)
+	err = file.Remove0byte(src)
+	assert.Nil(t, err)
+}
+
+func TestVendor(t *testing.T) {
+	s := file.Vendor()
+	assert.NotEqual(t, "", s)
 }

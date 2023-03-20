@@ -20,7 +20,6 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
-	"go.uber.org/zap"
 )
 
 const (
@@ -250,12 +249,7 @@ func (p Proof) Decompress(w io.Writer) error {
 		return err
 	}
 	if n := th.Name; n != "" {
-		l, err := zap.NewProduction()
-		if err != nil {
-			return err
-		}
-		tmpLogger := l.Sugar()
-		if err := images.Generate(w, tmpLogger, n, p.UUID, true); err != nil {
+		if err := images.Generate(w, n, p.UUID, true); err != nil {
 			return fmt.Errorf("archive generate img: %w", err)
 		}
 	}

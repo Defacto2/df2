@@ -119,7 +119,7 @@ that are raster images.`,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := images.Fix(db, os.Stdout, logr); err != nil {
+		if err := images.Fix(db, os.Stdout); err != nil {
 			logr.Error(err)
 		}
 	},

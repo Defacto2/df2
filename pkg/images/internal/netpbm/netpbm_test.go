@@ -1,7 +1,6 @@
 package netpbm_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,10 +9,10 @@ import (
 )
 
 func TestConvert(t *testing.T) {
-	const gif = "../../../../tests/images/test.gif"
-	const iff = "../../../../tests/images/test.iff"
+	gif := filepath.Join("..", "..", "..", "..", "tests", "images", "test.gif")
+	iff := filepath.Join("..", "..", "..", "..", "tests", "images", "test.iff")
 	dest := filepath.Join(os.TempDir(), "test_netpbm.png")
-	fmt.Fprintln(os.Stdout, dest)
+
 	type args struct {
 		src  string
 		dest string

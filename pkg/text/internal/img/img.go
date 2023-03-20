@@ -63,7 +63,7 @@ installation instructions: https://github.com/ansilove/ansilove`
 	if err := resize(w, o); err != nil {
 		return err
 	}
-	s, err = images.ToWebp(w, o, images.NewExt(o, webp), true)
+	s, err = images.ToWebp(w, o, images.ReplaceExt(webp, o), true)
 	if err != nil {
 		return fmt.Errorf("generate webp: %w", err)
 	}
@@ -84,7 +84,7 @@ func resize(w io.Writer, o string) error {
 			return fmt.Errorf("generate info: %w", err)
 		}
 		cw, ch := images.WebPCalc(wp, hp)
-		s, err := images.ToPng(o, images.NewExt(o, png), ch, cw)
+		s, err := images.ToPng(o, images.ReplaceExt(png, o), ch, cw)
 		if err != nil {
 			return fmt.Errorf("generate calc: %w", err)
 		}

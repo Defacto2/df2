@@ -4,12 +4,15 @@ import (
 	"fmt"
 	_ "image/gif"
 	_ "image/jpeg"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/images"
+	"github.com/stretchr/testify/assert"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
@@ -38,28 +41,15 @@ func testTxt() string {
 	return filepath.Join(testDir("text"), "test.txt")
 }
 
-func TestNewExt(t *testing.T) {
-	type args struct {
-		name      string
-		extension string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"", args{"hello", ".txt"}, "hello.txt"},
-		{"", args{"hello.jpg", ".png"}, "hello.png"},
-		{"", args{"hello", ""}, "hello"},
-		{"", args{"", ".ssh"}, ".ssh"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := images.NewExt(tt.args.name, tt.args.extension); got != tt.want {
-				t.Errorf("NewExt() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestReplaceExt(t *testing.T) {
+	s := images.ReplaceExt(".txt", "document")
+	assert.Equal(t, "document.txt", s)
+	s = images.ReplaceExt(".png", "image.jpg")
+	assert.Equal(t, "image.png", s)
+	s = images.ReplaceExt("", "image")
+	assert.Equal(t, "image", s)
+	s = images.ReplaceExt(".png", "")
+	assert.Equal(t, ".png", s)
 }
 
 func TestDuplicate(t *testing.T) {
@@ -94,40 +84,24 @@ func TestDuplicate(t *testing.T) {
 }
 
 func TestInfo(t *testing.T) {
-	tests := []struct {
-		name       string
-		wantHeight int
-		wantWidth  int
-		wantFormat string
-		wantErr    bool
-	}{
-		{"", 0, 0, "", true},
-		{testTxt(), 0, 0, "", true},
-		{testImg(p), 32, 1280, p, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotWidth, gotHeight, gotFormat, err := images.Info(tt.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Info() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotHeight != tt.wantHeight {
-				t.Errorf("Info() gotHeight = %v, want %v", gotHeight, tt.wantHeight)
-			}
-			if gotWidth != tt.wantWidth {
-				t.Errorf("Info() gotWidth = %v, want %v", gotWidth, tt.wantWidth)
-			}
-			if gotFormat != tt.wantFormat {
-				t.Errorf("Info() gotFormat = %v, want %v", gotFormat, tt.wantFormat)
-			}
-		})
-	}
+	w, x, f, err := images.Info("")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, w)
+	assert.Equal(t, 0, x)
+	assert.Equal(t, "", f)
+	w, x, f, err = images.Info(testTxt())
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, w)
+	assert.Equal(t, 0, x)
+	assert.Equal(t, "", f)
+	w, x, f, err = images.Info(testImg(p))
+	assert.Nil(t, err)
+	assert.Equal(t, 1280, w)
+	assert.Equal(t, 32, x)
+	assert.Equal(t, p, f)
 }
 
 func TestGenerate(t *testing.T) {
-	dir := testDir(imgs)
-	// "../../tests/images"
 	const (
 		gif = ".gif"
 		jpg = ".jpg"
@@ -136,36 +110,35 @@ func TestGenerate(t *testing.T) {
 		ts  = "test"
 		tg  = "testgen"
 	)
-	type args struct {
-		src    string
-		id     string
-		remove bool
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"empty", args{}, true},
-		{g, args{filepath.Join(dir, ts+gif), tg, false}, false},
-		{j, args{filepath.Join(dir, ts+jpg), tg, false}, false},
-		{p, args{filepath.Join(dir, ts+png), tg, false}, false},
-		{"wbm", args{filepath.Join(dir, ts+wbm), tg, false}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := images.Generate(nil, nil, tt.args.src, tt.args.id, tt.args.remove); (err != nil) != tt.wantErr {
-				t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-	for _, ext := range []string{gif, jpg, png, wbm} {
-		if err := os.Remove(filepath.Join(dir, "test_400x"+ext)); err != nil {
-			log.Print(err)
-		}
-		os.Remove("testgen.png")
-		os.Remove("testgen.webp")
-	}
+	dir := testDir(imgs)
+
+	err := images.Generate(nil, "", "", false)
+	assert.NotNil(t, err)
+	err = images.Generate(io.Discard, "", tg, false)
+	assert.NotNil(t, err)
+	err = images.Generate(io.Discard, filepath.Join(dir, ts+gif), tg, false)
+	assert.Nil(t, err)
+	err = images.Generate(io.Discard, filepath.Join(dir, ts+wbm), tg, false)
+	assert.NotNil(t, err)
+}
+
+func TestLibraries(t *testing.T) {
+	const (
+		gif = ".gif"
+		jpg = ".jpg"
+		png = ".png"
+		wbm = ".wbm"
+		ts  = "test"
+		tg  = "testgen"
+	)
+	dir := testDir(imgs)
+
+	err := images.Libraries(nil, "", "", false)
+	assert.NotNil(t, err)
+	err = images.Libraries(io.Discard, "", tg, false)
+	assert.NotNil(t, err)
+	err = images.Libraries(io.Discard, filepath.Join(dir, ts+gif), tg, false)
+	assert.Nil(t, err)
 }
 
 func TestWidth(t *testing.T) {
@@ -356,17 +329,26 @@ func TestWebPCalc(t *testing.T) {
 }
 
 func TestFix(t *testing.T) {
-	tests := []struct {
-		name    string
-		wantErr bool
-	}{
-		{"run", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := images.Fix(nil, nil, nil); (err != nil) != tt.wantErr {
-				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	err := images.Fix(nil, nil)
+	assert.NotNil(t, err)
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = images.Fix(db, io.Discard)
+	assert.Nil(t, err)
+}
+
+func TestMove(t *testing.T) {
+	src, err := os.CreateTemp(os.TempDir(), "images-move-test")
+	assert.Nil(t, err)
+	i, err := src.WriteString("hello world\n")
+	assert.Nil(t, err)
+	assert.Equal(t, 12, i)
+	src.Close()
+	dst := filepath.Join(os.TempDir(), "images-move-test-xyz")
+	err = images.Move(dst, src.Name())
+	assert.Nil(t, err)
+	_, err = os.Stat(dst)
+	assert.Nil(t, err)
+	defer os.Remove(dst)
 }

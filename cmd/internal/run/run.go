@@ -351,7 +351,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 	i++
 	s = color.Info.Sprintf("%d. generate missing images\n", i)
 	fmt.Fprintln(w, s)
-	if err := images.Fix(db, w, l); err != nil {
+	if err := images.Fix(db, w); err != nil {
 		return err
 	}
 	i++

@@ -1,6 +1,7 @@
 package file
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +15,8 @@ import (
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 )
+
+var ErrPointer = errors.New("pointer value cannot be nil")
 
 const (
 	gif  = ".gif"
@@ -47,14 +50,17 @@ func (i Image) IsExt() bool {
 	return false
 }
 
-func (i Image) IsDir(dir *directories.Dir) bool {
+func (i Image) IsDir(dir *directories.Dir) (bool, error) {
+	if dir == nil {
+		return false, ErrPointer
+	}
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
 		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 // Check the existence of the named file and
@@ -84,17 +90,18 @@ func Remove(confirm bool, name string) error {
 	return nil
 }
 
-func RemoveWebP(name string) error {
+// Remove0byte removes the named file but only if it is 0 bytes in size.
+func Remove0byte(name string) error {
 	s, err := os.Stat(name)
 	if os.IsNotExist(err) {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("removewebp stat: %w", err)
+		return fmt.Errorf("remove 0byte stat: %w", err)
 	}
 	if s.Size() == 0 {
 		if err := os.Remove(name); err != nil {
-			return fmt.Errorf("removewebp: %w", err)
+			return fmt.Errorf("remove 0byte: %w", err)
 		}
 	}
 	return nil

@@ -50,6 +50,9 @@ func Extensions() Idents {
 
 // Convert uses netpdm to convert a configured image to PNG.
 func Convert(w io.Writer, src, dest string) error {
+	if w == nil {
+		w = io.Discard
+	}
 	if _, err := os.Stat(src); os.IsNotExist(err) {
 		return fmt.Errorf("%w: %s", ErrSrc, src)
 	} else if err != nil {

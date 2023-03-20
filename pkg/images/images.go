@@ -11,12 +11,12 @@ import (
 	_ "image/jpeg" // register Jpeg decoding.
 	"image/png"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
 	"github.com/Defacto2/df2/pkg/images/internal/imagemagick"
@@ -26,7 +26,6 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/nickalie/go-webpbin"
 	"github.com/yusukebe/go-pngquant"
-	"go.uber.org/zap"
 	_ "golang.org/x/image/bmp"  // register BMP decoding.
 	_ "golang.org/x/image/tiff" // register TIFF decoding.
 	_ "golang.org/x/image/webp" // register WebP decoding.
@@ -35,10 +34,11 @@ import (
 var ErrFormat = errors.New("unsupported image format")
 
 const (
-	WebpMaxSize int         = 16383 // WebpMaxSize is the maximum pixel dimension of an webp image.
-	thumbWidth  int         = 400
-	fperm       os.FileMode = 0o666
-	fmode                   = os.O_RDWR | os.O_CREATE
+	WebpMaxSize int = 16383 // WebpMaxSize is the maximum pixel dimension of an webp image.
+
+	thumbWidth int         = 400
+	fperm      os.FileMode = 0o666
+	fmode                  = os.O_RDWR | os.O_CREATE
 
 	gif  = ".gif"
 	jpg  = ".jpg"
@@ -50,12 +50,19 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are images.
-func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
+func Fix(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	dir, err := directories.Init(configger.Defaults(), false)
 	if err != nil {
 		return err
 	}
-	rows, err := db.Query(`SELECT id, uuid, filename, filesize FROM files WHERE platform="image" ORDER BY id ASC`)
+	rows, err := db.Query(`SELECT id, uuid, filename, filesize ` +
+		`FROM files WHERE platform="image" ORDER BY id ASC`)
 	if err != nil {
 		return fmt.Errorf("images fix query: %w", err)
 	} else if rows.Err() != nil {
@@ -64,27 +71,31 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 	defer rows.Close()
 	c := 0
 	for rows.Next() {
-		var img file.Image
+		img := file.Image{}
 		if err = rows.Scan(&img.ID, &img.UUID, &img.Name, &img.Size); err != nil {
 			return fmt.Errorf("images fix rows scan: %w", err)
 		}
 		if directories.ArchiveExt(img.Name) {
 			continue
 		}
-		if !img.IsDir(&dir) {
-			c++
-			fmt.Fprintf(w, "%d. %v", c, img)
-			if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
-				fmt.Fprintf(w, "%s\n", str.X())
-				continue
-			} else if err != nil {
-				return fmt.Errorf("images fix stat: %w", err)
-			}
-			if err := Generate(w, l, filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
-				return fmt.Errorf("images fix generate: %w", err)
-			}
-			fmt.Fprintln(w)
+		if b, err := img.IsDir(&dir); err != nil {
+			return err
+		} else if b {
+			continue
 		}
+		c++
+		fmt.Fprintf(w, "%d. %v", c, img)
+		if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
+			fmt.Fprintf(w, "%s\n", str.X())
+			continue
+		} else if err != nil {
+			return fmt.Errorf("images fix stat: %w", err)
+		}
+		if err := Generate(w, filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
+			//return fmt.Errorf("images fix generate: %w", err)
+			fmt.Fprintf(w, "%s", err)
+		}
+		fmt.Fprintln(w)
 	}
 	if c == 0 {
 		fmt.Fprintln(w, "everything is okay, there is nothing to do")
@@ -113,9 +124,12 @@ func Duplicate(name, suffix string) (string, error) {
 }
 
 // Generate a collection of site images.
-func Generate(w io.Writer, l *zap.SugaredLogger, name, id string, remove bool) error {
-	if _, err := os.Stat(name); os.IsNotExist(err) {
-		return fmt.Errorf("generate stat %q: %w", name, err)
+func Generate(w io.Writer, src, id string, remove bool) error {
+	if w == nil {
+		w = io.Discard
+	}
+	if _, err := os.Stat(src); os.IsNotExist(err) {
+		return fmt.Errorf("generate stat %q: %w", src, err)
 	}
 	f, err := directories.Files(configger.Defaults(), id)
 	if err != nil {
@@ -123,76 +137,98 @@ func Generate(w io.Writer, l *zap.SugaredLogger, name, id string, remove bool) e
 	}
 	// these funcs use dependencies that are not thread safe
 	// convert to png
-	pngDest, webpDest := NewExt(f.Img000, _png), NewExt(f.Img000, webp)
+	pngDest, webpDest := ReplaceExt(_png, f.Img000), ReplaceExt(webp, f.Img000)
 	const width = 1500
-	s, err := ToPng(name, pngDest, width, width)
-	feedback(w, l, s, err)
+	s, err := ToPng(src, pngDest, width, width)
+	if err != nil {
+		return fmt.Errorf("could not generate from %s: %s: %s", src, pngDest, err)
+	}
+	fmt.Fprintf(w, "  %s", s)
 	// use netpbm or imagemagick to convert unsupported image formats into PNG
 	if !file.Check(pngDest, err) {
-		if err := external(w, l, name, pngDest, s, remove); err == nil {
-			name = pngDest
+		if err := Libraries(w, src, pngDest, remove); err != nil {
+			if err := file.Remove(remove, src); err != nil {
+				fmt.Fprintf(w, "could not remove %s: %s\n", src, err)
+			}
+		} else {
+			src = pngDest // use the png created by the libraries
 		}
 	}
 	// convert to webp
-	if s, err = ToWebp(w, name, webpDest, true); !errors.Is(err, ErrFormat) {
-		feedback(w, l, s, err)
-	}
+	s, err = ToWebp(w, src, webpDest, true)
 	if err != nil {
+		if !errors.Is(err, ErrFormat) {
+			return fmt.Errorf("could not generate webp from %s: %s: %s", src, webpDest, err)
+		}
 		s, err = ToWebp(w, pngDest, webpDest, true)
-		feedback(w, l, s, err)
+		if err != nil {
+			return fmt.Errorf("could not generate webp from %s: %s: %s", pngDest, webpDest, err)
+		}
 	}
+	fmt.Fprintf(w, "  %s", s)
 	webpOk := file.Check(webpDest, err)
 	// make 400x400 thumbs
-	s, err = ToThumb(name, f.Img400, thumbWidth)
+	s, err = ToThumb(src, f.Img400, thumbWidth)
 	if err != nil {
 		s, err = ToThumb(pngDest, f.Img400, thumbWidth)
 	} else if err != nil && webpOk {
 		s, err = ToThumb(webpDest, f.Img400, thumbWidth)
 	}
-	feedback(w, l, s, err)
-	return file.Remove(remove, name)
+	if err != nil {
+		return fmt.Errorf("could not generate thumbs from any sources: %s: %s", src, err)
+	}
+	fmt.Fprintf(w, "  %s", s)
+	return file.Remove(remove, src)
 }
 
-func external(w io.Writer, l *zap.SugaredLogger, name, pngDest, s string, remove bool) error {
-	prog, err := netpbm.ID(name)
+func Libraries(w io.Writer, src, pngDest string, remove bool) error {
+	if w == nil {
+		w = io.Discard
+	}
+	prog, err := netpbm.ID(src)
 	if err != nil {
 		return err
 	}
 	if prog != "" {
-		err := netpbm.Convert(w, name, pngDest)
+		err := netpbm.Convert(w, src, pngDest)
 		if err != nil {
-			feedback(w, l, s, err)
-			return file.Remove(remove, name)
+			return err
 		}
 		if !file.Check(pngDest, err) {
-			return file.Remove(remove, name)
+			return err
 		}
 		return nil
 	}
-	err1 := imagemagick.Convert(w, name, pngDest)
-	if err1 != nil {
-		feedback(w, l, s, err1)
-		return file.Remove(remove, name)
-	}
-	if !file.Check(pngDest, err1) {
-		return file.Remove(remove, name)
+	if err = imagemagick.Convert(w, src, pngDest); err != nil {
+		return err
+	} else if !file.Check(pngDest, err) {
+		return file.Remove(remove, src)
 	}
 	return nil
 }
 
-func feedback(w io.Writer, l *zap.SugaredLogger, s string, err error) {
-	if s != "" {
-		fmt.Fprintf(w, "  %s", s)
-		return
-	}
+// Copy a file from the source location to the destination.
+func Copy(dest, src string) error {
+	s, err := os.Open(src)
 	if err != nil {
-		l.Errorln(err)
+		return fmt.Errorf("cp open: %w", err)
 	}
+	defer s.Close()
+	d, err := os.OpenFile(dest, fmode, fperm)
+	if err != nil {
+		return fmt.Errorf("cp create: %w", err)
+	}
+	defer d.Close()
+	_, err = io.Copy(d, s)
+	if err != nil {
+		return fmt.Errorf("cp io copy: %w", err)
+	}
+	return nil
 }
 
 // Move a file from the source location to the destination.
 // This is used in situations where os.rename() fails due to multiple partitions.
-func Move(src, dest string) error {
+func Move(dest, src string) error {
 	s, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("move open: %w", err)
@@ -203,7 +239,7 @@ func Move(src, dest string) error {
 		return fmt.Errorf("move create: %w", err)
 	}
 	defer d.Close()
-	_, err = io.Copy(s, d)
+	_, err = io.Copy(d, s)
 	if err != nil {
 		return fmt.Errorf("move io copy: %w", err)
 	}
@@ -227,8 +263,8 @@ func Info(name string) (width, height int, format string, err error) { //nolint:
 	return config.Width, config.Height, format, file.Close()
 }
 
-// NewExt replaces or appends the extension to a file name.
-func NewExt(name, ext string) string {
+// ReplaceExt replaces or appends the extension to a file name.
+func ReplaceExt(ext, name string) string {
 	e := filepath.Ext(name)
 	if e == "" {
 		return name + ext
@@ -241,13 +277,13 @@ func NewExt(name, ext string) string {
 // helpful: https://www.programming-books.io/essential/
 // go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49.
 func ToPng(src, dest string, width, height int) (string, error) {
-	in, err := os.Open(src)
+	f, err := os.Open(src)
 	if err != nil {
 		return "", fmt.Errorf("to png open %s: %w", src, err)
 	}
-	defer in.Close()
+	defer f.Close()
 	// image.Decode will determine the format
-	img, ext, err := image.Decode(in)
+	img, ext, err := image.Decode(f)
 	if err != nil {
 		return "", fmt.Errorf("to png decode: %w", err)
 	}
@@ -261,21 +297,21 @@ func ToPng(src, dest string, width, height int) (string, error) {
 		return "", fmt.Errorf("to png quant compress: %w", err)
 	}
 	// adjust any configs to the PNG image encoder
-	cfg := png.Encoder{
+	p := png.Encoder{
 		CompressionLevel: png.BestCompression,
 	}
 	// write the PNG data to img
-	buf := new(bytes.Buffer)
-	if err = cfg.Encode(buf, img); err != nil {
+	bb := &bytes.Buffer{}
+	if err = p.Encode(bb, img); err != nil {
 		return "", fmt.Errorf("to png buffer encode: %w", err)
 	}
 	// save the PNG to a file
-	out, err := os.Create(dest)
+	d, err := os.Create(dest)
 	if err != nil {
 		return "", fmt.Errorf("to png create %q: %w", dest, err)
 	}
-	defer out.Close()
-	if _, err := buf.WriteTo(out); err != nil {
+	defer d.Close()
+	if _, err := bb.WriteTo(d); err != nil {
 		return "", fmt.Errorf("to png buffer write to: %w", err)
 	}
 	return fmt.Sprintf("%v»png", strings.ToLower(ext)), nil
@@ -283,35 +319,35 @@ func ToPng(src, dest string, width, height int) (string, error) {
 
 // ToThumb creates a thumb from an image that is pixel squared in size.
 func ToThumb(src, dest string, sizeSquared int) (string, error) {
-	pfx := "_" + fmt.Sprintf("%v", sizeSquared) + "x"
-	cp, err := Duplicate(src, pfx)
+	s := "_" + fmt.Sprintf("%v", sizeSquared) + "x"
+	cp, err := Duplicate(src, s)
 	if err != nil {
 		return "", fmt.Errorf("to thumb duplicate: %w", err)
 	}
-	in, err := imaging.Open(cp)
+	img, err := imaging.Open(cp)
 	if err != nil {
 		return "", fmt.Errorf("to thumb imaging open: %w", err)
 	}
-	in = imaging.Resize(in, sizeSquared, 0, imaging.Lanczos)
-	in = imaging.CropAnchor(in, sizeSquared, sizeSquared, imaging.Center)
+	img = imaging.Resize(img, sizeSquared, 0, imaging.Lanczos)
+	img = imaging.CropAnchor(img, sizeSquared, sizeSquared, imaging.Center)
 	// use the 3rd party CLI tool, pngquant to compress the PNG data
-	in, err = pngquant.Compress(in, "4")
+	img, err = pngquant.Compress(img, "4")
 	if err != nil {
 		return "", fmt.Errorf("to thumb png quant compress: %w", err)
 	}
-	f := NewExt(cp, _png)
-	if err := imaging.Save(in, f); err != nil {
+	f := ReplaceExt(_png, cp)
+	if err := imaging.Save(img, f); err != nil {
 		return "", fmt.Errorf("to thumb imaging save: %w", err)
 	}
-	ext := NewExt(dest, _png)
-	if err := os.Rename(f, ext); err != nil {
+	pngDest := ReplaceExt(_png, dest)
+	if err := os.Rename(f, pngDest); err != nil {
 		var le *os.LinkError // invalid cross-device link
-		if errors.As(err, &le) {
-			if err = Move(f, ext); err != nil {
-				return "", fmt.Errorf("to thumb move: %w", err)
-			}
-		} else {
+		if !errors.As(err, &le) {
 			return "", fmt.Errorf("to thumb rename: %w", err)
+		}
+		// attempt to fix cross-device link
+		if err = Move(pngDest, f); err != nil {
+			return "", fmt.Errorf("to thumb move: %w", err)
 		}
 	}
 	if _, err := os.Stat(cp); err == nil {
@@ -325,6 +361,9 @@ func ToThumb(src, dest string, sizeSquared int) (string, error) {
 // ToWebp converts any supported format to a WebP image using a 3rd party library.
 // Input format can be either GIF, PNG, JPEG, TIFF, WebP or raw Y'CbCr samples.
 func ToWebp(w io.Writer, src, dest string, vendorTempDir bool) (string, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	input, rm, err := checkWebP(src)
 	if err != nil {
 		return "", err
@@ -348,7 +387,7 @@ func ToWebp(w io.Writer, src, dest string, vendorTempDir bool) (string, error) {
 		defer os.Remove(input)
 	}
 	if err = webp.Run(); err != nil {
-		if err1 := file.RemoveWebP(dest); err1 != nil {
+		if err1 := file.Remove0byte(dest); err1 != nil {
 			return "", fmt.Errorf("to webp cleanup: %w", err1)
 		}
 		return "", fmt.Errorf("to webp run: %w", err)
@@ -378,7 +417,7 @@ func checkWebP(src string) (string, bool, error) {
 		// gif2webp -- Tool for converting GIF images to WebP
 		f, err := os.CreateTemp("", "df2-gifToWebp.png")
 		if err != nil {
-			log.Fatal(err)
+			return "", false, err
 		}
 		_, err = ToPng(src, f.Name(), 0, 0)
 		if err != nil {
@@ -401,6 +440,9 @@ func checkWebP(src string) (string, bool, error) {
 
 // cropWebP crops an image to be usable size for WebP conversion.
 func cropWebP(w io.Writer, name string) (string, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	wp, hp, _, err := Info(name)
 	if err != nil {
 		return "", fmt.Errorf("to webp size: %w", err)
@@ -411,8 +453,7 @@ func cropWebP(w io.Writer, name string) (string, error) {
 		ext := filepath.Ext(name)
 		fn := strings.TrimSuffix(name, ext)
 		crop := fn + "-cropped" + ext
-		_, err := ToPng(name, crop, cropW, cropH)
-		if err != nil {
+		if _, err := ToPng(name, crop, cropW, cropH); err != nil {
 			return "", fmt.Errorf("webp crop: %w", err)
 		}
 		return crop, nil

@@ -23,6 +23,9 @@ var ErrFmt = errors.New("imagemagick does not support this image")
 
 // Convert uses the magick convert command to convert an image to PNG.
 func Convert(w io.Writer, src, dest string) error {
+	if w == nil {
+		w = io.Discard
+	}
 	if _, err := ID(src); err != nil {
 		return err
 	}
