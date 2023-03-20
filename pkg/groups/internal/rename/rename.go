@@ -25,7 +25,7 @@ func Clean(db *sql.DB, w io.Writer, name string) (bool, error) {
 	if w == nil {
 		w = io.Discard
 	}
-	fix := CleanStr(name)
+	fix := CleanS(name)
 	if fix == name {
 		return false, nil
 	}
@@ -41,8 +41,8 @@ func Clean(db *sql.DB, w io.Writer, name string) (bool, error) {
 	return success, nil
 }
 
-// CleanStr fixes the malformed string.
-func CleanStr(s string) string {
+// CleanS fixes the malformed string.
+func CleanS(s string) string {
 	f := database.TrimSP(s)
 	f = database.StripChars(f)
 	f = database.StripStart(f)
@@ -153,7 +153,7 @@ func Update(db *sql.DB, newName, group string) (int64, error) {
 
 // FmtExact matches the exact group name to apply a format.
 func FmtExact(g string) string {
-	switch g {
+	switch strings.ToLower(g) {
 	// all uppercase full groups
 	case "anz ftp", "mor ftp", "msv ftp", "nos ftp", "pox ftp", "scf ftp", "scsi ftp",
 		"tbb ftp", "tog ftp", "top ftp", "tph-qqt", "tpw ftp", "u4ea ftp", "zoo ftp",

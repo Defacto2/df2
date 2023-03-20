@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/gookit/color"
 )
 
@@ -35,34 +35,42 @@ func Contains(x string, sorted []string) bool {
 	return sorted[o] == x
 }
 
-// MatchStdOut scans over the groups and attempts to match possible misnamed duplicates.
+// Match scans over the groups and attempts to match possible misnamed duplicates.
 // The results are printed to stdout in realtime.
-func MatchStdOut(db *sql.DB, w io.Writer) error { //nolint:funlen
-	tick := time.Now()
+// maxCount is intended for tests and will limit the number of groups to scan.
+func Match(db *sql.DB, w io.Writer, maxCount int) error { //nolint:funlen
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 
 	const (
 		n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12 = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 	)
-
+	tick := time.Now()
 	list, total, err := List(db, w)
 	if err != nil {
 		return err
 	}
 	sort.Strings(list)
 
-	l := 0
-	var matches []string
+	matches := []string{}
 	a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 := "", "", "", "", "", "", "", "", "", "", "", "", ""
 	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 := "", "", "", "", "", "", "", "", "", "", "", "", ""
 	f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 := "", "", "", "", "", "", "", "", "", "", "", ""
 	g0, g1, g2, g3, g4, g5, g6, g7, g8 := "", "", "", "", "", "", "", "", ""
 	h0, h1, h2, h3, h4, h5, h6, h7, h8 := "", "", "", "", "", "", "", "", ""
+	i := 0
 	for _, group := range list {
-		l = len(group)
-		if l == 0 {
+		if len(group) == 0 {
 			continue
 		}
-
+		i++
+		if maxCount > 0 && i > maxCount {
+			break
+		}
 		a0 = SwapSuffix(group, "s", "z")
 		a1 = group + "s"
 		a2 = group + "z"
@@ -117,7 +125,6 @@ func MatchStdOut(db *sql.DB, w io.Writer) error { //nolint:funlen
 		h7 = SwapAll(group, "b", "8")
 		g8 = SwapAll(group, "9", "g")
 		h8 = SwapAll(group, "g", "9")
-
 		for _, match := range list {
 			if Contains(match, matches) {
 				continue
@@ -132,13 +139,13 @@ func MatchStdOut(db *sql.DB, w io.Writer) error { //nolint:funlen
 				h0, h1, h2, h3, h4, h5, h6, h7, h8:
 				g, err1 := Count(db, group)
 				m, err2 := Count(db, match)
-				fmt.Fprintf(os.Stdout, "%s %s %s (%d%s%d)\n", group, approx, match,
+				fmt.Fprintf(w, "%s %s %s (%d%s%d)\n", group, approx, match,
 					g, approx, m)
 				if err1 != nil {
-					fmt.Fprintln(os.Stdout, err1)
+					fmt.Fprintln(w, err1)
 				}
 				if err2 != nil {
-					fmt.Fprintln(os.Stdout, err2)
+					fmt.Fprintln(w, err2)
 				}
 				matches = append(matches, match)
 				sort.Strings(matches)
@@ -146,19 +153,17 @@ func MatchStdOut(db *sql.DB, w io.Writer) error { //nolint:funlen
 			}
 		}
 	}
-	l = len(matches)
-	return matchSummary(tick, l, total)
+	return matchSummary(w, tick, len(matches), total)
 }
 
-func matchSummary(tick time.Time, l, total int) error {
+func matchSummary(w io.Writer, tick time.Time, l, total int) error {
 	elapsed := time.Since(tick)
-	w := os.Stdout
 	fmt.Fprintf(w, "\nProcessing time %s\n", elapsed)
 	switch l {
 	case 0:
 		fmt.Fprintf(w, "\nGreat, there are no known duplicate names from %d groups\n", total)
 	default:
-		color.Primary.Printf("\n%d matches from %d groups\n", l, total)
+		fmt.Fprint(w, color.Primary.Sprintf("\n%d matches from %d groups\n", l, total))
 		fmt.Fprintf(w, "To rename groups: df2 fix rename \"group name\" \"replacement name\"\n")
 		fmt.Fprintf(w, "Example: df2 fix rename %q %q\n", "defacto ii", "defacto2")
 	}

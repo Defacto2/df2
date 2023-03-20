@@ -34,7 +34,7 @@ func TestFmtSyntax(t *testing.T) {
 	assert.Equal(t, "hello & world", s)
 }
 
-func TestCleanStr(t *testing.T) {
+func TestCleanS(t *testing.T) {
 	type args struct {
 		s string
 	}
@@ -73,8 +73,8 @@ func TestCleanStr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := rename.CleanStr(tt.args.s); got != tt.want {
-				t.Errorf("CleanStr() = %v, want %v", got, tt.want)
+			if got := rename.CleanS(tt.args.s); got != tt.want {
+				t.Errorf("CleanS() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -154,4 +154,13 @@ func TestFormat(t *testing.T) {
 	assert.Equal(t, "PC-My", s)
 	s = rename.Format("lsdstuff")
 	assert.Equal(t, "LSDStuff", s)
+}
+
+func TestFmtExact(t *testing.T) {
+	s := rename.FmtExact("")
+	assert.Equal(t, "", s)
+	s = rename.FmtExact("tcsm bbs")
+	assert.Equal(t, "TCSM BBS", s)
+	s = rename.FmtExact("Scenet")
+	assert.Equal(t, "scenet", s)
 }

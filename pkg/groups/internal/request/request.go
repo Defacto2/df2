@@ -166,7 +166,7 @@ func (r Flags) Parse(db *sql.DB, w, dest io.Writer, tmpl string) error {
 		if f := r.Filter; f == "" {
 			fmt.Fprintln(w, count, "matching (all) records found")
 		} else {
-			fmt.Fprintf(w, "%d matching %s records found (%s)\n", count, f, dest)
+			fmt.Fprintf(w, "%d matching %s records found\n", count, f)
 		}
 	}
 	data, err := r.iterate(db, w, list...)
@@ -195,11 +195,6 @@ func (r Flags) parse(t *template.Template, data *[]Result, dest io.Writer, count
 	}
 	switch group.Get(r.Filter) {
 	case group.BBS, group.FTP, group.Group, group.Magazine:
-		// f, err := os.OpenFile(dest, os.O_CREATE, 0666)
-		// if err != nil {
-		// 	return fmt.Errorf("parse open: %w", err)
-		// }
-		// defer f.Close()
 		fmt.Fprint(dest, r.prependHTML(count))
 		if err := t.Execute(dest, &data); err != nil {
 			return fmt.Errorf("parse execute: %w", err)

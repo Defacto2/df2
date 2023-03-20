@@ -299,6 +299,8 @@ func GroupCron(db *sql.DB, w io.Writer, cfg configger.Config, gro arg.Group) err
 		if err := groups.Cronjob(db, w, dest, tag, ow); err != nil {
 			return err
 		}
+		fmt.Fprintln(dest)
+		dest.Flush()
 	}
 	return nil
 }

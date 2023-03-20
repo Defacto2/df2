@@ -20,6 +20,7 @@ import (
 var (
 	ErrCronDir = errors.New("cronjob directory does not exist")
 	ErrHTMLDir = errors.New("the directory.html setting is empty")
+	ErrTag     = errors.New("cronjob tag cannot be an empty string")
 )
 
 // Request flags for group functions.
@@ -27,48 +28,21 @@ type Request request.Flags
 
 // DataList prints an auto-complete list for HTML input elements.
 func (r Request) DataList(db *sql.DB, w, dest io.Writer) error {
-	if db == nil {
-		return database.ErrDB
-	}
-	if w == nil {
-		w = io.Discard
-	}
-	if dest == nil {
-		dest = io.Discard
-	}
 	return request.Flags(r).DataList(db, w, dest)
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
 func (r Request) HTML(db *sql.DB, w, dest io.Writer) error {
-	if db == nil {
-		return database.ErrDB
-	}
-	if w == nil {
-		w = io.Discard
-	}
-	if dest == nil {
-		dest = io.Discard
-	}
 	return request.Flags(r).HTML(db, w, dest)
 }
 
 // Print a list of organisations or groups filtered by a name and summarizes the results.
 func (r Request) Print(db *sql.DB, w io.Writer) (int, error) {
-	if db == nil {
-		return 0, database.ErrDB
-	}
-	if w == nil {
-		w = io.Discard
-	}
 	return request.Print(db, w, request.Flags(r))
 }
 
 // Count returns the number of file entries associated with a named group.
 func Count(db *sql.DB, name string) (int, error) {
-	if db == nil {
-		return 0, database.ErrDB
-	}
 	return group.Count(db, name)
 }
 
@@ -76,6 +50,9 @@ func Count(db *sql.DB, name string) (int, error) {
 func Cronjob(db *sql.DB, w, dest io.Writer, tag string, force bool) error {
 	if db == nil {
 		return database.ErrDB
+	}
+	if tag == "" {
+		return ErrTag
 	}
 	if w == nil {
 		w = io.Discard
@@ -112,7 +89,7 @@ func Exact(db *sql.DB, name string) (int, error) {
 	if err := row.Scan(&count); err != nil {
 		return 0, fmt.Errorf("count: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
 // Fix any malformed group names found in the database.
@@ -195,9 +172,6 @@ func Slug(s string) string {
 
 // Update replaces all instances of the group name with the new group name.
 func Update(db *sql.DB, newName, group string) (int64, error) {
-	if db == nil {
-		return 0, database.ErrDB
-	}
 	return rename.Update(db, newName, group)
 }
 

@@ -1,121 +1,96 @@
 package request_test
 
 import (
-	"os"
-	"path/filepath"
+	"bytes"
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestParse(t *testing.T) {
-	t.Parallel()
-	tmp := filepath.Join(os.TempDir(), "request.htm")
-	type args struct {
-		filename string
-		templ    string
-	}
-	tests := []struct {
-		name    string
-		r       request.Flags
-		args    args
-		wantErr bool
-	}{
-		{"empty", request.Flags{Filter: "bbs"}, args{tmp, ""}, false},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			// note: this test is slow
-			t.Parallel()
-			if err := tt.r.Parse(nil, nil, nil, tt.args.templ); (err != nil) != tt.wantErr {
-				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+func TestFlags_DataList(t *testing.T) {
+	f := request.Flags{}
+	err := f.DataList(nil, nil, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = f.DataList(db, io.Discard, io.Discard)
+	assert.NotNil(t, err)
+
+	f = request.Flags{Filter: "bbs"}
+	b := bytes.Buffer{}
+	err = f.DataList(db, io.Discard, &b)
+	assert.Nil(t, err)
+	assert.Contains(t, b.String(), `<option value="`)
 }
 
-func TestPrintr(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name      string
-		r         request.Flags
-		wantTotal bool
-		wantErr   bool
-	}{
-		{"", request.Flags{}, true, false},
-		{"bbs", request.Flags{Filter: "bbs"}, true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt := tt
-			t.Parallel()
-			gotTotal, err := request.Print(nil, nil, tt.r)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Print() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if (gotTotal > 0) != tt.wantTotal {
-				t.Errorf("Print() = %v, want %v", gotTotal, tt.wantTotal)
-			}
-		})
-	}
+func TestFlags_HTML(t *testing.T) {
+	f := request.Flags{}
+	err := f.HTML(nil, nil, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = f.HTML(db, io.Discard, io.Discard)
+	assert.NotNil(t, err)
+
+	f = request.Flags{Filter: "bbs"}
+	b := bytes.Buffer{}
+	err = f.HTML(db, io.Discard, &b)
+	assert.Nil(t, err)
+	assert.Contains(t, b.String(), `/a></h2><h2><a href="`)
 }
 
-func TestInitialism(t *testing.T) {
-	type args struct {
-		group string
-	}
-	tests := []struct {
-		name     string
-		r        request.Flags
-		args     args
-		wantName string
-		wantErr  bool
-	}{
-		{"empty", request.Flags{}, args{""}, "", false},
-		{"none", request.Flags{Initialisms: false}, args{"Defacto2"}, "", false},
-		{"Defacto2", request.Flags{Initialisms: true}, args{"Defacto2"}, "DF2", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotName, err := tt.r.Initialism(nil, tt.args.group)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Initialism() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotName != tt.wantName {
-				t.Errorf("Initialism() = %v, want %v", gotName, tt.wantName)
-			}
-		})
-	}
+func TestFlags_Files(t *testing.T) {
+	f := request.Flags{}
+	_, err := f.Files(nil, "")
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	i, err := f.Files(db, "")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, i)
+	f = request.Flags{Counts: true}
+	i, err = f.Files(db, "Defacto")
+	assert.Nil(t, err)
+	assert.Greater(t, i, 1)
 }
 
-func TestFiles(t *testing.T) {
-	type args struct {
-		group string
-	}
-	tests := []struct {
-		name      string
-		r         request.Flags
-		args      args
-		wantTotal bool
-		wantErr   bool
-	}{
-		{"empty", request.Flags{}, args{""}, false, false},
-		{"none", request.Flags{Counts: false}, args{"Defacto2"}, false, false},
-		{"Defacto2", request.Flags{Counts: true}, args{"Defacto2"}, true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotTotal, err := tt.r.Files(nil, tt.args.group)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Request.files() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if (gotTotal > 0) != tt.wantTotal {
-				t.Errorf("Request.files() = %v, want %v", gotTotal, tt.wantTotal)
-			}
-		})
-	}
+func TestFlags_Initialism(t *testing.T) {
+	f := request.Flags{}
+	_, err := f.Initialism(nil, "")
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	s, err := f.Initialism(db, "")
+	assert.Nil(t, err)
+	assert.Equal(t, "", s)
+	f = request.Flags{Initialisms: true}
+	s, err = f.Initialism(db, "Defacto")
+	assert.Nil(t, err)
+	assert.Equal(t, "df", s)
+}
+
+func TestPrint(t *testing.T) {
+	r := request.Flags{}
+	i, err := request.Print(nil, nil, r)
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	i, err = request.Print(db, io.Discard, r)
+	assert.Nil(t, err)
+	assert.Greater(t, i, 1)
 }

@@ -36,7 +36,8 @@ var testGroupNames = &cobra.Command{
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := groups.MatchStdOut(db, os.Stdout); err != nil {
+		const allGroups = 0
+		if err := groups.Match(db, os.Stdout, allGroups); err != nil {
 			logr.Error(err)
 		}
 	},

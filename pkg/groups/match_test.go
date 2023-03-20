@@ -1,10 +1,14 @@
 package groups_test
 
 import (
+	"io"
 	"sort"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestContains(t *testing.T) {
@@ -33,6 +37,17 @@ func TestContains(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMatch(t *testing.T) {
+	err := groups.Match(nil, nil, -1)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = groups.Match(db, io.Discard, 100)
+	assert.Nil(t, err)
 }
 
 func TestSwapOne(t *testing.T) {
