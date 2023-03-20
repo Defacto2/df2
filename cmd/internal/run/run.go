@@ -392,15 +392,15 @@ func People(db *sql.DB, w io.Writer, directory string, pf arg.People) error {
 	}
 	fmtflags := [7]string{datal, htm, txt, dl, "d", "h", "t"}
 	arg.FilterFlag(w, people.Filters(), "filter", pf.Filter)
-	var req people.Request
+	var req people.Flags
 	if arg.FilterFlag(w, fmtflags, "format", pf.Format); pf.Format != "" {
-		req = people.Request{Filter: pf.Filter, Progress: pf.Progress}
+		req = people.Flags{Filter: pf.Filter, Progress: pf.Progress}
 	}
 	switch pf.Format {
 	case datal, dl, "d":
-		return people.DataList(db, w, "", directory, req)
+		return people.DataList(db, w, "", req)
 	case htm, "h", "":
-		return people.HTML(db, w, "", directory, req)
+		return people.HTML(db, w, "", req)
 	case txt, "t":
 		return people.Print(db, w, req)
 	}

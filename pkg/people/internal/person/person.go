@@ -7,10 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"text/template"
-
-	"github.com/Defacto2/df2/pkg/people/internal/role"
 )
 
 var ErrFilter = errors.New("invalid filter used")
@@ -24,36 +21,40 @@ type Person struct {
 
 type Persons []Person
 
-// Tempate creates the HTML used by the website to list people.
-func (p Persons) Template(w io.Writer, filename, directory, tpl string, filter string) error {
-	t, err := template.New("h2").Parse(tpl)
+// Tempate saves to dest the HTML used by the website to list people.
+func (p Persons) Template(dest, tmpl string) error {
+	t, err := template.New("h2").Parse(tmpl)
 	if err != nil {
 		return fmt.Errorf("parse h2 template: %w", err)
 	}
-	if filename == "" {
-		var buf bytes.Buffer
-		wr := bufio.NewWriter(&buf)
-		if err = t.Execute(wr, p); err != nil {
-			return fmt.Errorf("parse h2 execute template: %w", err)
-		}
-		if err := wr.Flush(); err != nil {
-			return fmt.Errorf("parse writer flush: %w", err)
-		}
-		fmt.Fprintln(w, buf.String())
-		return nil
+	f, err := os.Create(dest)
+	if err != nil {
+		return fmt.Errorf("parse create: %w", err)
 	}
-	switch role.Roles(filter) {
-	case role.Artists, role.Coders, role.Musicians, role.Writers:
-		f, err := os.Create(path.Join(directory, filename))
-		if err != nil {
-			return fmt.Errorf("parse create: %w", err)
-		}
-		defer f.Close()
-		if err = t.Execute(f, p); err != nil {
-			return fmt.Errorf("parse template execute: %w", err)
-		}
-	case role.Everyone:
-		return fmt.Errorf("parse %v: %w", filter, ErrFilter)
+	defer f.Close()
+	if err = t.Execute(f, p); err != nil {
+		return fmt.Errorf("parse template execute: %w", err)
 	}
+	return nil
+}
+
+// Tempate writes the HTML used by the website to list people.
+func (p Persons) TemplateW(w io.Writer, tmpl string) error {
+	if w == nil {
+		w = io.Discard
+	}
+	t, err := template.New("h2").Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("parse h2 template: %w", err)
+	}
+	var bb bytes.Buffer
+	nr := bufio.NewWriter(&bb)
+	if err = t.Execute(nr, p); err != nil {
+		return fmt.Errorf("parse h2 execute template: %w", err)
+	}
+	if err := nr.Flush(); err != nil {
+		return fmt.Errorf("parse writer flush: %w", err)
+	}
+	fmt.Fprintln(w, bb.String())
 	return nil
 }
