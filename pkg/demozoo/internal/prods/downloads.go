@@ -52,7 +52,7 @@ func (p *ProductionsAPIv1) DownloadLink(w io.Writer) (string, string) { //nolint
 			fmt.Fprintf(w, "url.Parse(%s) error = %q\n", l.URL, err)
 			continue
 		}
-		ping, err := download.PingHead(l.URL)
+		ping, err := download.PingHead(l.URL, 0)
 		if err != nil {
 			fmt.Fprintf(w, "download.Ping(%s) error = %q\n", l.URL, err)
 			continue
@@ -84,7 +84,7 @@ func (p *ProductionsAPIv1) Download(w io.Writer, l DownloadsAPIv1) error {
 		fmt.Fprint(w, " not usable\n")
 		return nil
 	}
-	ping, err := download.PingHead(l.URL)
+	ping, err := download.PingHead(l.URL, 0)
 	if err != nil {
 		return fmt.Errorf("ping download from demozoo: %w", err)
 	}

@@ -162,7 +162,7 @@ func (p Style) RangeFiles(w io.Writer, urls []string) {
 		}
 		wg.Add(1)
 		go func(link string) {
-			code, name, size, err := download.PingFile(strings.TrimSpace(link))
+			code, name, size, err := download.PingFile(strings.TrimSpace(link), 0)
 			if err != nil {
 				fmt.Fprintf(w, "%s\t%s\n", ColorCode(code), err)
 				wg.Done()
@@ -328,7 +328,7 @@ func GetSoftDeleteKeys(db *sql.DB) (IDs, error) {
 
 // GetTitle returns the string value of the HTML <title> element and status code of a URL.
 func GetTitle(trimSuffix bool, url string) (string, int, error) {
-	b, status, err := download.Get(url)
+	b, status, err := download.Get(url, 0)
 	if err != nil {
 		return "", status, err
 	}
