@@ -2,74 +2,53 @@
 package prompt
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
-	"log"
+	"io"
 	"os"
-
-	"github.com/Defacto2/df2/pkg/prompt/internal/input"
+	"strings"
 )
 
-const (
-	PortMin = input.PortMin // PortMin is the lowest permitted network port.
-	PortMax = input.PortMax // PortMax is the largest permitted network port.
+var (
+	ErrReader = errors.New("reader io cannot be nil")
 )
 
-// Dir asks the user for a directory path and saves it.
-func Dir() string {
-	s, err := input.Dir(os.Stdin)
-	if errors.Is(err, input.ErrEmpty) {
-		os.Exit(0)
+// Read and trim the reader and return the results.
+func Read(r io.Reader) (string, error) {
+	if r == nil {
+		return "", ErrReader
 	}
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	reader := bufio.NewReader(r)
+	s, err := reader.ReadString('\n')
+	s = strings.TrimSpace(s) // remove the newline caused from the Enter keypress
+	if err != nil && err != io.EOF {
+		return s, err
 	}
-	return s
-}
-
-// Port asks the user for a port configuration value and returns the input.
-func Port() int64 {
-	i, err := input.Port(os.Stdin)
-	if err != nil {
-		os.Exit(1)
-	}
-	return i
-}
-
-// IsPort reports if the port is usable.
-func IsPort(port int) bool {
-	if port < PortMin || port > PortMax {
-		return false
-	}
-	return true
-}
-
-// String asks the user for a string configuration value and saves it.
-func String(keep string) string {
-	fmt.Fprintln(os.Stdout, keep)
-	s, err := input.String(os.Stdin)
-	if errors.Is(err, input.ErrEmpty) {
-		os.Exit(0)
-	}
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	return s
+	return s, nil
 }
 
 // YN asks the user for a yes or no input.
-func YN(query string, yes bool) bool {
+func YN(w io.Writer, s string, defaultY bool) (bool, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	y, n := "Y", "n"
-	if !yes {
+	if !defaultY {
 		y, n = "y", "N"
 	}
-	fmt.Fprintf(os.Stdout, "%s? [%s/%s] ", query, y, n)
-	in, err := input.Read(os.Stdin)
+	fmt.Fprintf(w, "%s? [%s/%s] ", s, y, n)
+	input, err := Read(os.Stdin)
 	if err != nil {
-		log.Print(fmt.Errorf("prompt yn input: %w", err))
-		return false
+		return false, fmt.Errorf("prompt yn input: %w", err)
 	}
-	return input.YN(in, yes)
+	switch input {
+	case "":
+		if defaultY {
+			return true, nil
+		}
+	case "yes", "y":
+		return true, nil
+	}
+	return false, nil
 }

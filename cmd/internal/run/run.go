@@ -172,7 +172,11 @@ func releaser(db *sql.DB, w io.Writer, id uint) error {
 	}
 	s := fmt.Sprintf("Attempt to add the %d productions found for the %s, %s",
 		len(p.API), v, r.API.Name)
-	if !prompt.YN(s, true) {
+	b, err := prompt.YN(w, s, true)
+	if err != nil {
+		return err
+	}
+	if !b {
 		return nil
 	}
 	return demozoo.InsertProds(db, w, &p.API)
@@ -448,7 +452,11 @@ func Rename(db *sql.DB, w io.Writer, args ...string) error {
 			src, oldArg, newName, src+dest)
 		color.Danger.Println("This cannot be undone")
 	}
-	if b := prompt.YN("Rename the group", false); !b {
+	b, err := prompt.YN(w, "Rename the group", false)
+	if err != nil {
+		return err
+	}
+	if !b {
 		return nil
 	}
 	i, err := groups.Update(db, newName, oldArg)
