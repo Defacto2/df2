@@ -1,39 +1,50 @@
 package data_test
 
 import (
-	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/shrink/internal/data"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
-	path = "../../../../tests/empty"
-	imgs = "../../../../tests/images"
 	uuid = "29e0ca1f-c0a6-4b1a-b019-94a54243c093"
 )
 
+var (
+	testdata = filepath.Join("..", "..", "..", "..", "tests", "uuid")
+)
+
 func TestMonth(t *testing.T) {
-	tests := []struct {
-		name string
-		s    string
-		want data.Months
-	}{
-		{"empty", "", 0},
-		{"two letters", "ja", 0},
-		{"three letters", "jan", 1},
-		{"last", "dec", 12},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := data.Month(tt.s); got != tt.want {
-				t.Errorf("Month() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	m := data.Month("")
+	assert.Equal(t, data.Months(0), m)
+	m = data.Month("ja")
+	assert.Equal(t, data.Months(0), m)
+	m = data.Month("jan")
+	assert.Equal(t, data.Months(1), m)
+	m = data.Month("dec")
+	assert.Equal(t, data.Months(12), m)
+
+}
+
+func TestApprovals_Approve(t *testing.T) {
+	p := data.Preview
+	err := p.Approve(nil)
+	assert.NotNil(t, err)
+	i := data.Preview
+	err = i.Approve(nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = p.Approve(db)
+	assert.NotNil(t, err)
 }
 
 func TestInit(t *testing.T) {
@@ -42,89 +53,34 @@ func TestInit(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if err := data.Init(nil, ""); err == nil {
+	if err := data.Init(io.Discard, ""); err == nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
-	if err := data.Init(nil, d); err != nil {
+	if err := data.Init(io.Discard, d); err != nil {
 		t.Errorf("Init() should have an error: %v", err)
 	}
 }
 
 func TestSaveDir(t *testing.T) {
-	if s := data.SaveDir(); s == "" {
-		t.Errorf("SaveDir() is empty")
-	}
-}
-
-func TestApprovals_Approve(t *testing.T) {
-	tests := []struct {
-		name    string
-		cmd     data.Approvals
-		wantErr bool
-	}{
-		{"empty", "", true},
-		{"bad", "invalid", true},
-		{"okay", data.Incoming, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.cmd.Approve(nil); !errors.Is(err, data.ErrApprove) != tt.wantErr {
-				t.Errorf("Approvals.Approve() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func touch() error {
-	file, err := os.Create(filepath.Join(path, uuid))
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	return nil
+	s, err := data.SaveDir()
+	assert.Nil(t, err)
+	assert.NotEqual(t, "", s)
 }
 
 func TestApprovals_Store(t *testing.T) {
-	d, err := filepath.Abs(path)
-	if err != nil {
-		t.Error(err)
-	}
-	if _, err := os.Stat(d); os.IsNotExist(err) {
-		if err := os.Mkdir(d, 0o755); err != nil {
-			t.Error(err)
-		}
-		defer os.Remove(d)
-	}
-	if err := touch(); err != nil {
-		t.Error(err)
-	}
-	type args struct {
-		path    string
-		partial string
-	}
-	tests := []struct {
-		name    string
-		cmd     data.Approvals
-		args    args
-		wantErr bool
-	}{
-		{"empty", "", args{}, true},
-		{"no args", data.Incoming, args{}, true},
-		{"", data.Incoming, args{
-			path: d, partial: "",
-		}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.cmd.Store(nil, tt.args.path, tt.args.partial); (err != nil) != tt.wantErr {
-				t.Errorf("Approvals.Store() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	path, err := data.Preview.Store(nil, "", "", false)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", path)
+	path, err = data.Preview.Store(io.Discard, testdata, "store-test", false)
+	assert.Nil(t, err)
+	assert.NotEqual(t, "", path)
+	defer os.Remove(path)
 }
 
 func TestCompress(t *testing.T) {
 	// archive file
+	path := filepath.Join("..", "..", "..", "..", "tests", "empty")
+	imgs := filepath.Join("..", "..", "..", "..", "tests", "images")
 	d, err := filepath.Abs(path)
 	if err != nil {
 		t.Error(err)
@@ -143,48 +99,19 @@ func TestCompress(t *testing.T) {
 	}
 	i1 := filepath.Join(img, "test_0x.png")
 	i2 := filepath.Join(img, "test-clone.png")
-	type args struct {
-		name  string
-		files []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"empty", args{}, true},
-		{"nofiles", args{
-			name: tgz,
-		}, false},
-		{"okay", args{
-			name:  tgz,
-			files: []string{i1, i2},
-		}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := data.Compress(io.Discard, tt.args.files, tt.args.name); (err != nil) != tt.wantErr {
-				t.Errorf("Compress() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			defer os.Remove(tgz)
-		})
-	}
+
+	err = data.Compress(io.Discard, nil, "")
+	assert.NotNil(t, err)
+	err = data.Compress(io.Discard, nil, tgz)
+	assert.Nil(t, err)
+	err = data.Compress(io.Discard, []string{i1, i2}, tgz)
+	assert.Nil(t, err)
+	defer os.Remove(tgz)
 }
 
 func TestRemove(t *testing.T) {
-	tests := []struct {
-		name    string
-		files   []string
-		wantErr bool
-	}{
-		{"no files", nil, false},
-		{"bad dir", []string{"/invalid"}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := data.Remove(nil, tt.files); (err != nil) != tt.wantErr {
-				t.Errorf("Remove() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	err := data.Remove(io.Discard, nil)
+	assert.Nil(t, err)
+	err = data.Remove(io.Discard, []string{"blahblahblah"})
+	assert.NotNil(t, err)
 }

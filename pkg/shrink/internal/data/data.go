@@ -29,7 +29,7 @@ var (
 type Months uint
 
 const (
-	non Months = iota // Unknown or non month.
+	non Months = iota // Unknown or a non month.
 	jan
 	feb
 	mar
@@ -81,6 +81,9 @@ const (
 
 // Approve prints the number of records waiting for approval for public display.
 func (cmd Approvals) Approve(db *sql.DB) error {
+	if db == nil {
+		return database.ErrDB
+	}
 	switch cmd {
 	case Preview, Incoming:
 	default:
@@ -98,6 +101,9 @@ func (cmd Approvals) Approve(db *sql.DB) error {
 
 // Init SQL directory.
 func Init(w io.Writer, directory string) error { //nolint:funlen
+	if w == nil {
+		w = io.Discard
+	}
 	const (
 		layout   = "2-1-2006"
 		minDash  = 2
@@ -159,43 +165,41 @@ func Init(w io.Writer, directory string) error { //nolint:funlen
 }
 
 // SaveDir returns a usable path to store backups.
-func SaveDir() string {
+func SaveDir() (string, error) {
 	usr, err := user.Current()
 	if err == nil {
-		return usr.HomeDir
+		return usr.HomeDir, nil
 	}
-	var dir string
-	dir, err = os.Getwd()
+	dir, err := os.Getwd()
 	if err != nil {
-		log.Println("shrink saveDir failed to get the user home or the working directory:", err)
-		return ""
+		return "", fmt.Errorf("save directory failed to find a path: %w", err)
 	}
-	return dir
+	return dir, nil
 }
 
 // Store incoming or preview files as a tar archive.
-func (cmd Approvals) Store(w io.Writer, path, partial string) error {
+func (cmd Approvals) Store(w io.Writer, path, partial string, deleteSrc bool) (string, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	switch cmd {
 	case Preview, Incoming:
 	default:
-		return ErrUnknown
+		return "", ErrUnknown
 	}
-
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return fmt.Errorf("store read: %w", err)
+		return "", fmt.Errorf("store read: %w", err)
 	}
-
 	cnt, inUse := 0, 0
 	files := []string{}
-
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
 		f, err := entry.Info()
 		if err != nil {
-			return fmt.Errorf("store entry info: %w", err)
+			return "", fmt.Errorf("store entry info: %w", err)
 		}
 		files = append(files, filepath.Join(path, f.Name()))
 		cnt++
@@ -203,22 +207,25 @@ func (cmd Approvals) Store(w io.Writer, path, partial string) error {
 	}
 
 	if len(files) == 0 {
-		return nil
+		return "", nil
 	}
 	fmt.Fprintf(w, "%s found %d files using %s for backup.\n", cmd, cnt, humanize.Bytes(uint64(inUse)))
 
 	n := time.Now()
-	filename := filepath.Join(SaveDir(),
+	dir, err := SaveDir()
+	if err != nil {
+		return "", err
+	}
+	filename := filepath.Join(dir,
 		fmt.Sprintf("d2-%s_%d-%02d-%02d.tar", partial, n.Year(), n.Month(), n.Day()))
-
-	if err := storer(files, filename, partial); err != nil {
-		return err
+	if err := storer(files, filename, partial, deleteSrc); err != nil {
+		return "", err
 	}
 	fmt.Fprintf(w, "%s freeing up space is complete.\n", cmd)
-	return nil
+	return filename, nil
 }
 
-func storer(files []string, filename, partial string) error {
+func storer(files []string, filename, partial string, deleteSrc bool) error {
 	store, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("store create: %w", err)
@@ -228,7 +235,10 @@ func storer(files []string, filename, partial string) error {
 	if err := archive.Store(store, files); err != nil {
 		return fmt.Errorf("%w: %s", ErrArcStore, partial)
 	}
-	return archive.Delete(files)
+	if deleteSrc {
+		return archive.Delete(files)
+	}
+	return nil
 }
 
 // Compress the collection of files into a named archive.
@@ -249,8 +259,15 @@ func Compress(w io.Writer, files []string, name string) error {
 }
 
 func sqlProcess(w io.Writer, files []string) error {
+	if w == nil {
+		w = io.Discard
+	}
 	n := time.Now()
-	name := filepath.Join(SaveDir(), fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz",
+	dir, err := SaveDir()
+	if err != nil {
+		return err
+	}
+	name := filepath.Join(dir, fmt.Sprintf("d2-sql_%d-%02d-%02d.tar.gz",
 		n.Year(), n.Month(), n.Day()))
 	if err := Compress(w, files, name); err != nil {
 		return err
