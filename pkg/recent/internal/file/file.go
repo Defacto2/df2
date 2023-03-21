@@ -43,6 +43,9 @@ const (
 
 // Scan the thumbnail for usable JSON metadata.
 func (f *Thumb) Scan(values []sql.RawBytes) {
+	if len(values) < createdat+1 {
+		return
+	}
 	if id := string(values[id]); id != "" {
 		f.URLID = database.ObfuscateParam(id)
 	}

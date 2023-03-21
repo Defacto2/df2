@@ -18,21 +18,22 @@ import (
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
-	"go.uber.org/zap"
 )
 
 var (
-	ErrNoRec   = errors.New("record cannot be empty")
-	ErrNoStat  = errors.New("stat cannot be empty")
 	ErrColVals = errors.New("each database value must have a matching table column")
+	ErrID      = errors.New("record id cannot be empty")
+	ErrProof   = errors.New("proof structure cannot be empty")
+	ErrRecord  = errors.New("record structure cannot be empty")
+	ErrPointer = errors.New("pointer value cannot be nil")
 )
 
 // Record of a file item.
 type Record struct {
-	ID   string // MySQL auto increment Id.
-	UUID string // Unique Id.
-	File string // Absolute path to file.
-	Name string // Filename.
+	ID   string // ID is a database generated, auto increment identifier.
+	UUID string // Universal unique ID.
+	File string // File is an absolute path to the hosted file download.
+	Name string // Name is the original filename of the download.
 }
 
 // New returns a file record using values from the database.
@@ -51,15 +52,22 @@ func New(values []sql.RawBytes, path string) Record {
 
 // Approve sets the record to be publically viewable.
 func (r Record) Approve(db *sql.DB, w io.Writer) error {
-	if reflect.DeepEqual(r, Record{}) {
-		return ErrNoRec
+	if db == nil {
+		return database.ErrDB
 	}
-	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
+	if r.ID == "" {
+		return ErrID
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	const stmt = "UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?"
+	prep, err := db.Prepare(stmt)
 	if err != nil {
 		return fmt.Errorf("approve prepare: %w", err)
 	}
-	defer update.Close()
-	res, err := update.Exec(database.UpdateID, r.ID)
+	defer prep.Close()
+	res, err := prep.Exec(database.UpdateID, r.ID)
 	if err != nil {
 		return fmt.Errorf("approve exec: %w", err)
 	}
@@ -74,32 +82,37 @@ func (r Record) Approve(db *sql.DB, w io.Writer) error {
 }
 
 // Iterate through each stat value.
-func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, s stat.Proof) error { //nolint:cyclop
-	if reflect.DeepEqual(r, Record{}) {
-		return ErrNoRec
+func (r Record) Iterate(db *sql.DB, w io.Writer, cfg configger.Config, p stat.Proof) error { //nolint:cyclop
+	if db == nil {
+		return database.ErrDB
 	}
-	if reflect.DeepEqual(s, stat.Proof{}) {
-		return ErrNoStat
+	if r == (Record{}) {
+		return ErrRecord
 	}
-	if s.Values == nil {
+	if reflect.DeepEqual(p, stat.Proof{}) {
+		return ErrProof
+	}
+	if p.Values == nil {
 		return nil
 	}
-	if len(*s.Values) != len(s.Columns) {
+	if len(*p.Values) != len(p.Columns) {
 		return ErrColVals
 	}
-	var value string
-	for i, raw := range *s.Values {
-		value = database.Val(raw)
-		switch s.Columns[i] {
+	for i, raw := range *p.Values {
+		s := database.Val(raw)
+		switch p.Columns[i] {
 		case "id":
-			r.Prefix(w, &s)
+			r.Prefix(w, &p)
 		case "createdat":
-			// TODO: unsure of purpose, need to handle err
-			database.DateTime(raw)
+			s, err := database.DateTime(raw)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(w, "%v", s)
 		case "filename":
-			fmt.Fprintf(w, "%v", value)
+			fmt.Fprintf(w, "%v", s)
 		case "file_zip_content":
-			if err := r.Zip(db, w, cfg, raw, &s); err != nil {
+			if err := r.Zip(db, w, cfg, p.Overwrite); err != nil {
 				return err
 			}
 		default:
@@ -110,13 +123,22 @@ func (r Record) Iterate(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg confi
 
 // UpdateZipContent sets the file_zip_content column to match content and platform to "image".
 func UpdateZipContent(db *sql.DB, w io.Writer, id, filename, content string, items int) error {
-	const q = "UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?"
-	update, err := db.Prepare(q)
+	if db == nil {
+		return database.ErrDB
+	}
+	if id == "" {
+		return ErrID
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	const stmt = "UPDATE files SET filename=?,file_zip_content=?,updatedat=NOW(),updatedby=?,platform=? WHERE id=?"
+	prep, err := db.Prepare(stmt)
 	if err != nil {
 		return fmt.Errorf("updatezip prepare: %w", err)
 	}
-	defer update.Close()
-	if _, err := update.Exec(filename, content, database.UpdateID, "image", id); err != nil {
+	defer prep.Close()
+	if _, err := prep.Exec(filename, content, database.UpdateID, "image", id); err != nil {
 		return fmt.Errorf("updatezip exec: %w", err)
 	}
 	fmt.Fprintf(w, "%d items", items)
@@ -124,30 +146,42 @@ func UpdateZipContent(db *sql.DB, w io.Writer, id, filename, content string, ite
 }
 
 // Prefix prints the stat count and record Id to stdout.
-func (r Record) Prefix(w io.Writer, s *stat.Proof) {
+func (r Record) Prefix(w io.Writer, s *stat.Proof) error {
+	if s == nil {
+		return fmt.Errorf("stat proof %w", ErrPointer)
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	logger.Printcrf(w, "%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.Total)),
 		s.Count,
 		color.Primary.Sprint(r.ID))
+	return nil
 }
 
 // Zip reads an archive and saves the content to the database.
-func (r Record) Zip(db *sql.DB, w io.Writer, cfg configger.Config, col sql.RawBytes, s *stat.Proof) error {
-	if reflect.DeepEqual(r, Record{}) {
-		return ErrNoRec
+func (r Record) Zip(db *sql.DB, w io.Writer, cfg configger.Config, overwrite bool) error {
+	if db == nil {
+		return database.ErrDB
 	}
-	if reflect.DeepEqual(s, stat.Proof{}) {
-		return ErrNoStat
+	if r == (Record{}) {
+		return ErrRecord
 	}
-	if col != nil && !s.Overwrite {
+	if w == nil {
+		w = io.Discard
+	}
+	if !overwrite {
 		return nil
 	}
 	fmt.Fprint(w, " • ")
-	if u, err := r.fileZipContent(db, w); !u {
-		return nil
-	} else if err != nil {
+	u, err := r.fileZipContent(db, w)
+	if err != nil {
 		return fmt.Errorf("zip content: %w", err)
+	}
+	if !u {
+		return nil
 	}
 	proof := archive.Proof{
 		Source: r.File,
@@ -165,38 +199,44 @@ func (r Record) Zip(db *sql.DB, w io.Writer, cfg configger.Config, col sql.RawBy
 }
 
 func (r Record) fileZipContent(db *sql.DB, w io.Writer) (bool, error) {
-	if reflect.DeepEqual(r, Record{}) {
-		return false, ErrNoRec
+	if db == nil {
+		return false, database.ErrDB
 	}
-	a, fn, err := archive.Read(w, r.File, r.Name)
+	if r == (Record{}) {
+		return false, ErrRecord
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	list, name, err := archive.Read(w, r.File, r.Name)
 	if err != nil {
 		return false, err
 	}
-	if err := UpdateZipContent(db, w, r.ID, fn, strings.Join(a, "\n"), len(a)); err != nil {
+	if err := UpdateZipContent(db, w, r.ID, name, strings.Join(list, "\n"), len(list)); err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
 // Skip checks if the file of the proof exists.
-func Skip(w io.Writer, s stat.Proof, r Record, hide bool) (bool, error) {
-	if reflect.DeepEqual(r, Record{}) {
-		return false, ErrNoRec
-	}
+func Skip(w io.Writer, s stat.Proof, r Record) (bool, error) {
 	if reflect.DeepEqual(s, stat.Proof{}) {
-		return false, ErrNoStat
+		return false, ErrProof
+	}
+	if r == (Record{}) {
+		return false, ErrRecord
+	}
+	if w == nil {
+		w = io.Discard
 	}
 	if _, err := os.Stat(r.File); os.IsNotExist(err) {
-		s.Missing++
-		if !hide {
-			fmt.Fprintf(w, "%s %0*d. %v is missing %v %s\n",
-				color.Question.Sprint("→"),
-				len(strconv.Itoa(s.Total)),
-				s.Count,
-				color.Primary.Sprint(r.ID),
-				filepath.Join(s.Base, color.Danger.Sprint(r.UUID)),
-				str.X())
-		}
+		fmt.Fprintf(w, "%s %0*d. %v is missing %v %s\n",
+			color.Question.Sprint("→"),
+			len(strconv.Itoa(s.Total)),
+			s.Count,
+			color.Primary.Sprint(r.ID),
+			filepath.Join(s.Base, color.Danger.Sprint(r.UUID)),
+			str.X())
 		return true, nil
 	} else if err != nil {
 		return false, fmt.Errorf("file skip stat %q: %w", r.File, err)

@@ -339,10 +339,10 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 	fmt.Fprintln(w, s)
 	newProof := proof.Request{
 		Overwrite:   false,
-		AllProofs:   false,
+		All:         false,
 		HideMissing: false,
 	}
-	if err := newProof.Queries(db, w, l, cfg); err != nil {
+	if err := newProof.Queries(db, w, cfg); err != nil {
 		return err
 	}
 	i++

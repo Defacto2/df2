@@ -37,18 +37,18 @@ func Init(cfg configger.Config) (Proof, error) {
 }
 
 // Summary of the proofs.
-func (s *Proof) Summary(id string) string {
-	if s == nil {
+func (p *Proof) Summary(id string) string {
+	if p == nil {
 		return ""
 	}
-	if id != "" && s.Total < 1 {
+	if id != "" && p.Total < 1 {
 		return ""
 	}
-	total := s.Count - s.Missing
+	total := p.Count - p.Missing
 	if total == 0 {
 		return "nothing to do\n"
 	}
-	elapsed := time.Since(s.start).Seconds()
+	elapsed := time.Since(p.start).Seconds()
 	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, elapsed)
 	return fmt.Sprintf("\n%s\n%s\n", strings.Repeat("─", len(t)), t)
 }

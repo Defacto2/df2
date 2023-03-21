@@ -24,7 +24,7 @@ photos and text NFO files.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		r := proof.Request{
 			Overwrite:   proofs.Overwrite,
-			AllProofs:   proofs.All,
+			All:         proofs.All,
 			HideMissing: proofs.HideMissing,
 		}
 		db, err := database.Connect(cfg)
@@ -35,11 +35,11 @@ photos and text NFO files.`,
 		w := os.Stdout
 		switch {
 		case proofs.ID != "":
-			if err := r.Query(db, w, logr, cfg, proofs.ID); err != nil {
+			if err := r.Query(db, w, cfg, proofs.ID); err != nil {
 				logr.Error(err)
 			}
 		default:
-			if err := r.Queries(db, w, logr, cfg); err != nil {
+			if err := r.Queries(db, w, cfg); err != nil {
 				logr.Error(err)
 			}
 		}
