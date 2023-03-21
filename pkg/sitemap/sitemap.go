@@ -5,28 +5,44 @@ package sitemap
 import (
 	"database/sql"
 	"encoding/xml"
+	"errors"
 	"fmt"
+	"io"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
 )
 
+var (
+	ErrPointer = errors.New("pointer value cannot be nil")
+)
+
 const (
-	// Base URL of the website.
-	Base = "https://defacto2.net"
-	// Local base URL for the websote hosted on a Docker container.
-	LocalBase = "http://localhost:8560"
+	// Location is the URL of the website.
+	Location = "https://defacto2.net"
+
+	// DockerLoc is the URL for the developer hosted on a Docker container.
+	DockerLoc = "http://localhost:8560"
+
+	// Namespace is the XML name space.
+	Namespace = "http://www.sitemaps.org/schemas/sitemap/0.9"
+
 	// limit the number of urls as permitted by Bing and Google search engines.
 	Limit = 50000
 )
 
 // Create generates and prints the sitemap.
-func Create(db *sql.DB, directory string) error {
-	// query
-	id, v := "", &urlset.Set{XMLNS: "http://www.sitemaps.org/schemas/sitemap/0.9"}
+func Create(db *sql.DB, w io.Writer, dir string) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	id := ""
+	tmpl := &urlset.Set{XMLNS: Namespace}
 	var createdat, updatedat sql.NullString
 	count, err := nullsDeleteAt(db)
 	if err != nil {
@@ -42,8 +58,8 @@ func Create(db *sql.DB, directory string) error {
 	defer rows.Close()
 	// handle static urls
 	const paths = 29
-	v.Urls = make([]urlset.Tag, paths+count)
-	c, i := v.StaticURLs(directory)
+	tmpl.URLs = make([]urlset.Tag, paths+count)
+	c, i := tmpl.StaticURLs(dir)
 	// handle query results.
 	for rows.Next() {
 		i++
@@ -57,11 +73,11 @@ func Create(db *sql.DB, directory string) error {
 		if _, err = createdat.Value(); err != nil {
 			continue
 		}
-		loc, err := url.JoinPath(Base, "f")
+		loc, err := url.JoinPath(Location, "f")
 		if err != nil {
 			return err
 		}
-		v.Urls[i] = urlset.Tag{
+		tmpl.URLs[i] = urlset.Tag{
 			Location:     loc,
 			LastModified: database.ObfuscateParam(id),
 			ChangeFreq:   lastmodValue(createdat, updatedat),
@@ -72,37 +88,47 @@ func Create(db *sql.DB, directory string) error {
 			break
 		}
 	}
-	if err := createOutput(v); err != nil {
+	if err := createOutput(w, tmpl); err != nil {
 		return err
 	}
 	return nil
 }
 
-func createOutput(v *urlset.Set) error {
-	empty, trimmed := urlset.Tag{}, []urlset.Tag{}
-	for i, x := range v.Urls {
+func createOutput(w io.Writer, tmpl *urlset.Set) error {
+	if tmpl == nil {
+		return fmt.Errorf("urlset set %w", ErrPointer)
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	empty := urlset.Tag{}
+	trimmed := []urlset.Tag{}
+	for i, x := range tmpl.URLs {
 		if x == empty {
-			trimmed = v.Urls[0:i]
+			trimmed = tmpl.URLs[0:i]
 			break
 		}
 	}
-	v.Urls = trimmed
-	output, err := xml.MarshalIndent(v, "", "")
+	tmpl.URLs = trimmed
+	b, err := xml.MarshalIndent(tmpl, "", "")
 	if err != nil {
 		return fmt.Errorf("create xml marshal indent: %w", err)
 	}
-	if _, err := os.Stdout.Write([]byte(xml.Header)); err != nil {
-		return fmt.Errorf("create stdout xml header: %w", err)
+	if _, err := w.Write([]byte(xml.Header)); err != nil {
+		return fmt.Errorf("writer xml header: %w", err)
 	}
-	output = append(output, []byte("\n")...)
-	if _, err := os.Stdout.Write(output); err != nil {
-		return fmt.Errorf("create stdout: %w", err)
+	b = append(b, []byte("\n")...)
+	if _, err := w.Write(b); err != nil {
+		return fmt.Errorf("writer xml: %w", err)
 	}
 	return nil
 }
 
 func nullsDeleteAt(db *sql.DB) (int, error) {
-	var count int
+	if db == nil {
+		return 0, database.ErrDB
+	}
+	count := 0
 	if err := db.QueryRow("SELECT COUNT(*) FROM `files` WHERE `deletedat` IS NULL").Scan(&count); err != nil {
 		return 0, err
 	}
@@ -111,7 +137,7 @@ func nullsDeleteAt(db *sql.DB) (int, error) {
 
 // lastmodValue parse createdat and updatedat to use in the <lastmod> tag.
 func lastmodValue(createdat, updatedat sql.NullString) string {
-	var lm string
+	lm := ""
 	if ok := updatedat.Valid; ok {
 		lm = updatedat.String
 	} else if ok := createdat.Valid; ok {

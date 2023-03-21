@@ -190,7 +190,7 @@ var recentCmd = &cobra.Command{
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := recent.List(db, rec.Limit, rec.Compress); err != nil {
+		if err := recent.List(db, os.Stdout, rec.Limit, rec.Compress); err != nil {
 			logr.Error(err)
 		}
 	},
@@ -217,7 +217,7 @@ See: https://developers.google.com/search/docs/advanced/sitemaps/overview`,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := sitemap.Create(db, cfg.HTMLViews); err != nil {
+		if err := sitemap.Create(db, os.Stdout, cfg.HTMLViews); err != nil {
 			logr.Error(err)
 		}
 	},

@@ -17,7 +17,7 @@ const (
 type Set struct {
 	XMLName xml.Name `xml:"urlset,omitempty"`
 	XMLNS   string   `xml:"xmlns,attr,omitempty"`
-	Urls    []Tag    `xml:"url,omitempty"`
+	URLs    []Tag    `xml:"url,omitempty"`
 }
 
 // Tag composes the <url> tag in the sitemap.
@@ -75,9 +75,9 @@ func HTML3Path() [7]string {
 	}
 }
 
-func (set *Set) StaticURLs(directory string) (c, i int) { //nolint:nonamedreturns
+func (set *Set) StaticURLs(dir string) (c, i int) { //nolint:nonamedreturns
 	paths := Paths()
-	if set == nil || len(set.Urls) < len(paths) {
+	if set == nil || len(set.URLs) < len(paths) {
 		return 0, 0
 	}
 	// sitemap priorities
@@ -87,25 +87,25 @@ func (set *Set) StaticURLs(directory string) (c, i int) { //nolint:nonamedreturn
 	}
 	c, i = 0, 0
 	for i, path := range paths {
-		file := filepath.Join(directory, path, index)
+		file := filepath.Join(dir, path, index)
 		if s, err := os.Stat(file); !os.IsNotExist(err) {
-			set.Urls[i] = Tag{uri(path), Lastmod(s), "", veryHigh}
+			set.URLs[i] = Tag{uri(path), Lastmod(s), "", veryHigh}
 			c++
 			continue
 		}
-		j := filepath.Join(directory, path) + cfm
+		j := filepath.Join(dir, path) + cfm
 		if s, err := os.Stat(j); !os.IsNotExist(err) {
-			set.Urls[i] = Tag{uri(path), Lastmod(s), "", high}
+			set.URLs[i] = Tag{uri(path), Lastmod(s), "", high}
 			c++
 			continue
 		}
-		k := filepath.Join(directory, strings.ReplaceAll(path, "-", "")+cfm)
+		k := filepath.Join(dir, strings.ReplaceAll(path, "-", "")+cfm)
 		if s, err := os.Stat(k); !os.IsNotExist(err) {
-			set.Urls[i] = Tag{uri(path), Lastmod(s), "", standard}
+			set.URLs[i] = Tag{uri(path), Lastmod(s), "", standard}
 			c++
 			continue
 		}
-		set.Urls[i] = Tag{uri(path), "", "", top}
+		set.URLs[i] = Tag{uri(path), "", "", top}
 	}
 	return c, i
 }

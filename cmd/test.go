@@ -53,9 +53,9 @@ var testURLsCmd = &cobra.Command{
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		base := sitemap.Base
+		base := sitemap.Location
 		if tests.LocalHost {
-			base = sitemap.LocalBase
+			base = sitemap.DockerLoc
 		}
 		if err := run.TestSite(db, os.Stdout, base); err != nil {
 			logr.Error(err)
@@ -68,5 +68,5 @@ func init() { //nolint:gochecknoinits
 	testCmd.AddCommand(testGroupNames)
 	testCmd.AddCommand(testURLsCmd)
 	testURLsCmd.Flags().BoolVarP(&tests.LocalHost, "localhost", "l", true,
-		"run the tests to target "+sitemap.LocalBase)
+		"run the tests to target "+sitemap.DockerLoc)
 }

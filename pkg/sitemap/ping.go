@@ -22,6 +22,21 @@ import (
 
 var ErrNoIDs = errors.New("no ids to randomise")
 
+// Style the result of a link and its status code.
+type Style int
+
+const (
+	LinkNotFound Style = iota // LinkNotFound first prints the link and expects 404 status codes.
+	LinkSuccess               // LinkSuccess first prints the link and expects 200 status codes.
+	NotFound                  // NotFound expects 404 status codes.
+	Success                   // Success expects 200 status codes.
+)
+
+const (
+	// TitleSuffix is the string normally appended to most browser tabs.
+	TitleSuffix = " | Defacto2"
+)
+
 // Root URL element.
 type Root int
 
@@ -77,24 +92,12 @@ func FileList(base string) ([]string, error) {
 	return urls, nil
 }
 
-const (
-	LinkNotFound Style = iota // LinkNotFound first prints the link and expects 404 status codes.
-	LinkSuccess               // LinkSuccess first prints the link and expects 200 status codes.
-	NotFound                  // NotFound expects 404 status codes.
-	Success                   // Success expects 200 status codes.
-)
-
-const (
-	// TitleSuffix is the string normally appended to most browser tabs.
-	TitleSuffix = " | Defacto2"
-)
-
 // IDs are the primary keys of the file records.
 type IDs []int
 
-// Contains returns true whenever a contains x.
-func (a *IDs) Contains(x int) bool {
-	for _, n := range *a {
+// Contains returns true whenever IDs contains x.
+func (i *IDs) Contains(x int) bool {
+	for _, n := range *i {
 		if x == n {
 			return true
 		}
@@ -112,7 +115,7 @@ func (a IDs) Randomize(x int) (IDs, error) {
 		x = l
 	}
 	randoms := make(IDs, 0, x)
-	var seeded int64
+	seeded := int64(0)
 	for i := 1; i <= x; i++ {
 		seed := time.Now().UnixNano()
 		if seed == seeded {
@@ -122,8 +125,8 @@ func (a IDs) Randomize(x int) (IDs, error) {
 		}
 		seeded = seed
 		r := rand.New(rand.NewSource(seed)) //nolint:gosec
-		randomIndex := r.Intn(l)
-		id := a[randomIndex]
+		randIndex := r.Intn(l)
+		id := a[randIndex]
 		if randoms.Contains(id) {
 			i--
 			continue
@@ -146,9 +149,6 @@ func (a IDs) JoinPaths(base string, r Root) []string {
 	}
 	return urls
 }
-
-// Style the result of a link and its status code.
-type Style int
 
 // RangeFiles ranges over the file download URLs.
 func (p Style) RangeFiles(w io.Writer, urls []string) {
@@ -236,6 +236,12 @@ func AbsPaths(base string) ([28]string, error) {
 
 // AbsPaths returns all the HTML3 static URLs used by the sitemap.
 func AbsPathsH3(db *sql.DB, w io.Writer, base string) ([]string, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	const root = "html3"
 	urls := urlset.HTML3Path()
 	paths := make([]string, 0, len(urls))
@@ -301,6 +307,9 @@ func ColorCode(i int) string {
 
 // GetBlocked returns all the primary keys of the records with blocked file downloads.
 func GetBlocked(db *sql.DB) (IDs, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	ids, err := database.GetKeys(db, database.WhereDownloadBlock)
 	if err != nil {
 		return nil, fmt.Errorf("%w: blocked downloads", err)
@@ -310,6 +319,9 @@ func GetBlocked(db *sql.DB) (IDs, error) {
 
 // GetKeys returns all the primary keys of the file records that are public.
 func GetKeys(db *sql.DB) (IDs, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	ids, err := database.GetKeys(db, database.WhereAvailable)
 	if err != nil {
 		return nil, fmt.Errorf("%w: keys", err)
@@ -319,6 +331,9 @@ func GetKeys(db *sql.DB) (IDs, error) {
 
 // GetSoftDeleteKeys returns all the primary keys of the file records that are not public and hidden.
 func GetSoftDeleteKeys(db *sql.DB) (IDs, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	ids, err := database.GetKeys(db, database.WhereHidden)
 	if err != nil {
 		return nil, fmt.Errorf("%w: hidden keys", err)
@@ -352,6 +367,9 @@ func FindTitle(b []byte) string {
 
 // RandBlocked returns a randomized count of primary keys for records with blocked file downloads.
 func RandBlocked(db *sql.DB, count int) (int, IDs, error) {
+	if db == nil {
+		return 0, nil, database.ErrDB
+	}
 	if count < 1 {
 		return 0, nil, nil
 	}
@@ -365,6 +383,9 @@ func RandBlocked(db *sql.DB, count int) (int, IDs, error) {
 
 // RandDeleted returns a randomized count of primary keys for hidden file records.
 func RandDeleted(db *sql.DB, count int) (int, IDs, error) {
+	if db == nil {
+		return 0, nil, database.ErrDB
+	}
 	if count < 1 {
 		return 0, nil, nil
 	}
@@ -378,6 +399,9 @@ func RandDeleted(db *sql.DB, count int) (int, IDs, error) {
 
 // RandBlocked returns a randomized count of primary keys for public file records.
 func RandIDs(db *sql.DB, count int) (int, IDs, error) {
+	if db == nil {
+		return 0, nil, database.ErrDB
+	}
 	if count < 1 {
 		return 0, nil, nil
 	}

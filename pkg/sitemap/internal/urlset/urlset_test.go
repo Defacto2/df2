@@ -61,7 +61,7 @@ func TestSet_StaticURLs(t *testing.T) {
 	type fields struct {
 		XMLName xml.Name     `xml:"urlset,omitempty"`
 		XMLNS   string       `xml:"xmlns,attr,omitempty"`
-		Urls    []urlset.Tag `xml:"url,omitempty"`
+		URLs    []urlset.Tag `xml:"url,omitempty"`
 	}
 	tests := []struct {
 		name   string
@@ -73,12 +73,12 @@ func TestSet_StaticURLs(t *testing.T) {
 		{"too small", fields{
 			XMLName: xml.Name{Space: " ", Local: "set.Urls"},
 			XMLNS:   "pretend namespace",
-			Urls:    []urlset.Tag{tag},
+			URLs:    []urlset.Tag{tag},
 		}, 0, 0},
 		{"okay", fields{
 			XMLName: xml.Name{Space: " ", Local: "set.Urls"},
 			XMLNS:   "pretend namespace",
-			Urls:    tags(),
+			URLs:    tags(),
 		}, 0, 0},
 	}
 	for _, tt := range tests {
@@ -86,7 +86,7 @@ func TestSet_StaticURLs(t *testing.T) {
 			set := &urlset.Set{
 				XMLName: tt.fields.XMLName,
 				XMLNS:   tt.fields.XMLNS,
-				Urls:    tt.fields.Urls,
+				URLs:    tt.fields.URLs,
 			}
 			gotC, gotI := set.StaticURLs("")
 			if gotC != tt.wantC {
