@@ -1,0 +1,5 @@
+ren tests dir to testdata.
+replace os file exists code with fs file exists.
+ - errors.Is(err, fs.ErrExist) or fs.ErrNotExists
+
+confirm file.Write and file.WriteString have file.Sync()

@@ -102,9 +102,9 @@ type TestSite struct {
 }
 
 type ZipCmmt struct {
-	ASCII   bool
-	Unicode bool
-	OW      bool
+	Stdout  bool // Stdout writes any found zip comment to the stdout.
+	Unicode bool // Unicode attempts to convert any CP-437 encoded comments to Unicode.
+	OW      bool // OW overwrites any existing save zip comments, otherwise they're skipped.
 }
 
 // Invalid returns instructions for invalid command arguments and exits with an error code.

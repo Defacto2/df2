@@ -1,101 +1,99 @@
 package cmmt_test
 
 import (
-	"database/sql"
+	"io"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/zipcmmt/internal/cmmt"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
-	path = "../../../../tests/uuid"
-	uuid = "ef73b9dc-58b5-11ec-bf63-0242ac130002"
+	mockCmmt = "Test is some placeholder text."
+	uniCmmt  = "Test is some \xCD\xB9 text."
+	uuid     = "ef73b9dc-58b5-11ec-bf63-0242ac130002"
 )
 
-func TestZipfile_Checks(t *testing.T) {
-	type fields struct {
-		UUID    string
-		ASCII   bool
-		Unicode bool
+var path = filepath.Join("..", "..", "..", "..", "tests", "uuid")
+
+func TestZipfile_Exist(t *testing.T) {
+	z := cmmt.Zipfile{}
+	b, err := z.Exist("")
+	assert.NotNil(t, err)
+	assert.False(t, b)
+
+	z = cmmt.Zipfile{
+		UUID: "foo",
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		path   string
-		wantOk bool
-	}{
-		{"empty", fields{}, "", false},
-		{"okay", fields{UUID: uuid, ASCII: true, Unicode: true}, path, true},
+	b, err = z.Exist(path)
+	assert.NotNil(t, err)
+	assert.False(t, b)
+
+	z = cmmt.Zipfile{
+		UUID:      uuid,
+		Overwrite: true,
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			z := &cmmt.Zipfile{
-				UUID:    tt.fields.UUID,
-				ASCII:   tt.fields.ASCII,
-				Unicode: tt.fields.Unicode,
-			}
-			if gotOk := z.CheckDownload(tt.path); gotOk != tt.wantOk {
-				t.Errorf("Zipfile.CheckDownload() = %v, want %v", gotOk, tt.wantOk)
-			}
-			// the gotOk == wantOk is intentional.
-			if gotOk := z.CheckCmmtFile(tt.path); gotOk == tt.wantOk {
-				t.Errorf("Zipfile.CheckCmmtFile() = %v, want %v", gotOk, tt.wantOk)
-			}
-		})
-	}
+	b, err = z.Exist("")
+	assert.NotNil(t, err)
+	assert.False(t, b)
+
+	b, err = z.Exist(path)
+	assert.Nil(t, err)
+	assert.True(t, b)
 }
 
 func TestZipfile_Save(t *testing.T) {
-	tests := []struct {
-		name    string
-		path    string
-		wantErr bool
-	}{
-		{"empty", "", true},
-		{"ok", filepath.Join(path, uuid), false},
+	z := cmmt.Zipfile{}
+	s, err := z.Save(nil, "")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", s)
+
+	z = cmmt.Zipfile{
+		UUID: "foo",
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			z := &cmmt.Zipfile{}
-			if err := z.Save(nil, tt.path); (err != nil) != tt.wantErr {
-				t.Errorf("Zipfile.Save() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+	s, err = z.Save(io.Discard, "bar")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", s)
+
+	z = cmmt.Zipfile{
+		ID:   1,
+		UUID: uuid,
 	}
+	s, err = z.Save(io.Discard, path)
+	assert.Nil(t, err)
+	assert.NotEqual(t, "", s)
 }
 
-func TestZipfile_Print(t *testing.T) {
-	type fields struct {
-		ID    uint
-		Name  string
-		Magic sql.NullString
+func TestZipfile_Format(t *testing.T) {
+	z := cmmt.Zipfile{}
+	bb, err := z.Format(nil)
+	assert.NotNil(t, err)
+	assert.Empty(t, bb)
+
+	s := mockCmmt
+	bb, err = z.Format(&s)
+	assert.NotNil(t, err)
+	assert.Empty(t, bb)
+
+	z = cmmt.Zipfile{
+		ID: 1,
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		cmmt   *string
-		want   string
-	}{
-		{"empty", fields{}, nil, ""},
-		{"ok", fields{
-			ID:    1,
-			Name:  "somefile.txt",
-			Magic: sql.NullString{String: "text/plain", Valid: true},
-		}, nil, "1. - somefile.txt [text/plain]"},
+	bb, err = z.Format(&s)
+	assert.Nil(t, err)
+	assert.Contains(t, bb.String(), mockCmmt)
+
+	s = ""
+	bb, err = z.Format(&s)
+	assert.Nil(t, err)
+	assert.Equal(t, "", bb.String())
+
+	z = cmmt.Zipfile{
+		ID:    1,
+		CP437: true,
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			z := &cmmt.Zipfile{
-				ID:    tt.fields.ID,
-				Name:  tt.fields.Name,
-				Magic: tt.fields.Magic,
-			}
-			if got := strings.TrimSpace(z.Print(tt.cmmt)); got != tt.want {
-				t.Errorf("Zipfile.Print() = %q, want %q",
-					got, tt.want)
-			}
-		})
-	}
+	s = uniCmmt
+	bb, err = z.Format(&s)
+	assert.Nil(t, err)
+	assert.Contains(t, bb.String(), "Test is some ═╣ text.")
 }

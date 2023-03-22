@@ -184,7 +184,7 @@ var fixZipCmmtCmd = &cobra.Command{
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := zipcmmt.Fix(db, os.Stdout, cfg, zipc.ASCII, zipc.Unicode, zipc.OW, true); err != nil {
+		if err := zipcmmt.Fix(db, os.Stdout, cfg, zipc.Unicode, zipc.OW, zipc.Stdout); err != nil {
 			logr.Error(err)
 		}
 	},
@@ -202,7 +202,7 @@ func init() { //nolint:gochecknoinits
 	fixCmd.AddCommand(fixRenGroup)
 	fixCmd.AddCommand(fixTextCmd)
 	fixCmd.AddCommand(fixZipCmmtCmd)
-	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zipc.ASCII, "print", "p", false,
+	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zipc.Stdout, "print", "p", false,
 		"also print saved comments to the stdout")
 	fixZipCmmtCmd.PersistentFlags().BoolVarP(&zipc.Unicode, "unicode", "u", false,
 		"also convert saved comments into Unicode and print to the stdout")
