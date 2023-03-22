@@ -1,24 +1,26 @@
 package text_test
 
 import (
+	"io"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/text"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFix(t *testing.T) {
-	tests := []struct {
-		name    string
-		wantErr bool
-	}{
-		{"fix", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := text.Fix(nil, nil, configger.Defaults()); (err != nil) != tt.wantErr {
-				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	t.Parallel()
+	err := text.Fix(nil, nil, configger.Config{})
+	assert.NotNil(t, err)
+
+	cfg := configger.Defaults()
+	db, err := database.Connect(cfg)
+	assert.Nil(t, err)
+	defer db.Close()
+	err = text.Fix(db, io.Discard, configger.Config{})
+	assert.NotNil(t, err)
+	err = text.Fix(db, io.Discard, cfg)
+	assert.Nil(t, err)
 }

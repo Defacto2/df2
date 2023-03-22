@@ -8,22 +8,29 @@ import (
 	"io"
 
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 )
 
 const (
-	fixStmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme, platform " +
+	stmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme, platform " +
 		"FROM files WHERE platform=\"text\" OR platform=\"textamiga\" OR platform=\"ansi\" ORDER BY id DESC"
 )
 
 // Fix generates any missing assets from downloads that are text based.
 func Fix(db *sql.DB, w io.Writer, cfg configger.Config) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	dir, err := directories.Init(cfg, false)
 	if err != nil {
 		return err
 	}
-	rows, err := db.Query(fixStmt)
+	rows, err := db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("fix db query: %w", err)
 	} else if rows.Err() != nil {

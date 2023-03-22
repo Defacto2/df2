@@ -139,7 +139,7 @@ func Generate(w io.Writer, src, id string, remove bool) error {
 	// convert to png
 	pngDest, webpDest := ReplaceExt(_png, f.Img000), ReplaceExt(webp, f.Img000)
 	const width = 1500
-	s, err := ToPng(src, pngDest, width, width)
+	s, err := ToPNG(src, pngDest, width, width)
 	if err != nil {
 		return fmt.Errorf("could not generate from %s: %s: %s", src, pngDest, err)
 	}
@@ -273,10 +273,10 @@ func ReplaceExt(ext, name string) string {
 	return fn + ext
 }
 
-// ToPng converts any supported format to a compressed PNG image.
+// ToPNG converts any supported format to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/
 // go/images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49.
-func ToPng(src, dest string, width, height int) (string, error) {
+func ToPNG(src, dest string, width, height int) (string, error) {
 	f, err := os.Open(src)
 	if err != nil {
 		return "", fmt.Errorf("to png open %s: %w", src, err)
@@ -419,7 +419,7 @@ func checkWebP(src string) (string, bool, error) {
 		if err != nil {
 			return "", false, err
 		}
-		_, err = ToPng(src, f.Name(), 0, 0)
+		_, err = ToPNG(src, f.Name(), 0, 0)
 		if err != nil {
 			return "", true, fmt.Errorf("to webp gif-topng: %w", err)
 		}
@@ -453,7 +453,7 @@ func cropWebP(w io.Writer, name string) (string, error) {
 		ext := filepath.Ext(name)
 		fn := strings.TrimSuffix(name, ext)
 		crop := fn + "-cropped" + ext
-		if _, err := ToPng(name, crop, cropW, cropH); err != nil {
+		if _, err := ToPNG(name, crop, cropW, cropH); err != nil {
 			return "", fmt.Errorf("webp crop: %w", err)
 		}
 		return crop, nil

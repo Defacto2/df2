@@ -144,7 +144,7 @@ func (t *TextFile) ExtractedImgs(w io.Writer, cfg configger.Config, dir string) 
 		return fmt.Errorf("extractedimgs: %s: %w", t.UUID, err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(w, cfg, n, t.UUID, amiga); err != nil {
+	if err := img.Make(w, cfg, n, t.UUID, amiga); err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
 	return nil
@@ -161,7 +161,7 @@ func (t *TextFile) TextPng(w io.Writer, cfg configger.Config, c int, dir string)
 		return fmt.Errorf("txtpng: %w", err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(w, cfg, name, t.UUID, amiga); err != nil {
+	if err := img.Make(w, cfg, name, t.UUID, amiga); err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
 	fmt.Fprintln(w)

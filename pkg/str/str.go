@@ -25,6 +25,9 @@ func Piped() bool {
 
 // Progress returns the count of total remaining as a percentage.
 func Progress(w io.Writer, name string, count, total int) float64 {
+	if w == nil {
+		w = io.Discard
+	}
 	const fin = 100
 	r := float64(count) / float64(total) * fin
 	switch r {

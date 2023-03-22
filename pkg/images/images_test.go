@@ -165,7 +165,7 @@ func TestWidth(t *testing.T) {
 	}
 }
 
-func TestToPng(t *testing.T) {
+func TestToPNG(t *testing.T) {
 	type args struct {
 		src    string
 		dest   string
@@ -186,9 +186,9 @@ func TestToPng(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := images.ToPng(tt.args.src, tt.args.dest, tt.args.height, 0)
+			_, err := images.ToPNG(tt.args.src, tt.args.dest, tt.args.height, 0)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ToPng() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ToPNG() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 		})
