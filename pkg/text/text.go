@@ -65,12 +65,14 @@ func fixRow(w io.Writer, cfg configger.Config, i, c int, dir *directories.Dir, r
 	// missing images + source is an archive
 	if !ok && t.Archive() {
 		c++
-		return extract(w, cfg, t, i, c, dir)
+		if err := extract(w, cfg, t, dir); err != nil {
+			return i, c, err
+		}
 	}
 	// missing images + source is a textfile
 	if !ok {
 		c++
-		if err := t.TextPng(w, cfg, c, dir.UUID); err != nil {
+		if err := t.TextPNG(w, cfg, c, dir.UUID); err != nil {
 			return i, c, err
 		}
 	}
@@ -82,19 +84,18 @@ func fixRow(w io.Writer, cfg configger.Config, i, c int, dir *directories.Dir, r
 	return i, c, nil
 }
 
-func extract(w io.Writer, cfg configger.Config, t tf.TextFile, i, c int, dir *directories.Dir) (int, int, error) {
-	err := t.Extract(w, dir)
-	switch {
-	case errors.Is(err, tf.ErrMeUnk):
-		return i, c, nil
-	case errors.Is(err, tf.ErrMeNo):
-		return i, c, nil
-	case err != nil:
-		fmt.Fprintln(w, t.String(), err)
-		return i, c, nil
+func extract(w io.Writer, cfg configger.Config, t tf.TextFile, dir *directories.Dir) error {
+	if dir == nil {
+		return tf.ErrPointer
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if err := t.Extract(w, dir); err != nil {
+		return err
 	}
 	if err := t.ExtractedImgs(w, cfg, dir.UUID); err != nil {
 		fmt.Fprintln(w, t.String(), err)
 	}
-	return i, c, nil
+	return nil
 }
