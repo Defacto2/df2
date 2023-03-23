@@ -26,7 +26,7 @@ func createTempDir() (int64, string, error) {
 		return 0, "", err
 	}
 	// copy files
-	path := filepath.Join("..", "..", "..", "..", "tests", "images")
+	path := filepath.Join("..", "..", "..", "..", "testdata", "images")
 	src, err := filepath.Abs(path)
 	if err != nil {
 		return 0, dir, err

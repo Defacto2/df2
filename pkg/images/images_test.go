@@ -22,7 +22,7 @@ const imgs, g, j, p, w = "images", "gif", "jpg", "png", "webp"
 
 func testDir(name string) string {
 	dir, _ := os.Getwd()
-	return filepath.Join(dir, "..", "..", "tests", name)
+	return filepath.Join(dir, "..", "..", "testdata", name)
 }
 
 func testImg(ext string) string {

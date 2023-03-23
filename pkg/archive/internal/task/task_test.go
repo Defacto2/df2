@@ -11,7 +11,7 @@ import (
 
 func testDir() string {
 	dir, _ := os.Getwd()
-	return filepath.Join(dir, "..", "..", "..", "..", "tests")
+	return filepath.Join(dir, "..", "..", "..", "..", "testdata")
 }
 
 func TestRun(t *testing.T) {

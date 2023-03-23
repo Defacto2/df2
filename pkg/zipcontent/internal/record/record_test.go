@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var dzDir = filepath.Join("..", "..", "..", "..", "tests", "demozoo")
+var dzDir = filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
 
 func TestNew(t *testing.T) {
 	r, err := record.New(nil, "")

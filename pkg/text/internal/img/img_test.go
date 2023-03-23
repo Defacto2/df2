@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	testDir = filepath.Join("..", "..", "..", "..", "tests")
+	testDir = filepath.Join("..", "..", "..", "..", "testdata")
 )
 
 func TestMake(t *testing.T) {

@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	dzDir = filepath.Join("..", "..", "..", "..", "tests", "demozoo")
+	dzDir = filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
 )
 
 func TestTextFile(t *testing.T) {

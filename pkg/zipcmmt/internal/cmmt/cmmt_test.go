@@ -15,7 +15,7 @@ const (
 	uuid     = "ef73b9dc-58b5-11ec-bf63-0242ac130002"
 )
 
-var path = filepath.Join("..", "..", "..", "..", "tests", "uuid")
+var path = filepath.Join("..", "..", "..", "..", "testdata", "uuid")
 
 func TestZipfile_Exist(t *testing.T) {
 	z := cmmt.Zipfile{}

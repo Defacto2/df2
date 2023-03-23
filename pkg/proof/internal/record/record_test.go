@@ -114,7 +114,7 @@ func TestRecord_Zip(t *testing.T) {
 	assert.NotNil(t, err)
 	wd, err := os.Getwd()
 	assert.Nil(t, err)
-	path := filepath.Join(wd, "..", "..", "..", "..", "tests", "demozoo", "test.zip")
+	path := filepath.Join(wd, "..", "..", "..", "..", "testdata", "demozoo", "test.zip")
 	r = record.Record{
 		ID:   "1",
 		UUID: uuid,

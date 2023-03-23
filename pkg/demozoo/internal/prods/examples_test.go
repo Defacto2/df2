@@ -19,7 +19,7 @@ const (
 	ch3 = 3
 )
 
-var testDir = filepath.Join("..", "..", "..", "..", "tests", "json")
+var testDir = filepath.Join("..", "..", "..", "..", "testdata", "json")
 
 var example1, example2, example3 prods.ProductionsAPIv1 //nolint:gochecknoglobals
 

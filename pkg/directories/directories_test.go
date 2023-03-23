@@ -59,8 +59,8 @@ func TestFiles(t *testing.T) {
 }
 
 func TestSize(t *testing.T) {
-	empty := filepath.Join("..", "..", "tests", "empty")
-	valid := filepath.Join("..", "..", "tests", "demozoo")
+	empty := filepath.Join("..", "..", "testdata", "empty")
+	valid := filepath.Join("..", "..", "testdata", "demozoo")
 	i, u := int64(0), uint64(0)
 
 	c, b, err := directories.Size("")

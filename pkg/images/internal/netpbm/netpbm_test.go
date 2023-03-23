@@ -9,8 +9,8 @@ import (
 )
 
 func TestConvert(t *testing.T) {
-	gif := filepath.Join("..", "..", "..", "..", "tests", "images", "test.gif")
-	iff := filepath.Join("..", "..", "..", "..", "tests", "images", "test.iff")
+	gif := filepath.Join("..", "..", "..", "..", "testdata", "images", "test.gif")
+	iff := filepath.Join("..", "..", "..", "..", "testdata", "images", "test.iff")
 	dest := filepath.Join(os.TempDir(), "test_netpbm.png")
 
 	type args struct {

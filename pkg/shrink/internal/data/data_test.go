@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	testdata = filepath.Join("..", "..", "..", "..", "tests", "uuid")
+	testdata = filepath.Join("..", "..", "..", "..", "testdata", "uuid")
 )
 
 func TestMonth(t *testing.T) {
@@ -81,8 +81,8 @@ func TestApprovals_Store(t *testing.T) {
 
 func TestCompress(t *testing.T) {
 	// archive file
-	path := filepath.Join("..", "..", "..", "..", "tests", "empty")
-	imgs := filepath.Join("..", "..", "..", "..", "tests", "images")
+	path := filepath.Join("..", "..", "..", "..", "testdata", "empty")
+	imgs := filepath.Join("..", "..", "..", "..", "testdata", "images")
 	d, err := filepath.Abs(path)
 	if err != nil {
 		t.Error(err)

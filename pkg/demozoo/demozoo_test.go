@@ -489,13 +489,13 @@ func TestZipContent(t *testing.T) {
 	}{
 		{"empty", fields{}, false, true},
 		{"missing", fields{FilePath: "/dev/null"}, false, true},
-		{"dir", fields{FilePath: "tests/demozoo"}, false, true},
+		{"dir", fields{FilePath: "testdata/demozoo"}, false, true},
 		{"7zip", fields{
-			FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"),
+			FilePath: filepath.Join(pwd, "testdata", "demozoo", "test.7z"),
 			Filename: "test.7z",
 		}, false, true},
 		{"zip", fields{
-			FilePath: filepath.Join(pwd, "tests", "demozoo", "test.zip"),
+			FilePath: filepath.Join(pwd, "testdata", "demozoo", "test.zip"),
 			Filename: "test.zip",
 		}, true, false},
 	}
@@ -548,7 +548,7 @@ func TestFileExist(t *testing.T) {
 	assert.Equal(t, 2, st.Missing)
 
 	r = demozoo.Record{
-		FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"),
+		FilePath: filepath.Join(pwd, "testdata", "demozoo", "test.7z"),
 	}
 	b, err = st.FileExist(&r)
 	assert.Nil(t, err)
