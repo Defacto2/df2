@@ -1,5 +1,3 @@
 ren tests dir to testdata.
 
-confirm file.Write and file.WriteString have file.Sync()
-
 make unit tests 	t.Parallel()

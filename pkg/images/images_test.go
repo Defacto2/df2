@@ -342,6 +342,7 @@ func TestMove(t *testing.T) {
 	src, err := os.CreateTemp(os.TempDir(), "images-move-test")
 	assert.Nil(t, err)
 	i, err := src.WriteString("hello world\n")
+	src.Sync()
 	assert.Nil(t, err)
 	assert.Equal(t, 12, i)
 	src.Close()
