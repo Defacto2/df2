@@ -348,7 +348,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 	i++
 	s = color.Info.Sprintf("%d. scan for empty archives\n", i)
 	fmt.Fprintln(w, s)
-	if err := zipcontent.Fix(db, w, l, cfg, true); err != nil {
+	if err := zipcontent.Fix(db, w, cfg, true); err != nil {
 		return err
 	}
 	i++

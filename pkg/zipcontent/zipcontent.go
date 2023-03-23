@@ -5,21 +5,33 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
-	"go.uber.org/zap"
 )
 
+func stmt() string {
+	const s = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`updatedat`,`retrotxt_readme`"
+	const w = " WHERE file_zip_content IS NULL AND (`filename` LIKE '%.zip' OR `filename`" +
+		" LIKE '%.rar' OR `filename` LIKE '%.7z')"
+	return fmt.Sprintf("%s FROM `files` %s", s, w)
+}
+
 // Fix the content of zip archives within in the database.
-func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, summary bool) error { //nolint:cyclop
+func Fix(db *sql.DB, w io.Writer, cfg configger.Config, summary bool) error { //nolint:cyclop
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	s, err := scan.Init(cfg)
 	if err != nil {
 		return err
 	}
-	rows, err := db.Query(where())
+	rows, err := db.Query(stmt())
 	if err != nil {
 		return err
 	}
@@ -32,14 +44,14 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, su
 		return err
 	}
 	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]any, len(values))
+	args := make([]any, len(values))
 	for i := range values {
-		scanArgs[i] = &values[i]
+		args[i] = &values[i]
 	}
 	for rows.Next() {
 		s.Total++
 	}
-	rows, err = db.Query(where())
+	rows, err = db.Query(stmt())
 	if err != nil {
 		return err
 	}
@@ -48,7 +60,7 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, su
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err := rows.Scan(scanArgs...); err != nil {
+		if err := rows.Scan(args...); err != nil {
 			return err
 		}
 		s.Count++
@@ -58,8 +70,8 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, su
 		}
 		s.Columns = columns
 		s.Values = &values
-		if err := r.Iterate(db, w, l, &s); err != nil {
-			log.Printf("\n%s\n", err)
+		if err := r.Iterate(db, w, &s); err != nil {
+			fmt.Fprintf(w, "\n%s\n", err)
 			continue
 		}
 		fmt.Fprintln(w)
@@ -68,11 +80,4 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, su
 		s.Summary(w)
 	}
 	return nil
-}
-
-func where() string {
-	const s = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`updatedat`,`retrotxt_readme`"
-	const w = " WHERE file_zip_content IS NULL AND (`filename` LIKE '%.zip' OR `filename`" +
-		" LIKE '%.rar' OR `filename` LIKE '%.7z')"
-	return fmt.Sprintf("%s FROM `files` %s", s, w)
 }

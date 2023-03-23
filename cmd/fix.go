@@ -57,7 +57,7 @@ records that do not have this expected context.`,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := zipcontent.Fix(db, os.Stdout, logr, cfg, true); err != nil {
+		if err := zipcontent.Fix(db, os.Stdout, cfg, true); err != nil {
 			logr.Errorf("archives fix: %w", err)
 		}
 	},

@@ -13,12 +13,12 @@ import (
 
 // Stats contain the statistics of the archive scan.
 type Stats struct {
-	BasePath string          // Path to file downloads directory with UUID as filenames.
-	Count    int             // Database table row index.
+	BasePath string          // BasePath is the path to the file downloads directory.
+	Count    int             // Count the database table row index.
 	Missing  int             // Missing UUID as files count.
 	Total    int             // Total rows in the database table.
-	Columns  []string        // Column names of the database table.
-	Values   *[]sql.RawBytes // Values of the rows in the database.
+	Columns  []string        // Columns are column names from the database table.
+	Values   *[]sql.RawBytes // Values of the database table.
 	start    time.Time       // Processing duration.
 }
 
@@ -36,11 +36,11 @@ func (s *Stats) Summary(w io.Writer) {
 	if w == nil {
 		w = io.Discard
 	}
-	total := s.Count - s.Missing
-	if total == 0 {
+	count := s.Count - s.Missing
+	if count == 0 {
 		fmt.Fprint(w, "nothing to do")
 	}
 	elapsed := time.Since(s.start).Seconds()
-	t := fmt.Sprintf("Total archives scanned: %v, time elapsed %.1f seconds", total, elapsed)
+	t := fmt.Sprintf("Total archives scanned: %v, time elapsed %.1f seconds", count, elapsed)
 	fmt.Fprintf(w, "\n%s\n%s\n", strings.Repeat("─", len(t)), t)
 }

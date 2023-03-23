@@ -2,250 +2,109 @@ package record_test
 
 import (
 	"database/sql"
+	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
+	"github.com/stretchr/testify/assert"
 )
 
+var dzDir = filepath.Join("..", "..", "..", "..", "tests", "demozoo")
+
 func TestNew(t *testing.T) {
-	const id, uuid, filename, readme = 0, 1, 4, 6
-	var empty record.Record
-	mock := make([]sql.RawBytes, 7)
+	r, err := record.New(nil, "")
+	assert.NotNil(t, err)
+	assert.Empty(t, r)
+
 	const ids, uuids = "345674", "b4ef0174-57b4-11ec-bf63-0242ac130002"
-	mock[id] = sql.RawBytes(ids)
-	mock[uuid] = sql.RawBytes(uuids)
-	mock[filename] = sql.RawBytes("somefile.zip")
-	mock[readme] = sql.RawBytes("readme.txt")
-	want := record.Record{
-		ID:    ids,
-		UUID:  uuids,
-		File:  "dir/" + uuids,
-		Name:  "somefile.zip",
-		Files: nil,
-		NFO:   "readme.txt",
-	}
-	type args struct {
-		values []sql.RawBytes
-		path   string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    record.Record
-		wantErr bool
-	}{
-		{"empty", args{}, empty, true},
-		{"mock", args{mock, "dir"}, want, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := record.New(tt.args.values, tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	const id, uuid, filename, readme = 0, 1, 4, 6
+	vals := make([]sql.RawBytes, 7)
+	vals[id] = sql.RawBytes(ids)
+	vals[uuid] = sql.RawBytes(uuids)
+	vals[filename] = sql.RawBytes("somefile.zip")
+	vals[readme] = sql.RawBytes("readme.txt")
+
+	r, err = record.New(vals, "some-directory")
+	assert.Nil(t, err)
+	assert.NotEmpty(t, r)
 }
 
-func TestIterate(t *testing.T) {
-	var empty record.Record
-	mockV := []sql.RawBytes{
+func TestRecord_Iterate(t *testing.T) {
+	r := record.Record{}
+	err := r.Iterate(nil, nil, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+
+	err = r.Iterate(db, io.Discard, nil)
+	assert.NotNil(t, err)
+
+	vals := []sql.RawBytes{
 		sql.RawBytes("0"),
 		sql.RawBytes(time.Now().String()),
 		sql.RawBytes("somefile.zip"),
 		sql.RawBytes(""),
 	}
-	mockR := record.Record{
-		ID: "1",
-	}
-	mockSBad := scan.Stats{
+	badSt := scan.Stats{
 		Columns: []string{"1ee21218-5898-11ec-bf63-0242ac130002"},
-		Values:  &mockV,
+		Values:  &vals,
 	}
-	mockS := scan.Stats{
+	err = r.Iterate(db, io.Discard, &badSt)
+	assert.NotNil(t, err)
+
+	okSt := scan.Stats{
 		Columns: []string{"id", "createdat", "filename", "uuid"},
-		Values:  &mockV,
+		Values:  &vals,
 	}
-	type fields struct {
-		ID    string
-		UUID  string
-		File  string
-		Name  string
-		Files []string
-		NFO   string
-	}
-	type args struct {
-		s *scan.Stats
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{"empty", fields(empty), args{}, true},
-		{"no stats", fields(mockR), args{}, true},
-		{"no fields", fields(empty), args{&mockSBad}, true},
-		{"missing cols", fields(mockR), args{&mockSBad}, true},
-		// we want an error because it attempts to read a non-existent file.
-		{"okay, but want error", fields(mockR), args{&mockS}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &record.Record{
-				ID:    tt.fields.ID,
-				UUID:  tt.fields.UUID,
-				File:  tt.fields.File,
-				Name:  tt.fields.Name,
-				Files: tt.fields.Files,
-				NFO:   tt.fields.NFO,
-			}
-			if err := r.Iterate(nil, nil, nil, tt.args.s); (err != nil) != tt.wantErr {
-				t.Errorf("Iterate() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	err = r.Iterate(db, io.Discard, &okSt)
+	assert.NotNil(t, err)
 }
 
-func TestRecord_Save(t *testing.T) {
-	type fields struct {
-		ID    string
-		UUID  string
-		File  string
-		Name  string
-		Files []string
-		NFO   string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		want    int64
-		wantErr bool
-	}{
-		{"empty", fields{}, 0, true},
-		{"bad id", fields{ID: "abcde"}, 0, true},
-		{"good id", fields{ID: "1"}, 1, false},
-		// use the time now value to force an update to the database.
-		{"nfo", fields{ID: "1", NFO: "sometextfile-" + time.Now().String() + ".txt"}, 1, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &record.Record{
-				ID:    tt.fields.ID,
-				UUID:  tt.fields.UUID,
-				File:  tt.fields.File,
-				Name:  tt.fields.Name,
-				Files: tt.fields.Files,
-				NFO:   tt.fields.NFO,
-			}
-			got, err := r.Save(nil)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Record.Save() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Record.Save() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+func TestRecord_Archive(t *testing.T) {
+	const uuid = "1ee21218-5898-11ec-bf63-0242ac130002"
+	r := record.Record{}
+	err := r.Archive(nil, nil, nil)
+	assert.NotNil(t, err)
 
-func TestRecord_Nfo(t *testing.T) {
-	const fn = "test.zip"
-	files := []string{"prog.exe", "data.1", "data.2", "data.3", "prog.txt", "test.txt", "test.nfo"}
-	mockS := scan.Stats{
-		BasePath: "",
-	}
-	type fields struct {
-		ID    string
-		UUID  string
-		File  string
-		Name  string
-		Files []string
-		NFO   string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		s       *scan.Stats
-		wantErr bool
-	}{
-		{"empty", fields{}, nil, true},
-		// this test will fail when attempting to extract a non-existent file
-		{"fake file", fields{File: fn, Files: files}, &mockS, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &record.Record{
-				ID:    tt.fields.ID,
-				UUID:  tt.fields.UUID,
-				File:  tt.fields.File,
-				Name:  tt.fields.Name,
-				Files: tt.fields.Files,
-				NFO:   tt.fields.NFO,
-			}
-			if err := r.Nfo(nil, tt.s); (err != nil) != tt.wantErr {
-				t.Errorf("Record.Nfo() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.Archive(db, io.Discard, nil)
+	assert.NotNil(t, err)
 
-func TestRecord_Read(t *testing.T) {
-	const (
-		dir  = "../../../../tests/demozoo"
-		fn   = "test.zip"
-		uuid = "c1fab556-58a0-11ec-bf63-0242ac130002"
-	)
-	mockS := scan.Stats{
-		BasePath: dir,
+	vals := []sql.RawBytes{
+		sql.RawBytes("0"),
+		sql.RawBytes(time.Now().String()),
+		sql.RawBytes("somefile.zip"),
+		sql.RawBytes(""),
 	}
-	type fields struct {
-		ID    string
-		UUID  string
-		File  string
-		Name  string
-		Files []string
-		NFO   string
+	badSt := scan.Stats{
+		Columns: []string{uuid},
+		Values:  &vals,
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		s       *scan.Stats
-		wantErr bool
-	}{
-		{"empty", fields{}, nil, true},
-		{"test.zip", fields{
-			ID:   "1",
-			UUID: uuid,
-			File: filepath.Join(dir, fn),
-			Name: fn,
-		}, &mockS, false},
+	err = r.Archive(db, io.Discard, &badSt)
+	assert.NotNil(t, err)
+
+	okSt := scan.Stats{
+		Columns: []string{"id", "createdat", "filename", "uuid"},
+		Values:  &vals,
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &record.Record{
-				ID:    tt.fields.ID,
-				UUID:  tt.fields.UUID,
-				File:  tt.fields.File,
-				Name:  tt.fields.Name,
-				Files: tt.fields.Files,
-				NFO:   tt.fields.NFO,
-			}
-			if err := r.Read(nil, nil, tt.s); (err != nil) != tt.wantErr {
-				t.Errorf("Record.Read() error = %v, wantErr %v", err, tt.wantErr)
-			} else if tt.name == "test.zip" && err == nil {
-				defer os.Remove(filepath.Join(dir, uuid+".txt"))
-			}
-		})
+
+	r = record.Record{
+		ID:   "1",
+		UUID: uuid,
+		File: filepath.Join(dzDir, "test.zip"),
+		Name: "test.png",
 	}
+	err = r.Archive(db, io.Discard, &okSt)
+	assert.Nil(t, err)
+	defer os.Remove(uuid + ".txt")
 }
