@@ -22,7 +22,7 @@ const (
 // MkDir creates a UUID subdirectory in the directory path.
 func MkDir(path string) error {
 	src, err := os.Stat(path)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		if err = os.MkdirAll(path, dirMode); err != nil {
 			return fmt.Errorf("create directory mkdir %q: %w", path, err)
 		}

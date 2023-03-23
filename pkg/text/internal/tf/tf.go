@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -88,7 +89,7 @@ func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 			return false, nil
 		}
 		s, err := os.Stat(filepath.Join(path, t.UUID+png))
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return false, nil
 		} else if err != nil {
 			return false, fmt.Errorf("textfile exist: %w", err)
@@ -152,7 +153,7 @@ func (t *TextFile) ExtractedImgs(w io.Writer, cfg configger.Config, dir string) 
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
 	fmt.Fprintln(w, "n", n)
-	if _, err := os.Stat(n); os.IsNotExist(err) {
+	if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%w: %s", os.ErrNotExist, n)
 	} else if err != nil {
 		return fmt.Errorf("extractedimgs: %s: %w", t.UUID, err)
@@ -171,7 +172,7 @@ func (t *TextFile) TextPNG(w io.Writer, cfg configger.Config, count int, dir str
 	}
 	fmt.Fprintf(w, "%d. %v", count, t)
 	name := filepath.Join(dir, t.UUID)
-	if _, err := os.Stat(name); os.IsNotExist(err) {
+	if _, err := os.Stat(name); errors.Is(err, fs.ErrNotExist) {
 		fmt.Fprintf(w, "%s\n", str.X())
 		return fmt.Errorf("%w: %s", ErrPNG, name)
 	} else if err != nil {
@@ -195,7 +196,7 @@ func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 	}
 	c++
 	name := filepath.Join(imgDir, t.UUID+webp)
-	if sw, err := os.Stat(name); !os.IsNotExist(err) && err != nil {
+	if sw, err := os.Stat(name); !errors.Is(err, fs.ErrNotExist) && err != nil {
 		fmt.Fprintf(w, "%s\n", str.X())
 		return c, fmt.Errorf("webp stat %w: %s", err, name)
 	} else if err == nil && sw.Size() > 0 {
@@ -205,7 +206,7 @@ func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 	}
 	fmt.Fprintf(w, "%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
-	if st, err := os.Stat(src); os.IsNotExist(err) || st.Size() == 0 {
+	if st, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) || st.Size() == 0 {
 		fmt.Fprintf(w, "%s (no src png)\n", str.X())
 		return c, nil
 	}

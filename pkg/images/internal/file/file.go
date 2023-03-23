@@ -3,6 +3,7 @@ package file
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path"
@@ -56,7 +57,8 @@ func (i Image) IsDir(dir *directories.Dir) (bool, error) {
 	}
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
-		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {
+		_, err := os.Stat(filepath.Join(path, i.UUID+_png))
+		if !errors.Is(err, fs.ErrNotExist) {
 			return true, nil
 		}
 	}
@@ -93,7 +95,7 @@ func Remove(confirm bool, name string) error {
 // Remove0byte removes the named file but only if it is 0 bytes in size.
 func Remove0byte(name string) error {
 	s, err := os.Stat(name)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	if err != nil {

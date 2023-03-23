@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -283,9 +284,11 @@ func Read(w io.Writer, src, name string) ([]string, string, error) {
 	if w == nil {
 		w = io.Discard
 	}
-	if i, err := os.Stat(src); os.IsNotExist(err) {
+	st, err := os.Stat(src)
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrFile)
-	} else if i.IsDir() {
+	}
+	if st.IsDir() {
 		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrDir)
 	}
 	files, fname, err := Readr(w, src, name)

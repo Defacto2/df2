@@ -1,6 +1,8 @@
 package directories_test
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -71,7 +73,7 @@ func TestSize(t *testing.T) {
 	assert.Equal(t, i, c)
 	assert.Equal(t, u, b)
 
-	if _, err := os.Stat(empty); os.IsNotExist(err) {
+	if _, err := os.Stat(empty); errors.Is(err, fs.ErrNotExist) {
 		if err := os.Mkdir(empty, 0o755); err != nil {
 			assert.Nil(t, err)
 		}

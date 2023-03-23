@@ -2,8 +2,10 @@ package recd
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -139,7 +141,7 @@ func (r *Record) Check(w io.Writer, incoming string, values []sql.RawBytes, dir 
 
 func (r *Record) checkDownload(w io.Writer, incoming, path string) bool {
 	file := filepath.Join(fmt.Sprint(path), r.UUID)
-	if _, err := os.Stat(file); os.IsNotExist(err) {
+	if _, err := os.Stat(file); errors.Is(err, fs.ErrNotExist) {
 		return r.recoverDownload(w, incoming, path)
 	}
 	return true
@@ -194,10 +196,8 @@ func (r *Record) checkHash(h1, h2 string) bool {
 }
 
 func (r *Record) checkImage(path string) bool {
-	if _, err := os.Stat(r.ImagePath(path)); os.IsNotExist(err) {
-		return false
-	}
-	return true
+	_, err := os.Stat(r.ImagePath(path))
+	return !errors.Is(err, fs.ErrNotExist)
 }
 
 func (r *Record) checkTags(t1, t2 string) bool {
@@ -220,7 +220,7 @@ func (r *Record) recoverDownload(w io.Writer, incoming, path string) bool {
 		return false
 	}
 	file := filepath.Join(src, r.Filename)
-	if _, err := os.Stat(file); os.IsNotExist(err) {
+	if _, err := os.Stat(file); errors.Is(err, fs.ErrNotExist) {
 		verbose(w, v, "!incoming:"+file+" ")
 		return false
 	}
@@ -231,7 +231,7 @@ func (r *Record) recoverDownload(w io.Writer, incoming, path string) bool {
 		return false
 	}
 	verbose(w, v, fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		verbose(w, v, "!!filecopy ")
 		fmt.Fprintln(os.Stderr, err)
 		return false

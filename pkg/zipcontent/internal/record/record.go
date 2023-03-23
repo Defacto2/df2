@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -146,7 +147,7 @@ func (r *Record) Textfile(w io.Writer, s *scan.Stats) error {
 		return nil
 	}
 	fmt.Fprintf(w, ", text file: %s", r.NFO)
-	if _, err := os.Stat(r.File + txt); os.IsNotExist(err) {
+	if _, err := os.Stat(r.File + txt); errors.Is(err, fs.ErrNotExist) {
 		tmp, err1 := os.MkdirTemp(os.TempDir(), "zipcontent")
 		if err1 != nil {
 			return err1

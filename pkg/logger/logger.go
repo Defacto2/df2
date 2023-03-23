@@ -3,8 +3,10 @@
 package logger
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,7 +55,7 @@ func SprintPath(name string) string {
 			continue
 		}
 		p = strings.Join(a[0:i+1], "/")
-		if _, err := os.Stat(p); os.IsNotExist(err) {
+		if _, err := os.Stat(p); errors.Is(err, fs.ErrNotExist) {
 			s = filepath.Join(s, color.Danger.Sprint(e))
 		} else {
 			s = filepath.Join(s, e)

@@ -254,11 +254,11 @@ func (s *Scan) backupPart(w io.Writer, f Files, d *directories.Dir, p part, test
 
 func (s *Scan) walker(d *directories.Dir, base, name string) (*os.File, error) {
 	_, err := os.Stat(base)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("create %q: %w", base, ErrDir)
 	}
 	_, err = os.Stat(d.Backup)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("create %q: %w", d.Backup, ErrBackup)
 	}
 	// create tar archive

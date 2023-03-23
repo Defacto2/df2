@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,7 +54,7 @@ func Convert(w io.Writer, src, dest string) error {
 	if w == nil {
 		w = io.Discard
 	}
-	if _, err := os.Stat(src); os.IsNotExist(err) {
+	if _, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%w: %s", ErrSrc, src)
 	} else if err != nil {
 		return err

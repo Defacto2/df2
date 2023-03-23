@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"reflect"
 	"strings"
@@ -45,7 +46,7 @@ func (st *Stat) FileExist(r *Record) (bool, error) {
 	}
 	s, err := os.Stat(r.FilePath)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			st.Missing++
 			return false, nil
 		}

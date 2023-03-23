@@ -2,6 +2,8 @@ package urlset
 
 import (
 	"encoding/xml"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -88,19 +90,19 @@ func (set *Set) StaticURLs(dir string) (c, i int) { //nolint:nonamedreturns
 	c, i = 0, 0
 	for i, path := range paths {
 		file := filepath.Join(dir, path, index)
-		if s, err := os.Stat(file); !os.IsNotExist(err) {
+		if s, err := os.Stat(file); !errors.Is(err, fs.ErrNotExist) {
 			set.URLs[i] = Tag{uri(path), Lastmod(s), "", veryHigh}
 			c++
 			continue
 		}
 		j := filepath.Join(dir, path) + cfm
-		if s, err := os.Stat(j); !os.IsNotExist(err) {
+		if s, err := os.Stat(j); !errors.Is(err, fs.ErrNotExist) {
 			set.URLs[i] = Tag{uri(path), Lastmod(s), "", high}
 			c++
 			continue
 		}
 		k := filepath.Join(dir, strings.ReplaceAll(path, "-", "")+cfm)
-		if s, err := os.Stat(k); !os.IsNotExist(err) {
+		if s, err := os.Stat(k); !errors.Is(err, fs.ErrNotExist) {
 			set.URLs[i] = Tag{uri(path), Lastmod(s), "", standard}
 			c++
 			continue

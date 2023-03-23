@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -202,8 +203,7 @@ func Export(name, dest string, amiga bool) (string, error) {
 	if dest == "" {
 		return "", fmt.Errorf("makepng: %w", ErrDest)
 	}
-	_, err := os.Stat(name)
-	if err != nil && os.IsNotExist(err) {
+	if _, err := os.Stat(name); errors.Is(err, fs.ErrNotExist) {
 		return "", fmt.Errorf("makepng missing %q: %w", name, err)
 	} else if err != nil {
 		return "", fmt.Errorf("makepng stat: %w", err)
@@ -242,7 +242,7 @@ func Export(name, dest string, amiga bool) (string, error) {
 
 func Bytes(name string) (uint64, error) {
 	stat, err := os.Stat(name)
-	if err != nil && os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return 0, fmt.Errorf("bytes stat %q: %w", name, err)
 	} else if err != nil {
 		return 0, fmt.Errorf("bytes stat: %w", err)

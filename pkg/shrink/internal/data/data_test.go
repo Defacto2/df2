@@ -1,7 +1,9 @@
 package data_test
 
 import (
+	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -85,7 +87,7 @@ func TestCompress(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if _, err := os.Stat(d); os.IsNotExist(err) {
+	if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
 		if err := os.Mkdir(d, 0o755); err != nil {
 			t.Error(err)
 		}

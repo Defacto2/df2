@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -229,7 +230,7 @@ func Skip(w io.Writer, s stat.Proof, r Record) (bool, error) {
 	if w == nil {
 		w = io.Discard
 	}
-	if _, err := os.Stat(r.File); os.IsNotExist(err) {
+	if _, err := os.Stat(r.File); errors.Is(err, fs.ErrNotExist) {
 		fmt.Fprintf(w, "%s %0*d. %v is missing %v %s\n",
 			color.Question.Sprint("→"),
 			len(strconv.Itoa(s.Total)),

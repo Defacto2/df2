@@ -11,6 +11,7 @@ import (
 	_ "image/jpeg" // register Jpeg decoding.
 	"image/png"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,7 +86,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 		}
 		c++
 		fmt.Fprintf(w, "%d. %v", c, img)
-		if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); errors.Is(err, fs.ErrNotExist) {
 			fmt.Fprintf(w, "%s\n", str.X())
 			continue
 		} else if err != nil {
@@ -128,7 +129,7 @@ func Generate(w io.Writer, src, id string, remove bool) error {
 	if w == nil {
 		w = io.Discard
 	}
-	if _, err := os.Stat(src); os.IsNotExist(err) {
+	if _, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("generate stat %q: %w", src, err)
 	}
 	f, err := directories.Files(configger.Defaults(), id)

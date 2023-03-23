@@ -1,7 +1,9 @@
 package configger
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -30,7 +32,7 @@ func DownloadDir(name string, log *zap.SugaredLogger) {
 		return
 	}
 	dir, err := os.Stat(name)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		log.Warnf("The download directory path does not exist, the server cannot send record downloads: %s", name)
 		return
 	}
@@ -57,7 +59,7 @@ func LogDir(name string, log *zap.SugaredLogger) {
 		return
 	}
 	dir, err := os.Stat(name)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		log.Fatalf("The log directory path does not exist, the server cannot log to files: %s", name)
 	}
 	if !dir.IsDir() {

@@ -264,10 +264,8 @@ func GroupCron(db *sql.DB, w io.Writer, cfg configger.Config, gro arg.Group) err
 		ow = true
 	}
 	dir := cfg.HTMLExports
-	if _, err := os.Stat(dir); err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("html export directory does not exist: %w: %s", err, dir)
-		}
+	if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("html export directory does not exist: %w: %s", err, dir)
 	}
 	for _, tag := range groups.Tags() {
 		name := fmt.Sprintf("%s.htm", tag)

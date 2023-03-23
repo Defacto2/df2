@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"math"
 	"os"
 	"path"
@@ -213,7 +214,7 @@ func Distinct(db *sql.DB, w io.Writer, value string) ([]string, error) {
 // whenever it is 0 bytes in size.
 func FileUpdate(name string, src time.Time) (bool, error) {
 	f, err := os.Stat(name)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return true, nil
 	}
 	if err != nil {

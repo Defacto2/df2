@@ -31,6 +31,7 @@ func init() {
 }
 
 func TestRun(t *testing.T) {
+	t.Parallel()
 	err := Data(nil, nil, database.Flags{})
 	assert.NotNil(t, err)
 	err = Data(db, nil, database.Flags{})

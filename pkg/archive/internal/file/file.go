@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 
 	"github.com/dustin/go-humanize"
@@ -102,17 +103,17 @@ func Dir(w io.Writer, name string) error {
 // Move copies a file to the destination and then deletes the source.
 func Move(name, dest string) (int64, error) {
 	if name == dest {
-		return 0, fmt.Errorf("filemove: %w", ErrSameArgs)
+		return 0, fmt.Errorf("file move: %w", ErrSameArgs)
 	}
-	written, err := Copy(name, dest)
+	b, err := Copy(name, dest)
 	if err != nil {
-		return 0, fmt.Errorf("filemove: %w", err)
+		return 0, fmt.Errorf("file move copy: %w", err)
 	}
-	if _, err = os.Stat(dest); os.IsNotExist(err) {
-		return 0, fmt.Errorf("filemove dest: %w", err)
+	if _, err = os.Stat(dest); errors.Is(err, fs.ErrNotExist) {
+		return 0, fmt.Errorf("file move: %s: %w", dest, err)
 	}
 	if err = os.Remove(name); err != nil {
-		return 0, fmt.Errorf("filemove remove name %q: %w", name, err)
+		return 0, fmt.Errorf("file move remove %q: %w", name, err)
 	}
-	return written, nil
+	return b, nil
 }
