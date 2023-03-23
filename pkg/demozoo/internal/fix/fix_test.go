@@ -11,6 +11,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
+	t.Parallel()
 	err := fix.Configs(nil, nil)
 	assert.NotNil(t, err)
 	db, err := database.Connect(configger.Defaults())

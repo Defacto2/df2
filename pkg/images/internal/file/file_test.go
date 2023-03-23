@@ -18,6 +18,7 @@ func testDir() string {
 }
 
 func TestImage(t *testing.T) {
+	t.Parallel()
 	i := file.Image{}
 	assert.Equal(t, "(0)  0 B ", i.String())
 	i = file.Image{
@@ -37,6 +38,7 @@ func TestImage(t *testing.T) {
 }
 
 func TestIsExt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		i      file.Image
@@ -58,6 +60,7 @@ func TestIsExt(t *testing.T) {
 }
 
 func TestCheck(t *testing.T) {
+	t.Parallel()
 	b := file.Check("", nil)
 	assert.Equal(t, false, b)
 	err := errors.New("check err")
@@ -68,6 +71,7 @@ func TestCheck(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
+	t.Parallel()
 	err := file.Remove(false, "")
 	assert.Nil(t, err)
 	err = file.Remove(true, "")
@@ -88,6 +92,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestVendor(t *testing.T) {
+	t.Parallel()
 	s := file.Vendor()
 	assert.NotEqual(t, "", s)
 }

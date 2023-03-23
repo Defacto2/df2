@@ -12,6 +12,7 @@ import (
 )
 
 func TestContains(t *testing.T) {
+	t.Parallel()
 	const hi = "👋 hi!"
 	x := []string{"hello", "world", "apple", "banana", "carrot", hi, "cake"}
 	sort.Strings(x)
@@ -40,6 +41,7 @@ func TestContains(t *testing.T) {
 }
 
 func TestMatch(t *testing.T) {
+	t.Parallel()
 	err := groups.Match(nil, nil, -1)
 	assert.NotNil(t, err)
 
@@ -51,6 +53,7 @@ func TestMatch(t *testing.T) {
 }
 
 func TestSwapOne(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group    string
 		phonetic string
@@ -79,6 +82,7 @@ func TestSwapOne(t *testing.T) {
 }
 
 func TestSwapAll(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group    string
 		phonetic string
@@ -108,6 +112,7 @@ func TestSwapAll(t *testing.T) {
 }
 
 func TestSwapNumeral(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group string
 		i     int
@@ -133,6 +138,7 @@ func TestSwapNumeral(t *testing.T) {
 }
 
 func TestSwapOrdinal(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group string
 		i     int
@@ -158,6 +164,7 @@ func TestSwapOrdinal(t *testing.T) {
 }
 
 func TestSwapPrefix(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group  string
 		prefix string
@@ -182,6 +189,7 @@ func TestSwapPrefix(t *testing.T) {
 }
 
 func TestSwapSuffix(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group  string
 		suffix string
@@ -209,6 +217,7 @@ func TestSwapSuffix(t *testing.T) {
 }
 
 func TestTrimSP(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		s     string

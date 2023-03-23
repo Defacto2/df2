@@ -11,6 +11,7 @@ import (
 )
 
 func TestProductions_Prods(t *testing.T) {
+	t.Parallel()
 	p := filter.Productions{}
 	r, err := p.Prods(nil, nil, 1)
 	assert.NotNil(t, err)

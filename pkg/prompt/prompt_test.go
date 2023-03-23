@@ -10,6 +10,7 @@ import (
 )
 
 func TestRead(t *testing.T) {
+	t.Parallel()
 	s, err := prompt.Read(nil)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
@@ -43,6 +44,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestYN(t *testing.T) {
+	t.Parallel()
 	b, err := prompt.YN(nil, "", false)
 	assert.Nil(t, err)
 	assert.Equal(t, b, false)

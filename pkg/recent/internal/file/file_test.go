@@ -12,6 +12,7 @@ import (
 const uuid = "d37e5b5f-f5bf-4138-9078-891e41b10a12"
 
 func TestThumb_Scan(t *testing.T) {
+	t.Parallel()
 	f := file.Thumb{}
 	f.Scan(nil)
 	assert.Equal(t, "", f.URLID)

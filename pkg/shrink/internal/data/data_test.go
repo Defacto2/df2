@@ -23,6 +23,7 @@ var (
 )
 
 func TestMonth(t *testing.T) {
+	t.Parallel()
 	m := data.Month("")
 	assert.Equal(t, data.Months(0), m)
 	m = data.Month("ja")
@@ -35,6 +36,7 @@ func TestMonth(t *testing.T) {
 }
 
 func TestApprovals_Approve(t *testing.T) {
+	t.Parallel()
 	p := data.Preview
 	err := p.Approve(nil)
 	assert.NotNil(t, err)
@@ -50,6 +52,7 @@ func TestApprovals_Approve(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
+	t.Parallel()
 	ds := string(filepath.Separator)
 	d, err := filepath.Abs(ds)
 	if err != nil {
@@ -64,12 +67,14 @@ func TestInit(t *testing.T) {
 }
 
 func TestSaveDir(t *testing.T) {
+	t.Parallel()
 	s, err := data.SaveDir()
 	assert.Nil(t, err)
 	assert.NotEqual(t, "", s)
 }
 
 func TestApprovals_Store(t *testing.T) {
+	t.Parallel()
 	path, err := data.Preview.Store(nil, "", "", false)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", path)
@@ -80,6 +85,7 @@ func TestApprovals_Store(t *testing.T) {
 }
 
 func TestCompress(t *testing.T) {
+	t.Parallel()
 	// archive file
 	path := filepath.Join("..", "..", "..", "..", "testdata", "empty")
 	imgs := filepath.Join("..", "..", "..", "..", "testdata", "images")
@@ -112,6 +118,7 @@ func TestCompress(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
+	t.Parallel()
 	err := data.Remove(io.Discard, nil)
 	assert.Nil(t, err)
 	err = data.Remove(io.Discard, []string{"blahblahblah"})

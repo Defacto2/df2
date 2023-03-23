@@ -14,6 +14,7 @@ import (
 const uuid = "10000000-0000-0000-0000-000000000000"
 
 func TestQuery(t *testing.T) {
+	t.Parallel()
 	r := proof.Request{}
 	err := r.Query(nil, nil, configger.Config{}, "")
 	assert.NotNil(t, err)
@@ -32,6 +33,7 @@ func TestQuery(t *testing.T) {
 }
 
 func Test_Select(t *testing.T) {
+	t.Parallel()
 	s := proof.Select("")
 	assert.Contains(t, s, "FROM `files` WHERE `section` = 'releaseproof'")
 	s = proof.Select("1")
@@ -41,6 +43,7 @@ func Test_Select(t *testing.T) {
 }
 
 func TestRequest_Skip(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Overwrite   bool
 		All         bool

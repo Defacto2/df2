@@ -13,6 +13,7 @@ import (
 )
 
 func TestInit(t *testing.T) {
+	t.Parallel()
 	d, err := directories.Init(configger.Defaults(), false)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, d)
@@ -27,6 +28,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestArchiveExt(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		name string
 	}
@@ -50,6 +52,7 @@ func TestArchiveExt(t *testing.T) {
 }
 
 func TestFiles(t *testing.T) {
+	t.Parallel()
 	d, err := directories.Files(configger.Defaults(), "")
 	assert.Nil(t, err)
 	assert.NotEmpty(t, d)
@@ -59,6 +62,7 @@ func TestFiles(t *testing.T) {
 }
 
 func TestSize(t *testing.T) {
+	t.Parallel()
 	empty := filepath.Join("..", "..", "testdata", "empty")
 	valid := filepath.Join("..", "..", "testdata", "demozoo")
 	i, u := int64(0), uint64(0)
@@ -91,6 +95,7 @@ func TestSize(t *testing.T) {
 }
 
 func TestTouch(t *testing.T) {
+	t.Parallel()
 	tmp := filepath.Join(os.TempDir(), "directories-touch-test.tmp")
 	err := directories.Touch(tmp)
 	assert.Nil(t, err)

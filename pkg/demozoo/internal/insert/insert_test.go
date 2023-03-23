@@ -15,6 +15,7 @@ import (
 )
 
 func TestRecord_Insert(t *testing.T) {
+	t.Parallel()
 	r := insert.Record{}
 	res, err := r.Insert(nil)
 	assert.NotNil(t, err)
@@ -42,6 +43,7 @@ func TestRecord_Insert(t *testing.T) {
 }
 
 func TestProds(t *testing.T) {
+	t.Parallel()
 	err := insert.Prods(nil, nil, nil)
 	assert.NotNil(t, err)
 
@@ -58,6 +60,7 @@ func TestProds(t *testing.T) {
 }
 
 func TestProd(t *testing.T) {
+	t.Parallel()
 	r, err := insert.Prod(nil, nil, releases.ProductionV1{})
 	assert.NotNil(t, err)
 	assert.Empty(t, r)

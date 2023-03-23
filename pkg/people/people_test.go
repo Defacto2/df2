@@ -13,6 +13,7 @@ import (
 )
 
 func TestCronjob(t *testing.T) {
+	t.Parallel()
 	err := people.Cronjob(nil, nil, "", false)
 	assert.NotNil(t, err)
 	db, err := database.Connect(configger.Defaults())
@@ -23,6 +24,7 @@ func TestCronjob(t *testing.T) {
 }
 
 func TestDataList(t *testing.T) {
+	t.Parallel()
 	err := people.DataList(nil, nil, "", people.Flags{})
 	assert.NotNil(t, err)
 	db, err := database.Connect(configger.Defaults())
@@ -37,6 +39,7 @@ func TestDataList(t *testing.T) {
 }
 
 func TestFilters(t *testing.T) {
+	t.Parallel()
 	f := people.Filters()
 	assert.Len(t, f, 4)
 	s := people.Roles()
@@ -44,6 +47,7 @@ func TestFilters(t *testing.T) {
 }
 
 func TestHTML(t *testing.T) {
+	t.Parallel()
 	err := people.HTML(nil, nil, "", people.Flags{})
 	assert.NotNil(t, err)
 	db, err := database.Connect(configger.Defaults())
@@ -58,6 +62,7 @@ func TestHTML(t *testing.T) {
 }
 
 func TestPrint(t *testing.T) {
+	t.Parallel()
 	err := people.Print(nil, nil, people.Flags{})
 	assert.NotNil(t, err)
 	db, err := database.Connect(configger.Defaults())
@@ -72,6 +77,7 @@ func TestPrint(t *testing.T) {
 }
 
 func TestFix(t *testing.T) {
+	t.Parallel()
 	err := people.Fix(nil, nil)
 	assert.NotNil(t, err)
 	db, err := database.Connect(configger.Defaults())

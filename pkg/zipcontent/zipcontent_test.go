@@ -11,6 +11,7 @@ import (
 )
 
 func TestFix(t *testing.T) {
+	t.Parallel()
 	err := zipcontent.Fix(nil, nil, configger.Config{}, false)
 	assert.NotNil(t, err)
 

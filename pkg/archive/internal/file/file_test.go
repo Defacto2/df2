@@ -23,6 +23,7 @@ func testDir(name string) string {
 }
 
 func TestAdd(t *testing.T) {
+	t.Parallel()
 	err := file.Add(nil, "")
 	assert.NotNil(t, err)
 	err = file.Add(nil, testDir("file-does-not-exists"))
@@ -37,6 +38,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestDir(t *testing.T) {
+	t.Parallel()
 	err := file.Dir(nil, "")
 	assert.NotNil(t, err)
 	err = file.Dir(io.Discard, testDir(""))
@@ -44,6 +46,7 @@ func TestDir(t *testing.T) {
 }
 
 func TestMove(t *testing.T) {
+	t.Parallel()
 	i, err := file.Move("", "")
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), i)
@@ -66,6 +69,7 @@ func TestMove(t *testing.T) {
 }
 
 func TestCopy(t *testing.T) {
+	t.Parallel()
 	i, err := file.Copy("", "")
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), i)

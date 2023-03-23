@@ -12,6 +12,7 @@ import (
 )
 
 func TestFilter(t *testing.T) {
+	t.Parallel()
 	f := group.BBS
 	assert.Equal(t, "bbs", f.String())
 	f = group.FTP
@@ -30,6 +31,7 @@ func TestFilter(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
+	t.Parallel()
 	i, err := group.Count(nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
@@ -48,6 +50,7 @@ func TestCount(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
+	t.Parallel()
 	s, i, err := group.List(nil, nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
@@ -68,6 +71,7 @@ func TestList(t *testing.T) {
 }
 
 func TestSQLWhere(t *testing.T) {
+	t.Parallel()
 	t.Helper()
 	type args struct {
 		f              group.Filter
@@ -99,6 +103,7 @@ func TestSQLWhere(t *testing.T) {
 }
 
 func Test_hrElement(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		cap   string
 		group string
@@ -128,6 +133,7 @@ func Test_hrElement(t *testing.T) {
 }
 
 func TestSQLSelect(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		f                  group.Filter
 		includeSoftDeletes bool
@@ -153,6 +159,7 @@ func TestSQLSelect(t *testing.T) {
 }
 
 func TestSlug(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		name string
 	}
@@ -176,6 +183,7 @@ func TestSlug(t *testing.T) {
 }
 
 func Test_FmtSyntax(t *testing.T) {
+	t.Parallel()
 	const ok = "hello & world"
 	tests := []struct {
 		name string

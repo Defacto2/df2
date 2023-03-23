@@ -9,6 +9,7 @@ import (
 )
 
 func TestConvert(t *testing.T) {
+	t.Parallel()
 	gif := filepath.Join("..", "..", "..", "..", "testdata", "images", "test.gif")
 	iff := filepath.Join("..", "..", "..", "..", "testdata", "images", "test.iff")
 	dest := filepath.Join(os.TempDir(), "test_netpbm.png")
@@ -38,6 +39,7 @@ func TestConvert(t *testing.T) {
 }
 
 func TestID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		src     string
 		want    netpbm.Program

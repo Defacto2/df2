@@ -9,6 +9,7 @@ import (
 )
 
 func TestProof_Summary(t *testing.T) {
+	t.Parallel()
 	p := stat.Proof{}
 	s := p.Summary("")
 	assert.Contains(t, s, "nothing")

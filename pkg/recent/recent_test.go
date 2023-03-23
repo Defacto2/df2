@@ -12,6 +12,7 @@ import (
 )
 
 func TestList(t *testing.T) {
+	t.Parallel()
 	err := recent.List(nil, nil, 1, false)
 	assert.NotNil(t, err)
 

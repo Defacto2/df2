@@ -12,6 +12,7 @@ import (
 var dir = filepath.Join("..", "..", "..", "..", "testdata", "images")
 
 func TestID(t *testing.T) {
+	t.Parallel()
 	var (
 		gif = dir + `test.gif GIF 1280x32 1280x32+0+0 8-bit sRGB 2c 661B 0.000u 0:00.000`
 		jpg = dir + `test.jpg JPEG 1280x32 1280x32+0+0 8-bit sRGB 3236B 0.000u 0:00.000`
@@ -45,6 +46,7 @@ func TestID(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
+	t.Parallel()
 	var gif = dir + "test.gif"
 	tmp := filepath.Join(t.TempDir(), "test.png")
 	type args struct {

@@ -9,6 +9,7 @@ import (
 )
 
 func TestProductionsAPIv1_Download(t *testing.T) {
+	t.Parallel()
 	p := prods.ProductionsAPIv1{}
 	err := p.Download(nil, prods.DownloadsAPIv1{})
 	assert.NotNil(t, err)

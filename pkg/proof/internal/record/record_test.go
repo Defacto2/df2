@@ -19,6 +19,7 @@ import (
 const uuid = "d37e5b5f-f5bf-4138-9078-891e41b10a12"
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	r := record.New(nil, "")
 	assert.Empty(t, r)
 	v := []sql.RawBytes{
@@ -33,6 +34,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestRecord_Approve(t *testing.T) {
+	t.Parallel()
 	r := record.Record{}
 	err := r.Approve(nil, nil)
 	assert.NotNil(t, err)
@@ -51,6 +53,7 @@ func TestRecord_Approve(t *testing.T) {
 }
 
 func TestRecord_Iterate(t *testing.T) {
+	t.Parallel()
 	r := record.Record{}
 	err := r.Iterate(nil, nil, configger.Config{}, stat.Proof{})
 	assert.NotNil(t, err)
@@ -79,6 +82,7 @@ func TestRecord_Iterate(t *testing.T) {
 }
 
 func TestUpdateZipContent(t *testing.T) {
+	t.Parallel()
 	err := record.UpdateZipContent(nil, nil, "", "", "", -999)
 	assert.NotNil(t, err)
 
@@ -92,6 +96,7 @@ func TestUpdateZipContent(t *testing.T) {
 }
 
 func TestRecord_Zip(t *testing.T) {
+	t.Parallel()
 	r := record.Record{}
 	err := r.Zip(nil, nil, configger.Config{}, false)
 	assert.NotNil(t, err)
@@ -126,6 +131,7 @@ func TestRecord_Zip(t *testing.T) {
 }
 
 func TestSkip(t *testing.T) {
+	t.Parallel()
 	b, err := record.Skip(nil, stat.Proof{}, record.Record{})
 	assert.NotNil(t, err)
 	assert.Equal(t, false, b)

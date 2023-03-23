@@ -18,6 +18,7 @@ import (
 var dzDir = filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	r, err := record.New(nil, "")
 	assert.NotNil(t, err)
 	assert.Empty(t, r)
@@ -36,6 +37,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestRecord_Iterate(t *testing.T) {
+	t.Parallel()
 	r := record.Record{}
 	err := r.Iterate(nil, nil, nil)
 	assert.NotNil(t, err)
@@ -69,6 +71,7 @@ func TestRecord_Iterate(t *testing.T) {
 }
 
 func TestRecord_Archive(t *testing.T) {
+	t.Parallel()
 	const uuid = "1ee21218-5898-11ec-bf63-0242ac130002"
 	r := record.Record{}
 	err := r.Archive(nil, nil, nil)

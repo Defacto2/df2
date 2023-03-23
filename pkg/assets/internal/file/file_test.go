@@ -12,6 +12,7 @@ import (
 const empty = "empty"
 
 func TestWalkName(t *testing.T) {
+	t.Parallel()
 	const tmp = "file.temp"
 	dir := os.TempDir()
 	valid, err := file.WalkName(dir, filepath.Join(dir, tmp))

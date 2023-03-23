@@ -8,6 +8,7 @@ import (
 )
 
 func TestProductionsAPIv1_Authors(t *testing.T) {
+	t.Parallel()
 	p := prods.ProductionsAPIv1{}
 	a := p.Authors()
 	assert.Empty(t, a)

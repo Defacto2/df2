@@ -23,6 +23,7 @@ var (
 )
 
 func TestTextFile(t *testing.T) {
+	t.Parallel()
 	s := tf.TextFile{}
 	assert.Equal(t, "(0)  0 B ", s.String())
 	s = tf.TextFile{
@@ -47,6 +48,7 @@ func TestTextFile(t *testing.T) {
 }
 
 func TestTextFile_Extract(t *testing.T) {
+	t.Parallel()
 	s := tf.TextFile{}
 	err := s.Extract(nil, nil)
 	assert.NotNil(t, err)
@@ -71,6 +73,7 @@ func TestTextFile_Extract(t *testing.T) {
 }
 
 func TestTextFile_ExtractedImgs(t *testing.T) {
+	t.Parallel()
 	s := tf.TextFile{}
 	err := s.ExtractedImgs(nil, configger.Config{}, "")
 	assert.NotNil(t, err)
@@ -89,6 +92,7 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 }
 
 func TestTextFile_TextPNG(t *testing.T) {
+	t.Parallel()
 	s := tf.TextFile{}
 	err := s.TextPNG(nil, configger.Config{}, 0, "")
 	assert.NotNil(t, err)
@@ -108,6 +112,7 @@ func TestTextFile_TextPNG(t *testing.T) {
 }
 
 func TestTextFile_Webp(t *testing.T) {
+	t.Parallel()
 	s := tf.TextFile{}
 	i, err := s.WebP(nil, 0, "")
 	assert.NotNil(t, err)

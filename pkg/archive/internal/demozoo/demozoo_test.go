@@ -12,6 +12,7 @@ import (
 )
 
 func TestData(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		DOSee string
 		NFO   string
@@ -40,6 +41,7 @@ func TestData(t *testing.T) {
 }
 
 func TestTop(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		f    demozoo.Finds
@@ -59,6 +61,7 @@ func TestTop(t *testing.T) {
 }
 
 func TestDOS(t *testing.T) {
+	t.Parallel()
 	const (
 		bat = ".bat"
 		com = ".com"
@@ -112,6 +115,7 @@ func TestDOS(t *testing.T) {
 }
 
 func Test_MoveText(t *testing.T) {
+	t.Parallel()
 	err := demozoo.MoveText(nil, configger.Config{}, "", "")
 	assert.ErrorIs(t, err, demozoo.ErrNoSrc)
 	tmp := os.TempDir()
@@ -122,6 +126,7 @@ func Test_MoveText(t *testing.T) {
 }
 
 func Test_NFO(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		name  string
 		files content.Contents

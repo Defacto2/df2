@@ -15,6 +15,7 @@ func testDir() string {
 }
 
 func TestRun(t *testing.T) {
+	t.Parallel()
 	empty := task.Task{}
 	th, tx, err := task.Run("")
 	assert.NotNil(t, err)

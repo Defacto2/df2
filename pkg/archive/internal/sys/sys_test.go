@@ -18,6 +18,7 @@ func testDir(name string) string {
 }
 
 func TestRename(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		ext      string
 		filename string
@@ -50,6 +51,7 @@ func TestRename(t *testing.T) {
 // The test files were created by me but sourced from:
 // https://github.com/jvilk/browserfs-zipfs-extras/tree/master/test/fixtures
 func TestPKZip(t *testing.T) {
+	t.Parallel()
 	const okay = "TEST.ANS;TEST.ASC;TEST.BMP;TEST.CAP;TEST.DIZ;TEST.DOC;TEST.EXE;TEST.GIF;" +
 		"TEST.JPG;TEST.ME;TEST.NFO;TEST.PCX;TEST.PNG;TEST.TXT;TEST~1.JPE;"
 	v080a1 := testDir("pkzip/PKZ80A1.ZIP")
@@ -108,6 +110,7 @@ func TestPKZip(t *testing.T) {
 }
 
 func TestReadr(t *testing.T) {
+	t.Parallel()
 	const okay = "test.png;test.txt;"
 	const extra = "ext dir/test file.text;test.png;test.txt;"
 	const rarextra = "ext dir/test file.text;test.png;test.txt;ext dir;"
@@ -164,6 +167,7 @@ func TestReadr(t *testing.T) {
 }
 
 func TestArjItem(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		s    string
 		want bool
@@ -188,6 +192,7 @@ func TestArjItem(t *testing.T) {
 }
 
 func TestExtract(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		src     string
 		targets string
@@ -231,6 +236,7 @@ func TestExtract(t *testing.T) {
 }
 
 func TestMagicLHA(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		magic string
 		want  bool

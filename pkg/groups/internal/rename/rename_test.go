@@ -11,6 +11,7 @@ import (
 )
 
 func TestClean(t *testing.T) {
+	t.Parallel()
 	_, err := rename.Clean(nil, nil, "")
 	assert.NotNil(t, err)
 
@@ -28,6 +29,7 @@ func TestClean(t *testing.T) {
 }
 
 func TestFmtSyntax(t *testing.T) {
+	t.Parallel()
 	s := rename.FmtSyntax("")
 	assert.Equal(t, "", s)
 	s = rename.FmtSyntax("hello&&&&world")
@@ -35,6 +37,7 @@ func TestFmtSyntax(t *testing.T) {
 }
 
 func TestCleanS(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -81,6 +84,7 @@ func TestCleanS(t *testing.T) {
 }
 
 func TestTrimThe(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		g string
 	}
@@ -107,6 +111,7 @@ func TestTrimThe(t *testing.T) {
 }
 
 func TestTrimDot(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -129,6 +134,7 @@ func TestTrimDot(t *testing.T) {
 }
 
 func TestFmtByName(t *testing.T) {
+	t.Parallel()
 	s := rename.FmtByName("")
 	assert.Equal(t, "", s)
 	s = rename.FmtByName("abc")
@@ -140,6 +146,7 @@ func TestFmtByName(t *testing.T) {
 }
 
 func TestFormat(t *testing.T) {
+	t.Parallel()
 	s := rename.Format("")
 	assert.Equal(t, "", s)
 	s = rename.Format("mydox")
@@ -157,6 +164,7 @@ func TestFormat(t *testing.T) {
 }
 
 func TestFmtExact(t *testing.T) {
+	t.Parallel()
 	s := rename.FmtExact("")
 	assert.Equal(t, "", s)
 	s = rename.FmtExact("tcsm bbs")

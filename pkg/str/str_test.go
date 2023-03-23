@@ -23,6 +23,7 @@ func capString(test, text string) string {
 }
 
 func Test_capString(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		test string
 		text string
@@ -49,6 +50,7 @@ func Test_capString(t *testing.T) {
 }
 
 func TestProgress(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		name  string
 		count int
@@ -75,6 +77,7 @@ func TestProgress(t *testing.T) {
 }
 
 func TestTruncate(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		text string
 		len  int

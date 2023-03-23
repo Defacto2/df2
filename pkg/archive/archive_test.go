@@ -24,6 +24,7 @@ func testDir(name string) string {
 }
 
 func TestCompress(t *testing.T) {
+	t.Parallel()
 	err := archive.Compress(nil, nil)
 	assert.NotNil(t, err)
 
@@ -38,6 +39,7 @@ func TestCompress(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
+	t.Parallel()
 	err := archive.Delete(nil)
 	assert.Nil(t, err)
 
@@ -47,6 +49,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
+	t.Parallel()
 	err := archive.Store(nil, nil)
 	assert.NotNil(t, err)
 
@@ -61,6 +64,7 @@ func TestStore(t *testing.T) {
 }
 
 func TestMIME(t *testing.T) {
+	t.Parallel()
 	f := content.File{}
 	err := f.MIME()
 	assert.NotNil(t, err)
@@ -73,6 +77,7 @@ func TestMIME(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
+	t.Parallel()
 	f, s, err := archive.Read(nil, "", "")
 	assert.Len(t, f, 0)
 	assert.Equal(t, "", s)
@@ -92,6 +97,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestRestore(t *testing.T) {
+	t.Parallel()
 	tmp := os.TempDir()
 	type args struct {
 		source      string
@@ -131,6 +137,7 @@ func TestRestore(t *testing.T) {
 }
 
 func TestExtract(t *testing.T) {
+	t.Parallel()
 	const uuid = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 	type args struct {
 		archive  string
@@ -163,6 +170,7 @@ func TestExtract(t *testing.T) {
 }
 
 func TestNFO(t *testing.T) {
+	t.Parallel()
 	const fileDiz = demozoo.FileDiz
 	var empty []string
 	const (
@@ -194,6 +202,7 @@ func TestNFO(t *testing.T) {
 }
 
 func TestDemozoo_Decompress(t *testing.T) {
+	t.Parallel()
 	dz := archive.Demozoo{}
 	_, err := dz.Decompress(nil, nil)
 	assert.NotNil(t, err)
@@ -212,6 +221,7 @@ func TestDemozoo_Decompress(t *testing.T) {
 }
 
 func TestExtractor(t *testing.T) {
+	t.Parallel()
 	err := archive.Extractor("", "", "test.txt", os.TempDir())
 	assert.NotNil(t, err)
 	tmp, err := os.MkdirTemp(os.TempDir(), "df2-extractor-test")

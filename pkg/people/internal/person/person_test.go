@@ -14,6 +14,7 @@ import (
 const tmpl = `{{range .}}<option value="{{.Nick}}" label="{{.Nick}}">{{end}}`
 
 func TestPersons_Template(t *testing.T) {
+	t.Parallel()
 	p := person.Persons{}
 	err := p.Template("", "")
 	assert.NotNil(t, err)
@@ -35,6 +36,7 @@ func TestPersons_Template(t *testing.T) {
 }
 
 func TestPersons_TemplateW(t *testing.T) {
+	t.Parallel()
 	p := person.Persons{}
 	err := p.TemplateW(nil, "")
 	assert.Nil(t, err)

@@ -79,6 +79,7 @@ func mockInline(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test_filename(t *testing.T) {
+	t.Parallel()
 	s := prods.Filename(nil)
 	assert.Equal(t, "", s)
 
@@ -104,6 +105,7 @@ func Test_filename(t *testing.T) {
 }
 
 func TestProductionsAPIv1_DownloadLink(t *testing.T) {
+	t.Parallel()
 	p := prods.ProductionsAPIv1{}
 	n, l := p.DownloadLink(nil)
 	assert.Equal(t, "", n)
@@ -121,6 +123,7 @@ func TestProductionsAPIv1_DownloadLink(t *testing.T) {
 }
 
 func TestProductionsAPIv1_PouetID(t *testing.T) {
+	t.Parallel()
 	p := prods.ProductionsAPIv1{}
 	i, c, err := p.PouetID(false)
 	assert.Nil(t, err)
@@ -140,6 +143,7 @@ func TestProductionsAPIv1_PouetID(t *testing.T) {
 }
 
 func TestProductionsAPIv1_Print(t *testing.T) {
+	t.Parallel()
 	p := prods.ProductionsAPIv1{}
 	err := p.Print(nil)
 	assert.Nil(t, err)
@@ -155,6 +159,7 @@ func TestProductionsAPIv1_Print(t *testing.T) {
 }
 
 func TestMutate(t *testing.T) {
+	t.Parallel()
 	u, err := url.Parse("http://example.com")
 	assert.Nil(t, err)
 	u, err = prods.Mutate(u)
@@ -175,6 +180,7 @@ func TestMutate(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
+	t.Parallel()
 	i, err := prods.Parse("")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
@@ -193,12 +199,14 @@ func TestParse(t *testing.T) {
 }
 
 func TestRandomName(t *testing.T) {
+	t.Parallel()
 	r, err := prods.RandomName()
 	assert.Nil(t, err)
 	assert.NotEqual(t, "", r)
 }
 
 func Test_SaveName(t *testing.T) {
+	t.Parallel()
 	s, err := prods.SaveName("")
 	assert.Nil(t, err)
 	assert.NotEqual(t, "", s)

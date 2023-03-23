@@ -14,9 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const empty = "empty"
-
 func TestClean(t *testing.T) {
+	t.Parallel()
 	c := assets.Clean{}
 	err := c.Walk(nil, nil)
 	assert.NotNil(t, err)
@@ -48,6 +47,7 @@ func TestClean(t *testing.T) {
 }
 
 func TestCreateUUIDMap(t *testing.T) {
+	t.Parallel()
 	i, ids, err := assets.CreateUUIDMap(nil)
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
@@ -63,6 +63,7 @@ func TestCreateUUIDMap(t *testing.T) {
 }
 
 func TestWalker(t *testing.T) {
+	t.Parallel()
 	c := assets.Clean{}
 	err := c.Walker(nil, nil, -1, nil)
 	assert.NotNil(t, err)
@@ -88,6 +89,7 @@ func TestWalker(t *testing.T) {
 }
 
 func TestSkip(t *testing.T) {
+	t.Parallel()
 	f, err := scan.Skip("", nil)
 	assert.NotNil(t, err)
 	assert.Equal(t, scan.Files{}, f)
@@ -101,6 +103,7 @@ func TestSkip(t *testing.T) {
 }
 
 func TestTargets(t *testing.T) {
+	t.Parallel()
 	const allTargets = 5
 	tests := []struct {
 		name   string

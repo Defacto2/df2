@@ -12,6 +12,7 @@ import (
 )
 
 func TestFlags_DataList(t *testing.T) {
+	t.Parallel()
 	f := request.Flags{}
 	err := f.DataList(nil, nil, nil)
 	assert.NotNil(t, err)
@@ -30,6 +31,7 @@ func TestFlags_DataList(t *testing.T) {
 }
 
 func TestFlags_HTML(t *testing.T) {
+	t.Parallel()
 	f := request.Flags{}
 	err := f.HTML(nil, nil, nil)
 	assert.NotNil(t, err)
@@ -48,6 +50,7 @@ func TestFlags_HTML(t *testing.T) {
 }
 
 func TestFlags_Files(t *testing.T) {
+	t.Parallel()
 	f := request.Flags{}
 	_, err := f.Files(nil, "")
 	assert.NotNil(t, err)
@@ -65,6 +68,7 @@ func TestFlags_Files(t *testing.T) {
 }
 
 func TestFlags_Initialism(t *testing.T) {
+	t.Parallel()
 	f := request.Flags{}
 	_, err := f.Initialism(nil, "")
 	assert.NotNil(t, err)
@@ -82,6 +86,7 @@ func TestFlags_Initialism(t *testing.T) {
 }
 
 func TestPrint(t *testing.T) {
+	t.Parallel()
 	r := request.Flags{}
 	i, err := request.Print(nil, nil, r)
 	assert.NotNil(t, err)

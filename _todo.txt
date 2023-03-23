@@ -1,1 +1,6 @@
 make unit tests 	t.Parallel()
+
+/cmd
+/configger/
+/database/
+/logger/

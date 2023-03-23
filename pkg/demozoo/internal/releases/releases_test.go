@@ -8,6 +8,7 @@ import (
 )
 
 func TestSite(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		title string
 		want  string
@@ -28,6 +29,7 @@ func TestSite(t *testing.T) {
 }
 
 func TestProductionV1_Released(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		ReleaseDate string
 		wantYear    int
@@ -60,6 +62,7 @@ func TestProductionV1_Released(t *testing.T) {
 }
 
 func TestTags(t *testing.T) {
+	t.Parallel()
 	p, s := releases.Tags("", "", "")
 	assert.Equal(t, "", p)
 	assert.Equal(t, "", s)

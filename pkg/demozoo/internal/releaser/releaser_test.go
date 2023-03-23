@@ -17,6 +17,7 @@ const (
 )
 
 func TestReleaserV1_Print(t *testing.T) {
+	t.Parallel()
 	r := releaser.ReleaserV1{}
 	err := r.Print(nil)
 	assert.Nil(t, err)
@@ -31,6 +32,7 @@ func TestReleaserV1_Print(t *testing.T) {
 }
 
 func TestReleaser_URL(t *testing.T) {
+	t.Parallel()
 	r := releaser.Releaser{}
 	err := r.URL()
 	assert.Nil(t, err)
@@ -40,6 +42,7 @@ func TestReleaser_URL(t *testing.T) {
 }
 
 func TestReleaser_Get(t *testing.T) {
+	t.Parallel()
 	r := releaser.Releaser{}
 	rel, err := r.Get()
 	if !errors.Is(err, context.DeadlineExceeded) {
@@ -54,6 +57,7 @@ func TestReleaser_Get(t *testing.T) {
 }
 
 func TestReleaser_Prods(t *testing.T) {
+	t.Parallel()
 	r := releaser.Releaser{}
 	rel, err := r.Prods()
 	assert.NotNil(t, err)

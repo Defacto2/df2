@@ -42,6 +42,7 @@ func testTxt() string {
 }
 
 func TestReplaceExt(t *testing.T) {
+	t.Parallel()
 	s := images.ReplaceExt(".txt", "document")
 	assert.Equal(t, "document.txt", s)
 	s = images.ReplaceExt(".png", "image.jpg")
@@ -53,6 +54,7 @@ func TestReplaceExt(t *testing.T) {
 }
 
 func TestDuplicate(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		filename string
 		prefix   string
@@ -84,6 +86,7 @@ func TestDuplicate(t *testing.T) {
 }
 
 func TestInfo(t *testing.T) {
+	t.Parallel()
 	w, x, f, err := images.Info("")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, w)
@@ -102,6 +105,7 @@ func TestInfo(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
+	t.Parallel()
 	const (
 		gif = ".gif"
 		jpg = ".jpg"
@@ -123,6 +127,7 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestLibraries(t *testing.T) {
+	t.Parallel()
 	const (
 		gif = ".gif"
 		jpg = ".jpg"
@@ -142,6 +147,7 @@ func TestLibraries(t *testing.T) {
 }
 
 func TestWidth(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		wantWidth int
@@ -166,6 +172,7 @@ func TestWidth(t *testing.T) {
 }
 
 func TestToPNG(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		src    string
 		dest   string
@@ -196,6 +203,7 @@ func TestToPNG(t *testing.T) {
 }
 
 func TestToThumb(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		src         string
 		dest        string
@@ -228,6 +236,7 @@ func TestToThumb(t *testing.T) {
 }
 
 func TestToWebxp(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		src  string
 		dest string
@@ -260,6 +269,7 @@ func TestToWebxp(t *testing.T) {
 }
 
 func TestToWebp(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		src  string
 		dest string
@@ -297,6 +307,7 @@ func TestToWebp(t *testing.T) {
 }
 
 func TestWebPCalc(t *testing.T) {
+	t.Parallel()
 	const long = 15000
 	type args struct {
 		width  int
@@ -329,6 +340,7 @@ func TestWebPCalc(t *testing.T) {
 }
 
 func TestFix(t *testing.T) {
+	t.Parallel()
 	err := images.Fix(nil, nil)
 	assert.NotNil(t, err)
 	db, err := database.Connect(configger.Defaults())
@@ -339,6 +351,7 @@ func TestFix(t *testing.T) {
 }
 
 func TestMove(t *testing.T) {
+	t.Parallel()
 	src, err := os.CreateTemp(os.TempDir(), "images-move-test")
 	assert.Nil(t, err)
 	i, err := src.WriteString("hello world\n")

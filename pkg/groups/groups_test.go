@@ -11,6 +11,7 @@ import (
 )
 
 func TestRequest_DataList(t *testing.T) {
+	t.Parallel()
 	r := groups.Request{}
 	err := r.DataList(nil, nil, nil)
 	assert.NotNil(t, err)
@@ -23,6 +24,7 @@ func TestRequest_DataList(t *testing.T) {
 }
 
 func TestCronjob(t *testing.T) {
+	t.Parallel()
 	err := groups.Cronjob(nil, nil, nil, "", false)
 	assert.NotNil(t, err)
 
@@ -36,6 +38,7 @@ func TestCronjob(t *testing.T) {
 }
 
 func TestExact(t *testing.T) {
+	t.Parallel()
 	i, err := groups.Exact(nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
@@ -52,6 +55,7 @@ func TestExact(t *testing.T) {
 }
 
 func TestFix(t *testing.T) {
+	t.Parallel()
 	err := groups.Fix(nil, nil)
 	assert.NotNil(t, err)
 
@@ -63,6 +67,7 @@ func TestFix(t *testing.T) {
 }
 
 func TestVariations(t *testing.T) {
+	t.Parallel()
 	s, err := groups.Variations(nil, "")
 	assert.NotNil(t, err)
 	assert.Empty(t, s)

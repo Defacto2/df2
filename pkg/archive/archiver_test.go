@@ -10,6 +10,7 @@ import (
 )
 
 func TestReadr(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		archive  string
 		filename string
@@ -38,6 +39,7 @@ func TestReadr(t *testing.T) {
 }
 
 func TestUnarchiver(t *testing.T) {
+	t.Parallel()
 	dir, err := os.MkdirTemp(os.TempDir(), "unarchiver")
 	var (
 		src = testDir("demozoo/test.zip")

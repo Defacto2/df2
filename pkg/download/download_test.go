@@ -18,6 +18,7 @@ const (
 )
 
 func TestRequest_Body(t *testing.T) {
+	t.Parallel()
 	const timeout = 3
 	r := download.Request{}
 	err := r.Body()
@@ -43,6 +44,7 @@ func TestRequest_Body(t *testing.T) {
 }
 
 func TestCheckTime(t *testing.T) {
+	t.Parallel()
 	td := func(v int) time.Duration {
 		sec, _ := time.ParseDuration(fmt.Sprintf("%ds", v))
 		return sec
@@ -67,6 +69,7 @@ func TestCheckTime(t *testing.T) {
 }
 
 func TestGetPing(t *testing.T) {
+	t.Parallel()
 	f, err := os.CreateTemp(os.TempDir(), "getping")
 	assert.Nil(t, err)
 	name := f.Name()
@@ -94,6 +97,7 @@ func TestGetPing(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
+	t.Parallel()
 	b, i, err := download.Get("", 0)
 	assert.NotNil(t, err)
 	assert.Empty(t, b)
@@ -109,6 +113,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestPingHead(t *testing.T) {
+	t.Parallel()
 	r, err := download.PingHead("", 0)
 	assert.NotNil(t, err)
 	assert.Nil(t, r)
@@ -127,6 +132,7 @@ func TestPingHead(t *testing.T) {
 }
 
 func TestPingFile(t *testing.T) {
+	t.Parallel()
 	c, n, s, err := download.PingFile("", 0)
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, c)
@@ -145,6 +151,7 @@ func TestPingFile(t *testing.T) {
 }
 
 func TestStatusColor(t *testing.T) {
+	t.Parallel()
 	s := download.StatusColor(-1, "")
 	assert.Equal(t, "", s)
 	s = download.StatusColor(-1, "error")

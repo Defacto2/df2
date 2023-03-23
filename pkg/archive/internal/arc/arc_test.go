@@ -17,6 +17,7 @@ func testDir(name string) string {
 }
 
 func TestWalkr(t *testing.T) {
+	t.Parallel()
 	err := arc.Walkr("", "", nil)
 	assert.NotNil(t, err)
 	// test panic
@@ -31,6 +32,7 @@ func TestWalkr(t *testing.T) {
 }
 
 func TestConfigure(t *testing.T) {
+	t.Parallel()
 	rar, err := archiver.ByExtension(".tar")
 	if err != nil {
 		t.Error(err)
@@ -59,6 +61,7 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestMagicExt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		src     string

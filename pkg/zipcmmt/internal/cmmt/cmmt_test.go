@@ -18,6 +18,7 @@ const (
 var path = filepath.Join("..", "..", "..", "..", "testdata", "uuid")
 
 func TestZipfile_Exist(t *testing.T) {
+	t.Parallel()
 	z := cmmt.Zipfile{}
 	b, err := z.Exist("")
 	assert.NotNil(t, err)
@@ -44,6 +45,7 @@ func TestZipfile_Exist(t *testing.T) {
 }
 
 func TestZipfile_Save(t *testing.T) {
+	t.Parallel()
 	z := cmmt.Zipfile{}
 	s, err := z.Save(nil, "")
 	assert.NotNil(t, err)
@@ -66,6 +68,7 @@ func TestZipfile_Save(t *testing.T) {
 }
 
 func TestZipfile_Format(t *testing.T) {
+	t.Parallel()
 	z := cmmt.Zipfile{}
 	bb, err := z.Format(nil)
 	assert.NotNil(t, err)

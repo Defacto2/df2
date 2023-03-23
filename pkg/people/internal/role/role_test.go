@@ -11,11 +11,13 @@ import (
 )
 
 func TestRole_String(t *testing.T) {
+	t.Parallel()
 	s := role.Writers
 	assert.Equal(t, "writers", s.String())
 }
 
 func TestList(t *testing.T) {
+	t.Parallel()
 	s, i, err := role.List(nil, nil, 0)
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
@@ -39,6 +41,7 @@ func TestList(t *testing.T) {
 }
 
 func TestPeopleStmt(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		role               string
 		includeSoftDeletes bool
@@ -68,6 +71,7 @@ func TestPeopleStmt(t *testing.T) {
 }
 
 func TestRoles(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		r string
 	}
@@ -92,6 +96,7 @@ func TestRoles(t *testing.T) {
 }
 
 func TestRename(t *testing.T) {
+	t.Parallel()
 	i, err := role.Rename(nil, "", "", 9999)
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), i)
@@ -127,6 +132,7 @@ func TestRename(t *testing.T) {
 }
 
 func TestClean(t *testing.T) {
+	t.Parallel()
 	b, err := role.Clean(nil, nil, "", 9999)
 	assert.NotNil(t, err)
 	assert.Equal(t, false, b)
@@ -145,6 +151,7 @@ func TestClean(t *testing.T) {
 }
 
 func TestCleanS(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -168,6 +175,7 @@ func TestCleanS(t *testing.T) {
 }
 
 func TestTrim(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}

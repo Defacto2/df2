@@ -7,6 +7,7 @@ import (
 )
 
 func TestWrite(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Name    string
 		Total   uint64
@@ -46,6 +47,7 @@ func TestWrite(t *testing.T) {
 }
 
 func TestPercent(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		count uint64
 		total uint64

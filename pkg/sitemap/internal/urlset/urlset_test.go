@@ -19,6 +19,7 @@ type mockedFileInfo struct {
 func (m mockedFileInfo) ModTime() time.Time { return m.modtime }
 
 func TestLastmod(t *testing.T) {
+	t.Parallel()
 	const year, month, day, hour, want = 1980, 1, 1, 12, "1980-01-01"
 	nyd := time.Date(year, month, day, hour, 0, 0, 0, time.UTC)
 	mfi := mockedFileInfo{
@@ -30,6 +31,7 @@ func TestLastmod(t *testing.T) {
 }
 
 func TestPaths(t *testing.T) {
+	t.Parallel()
 	got := urlset.Paths()
 	const expected = 28
 	if l := len(got); l != expected {
@@ -57,6 +59,7 @@ func tags() []urlset.Tag {
 }
 
 func TestSet_StaticURLs(t *testing.T) {
+	t.Parallel()
 	tag := urlset.Tag{Location: "/url-path-1"}
 	type fields struct {
 		XMLName xml.Name     `xml:"urlset,omitempty"`

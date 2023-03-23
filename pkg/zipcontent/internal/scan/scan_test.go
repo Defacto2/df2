@@ -10,6 +10,7 @@ import (
 )
 
 func TestStats(t *testing.T) {
+	t.Parallel()
 	s, err := scan.Init(configger.Config{})
 	assert.NotNil(t, err)
 	assert.Empty(t, s)

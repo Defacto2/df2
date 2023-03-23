@@ -8,6 +8,7 @@ import (
 )
 
 func TestProduction_URL(t *testing.T) {
+	t.Parallel()
 	p := prod.Production{}
 	err := p.URL()
 	assert.NotNil(t, err)
@@ -18,6 +19,7 @@ func TestProduction_URL(t *testing.T) {
 }
 
 func TestURL(t *testing.T) {
+	t.Parallel()
 	s, err := prod.URL(-1)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
@@ -30,6 +32,7 @@ func TestURL(t *testing.T) {
 }
 
 func TestProduction_Get(t *testing.T) {
+	t.Parallel()
 	p := prod.Production{}
 	res, err := p.Get()
 	assert.NotNil(t, err)

@@ -56,6 +56,7 @@ func createTempDir() (int64, string, error) {
 }
 
 func TestBackup(t *testing.T) {
+	t.Parallel()
 	_, tmp, err := createTempDir()
 	assert.Nil(t, err)
 	defer os.RemoveAll(tmp)

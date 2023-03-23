@@ -8,6 +8,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp(os.TempDir(), "test-create-dir")
 	if err != nil {
 		t.Error(err)
@@ -36,6 +37,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestHolders(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp(os.TempDir(), "test-create-holders")
 	if err != nil {
 		t.Error(err)

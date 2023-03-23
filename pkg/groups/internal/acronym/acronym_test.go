@@ -10,6 +10,7 @@ import (
 )
 
 func TestGroup_Get(t *testing.T) {
+	t.Parallel()
 	g := acronym.Group{}
 	err := g.Get(nil)
 	assert.NotNil(t, err)
@@ -26,6 +27,7 @@ func TestGroup_Get(t *testing.T) {
 }
 
 func TestFix(t *testing.T) {
+	t.Parallel()
 	i, err := acronym.Fix(nil)
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), i)
@@ -37,6 +39,7 @@ func TestFix(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
+	t.Parallel()
 	s, err := acronym.Get(nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
@@ -52,6 +55,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestTrim(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}

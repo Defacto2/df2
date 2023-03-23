@@ -14,6 +14,7 @@ func testDir(name string) string {
 	return filepath.Join(dir, "..", "..", "..", "..", "testdata", name)
 }
 func TestFile_MIME(t *testing.T) {
+	t.Parallel()
 	f := content.File{}
 	err := f.MIME()
 	assert.NotNil(t, err)
@@ -28,6 +29,7 @@ func TestFile_MIME(t *testing.T) {
 }
 
 func TestFile_Scan(t *testing.T) {
+	t.Parallel()
 	f := content.File{}
 	st, err := os.Stat(testDir("demozoo/test/test.txt"))
 	assert.Nil(t, err)

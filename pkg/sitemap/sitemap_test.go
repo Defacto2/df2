@@ -13,6 +13,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
+	t.Parallel()
 	err := sitemap.Create(nil, nil, "")
 	assert.NotNil(t, err)
 
@@ -34,6 +35,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestRoot(t *testing.T) {
+	t.Parallel()
 	s := sitemap.File.String()
 	assert.Equal(t, "f", s)
 	s = sitemap.Download.String()
@@ -44,6 +46,7 @@ func TestRoot(t *testing.T) {
 }
 
 func TestFileList(t *testing.T) {
+	t.Parallel()
 	s, err := sitemap.FileList(sitemap.Location)
 	assert.Nil(t, err)
 	assert.NotEqual(t, "", s)
@@ -53,6 +56,7 @@ func TestFileList(t *testing.T) {
 }
 
 func TestIDs(t *testing.T) {
+	t.Parallel()
 	ids := sitemap.IDs{1, 345, 543, 665}
 	b := ids.Contains(0)
 	assert.False(t, b)
@@ -69,6 +73,7 @@ func TestIDs(t *testing.T) {
 }
 
 func TestStyle_Range(t *testing.T) {
+	t.Parallel()
 	w := io.Discard
 	sitemap.NotFound.RangeFiles(w, nil)
 	sitemap.NotFound.RangeFiles(w, []string{sitemap.DockerLoc + "/d/9b1c6"})
@@ -85,6 +90,7 @@ func TestAbsPaths(t *testing.T) {
 }
 
 func TestAbsPathsH3(t *testing.T) {
+	t.Parallel()
 	s, err := sitemap.AbsPathsH3(nil, nil, "")
 	assert.NotNil(t, err)
 	assert.Len(t, s, 0)
@@ -97,6 +103,7 @@ func TestAbsPathsH3(t *testing.T) {
 }
 
 func TestColor(t *testing.T) {
+	t.Parallel()
 	s := sitemap.Color404(404)
 	assert.Contains(t, s, "✓")
 	s = sitemap.ColorCode(200)
@@ -104,6 +111,7 @@ func TestColor(t *testing.T) {
 }
 
 func TestGetBlocked(t *testing.T) {
+	t.Parallel()
 	i, err := sitemap.GetBlocked(nil)
 	assert.NotNil(t, err)
 	assert.Len(t, i, 0)
@@ -117,6 +125,7 @@ func TestGetBlocked(t *testing.T) {
 }
 
 func TestGetKeys(t *testing.T) {
+	t.Parallel()
 	i, err := sitemap.GetKeys(nil)
 	assert.NotNil(t, err)
 	assert.Len(t, i, 0)
@@ -130,6 +139,7 @@ func TestGetKeys(t *testing.T) {
 }
 
 func TestGetSoftDeleteKeys(t *testing.T) {
+	t.Parallel()
 	i, err := sitemap.GetSoftDeleteKeys(nil)
 	assert.NotNil(t, err)
 	assert.Len(t, i, 0)
@@ -143,6 +153,7 @@ func TestGetSoftDeleteKeys(t *testing.T) {
 }
 
 func TestRand(t *testing.T) {
+	t.Parallel()
 	db, err := database.Connect(configger.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
