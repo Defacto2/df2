@@ -92,7 +92,7 @@ func main() {
 	// Database check
 	db, err := msql.Connect(configs)
 	if err != nil {
-		logr.Errorf("Could not connect to the mysql database: %s.", err)
+		logr.Errorf("Could not connect to the database: %s.", err)
 	}
 	defer func() {
 		if !configs.IsProduction {
@@ -107,7 +107,7 @@ func main() {
 	if progInfo() {
 		w := os.Stdout
 		cmd.Brand(w, logr, brand)
-		s, err := cmd.ProgInfo(db, version)
+		s, err := cmd.ProgInfo(version)
 		if err != nil {
 			logr.Error(err)
 			return

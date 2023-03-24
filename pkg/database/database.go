@@ -1,4 +1,4 @@
-// Package database interacts with the MySQL datastore of Defacto2.
+// Package database interacts with the datastore of Defacto2.
 package database
 
 import (
@@ -23,18 +23,14 @@ import (
 	"github.com/Defacto2/df2/pkg/database/msql"
 	"github.com/google/uuid"
 	"github.com/gookit/color"
-	"go.uber.org/zap"
 )
 
 var (
-	ErrColType  = errors.New("the value type is not usable with the mysql column")
-	ErrConnect  = errors.New("could not connect to the mysql database server")
-	ErrDB       = errors.New("database handle pointer cannot be nil")
-	ErrNoID     = errors.New("unique id is does not exist in the database table")
-	ErrSynID    = errors.New("id is not a valid id or uuid value")
-	ErrSynUUID  = errors.New("id is not a valid uuid")
-	ErrNoTable  = errors.New("unknown database table")
-	ErrNoMethod = errors.New("unknown database export type")
+	ErrDB      = errors.New("database handle pointer cannot be nil")
+	ErrNoID    = errors.New("unique id is does not exist in the database table")
+	ErrPointer = errors.New("pointer value cannot be nil")
+	ErrSynID   = errors.New("id value is not a valid")
+	ErrValue   = errors.New("argument cannot be an empty value")
 )
 
 const (
@@ -88,20 +84,29 @@ func (t Table) String() string {
 	return [...]string{"files", "groupnames", "netresources", "users"}[t]
 }
 
-// Connect will connect to the database and handle any errors.
+type Update update.Update
+
+// Connect the database and handle any errors.
+// The DB connection must be closed after use.
 func Connect(cfg configger.Config) (*sql.DB, error) {
 	// In the future this could use either psql or msql.
 	return msql.Connect(cfg)
 }
 
 // ConnInfo will connect to the database and return any errors.
-func ConnInfo(db *sql.DB, cfg configger.Config) string {
-	return msql.Info(db, cfg)
+func ConnInfo(cfg configger.Config) (string, error) {
+	return msql.ConnInfo(cfg)
 }
 
 // Approve automatically checks and clears file records for live.
-func Approve(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, verbose bool) error {
-	return recd.Queries(db, w, l, cfg, verbose)
+func Approve(db *sql.DB, w io.Writer, cfg configger.Config, verbose bool) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	return recd.Queries(db, w, cfg, verbose)
 }
 
 // CheckID checks the syntax of the universal unique record id or MySQL auto-generated id.
@@ -116,15 +121,21 @@ func CheckID(id string) error {
 func CheckUUID(uuid string) error {
 	if !IsUUID(uuid) {
 		const example = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", uuid, example, ErrSynUUID)
+		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", uuid, example, ErrSynID)
 	}
 	return nil
 }
 
-// ColTypes details the columns used by the table.
-func ColTypes(db *sql.DB, w io.Writer, t Table) (string, error) {
+// Columns details the columns used by the table.
+func Columns(db *sql.DB, w io.Writer, t Table) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	// LIMIT 0 quickly returns an empty set
-	var query string
+	query := ""
 	switch t {
 	case Files:
 		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Files)
@@ -137,31 +148,35 @@ func ColTypes(db *sql.DB, w io.Writer, t Table) (string, error) {
 	}
 	rows, err := db.Query(query)
 	if err != nil {
-		return "", fmt.Errorf("column types query: %w", err)
+		return fmt.Errorf("column types query: %w", err)
 	}
 	if rows.Err() != nil {
-		return "", fmt.Errorf("column types rows: %w", rows.Err())
+		return fmt.Errorf("column types rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	colTypes, err := rows.ColumnTypes()
+	types, err := rows.ColumnTypes()
 	if err != nil {
-		return "", fmt.Errorf("column types: %w", err)
+		return fmt.Errorf("column types: %w", err)
 	}
 	const padding = 3
-	var buf strings.Builder
+	buf := strings.Builder{}
 	tw := tabwriter.NewWriter(&buf, 0, 0, padding, ' ', tabwriter.AlignRight)
 	fmt.Fprintln(tw, "Column name\tType\tNullable\tLength\t")
-	for _, s := range colTypes {
+	for _, s := range types {
 		fmt.Fprintf(tw, "%v\t%v\t%v\t%v\t\n",
 			s.Name(), s.DatabaseTypeName(), nullable(s), recd.ColLen(s))
 	}
 	if err = tw.Flush(); err != nil {
-		return "", fmt.Errorf("column types flush tab writer: %w", err)
+		return fmt.Errorf("column types flush tab writer: %w", err)
 	}
-	return buf.String(), nil
+	fmt.Fprintln(w, buf)
+	return nil
 }
 
 func nullable(s *sql.ColumnType) string {
+	if s == nil {
+		return "error"
+	}
 	n, ok := s.Nullable()
 	if !ok {
 		return ""
@@ -183,13 +198,19 @@ func DateTime(raw sql.RawBytes) (string, error) {
 		return "?", err
 	}
 	if t.UTC().Format("01 2006") != time.Now().Format("01 2006") {
-		return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 2006 "))), nil
+		return color.Info.Sprint(t.UTC().Format("02 Jan 2006")), nil
 	}
-	return fmt.Sprintf("%v ", color.Info.Sprint(t.UTC().Format("02 Jan 15:04"))), nil
+	return color.Info.Sprint(t.UTC().Format("02 Jan 15:04")), nil
 }
 
 // Distinct returns a unique list of values from the table column.
-func Distinct(db *sql.DB, w io.Writer, value string) ([]string, error) {
+func Distinct(db *sql.DB, value string) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
+	if value == "" {
+		return nil, nil
+	}
 	rows, err := db.Query("SELECT DISTINCT ? FROM `files`", value)
 	if err != nil {
 		return nil, fmt.Errorf("distinct query: %w", err)
@@ -199,7 +220,7 @@ func Distinct(db *sql.DB, w io.Writer, value string) ([]string, error) {
 	}
 	defer rows.Close()
 	res := []string{}
-	var dest sql.NullString
+	dest := sql.NullString{}
 	for rows.Next() {
 		if err = rows.Scan(&dest); err != nil {
 			return nil, fmt.Errorf("distinct scan: %w", err)
@@ -209,10 +230,13 @@ func Distinct(db *sql.DB, w io.Writer, value string) ([]string, error) {
 	return res, nil
 }
 
-// FileUpdate reports if the named file is newer than the database time.
+// FileUpdate returns true when named file is newer than the database time.
 // True is always returned when the named file does not exist or
 // whenever it is 0 bytes in size.
-func FileUpdate(name string, src time.Time) (bool, error) {
+func FileUpdate(name string, db time.Time) (bool, error) {
+	if name == "" {
+		return false, fmt.Errorf("name %w", ErrValue)
+	}
 	f, err := os.Stat(name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return true, nil
@@ -223,18 +247,25 @@ func FileUpdate(name string, src time.Time) (bool, error) {
 	if f.Size() == 0 {
 		return true, nil
 	}
-	return !f.ModTime().UTC().After(src.UTC()), nil
+	return f.ModTime().UTC().After(db.UTC()), nil
 }
-
-type Update update.Update
 
 // Execute Query and Args to update the database and returns the total number of changes.
 func Execute(db *sql.DB, u Update) (int64, error) {
+	if db == nil {
+		return 0, ErrDB
+	}
 	return update.Update(u).Execute(db)
 }
 
 // Fix any malformed section and platforms found in the database.
-func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
+func Fix(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	start := time.Now()
 	if err := update.Filename.NamedTitles(db, w); err != nil {
 		return fmt.Errorf("update filenames: %w", err)
@@ -247,85 +278,100 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger) error {
 	}
 	elapsed := time.Since(start).Seconds()
 	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
-
 	dist, err := update.Distinct(db, "section")
 	if err != nil {
 		return fmt.Errorf("fix distinct section: %w", err)
 	}
-	update.Sections(db, w, l, &dist)
+	if err := update.Sections(db, w, &dist); err != nil {
+		return fmt.Errorf("update sections: %w", err)
+	}
 	dist, err = update.Distinct(db, "platform")
 	if err != nil {
 		return fmt.Errorf("fix distinct platform: %w", err)
 	}
-	update.Platforms(db, w, l, &dist)
+	if err = update.Platforms(db, w, &dist); err != nil {
+		return fmt.Errorf("update platforms: %w", err)
+	}
 	return nil
 }
 
-// DemozooID finds a record ID by the saved Demozoo production ID. If no production exists a zero is returned.
-func DemozooID(db *sql.DB, id uint) (uint, error) {
-	var dz uint
-	// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
-	if err := db.QueryRow("SELECT id FROM files WHERE web_id_demozoo=?", id).Scan(&dz); err != nil {
-		return 0, fmt.Errorf("demozoo exist query row: %w", err)
+// DemozooID looks up a Demozoo productions ID in the files table,
+// and returns the ID of the first matched Defacto2 file record.
+// If no match is found then a zero is returned.
+func DemozooID(db *sql.DB, demozoo uint) (int, error) {
+	if db == nil {
+		return 0, ErrDB
+	}
+	dz := int(0)
+	if err := db.QueryRow("SELECT id FROM files WHERE web_id_demozoo=?", demozoo).Scan(&dz); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("demozooid %w", err)
 	}
 	return dz, nil
 }
 
-// GetID returns a numeric Id from a UUID or database id s value.
-func GetID(db *sql.DB, s string) (uint, error) {
-	// auto increment numeric ids
-	var id uint
-	if v, err := strconv.Atoi(s); err == nil {
+// GetID looks up the val and returns a matching auto-increment ID of the file record.
+// The val string must be either a UUID of the record or an increment ID.
+func GetID(db *sql.DB, val string) (int, error) {
+	if db == nil {
+		return 0, ErrDB
+	}
+	id := 0
+	// numeric ids
+	if v, err := strconv.Atoi(val); err == nil {
 		// https://stackoverflow.com/questions/1676551/best-way-to-test-if-a-row-exists-in-a-mysql-table
 		if err = db.QueryRow("SELECT EXISTS(SELECT * FROM files WHERE id=?)", v).Scan(&id); err != nil {
-			return 0, fmt.Errorf("lookupid query row: %w", err)
+			return 0, fmt.Errorf("get id query row: %w", err)
 		}
 		if id == 0 {
-			return 0, fmt.Errorf("lookupid %q: %w", s, ErrNoID)
+			return 0, fmt.Errorf("get id %d: %w", v, ErrNoID)
 		}
-		return uint(v), nil
+		return v, nil
 	}
 	// uuid ids
-	s = strings.ToLower(s)
-	if err := db.QueryRow("SELECT id FROM files WHERE uuid=?", s).Scan(&id); err != nil {
-		return 0, fmt.Errorf("lookupid %q: %w", s, ErrNoID)
+	v := strings.ToLower(val)
+	if err := db.QueryRow("SELECT id FROM files WHERE uuid=?", v).Scan(&id); err != nil {
+		return 0, fmt.Errorf("get id %s: %w", v, ErrNoID)
 	}
 	return id, nil
 }
 
 // GetKeys returns all the primary keys used by the files table.
 // The integer keys are sorted incrementally.
-// An SQL WHERE statement can be provided to filter the results.
-func GetKeys(db *sql.DB, whereStmt string) ([]int, error) {
-	whereStmt = strings.TrimSpace(whereStmt)
-	cs := CountFiles
-	if whereStmt != "" {
-		cs = fmt.Sprintf("%s %s", cs, whereStmt)
+// An optional, statement can be provided to filter the results.
+func GetKeys(db *sql.DB, stmt string) ([]int, error) {
+	if db == nil {
+		return nil, ErrDB
 	}
-	var count int
-	if err := db.QueryRow(cs).Scan(&count); err != nil {
+	stmt = strings.TrimSpace(stmt)
+	query := CountFiles
+	if stmt != "" {
+		query = fmt.Sprintf("%s %s", query, stmt)
+	}
+	count := 0
+	if err := db.QueryRow(query).Scan(&count); err != nil {
 		return nil, err
 	}
-
-	ss := SelKeys
-	if whereStmt != "" {
-		ss = fmt.Sprintf("%s %s", ss, whereStmt)
+	queryKeys := SelKeys
+	if stmt != "" {
+		queryKeys = fmt.Sprintf("%s %s", queryKeys, stmt)
 	}
-	rows, err := db.Query(ss)
+	rows, err := db.Query(queryKeys)
 	if err != nil {
-		return nil, fmt.Errorf("getkeys query: %w", err)
+		return nil, fmt.Errorf("get keys query: %w", err)
 	}
 	if rows.Err() != nil {
-		return nil, fmt.Errorf("getkeys rows: %w", rows.Err())
+		return nil, fmt.Errorf("get keys rows: %w", rows.Err())
 	}
 	defer rows.Close()
 
-	id, i := "", -1
-	keys := make([]int, 0, count)
+	id := ""
+	keys := []int{}
 	for rows.Next() {
-		i++
 		if err = rows.Scan(&id); err != nil {
-			return nil, fmt.Errorf("getkeys scan: %w", err)
+			return nil, fmt.Errorf("get keys scan: %w", err)
 		}
 		val, err := strconv.Atoi(id)
 		if err != nil {
@@ -336,20 +382,24 @@ func GetKeys(db *sql.DB, whereStmt string) ([]int, error) {
 	return keys, nil
 }
 
-// GetFile returns the filename from a supplied UUID or database ID value.
-func GetFile(db *sql.DB, s string) (string, error) {
-	var n sql.NullString
-	if v, err := strconv.Atoi(s); err == nil {
+// GetFile looks up val and returns the filename of the file record.
+// The val string must be either a UUID of the record or an increment ID.
+func GetFile(db *sql.DB, val string) (string, error) {
+	if db == nil {
+		return "", ErrDB
+	}
+	n := sql.NullString{}
+	if v, err := strconv.Atoi(val); err == nil {
 		err = db.QueryRow(SelNames+" WHERE id=?", v).Scan(&n)
 		if err != nil {
-			return "", fmt.Errorf("lookup file by id queryrow %q: %w", s, err)
+			return "", fmt.Errorf("lookup file by id queryrow %q: %w", val, err)
 		}
 		return n.String, nil
 	}
-	s = strings.ToLower(s)
-	err := db.QueryRow(SelNames+" WHERE uuid=?", s).Scan(&n)
+	val = strings.ToLower(val)
+	err := db.QueryRow(SelNames+" WHERE uuid=?", val).Scan(&n)
 	if err != nil {
-		return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", s, err)
+		return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", val, err)
 	}
 	return n.String, nil
 }
@@ -359,7 +409,7 @@ func IsDemozoo(b []sql.RawBytes) (bool, error) {
 	return recd.IsDemozoo(b)
 }
 
-// IsID reports whether string is a autogenerated record id.
+// IsID reports whether string is an auto-generated record id.
 func IsID(s string) bool {
 	r := regexp.MustCompile(`^0+`)
 	if x := r.ReplaceAllString(s, ""); x != s {
@@ -373,14 +423,14 @@ func IsID(s string) bool {
 	return true
 }
 
-// IsProof reports if a fetched proof file record is set to unapproved.
-func IsProof(l *zap.SugaredLogger, b []sql.RawBytes) (bool, error) {
+// IsUnApproved reports if a fetched file record is set to unapproved.
+func IsUnApproved(b []sql.RawBytes) (bool, error) {
 	// SQL column names can be found in the sqlSelect() func in proof.go
 	const deletedat, updatedat = 2, 6
-	if len(b) < updatedat {
+	if len(b) <= updatedat {
 		return false, nil
 	}
-	if b[deletedat] == nil {
+	if b[deletedat] == nil || b[updatedat] == nil {
 		return false, nil
 	}
 	n, err := recd.Valid(b[deletedat], b[updatedat])
@@ -473,6 +523,15 @@ func Tbls() string {
 
 // Total reports the number of records fetched by the supplied SQL query.
 func Total(db *sql.DB, w io.Writer, s *string) (int, error) {
+	if db == nil {
+		return -1, ErrDB
+	}
+	if s == nil {
+		return -1, fmt.Errorf("s %w", ErrPointer)
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	rows, err := db.Query(*s)
 	switch {
 	case err != nil && strings.Contains(err.Error(), "SQL syntax"):
@@ -506,10 +565,13 @@ func Val(col sql.RawBytes) string {
 }
 
 // Waiting returns the number of files requiring approval for public display.
-func Waiting(db *sql.DB) (uint, error) {
-	var count uint
+func Waiting(db *sql.DB) (int, error) {
+	if db == nil {
+		return -1, ErrDB
+	}
+	count := -1
 	if err := db.QueryRow(CountWaiting).Scan(&count); err != nil {
-		return 0, err
+		return -1, err
 	}
 	return count, nil
 }

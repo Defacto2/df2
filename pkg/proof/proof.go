@@ -128,7 +128,7 @@ func (request Request) Skip(w io.Writer, values []sql.RawBytes) (bool, error) {
 	if request.ByID != "" && request.Overwrite {
 		return false, nil
 	}
-	n, err := database.IsProof(nil, values)
+	n, err := database.IsUnApproved(values)
 	if err != nil {
 		return false, err
 	}

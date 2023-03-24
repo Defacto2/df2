@@ -11,12 +11,12 @@ func (v *Version) Query(cfg configger.Config) error {
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 	rows, err := conn.Query("SELECT version();")
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
-	defer conn.Close()
 	for rows.Next() {
 		if err := rows.Scan(v); err != nil {
 			return err

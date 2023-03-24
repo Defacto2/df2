@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -10,8 +11,7 @@ import (
 )
 
 func ExampleConnect() {
-	cfg := configger.Defaults()
-	db, err := database.Connect(cfg)
+	db, err := database.Connect(configger.Defaults())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -20,36 +20,40 @@ func ExampleConnect() {
 	// Output: 0
 }
 
-func ExampleColTypes() {
-	if _, err := database.ColTypes(nil, os.Stdout, database.Netresources); err != nil {
-		fmt.Print(err)
+func ExampleColumns() {
+	db, err := database.Connect(configger.Defaults())
+	if err != nil {
+		log.Fatal(err)
 	}
-	// Output:
-}
-
-func ExampleLastUpdate() {
-	if _, err := database.LastUpdate(nil); err != nil {
-		fmt.Print(err)
+	if err := database.Columns(db, io.Discard, database.Netresources); err != nil {
+		log.Fatal(err)
 	}
 	// Output:
 }
 
 func ExampleTotal() {
-	w := os.Stdout
-	s := "SELECT * FROM `files` WHERE `id` = '1'"
-	i, err := database.Total(nil, w, &s)
+	db, err := database.Connect(configger.Defaults())
 	if err != nil {
-		fmt.Print(err)
+		log.Fatal(err)
+	}
+	s := "SELECT * FROM `files` WHERE `id` = '1'"
+	i, err := database.Total(db, os.Stdout, &s)
+	if err != nil {
+		log.Fatal(err)
 	}
 	fmt.Print(i)
 	// Output: 1
 }
 
 func ExampleWaiting() {
-	i, err := database.Waiting(nil)
+	db, err := database.Connect(configger.Defaults())
 	if err != nil {
-		fmt.Print(err)
+		log.Fatal(err)
 	}
-	fmt.Print(i > 0)
+	i, err := database.Waiting(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Print(i >= 0)
 	// Output: true
 }

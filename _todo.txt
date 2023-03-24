@@ -4,3 +4,5 @@ make unit tests 	t.Parallel()
 /configger/
 /database/
 /logger/
+
+ErrPointer should always wrap

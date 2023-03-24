@@ -415,10 +415,16 @@ func RandIDs(db *sql.DB, count int) (int, IDs, error) {
 
 // Platforms lists the operating systems required by the files.
 func Platforms(db *sql.DB, w io.Writer) ([]string, error) {
-	return database.Distinct(db, w, "platform")
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	return database.Distinct(db, "platform")
 }
 
 // Sections lists the categories of files.
 func Sections(db *sql.DB, w io.Writer) ([]string, error) {
-	return database.Distinct(db, w, "section")
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	return database.Distinct(db, "section")
 }

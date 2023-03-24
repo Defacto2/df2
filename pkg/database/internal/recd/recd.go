@@ -17,7 +17,11 @@ import (
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
-	"go.uber.org/zap"
+)
+
+var (
+	ErrDB      = errors.New("database handle pointer cannot be nil")
+	ErrPointer = errors.New("pointer value cannot be nil")
 )
 
 const (
@@ -75,6 +79,9 @@ func (r *Record) String() string {
 
 // approve sets the record to be publically viewable.
 func (r *Record) Approve(db *sql.DB) error {
+	if db == nil {
+		return ErrDB
+	}
 	update, err := db.Prepare("UPDATE files SET updatedat=NOW(),updatedby=?,deletedat=NULL,deletedby=NULL WHERE id=?")
 	if err != nil {
 		return fmt.Errorf("record approve prepare: %w", err)
@@ -97,6 +104,12 @@ func (r *Record) AutoID(data string) uint {
 }
 
 func (r *Record) Check(w io.Writer, incoming string, values []sql.RawBytes, dir *directories.Dir) bool {
+	if dir == nil {
+		return false
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	v := r.Verbose
 	if !r.checkFileName(string(values[filename])) {
 		verbose(w, v, "!filename")
@@ -140,6 +153,9 @@ func (r *Record) Check(w io.Writer, incoming string, values []sql.RawBytes, dir 
 }
 
 func (r *Record) checkDownload(w io.Writer, incoming, path string) bool {
+	if w == nil {
+		w = io.Discard
+	}
 	file := filepath.Join(fmt.Sprint(path), r.UUID)
 	if _, err := os.Stat(file); errors.Is(err, fs.ErrNotExist) {
 		return r.recoverDownload(w, incoming, path)
@@ -240,6 +256,9 @@ func (r *Record) recoverDownload(w io.Writer, incoming, path string) bool {
 }
 
 func (r *Record) Summary(w io.Writer, rows int) {
+	if w == nil {
+		w = io.Discard
+	}
 	if rows == 0 {
 		const m = "No files were approved"
 		l := strings.Repeat("─", len(m))
@@ -261,6 +280,9 @@ func (r *Record) Summary(w io.Writer, rows int) {
 }
 
 func verbose(w io.Writer, v bool, i any) {
+	if w == nil {
+		w = io.Discard
+	}
 	if !v {
 		return
 	}
@@ -331,6 +353,9 @@ func Valid(deletedat, updatedat sql.RawBytes) (bool, error) {
 }
 
 func ColLen(s *sql.ColumnType) string {
+	if s == nil {
+		return ""
+	}
 	l, ok := s.Length()
 	if !ok {
 		return ""
@@ -359,6 +384,9 @@ func ReverseInt(i uint) (uint, error) {
 }
 
 func Verbose(w io.Writer, v bool, i any) {
+	if w == nil {
+		w = io.Discard
+	}
 	if !v {
 		return
 	}
@@ -380,7 +408,13 @@ const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`file
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, v bool) error {
+func Queries(db *sql.DB, w io.Writer, cfg configger.Config, v bool) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	rows, err := db.Query(newFilesSQL)
 	if err != nil {
 		return fmt.Errorf("queries query: %w", err)
@@ -393,10 +427,19 @@ func Queries(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
-	return query(db, w, l, cfg, v, rows, columns)
+	return query(db, w, cfg, v, rows, columns)
 }
 
-func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, v bool, rows *sql.Rows, columns []string) error {
+func query(db *sql.DB, w io.Writer, cfg configger.Config, v bool, rows *sql.Rows, columns []string) error {
+	if db == nil {
+		return ErrDB
+	}
+	if rows == nil {
+		return ErrPointer
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	x := func() string {
 		return fmt.Sprintf(" %s", str.X())
 	}
@@ -423,11 +466,11 @@ func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, 
 			rowCnt, string(values[0]), color.Primary.Sprint(r.UUID), color.Info.Sprint(r.Filename)))
 		na, err := NewApprove(values)
 		if err != nil {
-			l.Errorln(err)
+			fmt.Fprintln(w, err)
 		}
 		dz, err := IsDemozoo(values)
 		if err != nil {
-			l.Errorln(err)
+			fmt.Fprintln(w, err)
 		}
 		if !na && !dz {
 			Verbose(w, v, x())
@@ -443,7 +486,7 @@ func query(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, 
 			r.Save = false
 		} else if err := r.Approve(db); err != nil {
 			Verbose(w, v, x())
-			l.Errorln(err)
+			fmt.Fprintln(w, err)
 			r.Save = false
 		}
 		Verbose(w, v, fmt.Sprintf(" %s", str.Y()))

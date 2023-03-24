@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"bytes"
-	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -192,15 +191,12 @@ func Vers(version string) string {
 }
 
 // ProgInfo returns the response for the -version flag.
-func ProgInfo(db *sql.DB, version string) (string, error) {
-	if db == nil {
-		return "", fmt.Errorf("proginfo: %w", database.ErrDB)
-	}
+func ProgInfo(version string) (string, error) {
 	bin, err := configger.BinPath()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
-	l, err := check(db)
+	l, err := check()
 	if err != nil {
 		return "", err
 	}
@@ -241,10 +237,7 @@ func ProgInfo(db *sql.DB, version string) (string, error) {
 type lookups = map[string]string
 
 // check looks up the collection of dependencies and database connection.
-func check(db *sql.DB) (lookups, error) {
-	if db == nil {
-		return nil, fmt.Errorf("check: %w", database.ErrDB)
-	}
+func check() (lookups, error) {
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
@@ -265,8 +258,8 @@ func check(db *sql.DB) (lookups, error) {
 		"unzip":    miss,
 		"zipinfo":  miss,
 	}
-	if err := database.ConnInfo(db, cfg); err == "" {
-		l[d] = ok
+	if info, err := database.ConnInfo(cfg); err == nil {
+		l[d] = info
 	}
 	for file := range l {
 		if file == d {

@@ -77,7 +77,7 @@ This includes the formatting and trimming of groups, people, platforms and secti
 		}
 		defer db.Close()
 		w := os.Stdout
-		if err := database.Fix(db, w, logr); err != nil {
+		if err := database.Fix(db, w); err != nil {
 			logr.Error(err)
 		}
 		if err := groups.Fix(db, w); err != nil {

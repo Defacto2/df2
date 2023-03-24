@@ -25,10 +25,10 @@ var approveCmd = &cobra.Command{
 		}
 		defer db.Close()
 		w := os.Stdout
-		if err := database.Approve(db, w, logr, cfg, approve.Verbose); err != nil {
+		if err := database.Approve(db, w, cfg, approve.Verbose); err != nil {
 			logr.Error(err)
 		}
-		if err := database.Fix(db, w, logr); err != nil {
+		if err := database.Fix(db, w); err != nil {
 			logr.Error(err)
 		}
 		if err := groups.Fix(db, w); err != nil {

@@ -63,4 +63,9 @@
 			"}",
 		],
 	},
+	"assert err != nil":{
+		"scope": "go",
+		"prefix": "nn",
+		"body": ["assert.NotNil(t, err)"],
+	},
 }

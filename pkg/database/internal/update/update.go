@@ -3,13 +3,18 @@ package update
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/gookit/color"
-	"go.uber.org/zap"
+)
+
+var (
+	ErrDB      = errors.New("z database handle pointer cannot be nil")
+	ErrPointer = errors.New("pointer value cannot be nil")
 )
 
 // Update row values based on conditions.
@@ -20,6 +25,9 @@ type Update struct {
 
 // Execute Query and Args to update the database and returns the total number of changes.
 func (u Update) Execute(db *sql.DB) (int64, error) {
+	if db == nil {
+		return 0, ErrDB
+	}
 	update, err := db.Prepare(u.Query)
 	if err != nil {
 		return 0, fmt.Errorf("update execute db prepare: %w", err)
@@ -46,6 +54,12 @@ const (
 
 // NamedTitles remove record titles that match the filename.
 func (col Column) NamedTitles(db *sql.DB, w io.Writer) error {
+	// if db == nil {
+	// 	return ErrDB
+	// }
+	if w == nil {
+		w = io.Discard
+	}
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -75,6 +89,9 @@ func (col Column) NamedTitles(db *sql.DB, w io.Writer) error {
 
 // Distinct returns a unique list of values from the table column.
 func Distinct(db *sql.DB, column string) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	var result string
 	rows, err := db.Query("SELECT DISTINCT ? AS `result` FROM `files` WHERE ? != \"\"", column, column)
 	if err != nil {
@@ -94,14 +111,20 @@ func Distinct(db *sql.DB, column string) ([]string, error) {
 	return values, nil
 }
 
-func Sections(db *sql.DB, w io.Writer, l *zap.SugaredLogger, sections *[]string) {
+func Sections(db *sql.DB, w io.Writer, sections *[]string) error {
+	if db == nil {
+		return ErrDB
+	}
+	if sections == nil {
+		return fmt.Errorf("sections %w", ErrPointer)
+	}
 	var u Update
 	u.Query = "UPDATE files SET section=? WHERE `section`=?"
 	for _, s := range *sections {
 		u.Args = []any{strings.ToLower(s), s}
 		c, err := u.Execute(db)
 		if err != nil {
-			l.Errorln(err)
+			fmt.Fprintln(w, err)
 		}
 		if c == 0 {
 			continue
@@ -116,24 +139,31 @@ func Sections(db *sql.DB, w io.Writer, l *zap.SugaredLogger, sections *[]string)
 	u.Args = []any{"releaseadvert", "audio"}
 	c, err := u.Execute(db)
 	if err != nil {
-		l.Errorln(err)
+		return fmt.Errorf("execute %w", err)
 	}
 	if c == 0 {
-		return
+		return nil
 	}
 	str := fmt.Sprintf("%s %s \"%s\"",
 		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
 	printcr(w, c, &str)
+	return nil
 }
 
-func Platforms(db *sql.DB, w io.Writer, l *zap.SugaredLogger, platforms *[]string) {
+func Platforms(db *sql.DB, w io.Writer, platforms *[]string) error {
+	if db == nil {
+		return ErrDB
+	}
+	if platforms == nil {
+		return fmt.Errorf("platforms %w", ErrPointer)
+	}
 	var u Update
 	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
 	for _, p := range *platforms {
 		u.Args = []any{strings.ToLower(p), p}
 		c, err := u.Execute(db)
 		if err != nil {
-			l.Errorln(err)
+			fmt.Fprintln(w, err)
 		}
 		if c == 0 {
 			continue
@@ -142,6 +172,7 @@ func Platforms(db *sql.DB, w io.Writer, l *zap.SugaredLogger, platforms *[]strin
 			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
 		printcr(w, c, &s)
 	}
+	return nil
 }
 
 func printcr(w io.Writer, i int64, s *string) {

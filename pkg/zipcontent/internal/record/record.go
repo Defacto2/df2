@@ -80,8 +80,10 @@ func (r *Record) Iterate(db *sql.DB, w io.Writer, s *scan.Stats) error {
 				return err
 			}
 		case "createdat":
-			// TODO: unsure of purpose, check error
-			database.DateTime(raw)
+			s, err := database.DateTime(raw)
+			if err == nil {
+				fmt.Fprintf(w, "%v", s)
+			}
 		case "filename":
 			fmt.Fprintf(w, "%v", value)
 			if err := r.Archive(db, w, s); err != nil {

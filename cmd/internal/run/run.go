@@ -370,7 +370,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) er
 	i++
 	s = color.Info.Sprintf("%d. fix malformed database entries\n", i)
 	fmt.Fprintln(w, s)
-	if err := database.Fix(db, w, l); err != nil {
+	if err := database.Fix(db, w); err != nil {
 		return err
 	}
 	return groups.Fix(db, w)

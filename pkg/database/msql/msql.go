@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/url"
 	"strings"
@@ -26,7 +25,7 @@ const (
 var (
 	ErrConfig   = errors.New("no connection configuration was provided")
 	ErrConnect  = errors.New("no connection to the mysql database server")
-	ErrNoConn   = errors.New("no pointer to an open database connection")
+	ErrDB       = errors.New("database handle pointer cannot be nil")
 	ErrDatabase = errors.New("name of the database to connect is missing")
 	ErrHost     = errors.New("host name of the database server is missing")
 	ErrUser     = errors.New("user for database login is missing")
@@ -99,37 +98,38 @@ func (c Connection) String() string {
 
 func (c Connection) Ping(db *sql.DB) error {
 	if db == nil {
-		return ErrNoConn
+		return ErrDB
 	}
 	// ping the server to make sure the connection works
-	if err := db.Ping(); err != nil {
-		// fmt.Fprintln(w, color.Secondary.Sprint(strings.Replace(c.String(), c.Pass, hide, 1)))
-		// filter the password and then print the datasource connection info
-		// to discover more errors, use log.Printf("%T", err)
-		me := &mysql.MySQLError{}
-		nop := &net.OpError{}
-		switch {
-		case errors.As(err, &me):
-			return fmt.Errorf("mysql connection: %w", err)
-		case errors.As(err, &nop):
-			switch nop.Op {
-			case "dial":
-				log.Fatal(fmt.Errorf("database server %v is either down or the %v %v port is blocked: %w",
-					c.Host, Protocol, c.Port, ErrConnect))
-			case "read":
-				log.Fatal(fmt.Errorf("mysql database read: %w", err))
-			case "write":
-				log.Fatal(fmt.Errorf("mysql database write: %w", err))
-			default:
-				log.Fatal(fmt.Errorf("mysql database op: %w", err))
-			}
-		}
-		return fmt.Errorf("mysql database other: %w", err)
+	err := db.Ping()
+	if err == nil {
+		return nil
 	}
-	return nil
+	// filter the password and then print the datasource connection info
+	// to discover more errors, use log.Printf("%T", err)
+	me := &mysql.MySQLError{}
+	nop := &net.OpError{}
+	switch {
+	case errors.As(err, &me):
+		return fmt.Errorf("mysql connection: %w", err)
+	case errors.As(err, &nop):
+		switch nop.Op {
+		case "dial":
+			return fmt.Errorf("database server %v is either down or the %v %v port is blocked: %w",
+				c.Host, Protocol, c.Port, ErrConnect)
+		case "read":
+			return fmt.Errorf("mysql read: %w", err)
+		case "write":
+			return fmt.Errorf("mysql write: %w", err)
+		default:
+			return fmt.Errorf("mysql op: %w", err)
+		}
+	}
+	return fmt.Errorf("mysql database: %w", err)
 }
 
-// Connect to the MySQL database.
+// Connect to and open the database.
+// This must be closed after use.
 func Connect(cfg configger.Config) (*sql.DB, error) {
 	if cfg == (configger.Config{}) {
 		return nil, ErrConfig
@@ -157,15 +157,19 @@ func Connect(cfg configger.Config) (*sql.DB, error) {
 	return conn, nil
 }
 
-func Info(db *sql.DB, cfg configger.Config) string {
-	err := db.Ping()
+func ConnInfo(cfg configger.Config) (string, error) {
+	db, err := Connect(cfg) // ignore error
+	if err != nil {
+		return "", err
+	}
+	err = db.Ping()
 	if err == nil {
-		return ""
+		return "", nil
 	}
 	me := &mysql.MySQLError{}
 	if ok := errors.As(err, &me); ok {
 		e := strings.Replace(err.Error(), cfg.DBUser, color.Primary.Sprint(cfg.DBUser), 1)
-		return fmt.Sprintf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e))
+		return fmt.Sprintf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e)), nil
 	}
 	nop := &net.OpError{}
 	if ok := errors.As(err, &nop); ok {
@@ -173,9 +177,9 @@ func Info(db *sql.DB, cfg configger.Config) string {
 			return fmt.Sprintf("%s '%v' %s",
 				color.Danger.Sprint("database server"),
 				color.Primary.Sprintf("tcp(%s:%d)", cfg.DBHost, cfg.DBPort),
-				color.Danger.Sprint("is either down or the port is blocked"))
+				color.Danger.Sprint("is either down or the port is blocked")), nil
 		}
-		return color.Danger.Sprint(err)
+		return color.Danger.Sprint(err), nil
 	}
-	return ""
+	return "", nil
 }
