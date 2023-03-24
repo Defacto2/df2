@@ -17,11 +17,13 @@ import (
 )
 
 func TestRecord_String(t *testing.T) {
+	t.Parallel()
 	r := recd.Record{}
 	assert.NotEqual(t, "", r.String())
 }
 
 func TestRecord_Approve(t *testing.T) {
+	t.Parallel()
 	r := recd.Record{}
 	err := r.Approve(nil)
 	assert.NotNil(t, err)
@@ -45,6 +47,7 @@ func TestRecord_Approve(t *testing.T) {
 }
 
 func TestRecord_Check(t *testing.T) {
+	t.Parallel()
 	r := recd.Record{}
 	b, err := r.Check(nil, "", nil, nil)
 	assert.NotNil(t, err)
@@ -63,6 +66,7 @@ func TestRecord_Check(t *testing.T) {
 }
 
 func TestRecord_Checks(t *testing.T) {
+	t.Parallel()
 	r := recd.Record{}
 	b := r.CheckDownload(io.Discard, "", "")
 	assert.False(t, b)
@@ -97,12 +101,14 @@ func TestRecord_Checks(t *testing.T) {
 }
 
 func TestRecord_Summary(t *testing.T) {
+	t.Parallel()
 	r := recd.Record{}
 	r.Summary(nil, 0)
 	r.Summary(nil, 1)
 }
 
 func TestNewApprove(t *testing.T) {
+	t.Parallel()
 	b, err := recd.NewApprove(nil)
 	assert.NotNil(t, err)
 	assert.False(t, b)
@@ -119,6 +125,7 @@ func TestNewApprove(t *testing.T) {
 }
 
 func TestVerbose(t *testing.T) {
+	t.Parallel()
 	recd.Verbose(io.Discard, false, "true")
 	bb := &bytes.Buffer{}
 	recd.Verbose(bb, true, internal.RandStr)
@@ -126,6 +133,7 @@ func TestVerbose(t *testing.T) {
 }
 
 func TestQueries(t *testing.T) {
+	t.Parallel()
 	err := recd.Queries(nil, nil, configger.Config{}, false)
 	assert.NotNil(t, err)
 
@@ -137,77 +145,54 @@ func TestQueries(t *testing.T) {
 }
 
 func TestCheckGroups(t *testing.T) {
-	type args struct {
-		g1 string
-		g2 string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{"", args{"", ""}, false},
-		{"", args{"CHANGEME", ""}, false},
-		{"", args{"", "Changeme"}, false},
-		{"", args{"A group", ""}, true},
-		{"", args{"", "A group"}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := recd.Record{}
-			if got := r.CheckGroups(tt.args.g1, tt.args.g2); got != tt.want {
-				t.Errorf("CheckGroups() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Parallel()
+	r := recd.Record{}
+	b := r.CheckGroups("", "")
+	assert.False(t, b)
+	b = r.CheckGroups("CHANGEME", "")
+	assert.False(t, b)
+	b = r.CheckGroups("", "CHANGEME")
+	assert.False(t, b)
+	b = r.CheckGroups("A group", "")
+	assert.True(t, b)
+	b = r.CheckGroups("", "A group")
+	assert.True(t, b)
 }
 
 func TestValid(t *testing.T) {
-	type args struct {
-		deleted sql.RawBytes
-		updated sql.RawBytes
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    bool
-		wantErr bool
-	}{
-		{"new", args{[]byte("2006-01-02T15:04:05Z"), []byte("2006-01-02T15:04:05Z")}, true, false},
-		{"new+offset", args{[]byte("2006-01-02T15:04:06Z"), []byte("2006-01-02T15:04:05Z")}, true, false},
-		{"old del", args{[]byte("2016-01-02T15:04:05Z"), []byte("2006-01-02T15:04:05Z")}, false, false},
-		{"old upd", args{[]byte("2000-01-02T15:04:05Z"), []byte("2016-01-02T15:04:05Z")}, false, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := recd.Valid(tt.args.deleted, tt.args.updated)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Valid() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Valid() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Parallel()
+	b, err := recd.Valid(nil, nil)
+	assert.NotNil(t, err)
+	assert.False(t, b)
+
+	new, offset := []byte("2006-01-02T15:04:06Z"), []byte("2006-01-02T15:04:05Z")
+	b, err = recd.Valid(new, new)
+	assert.Nil(t, err)
+	assert.True(t, b)
+	b, err = recd.Valid(new, offset)
+	assert.Nil(t, err)
+	assert.True(t, b)
+	new, offset = []byte("2026-01-02T15:04:06Z"), []byte("2006-01-02T15:04:05Z")
+	b, err = recd.Valid(new, offset)
+	assert.Nil(t, err)
+	assert.False(t, b)
+	b, err = recd.Valid(offset, new)
+	assert.Nil(t, err)
+	assert.False(t, b)
 }
 
 func TestReverseInt(t *testing.T) {
-	tests := []struct {
-		name         string
-		value        uint
-		wantReversed uint
-	}{
-		{"empty", 0, 0},
-		{"count", 12345, 54321},
-		{"seq", 555, 555},
-		{"sign", 662211, 112266},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotReversed, _ := recd.ReverseInt(tt.value); gotReversed != tt.wantReversed {
-				t.Errorf("ReverseInt() = %v, want %v", gotReversed, tt.wantReversed)
-			}
-		})
-	}
+	t.Parallel()
+	i, err := recd.ReverseInt(0)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = recd.ReverseInt(12345)
+	assert.Nil(t, err)
+	assert.Equal(t, 54321, i)
+	i, err = recd.ReverseInt(555)
+	assert.Nil(t, err)
+	assert.Equal(t, 555, i)
+	i, err = recd.ReverseInt(662211)
+	assert.Nil(t, err)
+	assert.Equal(t, 112266, i)
 }

@@ -71,7 +71,7 @@ func Defaults() Config {
 		DBPass:  "example",
 		DBHost:  "localhost",
 		DBPort:  3306,
-		Timeout: 5,
+		Timeout: 15,
 		// directory paths
 		WebRoot:       webRoot,
 		Downloads:     filepath.Join(assets, "downloads"),

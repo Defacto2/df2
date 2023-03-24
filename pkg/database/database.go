@@ -19,6 +19,7 @@ import (
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database/internal/export"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
+	"github.com/Defacto2/df2/pkg/database/internal/templ"
 	"github.com/Defacto2/df2/pkg/database/internal/update"
 	"github.com/Defacto2/df2/pkg/database/msql"
 	"github.com/google/uuid"
@@ -34,30 +35,15 @@ var (
 )
 
 const (
-	// Datetime MySQL format.
-	Datetime = "2006-01-02T15:04:05Z"
+	Datetime = "2006-01-02T15:04:05Z" // Datetime MySQL format.
 
-	// UpdateID is a user id to use with the updatedby column.
-	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
+	ExampleID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" // ExampleID is an invalid placeholder UUID, where x represents a digit.
+	TestID    = "00000000-0000-0000-0000-000000000000" // TestID is a generic UUID that can be used for unit tests.
+	UpdateID  = "b66dc282-a029-4e99-85db-2cf2892fffcc" // UpdateID is a user id to use with the updatedby column.
 
-	// TestID is a generic UUID that can be used for unit tests.
-	TestID = "00000000-0000-0000-0000-000000000000"
-
-	hide = "****"
-	Null = "NULL"
-
-	CountFiles   = "SELECT COUNT(*) FROM `files`"
-	CountWaiting = CountFiles + " WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
-
-	SelKeys   = "SELECT `id` FROM `files`"
-	SelNames  = "SELECT `filename` FROM `files`"
-	SelUpdate = "SELECT `updatedat` FROM `files`" +
-		" WHERE `createdat` <> `updatedat` AND `deletedby` IS NULL" +
-		" ORDER BY `updatedat` DESC LIMIT 1"
-
-	WhereDownloadBlock = "WHERE `file_security_alert_url` IS NOT NULL AND `file_security_alert_url` != ''"
-	WhereAvailable     = "WHERE `deletedat` IS NULL"
-	WhereHidden        = "WHERE `deletedat` IS NOT NULL"
+	WhereAvailable     = templ.WhereAvailable
+	WhereDownloadBlock = templ.WhereDownloadBlock
+	WhereHidden        = templ.WhereHidden
 )
 
 // Empty is used as a blank value for search maps.
@@ -77,11 +63,13 @@ const (
 	Files        Table = iota // Files records.
 	Groups                    // Groups names.
 	Netresources              // Netresources for online websites.
-	Users                     // Users are site logins.
 )
 
 func (t Table) String() string {
-	return [...]string{"files", "groupnames", "netresources", "users"}[t]
+	if t > Netresources {
+		return ""
+	}
+	return [...]string{"files", "groupnames", "netresources"}[t]
 }
 
 type Update update.Update
@@ -120,8 +108,7 @@ func CheckID(id string) error {
 // CheckUUID checks the syntax of the universal unique record id.
 func CheckUUID(uuid string) error {
 	if !IsUUID(uuid) {
-		const example = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", uuid, example, ErrSynID)
+		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", uuid, ExampleID, ErrSynID)
 	}
 	return nil
 }
@@ -143,8 +130,6 @@ func Columns(db *sql.DB, w io.Writer, t Table) error {
 		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Groups)
 	case Netresources:
 		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Netresources)
-	case Users:
-		query = fmt.Sprintf("SELECT * FROM %s LIMIT 0", Users)
 	}
 	rows, err := db.Query(query)
 	if err != nil {
@@ -346,7 +331,7 @@ func GetKeys(db *sql.DB, stmt string) ([]int, error) {
 		return nil, ErrDB
 	}
 	stmt = strings.TrimSpace(stmt)
-	query := CountFiles
+	query := templ.CountFiles
 	if stmt != "" {
 		query = fmt.Sprintf("%s %s", query, stmt)
 	}
@@ -354,7 +339,7 @@ func GetKeys(db *sql.DB, stmt string) ([]int, error) {
 	if err := db.QueryRow(query).Scan(&count); err != nil {
 		return nil, err
 	}
-	queryKeys := SelKeys
+	queryKeys := templ.SelKeys
 	if stmt != "" {
 		queryKeys = fmt.Sprintf("%s %s", queryKeys, stmt)
 	}
@@ -390,14 +375,14 @@ func GetFile(db *sql.DB, val string) (string, error) {
 	}
 	n := sql.NullString{}
 	if v, err := strconv.Atoi(val); err == nil {
-		err = db.QueryRow(SelNames+" WHERE id=?", v).Scan(&n)
+		err = db.QueryRow(templ.SelNames+" WHERE id=?", v).Scan(&n)
 		if err != nil {
 			return "", fmt.Errorf("lookup file by id queryrow %q: %w", val, err)
 		}
 		return n.String, nil
 	}
 	val = strings.ToLower(val)
-	err := db.QueryRow(SelNames+" WHERE uuid=?", val).Scan(&n)
+	err := db.QueryRow(templ.SelNames+" WHERE uuid=?", val).Scan(&n)
 	if err != nil {
 		return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", val, err)
 	}
@@ -453,7 +438,7 @@ func LastUpdate(db *sql.DB) (time.Time, error) {
 	if db == nil {
 		return time.Time{}, ErrDB
 	}
-	row := db.QueryRow(SelUpdate)
+	row := db.QueryRow(templ.SelUpdate)
 	t := time.Time{}
 	if err := row.Scan(&t); err != nil {
 		return t, fmt.Errorf("last update: %w", err)
@@ -475,7 +460,7 @@ func ObfuscateParam(param string) string {
 		return param
 	}
 	l := len(param)
-	r, err := recd.ReverseInt(uint(pint))
+	r, err := recd.ReverseInt(pint)
 	if err != nil {
 		return param
 	}
@@ -559,7 +544,7 @@ func TrimSP(s string) string {
 // Val returns the column value as either a string or "NULL".
 func Val(col sql.RawBytes) string {
 	if col == nil {
-		return Null
+		return "NULL"
 	}
 	return string(col)
 }
@@ -570,7 +555,7 @@ func Waiting(db *sql.DB) (int, error) {
 		return -1, ErrDB
 	}
 	count := -1
-	if err := db.QueryRow(CountWaiting).Scan(&count); err != nil {
+	if err := db.QueryRow(templ.CountWaiting).Scan(&count); err != nil {
 		return -1, err
 	}
 	return count, nil

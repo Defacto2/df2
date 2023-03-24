@@ -1,3 +1,5 @@
+// Package database tests.
+// To avoid context deadline exceeded errors, these tests should not be run in parallel.
 package database_test
 
 import (
@@ -10,6 +12,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/database/internal/templ"
 	"github.com/Defacto2/df2/pkg/internal"
 	models "github.com/Defacto2/df2/pkg/models/mysql"
 	_ "github.com/go-sql-driver/mysql"
@@ -23,7 +26,7 @@ func TestTable(t *testing.T) {
 	assert.Equal(t, "files", database.Table(0).String())
 	assert.Equal(t, "groupnames", database.Table(1).String())
 	assert.Equal(t, "netresources", database.Table(2).String())
-	assert.Equal(t, "users", database.Table(3).String())
+	assert.Equal(t, "", database.Table(3).String())
 }
 
 func TestConnect(t *testing.T) {
@@ -38,20 +41,25 @@ func TestConnect(t *testing.T) {
 	defer db.Close()
 }
 
-func TestConnInfo(t *testing.T) {
+func TestConnInfo0(t *testing.T) {
 	t.Parallel()
 	s, err := database.ConnInfo(configger.Config{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
-
+}
+func TestConnInfo1(t *testing.T) {
+	t.Parallel()
 	cfg := configger.Defaults()
-	s, err = database.ConnInfo(configger.Config{})
+	s, err := database.ConnInfo(cfg)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
-
+}
+func TestConnInfo2(t *testing.T) {
+	t.Parallel()
+	cfg := configger.Defaults()
 	cfg.DBName = "foo"
 	cfg.DBPass = "bar"
-	s, err = database.ConnInfo(cfg)
+	s, err := database.ConnInfo(cfg)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
 }
@@ -243,7 +251,7 @@ func TestGetKeys(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Greater(t, len(all), 1)
 
-	ids, err = database.GetKeys(db, database.WhereAvailable)
+	ids, err = database.GetKeys(db, templ.WhereAvailable)
 	assert.Nil(t, err)
 	assert.Less(t, len(ids), len(all))
 }

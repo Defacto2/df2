@@ -1,12 +1,14 @@
 package msql
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/pkg/configger"
 	"github.com/go-sql-driver/mysql"
@@ -18,6 +20,8 @@ const (
 	Protocol = "tcp"
 	// DriverName of the database.
 	DriverName = "mysql"
+	// Timeout default in seconds for a database connection.
+	Timeout = 5
 
 	hider = "***"
 )
@@ -41,6 +45,7 @@ type Connection struct {
 	// NoSSLMode connects to the database using an insecure,
 	// plain text connecction using the sslmode=disable param.
 	NoSSLMode bool
+	Timeout   time.Duration // Timeout context in seconds.
 }
 
 func (c *Connection) Check() error {
@@ -89,7 +94,7 @@ func (c Connection) String() string {
 		c.Port)
 	v := url.Values{}
 	v.Add("allowCleartextPasswords", fmt.Sprint(!c.NoSSLMode))
-	v.Add("timeout", "5s")
+	v.Add("timeout", fmt.Sprintf("%ds", c.Timeout))
 	v.Add("parseTime", "true") // parseTime is required by the SQL boiler pkg.
 
 	// example connector: "user:password@tcp(localhost:5432)/database?sslmode=false"
@@ -100,8 +105,13 @@ func (c Connection) Ping(db *sql.DB) error {
 	if db == nil {
 		return ErrDB
 	}
+	if c.Timeout == 0 {
+		c.Timeout = Timeout
+	}
 	// ping the server to make sure the connection works
-	err := db.Ping()
+	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout*time.Second)
+	defer cancel()
+	err := db.PingContext(ctx)
 	if err == nil {
 		return nil
 	}
@@ -134,15 +144,17 @@ func Connect(cfg configger.Config) (*sql.DB, error) {
 	if cfg == (configger.Config{}) {
 		return nil, ErrConfig
 	}
-	// TODO: cfg checks, copied from connection pkg?
-	// TODO: handle nil cfg value to use default
 	dsn := Connection{
 		User:      cfg.DBUser,
 		Pass:      cfg.DBPass,
 		Database:  cfg.DBName,
 		Host:      cfg.DBHost,
 		Port:      cfg.DBPort,
-		NoSSLMode: true, // use IsProd...
+		NoSSLMode: !cfg.IsProduction,
+		Timeout:   time.Duration(cfg.Timeout),
+	}
+	if dsn.Timeout == 0 {
+		dsn.Timeout = Timeout
 	}
 	if err := dsn.Check(); err != nil {
 		return nil, err
@@ -158,10 +170,11 @@ func Connect(cfg configger.Config) (*sql.DB, error) {
 }
 
 func ConnInfo(cfg configger.Config) (string, error) {
-	db, err := Connect(cfg) // ignore error
+	db, err := Connect(cfg)
 	if err != nil {
 		return "", err
 	}
+	defer db.Close()
 	err = db.Ping()
 	if err == nil {
 		return "", nil

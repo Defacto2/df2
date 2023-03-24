@@ -24,6 +24,21 @@ type TablesData struct {
 	Table   string
 }
 
+const (
+	CountFiles   = "SELECT COUNT(*) FROM `files`"
+	CountWaiting = CountFiles + " WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
+
+	SelKeys   = "SELECT `id` FROM `files`"
+	SelNames  = "SELECT `filename` FROM `files`"
+	SelUpdate = "SELECT `updatedat` FROM `files`" +
+		" WHERE `createdat` <> `updatedat` AND `deletedby` IS NULL" +
+		" ORDER BY `updatedat` DESC LIMIT 1"
+
+	WhereDownloadBlock = "WHERE `file_security_alert_url` IS NOT NULL AND `file_security_alert_url` != ''"
+	WhereAvailable     = "WHERE `deletedat` IS NULL"
+	WhereHidden        = "WHERE `deletedat` IS NOT NULL"
+)
+
 const Table = `
 -- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump
 -- source:        https://defacto2.net/sql
