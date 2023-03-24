@@ -15,6 +15,8 @@ var (
 
 const (
 	DZ  = "demozoo"
+	Img = "images"
+	PNG = "test.png"
 	Zip = "test.zip"
 
 	File00UUID       = "00000000-0000-0000-0000-000000000000" // File00UUID is a blank UUID.
@@ -27,12 +29,18 @@ const (
 	TestDemozooC64   = 309360                                 // TestDemozooC64 is a Demozoo ID for an Commodore 64 production.
 )
 
-func Testdata() string {
+func Testdata(subs int) string {
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
-	dir := filepath.Join(wd, "..", "..", "testdata")
+	dir := wd
+	n := 1
+	for n <= subs {
+		n++
+		dir = filepath.Join(dir, "..")
+	}
+	dir = filepath.Join(dir, "testdata")
 	st, err := os.Stat(dir)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("%w: %s", err, dir))
@@ -43,7 +51,17 @@ func Testdata() string {
 	return dir
 }
 
-func TestZip() string {
-	dir := Testdata()
+func TestArchives(subs int) string {
+	dir := Testdata(subs)
+	return filepath.Join(dir, DZ)
+}
+
+func TestImg(subs int) string {
+	dir := Testdata(subs)
+	return filepath.Join(dir, Img, PNG)
+}
+
+func TestZip(subs int) string {
+	dir := Testdata(subs)
 	return filepath.Join(dir, DZ, Zip)
 }

@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	ErrDB      = errors.New("database handle pointer cannot be nil")
-	ErrPointer = errors.New("pointer value cannot be nil")
+	ErrDB       = errors.New("database handle pointer cannot be nil")
+	ErrPointer  = errors.New("pointer value cannot be nil")
+	ErrRawBytes = errors.New("rawbytes array is too small")
 )
 
 const (
@@ -103,9 +104,12 @@ func (r *Record) AutoID(data string) uint {
 	return id
 }
 
-func (r *Record) Check(w io.Writer, incoming string, values []sql.RawBytes, dir *directories.Dir) bool {
+func (r *Record) Check(w io.Writer, incoming string, values []sql.RawBytes, dir *directories.Dir) (bool, error) {
 	if dir == nil {
-		return false
+		return false, fmt.Errorf("dir %w", ErrPointer)
+	}
+	if len(values) < platform {
+		return false, fmt.Errorf("expect %d, have %d: %w", section, len(values), ErrRawBytes)
 	}
 	if w == nil {
 		w = io.Discard
@@ -113,57 +117,57 @@ func (r *Record) Check(w io.Writer, incoming string, values []sql.RawBytes, dir 
 	v := r.Verbose
 	if !r.checkFileName(string(values[filename])) {
 		verbose(w, v, "!filename")
-		return false
+		return false, nil
 	}
-	if !r.checkFileSize(string(values[filesize])) {
+	if !r.CheckFileSize(string(values[filesize])) {
 		verbose(w, v, "!filesize")
-		return false
+		return false, nil
 	}
 	if !r.checkHash(string(values[hashstrong]), string(values[hashweak])) {
 		verbose(w, v, "!hash")
-		return false
+		return false, nil
 	}
-	if !r.checkFileContent(string(values[filezipcontent])) {
+	if !r.CheckFileContent(string(values[filezipcontent])) {
 		verbose(w, v, "!file content")
-		return false
+		return false, nil
 	}
 	if !r.CheckGroups(string(values[groupbrandby]), string(values[groupbrandfor])) {
 		verbose(w, v, "!group")
-		return false
+		return false, nil
 	}
 	if !r.checkTags(string(values[platform]), string(values[section])) {
 		verbose(w, v, "!tag")
-		return false
+		return false, nil
 	}
-	if !r.checkDownload(w, incoming, dir.UUID) {
+	if !r.CheckDownload(w, incoming, dir.UUID) {
 		verbose(w, v, "!download")
-		return false
+		return false, nil
 	}
 	if string(values[platform]) != "audio" {
-		if !r.checkImage(dir.Img000) {
+		if !r.CheckImage(dir.Img000) {
 			verbose(w, v, "!000x")
-			return false
+			return false, nil
 		}
-		if !r.checkImage(dir.Img400) {
+		if !r.CheckImage(dir.Img400) {
 			verbose(w, v, "!400x")
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
-func (r *Record) checkDownload(w io.Writer, incoming, path string) bool {
+func (r *Record) CheckDownload(w io.Writer, incoming, path string) bool {
 	if w == nil {
 		w = io.Discard
 	}
 	file := filepath.Join(fmt.Sprint(path), r.UUID)
 	if _, err := os.Stat(file); errors.Is(err, fs.ErrNotExist) {
-		return r.recoverDownload(w, incoming, path)
+		return r.RecoverDownload(w, incoming, path)
 	}
 	return true
 }
 
-func (r *Record) checkFileContent(fc string) bool {
+func (r *Record) CheckFileContent(fc string) bool {
 	r.zipContent = fc
 	switch filepath.Ext(r.Filename) {
 	case z7, arj, rar, zip:
@@ -181,7 +185,7 @@ func (r *Record) checkFileName(fn string) bool {
 	return true
 }
 
-func (r *Record) checkFileSize(fs string) bool {
+func (r *Record) CheckFileSize(fs string) bool {
 	i, err := strconv.Atoi(fs)
 	if err != nil {
 		return false
@@ -211,7 +215,7 @@ func (r *Record) checkHash(h1, h2 string) bool {
 	return true
 }
 
-func (r *Record) checkImage(path string) bool {
+func (r *Record) CheckImage(path string) bool {
 	_, err := os.Stat(r.ImagePath(path))
 	return !errors.Is(err, fs.ErrNotExist)
 }
@@ -230,7 +234,10 @@ func (r *Record) ImagePath(path string) string {
 	return filepath.Join(fmt.Sprint(path), r.UUID+png)
 }
 
-func (r *Record) recoverDownload(w io.Writer, incoming, path string) bool {
+func (r *Record) RecoverDownload(w io.Writer, incoming, path string) bool {
+	if w == nil {
+		w = io.Discard
+	}
 	src, v := incoming, r.Verbose
 	if src == "" {
 		return false
@@ -243,13 +250,13 @@ func (r *Record) recoverDownload(w io.Writer, incoming, path string) bool {
 	fc, err := dupe(file, path)
 	if err != nil {
 		verbose(w, v, "!filecopy ")
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(w, err)
 		return false
 	}
 	verbose(w, v, fmt.Sprintf("copied %v", humanize.Bytes(uint64(fc))))
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		verbose(w, v, "!!filecopy ")
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(w, err)
 		return false
 	}
 	return true
@@ -322,6 +329,9 @@ func dupe(name, dest string) (int64, error) {
 func NewApprove(b []sql.RawBytes) (bool, error) {
 	// SQL column names can be found in the newFilesSQL statement in approve.go
 	const deletedat, createdat = 2, 3
+	if len(b) <= createdat {
+		return false, fmt.Errorf("have %d, but want %d %w", len(b), createdat, ErrRawBytes)
+	}
 	if b[deletedat] == nil {
 		return false, nil
 	}
@@ -423,11 +433,11 @@ func Queries(db *sql.DB, w io.Writer, cfg configger.Config, v bool) error {
 		return fmt.Errorf("queries query rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	columns, err := rows.Columns()
+	cols, err := rows.Columns()
 	if err != nil {
 		return fmt.Errorf("queries columns: %w", err)
 	}
-	return query(db, w, cfg, v, rows, columns)
+	return query(db, w, cfg, v, rows, cols)
 }
 
 func query(db *sql.DB, w io.Writer, cfg configger.Config, v bool, rows *sql.Rows, columns []string) error {
@@ -477,7 +487,9 @@ func query(db *sql.DB, w io.Writer, cfg configger.Config, v bool, rows *sql.Rows
 			continue
 		}
 		r.UUID = string(values[1])
-		if ok := r.Check(w, cfg.IncomingFiles, values, &dir); !ok {
+		if ok, err := r.Check(w, cfg.IncomingFiles, values, &dir); err != nil {
+			return err
+		} else if !ok {
 			Verbose(w, v, x())
 			continue
 		}

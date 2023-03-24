@@ -1,45 +1,139 @@
 package recd_test
 
 import (
+	"bytes"
 	"database/sql"
+	"io"
 	"os"
-	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
+	"github.com/Defacto2/df2/pkg/directories"
+	"github.com/Defacto2/df2/pkg/internal"
+	"github.com/stretchr/testify/assert"
 )
 
-func Test_record_imagePath(t *testing.T) {
-	type fields struct {
-		uuid string
+func TestRecord_String(t *testing.T) {
+	r := recd.Record{}
+	assert.NotEqual(t, "", r.String())
+}
+
+func TestRecord_Approve(t *testing.T) {
+	r := recd.Record{}
+	err := r.Approve(nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.Approve(db)
+	assert.Nil(t, err)
+
+	r = recd.Record{
+		ID: 1,
 	}
-	type args struct {
-		path string
+	err = r.Approve(db)
+	assert.Nil(t, err)
+
+	i := r.AutoID("1")
+	assert.Equal(t, uint(1), i)
+	err = r.Approve(db)
+	assert.Nil(t, err)
+}
+
+func TestRecord_Check(t *testing.T) {
+	r := recd.Record{}
+	b, err := r.Check(nil, "", nil, nil)
+	assert.NotNil(t, err)
+	assert.False(t, b)
+
+	dir, err := directories.Init(configger.Defaults(), false)
+	assert.Nil(t, err)
+	bb := &bytes.Buffer{}
+	b, err = r.Check(bb, "", nil, &dir)
+	assert.NotNil(t, err)
+	assert.False(t, b)
+	vals := make([]sql.RawBytes, 15)
+	b, err = r.Check(bb, "", vals, &dir)
+	assert.Nil(t, err)
+	assert.False(t, b)
+}
+
+func TestRecord_Checks(t *testing.T) {
+	r := recd.Record{}
+	b := r.CheckDownload(io.Discard, "", "")
+	assert.False(t, b)
+
+	r = recd.Record{
+		Filename: "test.zip",
 	}
-	const (
-		png  = ".png"
-		uuid = "486070ae-f462-446f-b7e8-c70cb7a8a996"
-	)
-	p := os.TempDir()
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
-	}{
-		{"empty", fields{uuid}, args{""}, uuid + png},
-		{"ok", fields{uuid}, args{p}, filepath.Join(p, uuid) + png},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := recd.Record{
-				UUID: tt.fields.uuid,
-			}
-			if got := r.ImagePath(tt.args.path); got != tt.want {
-				t.Errorf("ImagePath() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	r.CheckFileContent("")
+	assert.False(t, b)
+
+	b = r.CheckFileSize(internal.RandStr)
+	assert.False(t, b)
+
+	b = r.CheckFileSize("1024")
+	assert.True(t, b)
+
+	b = r.CheckImage(internal.RandStr)
+	assert.False(t, b)
+	b = r.CheckImage(internal.TestImg(4))
+	assert.True(t, b)
+
+	b = r.RecoverDownload(nil, "", "")
+	assert.False(t, b)
+
+	r = recd.Record{Filename: internal.Zip}
+	f, err := os.CreateTemp(os.TempDir(), "recover-download")
+	assert.Nil(t, err)
+	defer f.Close()
+	b = r.RecoverDownload(io.Discard, internal.TestArchives(4), f.Name())
+	assert.True(t, b)
+	defer os.Remove(f.Name())
+}
+
+func TestRecord_Summary(t *testing.T) {
+	r := recd.Record{}
+	r.Summary(nil, 0)
+	r.Summary(nil, 1)
+}
+
+func TestNewApprove(t *testing.T) {
+	b, err := recd.NewApprove(nil)
+	assert.NotNil(t, err)
+	assert.False(t, b)
+	raw := make([]sql.RawBytes, 4)
+	b, err = recd.NewApprove(raw)
+	assert.Nil(t, err)
+	assert.False(t, b)
+	now := time.Now().Format(time.RFC3339)
+	raw[2] = []byte(now)
+	raw[3] = []byte(now)
+	b, err = recd.NewApprove(raw)
+	assert.Nil(t, err)
+	assert.True(t, b)
+}
+
+func TestVerbose(t *testing.T) {
+	recd.Verbose(io.Discard, false, "true")
+	bb := &bytes.Buffer{}
+	recd.Verbose(bb, true, internal.RandStr)
+	assert.Contains(t, bb.String(), internal.RandStr)
+}
+
+func TestQueries(t *testing.T) {
+	err := recd.Queries(nil, nil, configger.Config{}, false)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(configger.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = recd.Queries(db, io.Discard, configger.Defaults(), false)
+	assert.Nil(t, err)
 }
 
 func TestCheckGroups(t *testing.T) {

@@ -159,8 +159,8 @@ func TestFileUpdate(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.False(t, b)
 
-	dir := internal.Testdata()
-	zip := internal.TestZip()
+	dir := internal.Testdata(2)
+	zip := internal.TestZip(2)
 
 	b, err = database.FileUpdate(dir, time.Now())
 	assert.Nil(t, err)
