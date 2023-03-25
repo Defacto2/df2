@@ -21,9 +21,9 @@ const (
 	// DriverName of the database.
 	DriverName = "mysql"
 	// Timeout default in seconds for a database connection.
-	Timeout = 5
+	Timeout = 30
 
-	hider = "***"
+	mask = "***"
 )
 
 var (
@@ -69,17 +69,17 @@ func (c *Connection) Check() error {
 func (c Connection) Open() (*sql.DB, error) {
 	conn, err := sql.Open(DriverName, c.String())
 	if err != nil {
-		return nil, c.HidePass(err)
+		return nil, c.MaskPass(err)
 	}
 	return conn, nil
 }
 
-// HidePass returns a MySQL database connection error with the user password removed.
-func (c Connection) HidePass(err error) error {
+// MaskPass returns a MySQL database connection error with the user password removed.
+func (c Connection) MaskPass(err error) error {
 	if err == nil {
 		return nil
 	}
-	s := strings.Replace(err.Error(), c.Pass, hider, 1)
+	s := strings.Replace(err.Error(), c.Pass, mask, 1)
 	return fmt.Errorf("mysql connection: %s", s)
 }
 
@@ -93,6 +93,9 @@ func (c Connection) String() string {
 		c.Host,
 		c.Port)
 	v := url.Values{}
+	if c.Timeout == 0 {
+		c.Timeout = Timeout
+	}
 	v.Add("allowCleartextPasswords", fmt.Sprint(!c.NoSSLMode))
 	v.Add("timeout", fmt.Sprintf("%ds", c.Timeout))
 	v.Add("parseTime", "true") // parseTime is required by the SQL boiler pkg.

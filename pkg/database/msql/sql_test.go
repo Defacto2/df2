@@ -9,6 +9,7 @@ import (
 )
 
 func TestVersion_Query(t *testing.T) {
+	t.Parallel()
 	cfg := configger.Defaults()
 	var v msql.Version
 	err := v.Query(cfg)
