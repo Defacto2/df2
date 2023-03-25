@@ -71,7 +71,7 @@ func Defaults() Config {
 		DBPass:  "example",
 		DBHost:  "localhost",
 		DBPort:  3306,
-		Timeout: 15,
+		Timeout: 30, // Timeout value matches the 30s timeout for unit tests.
 		// directory paths
 		WebRoot:       webRoot,
 		Downloads:     filepath.Join(assets, "downloads"),

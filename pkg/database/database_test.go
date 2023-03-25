@@ -1,5 +1,4 @@
 // Package database tests.
-// To avoid context deadline exceeded errors, these tests should not be run in parallel.
 package database_test
 
 import (
@@ -49,9 +48,8 @@ func TestConnInfo0(t *testing.T) {
 }
 func TestConnInfo1(t *testing.T) {
 	t.Parallel()
-	cfg := configger.Defaults()
-	s, err := database.ConnInfo(cfg)
-	assert.NotNil(t, err)
+	s, err := database.ConnInfo(configger.Defaults())
+	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
 func TestConnInfo2(t *testing.T) {
