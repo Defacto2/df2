@@ -3,7 +3,7 @@ package acronym_test
 import (
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ func TestGroup_Get(t *testing.T) {
 	g := acronym.Group{}
 	err := g.Get(nil)
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = g.Get(db)
@@ -31,7 +31,7 @@ func TestFix(t *testing.T) {
 	i, err := acronym.Fix(nil)
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), i)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	_, err = acronym.Fix(db)
@@ -43,7 +43,7 @@ func TestGet(t *testing.T) {
 	s, err := acronym.Get(nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	s, err = acronym.Get(db, "")

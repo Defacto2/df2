@@ -6,7 +6,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/assets"
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	_ "github.com/go-sql-driver/mysql"
@@ -20,7 +20,7 @@ func TestClean(t *testing.T) {
 	err := c.Walk(nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = c.Walk(db, io.Discard)
@@ -30,7 +30,7 @@ func TestClean(t *testing.T) {
 		Name:   "invalid",
 		Remove: false,
 		Human:  false,
-		Config: configger.Defaults(),
+		Config: conf.Defaults(),
 	}
 	err = c.Walk(db, io.Discard)
 	assert.NotNil(t, err)
@@ -40,7 +40,7 @@ func TestClean(t *testing.T) {
 		Name:   ok,
 		Remove: false,
 		Human:  false,
-		Config: configger.Defaults(),
+		Config: conf.Defaults(),
 	}
 	err = c.Walk(db, io.Discard)
 	assert.Nil(t, err)
@@ -53,7 +53,7 @@ func TestCreateUUIDMap(t *testing.T) {
 	assert.Equal(t, 0, i)
 	assert.Equal(t, database.IDs(nil), ids)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, ids, err = assets.CreateUUIDMap(db)
@@ -68,13 +68,13 @@ func TestWalker(t *testing.T) {
 	err := c.Walker(nil, nil, -1, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = c.Walker(db, io.Discard, -1, nil)
 	assert.NotNil(t, err)
 
-	d, err := directories.Init(configger.Defaults(), false)
+	d, err := directories.Init(conf.Defaults(), false)
 	assert.Nil(t, err)
 	err = c.Walker(db, io.Discard, -1, &d)
 	assert.NotNil(t, err)
@@ -82,7 +82,7 @@ func TestWalker(t *testing.T) {
 	c = assets.Clean{
 		Remove: false,
 		Human:  false,
-		Config: configger.Defaults(),
+		Config: conf.Defaults(),
 	}
 	err = c.Walker(db, io.Discard, assets.Download, &d)
 	assert.Nil(t, err)
@@ -94,7 +94,7 @@ func TestSkip(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, scan.Files{}, f)
 
-	d, err := directories.Init(configger.Defaults(), false)
+	d, err := directories.Init(conf.Defaults(), false)
 	assert.Nil(t, err)
 	f, err = scan.Skip("", &d)
 	assert.Nil(t, err)
@@ -114,7 +114,7 @@ func TestTargets(t *testing.T) {
 		{"", assets.Image, 2},
 		{"error", -1, 0},
 	}
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	d, err := directories.Init(cfg, false)
 	if err != nil {
 		t.Error(err)

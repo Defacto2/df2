@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/database/internal/templ"
 	"github.com/Defacto2/df2/pkg/internal"
@@ -30,11 +30,11 @@ func TestTable(t *testing.T) {
 
 func TestConnect(t *testing.T) {
 	t.Parallel()
-	db, err := database.Connect(configger.Config{})
+	db, err := database.Connect(conf.Config{})
 	assert.NotNil(t, err)
 	assert.Nil(t, db)
 
-	db, err = database.Connect(configger.Defaults())
+	db, err = database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	assert.NotNil(t, db)
 	defer db.Close()
@@ -42,19 +42,19 @@ func TestConnect(t *testing.T) {
 
 func TestConnInfo0(t *testing.T) {
 	t.Parallel()
-	s, err := database.ConnInfo(configger.Config{})
+	s, err := database.ConnInfo(conf.Config{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
 }
 func TestConnInfo1(t *testing.T) {
 	t.Parallel()
-	s, err := database.ConnInfo(configger.Defaults())
+	s, err := database.ConnInfo(conf.Defaults())
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
 func TestConnInfo2(t *testing.T) {
 	t.Parallel()
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	cfg.DBName = "foo"
 	cfg.DBPass = "bar"
 	s, err := database.ConnInfo(cfg)
@@ -64,13 +64,13 @@ func TestConnInfo2(t *testing.T) {
 
 func TestApprove(t *testing.T) {
 	t.Parallel()
-	err := database.Approve(nil, nil, configger.Config{}, false)
+	err := database.Approve(nil, nil, conf.Config{}, false)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
-	err = database.Approve(db, io.Discard, configger.Defaults(), false)
+	err = database.Approve(db, io.Discard, conf.Defaults(), false)
 	assert.Nil(t, err)
 }
 
@@ -116,7 +116,7 @@ func TestColumns(t *testing.T) {
 	t.Parallel()
 	err := database.Columns(nil, nil, 0)
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = database.Columns(db, io.Discard, database.Files)
@@ -148,7 +148,7 @@ func TestDistinct(t *testing.T) {
 	s, err := database.Distinct(nil, "")
 	assert.NotNil(t, err)
 	assert.Empty(t, s)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	s, err = database.Distinct(db, "")
@@ -184,7 +184,7 @@ func TestFix(t *testing.T) {
 	err := database.Fix(nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = database.Fix(db, io.Discard)
@@ -197,7 +197,7 @@ func TestDemozooID(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, id)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	id, err = database.DemozooID(db, 0)
@@ -217,7 +217,7 @@ func TestGetID(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, id)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	id, err = database.GetID(db, "")
@@ -241,7 +241,7 @@ func TestGetKeys(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Len(t, ids, 0)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 
@@ -260,7 +260,7 @@ func TestGetFile(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	s, err = database.GetFile(db, "")
@@ -353,7 +353,7 @@ func TestLastUpdate(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Empty(t, tt)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	tt, err = database.LastUpdate(db)
@@ -411,7 +411,7 @@ func TestTotal(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, -1, i)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = database.Total(db, io.Discard, nil)
@@ -442,7 +442,7 @@ func TestWaiting(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, -1, i)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = database.Waiting(db)

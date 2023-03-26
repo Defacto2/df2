@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 )
 
@@ -23,7 +23,7 @@ type Stats struct {
 }
 
 // Init initializes the archive scan statistics.
-func Init(cfg configger.Config) (Stats, error) {
+func Init(cfg conf.Config) (Stats, error) {
 	dir, err := directories.Init(cfg, false)
 	if err != nil {
 		return Stats{}, err

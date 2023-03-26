@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/zipcmmt/internal/cmmt"
@@ -19,7 +19,7 @@ const (
 		` files WHERE filename LIKE "%.zip"`
 )
 
-func Fix(db *sql.DB, w io.Writer, cfg configger.Config, unicode, overwrite, stdout bool) error {
+func Fix(db *sql.DB, w io.Writer, cfg conf.Config, unicode, overwrite, stdout bool) error {
 	if db == nil {
 		return database.ErrDB
 	}

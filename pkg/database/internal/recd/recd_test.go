@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
 	"github.com/Defacto2/df2/pkg/directories"
@@ -28,7 +28,7 @@ func TestRecord_Approve(t *testing.T) {
 	err := r.Approve(nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = r.Approve(db)
@@ -53,7 +53,7 @@ func TestRecord_Check(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.False(t, b)
 
-	dir, err := directories.Init(configger.Defaults(), false)
+	dir, err := directories.Init(conf.Defaults(), false)
 	assert.Nil(t, err)
 	bb := &bytes.Buffer{}
 	b, err = r.Check(bb, "", nil, &dir)
@@ -134,13 +134,13 @@ func TestVerbose(t *testing.T) {
 
 func TestQueries(t *testing.T) {
 	t.Parallel()
-	err := recd.Queries(nil, nil, configger.Config{}, false)
+	err := recd.Queries(nil, nil, conf.Config{}, false)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
-	err = recd.Queries(db, io.Discard, configger.Defaults(), false)
+	err = recd.Queries(db, io.Discard, conf.Defaults(), false)
 	assert.Nil(t, err)
 }
 

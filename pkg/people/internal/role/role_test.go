@@ -4,7 +4,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ func TestList(t *testing.T) {
 	assert.Equal(t, 0, i)
 	assert.Len(t, s, 0)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	s, i, err = role.List(db, io.Discard, 9999)
@@ -100,7 +100,7 @@ func TestRename(t *testing.T) {
 	i, err := role.Rename(nil, "", "", 9999)
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), i)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = role.Rename(db, "", "", 9999)
@@ -136,7 +136,7 @@ func TestClean(t *testing.T) {
 	b, err := role.Clean(nil, nil, "", 9999)
 	assert.NotNil(t, err)
 	assert.Equal(t, false, b)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	b, err = role.Clean(db, io.Discard, "", 9999)

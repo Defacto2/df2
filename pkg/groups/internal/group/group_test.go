@@ -4,7 +4,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/group"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
@@ -35,7 +35,7 @@ func TestCount(t *testing.T) {
 	i, err := group.Count(nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = group.Count(db, "")
@@ -56,7 +56,7 @@ func TestList(t *testing.T) {
 	assert.Equal(t, 0, i)
 	assert.Len(t, s, 0)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	s, i, err = group.List(db, io.Discard, "")

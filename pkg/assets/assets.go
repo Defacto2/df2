@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/dustin/go-humanize"
@@ -30,7 +30,7 @@ type Clean struct {
 	Name   string // Named section to clean.
 	Remove bool   // Remove any orphaned files from the directories.
 	Human  bool   // Use humanized, binary size values.
-	Config configger.Config
+	Config conf.Config
 }
 
 // Walk through and scans directories containing UUID files
@@ -150,7 +150,7 @@ func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
 	return total, uuids, nil
 }
 
-func Targets(cfg configger.Config, t Target, d *directories.Dir) ([]string, error) {
+func Targets(cfg conf.Config, t Target, d *directories.Dir) ([]string, error) {
 	if d == nil {
 		return nil, directories.ErrNil
 	}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive/internal/content"
 	"github.com/Defacto2/df2/pkg/archive/internal/file"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/dustin/go-humanize"
@@ -118,7 +118,7 @@ func DOS(w io.Writer, name string, files content.Contents, varNames *[]string) s
 }
 
 // MoveText moves the name file to a [uuid].txt named file.
-func MoveText(w io.Writer, cfg configger.Config, src, uuid string) error {
+func MoveText(w io.Writer, cfg conf.Config, src, uuid string) error {
 	if w == nil {
 		w = io.Discard
 	}

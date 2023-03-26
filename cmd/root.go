@@ -11,7 +11,7 @@ import (
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/cmd/internal/run"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/gookit/color"
@@ -28,7 +28,7 @@ var (
 )
 
 var (
-	cfg  configger.Config   // Enviroment variables for configuration.
+	cfg  conf.Config        // Enviroment variables for configuration.
 	logr *zap.SugaredLogger // Zap sugared logger for printing and storing.
 	pers arg.Persistant     // Persistant, command-line bool flags.
 )
@@ -56,11 +56,11 @@ var rootCmd = &cobra.Command{
 // Execute is a Cobra command that adds all child commands to the root and
 // sets the appropriate flags. It is called by main.main() and only needs
 // to be called once in the rootCmd.
-func Execute(log *zap.SugaredLogger, c configger.Config) error {
+func Execute(log *zap.SugaredLogger, c conf.Config) error {
 	if log == nil {
 		return ErrLogger
 	}
-	if c == (configger.Config{}) {
+	if c == (conf.Config{}) {
 		return ErrCfg
 	}
 	rootCmd.CompletionOptions.DisableDefaultCmd = true

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
@@ -24,7 +24,7 @@ type Request struct {
 }
 
 // Query parses a single proof with the record id or uuid.
-func (request *Request) Query(db *sql.DB, w io.Writer, cfg configger.Config, id string) error {
+func (request *Request) Query(db *sql.DB, w io.Writer, cfg conf.Config, id string) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -42,7 +42,7 @@ func (request *Request) Query(db *sql.DB, w io.Writer, cfg configger.Config, id 
 }
 
 // Queries parses all proofs.
-func (request Request) Queries(db *sql.DB, w io.Writer, cfg configger.Config) error { //nolint:cyclop,funlen
+func (request Request) Queries(db *sql.DB, w io.Writer, cfg conf.Config) error { //nolint:cyclop,funlen
 	if db == nil {
 		return database.ErrDB
 	}

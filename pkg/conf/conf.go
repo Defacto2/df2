@@ -1,7 +1,8 @@
-package configger
+package conf
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -14,8 +15,9 @@ import (
 )
 
 const (
-	EnvPrefix = "DF2_"
-	GapUser   = "df2"
+	EnvPrefix  = "DF2_"     // EnvPrefix is the prefix applied to all enviroment variable names.
+	LiveServer = "DF2_HOST" // LiveServer is environment variable name to identify the live web server.
+	GapUser    = "df2"      // GapUser is the Go Application Paths username.
 )
 
 // Config environment overrides for the Defacto2 tool.
@@ -52,7 +54,7 @@ func Defaults() Config {
 	assets := filepath.Join(root, "opt", "assets-defacto2")
 	webRoot := filepath.Join(root, "opt", "Defacto2-2020", "ROOT")
 	// local developer defaults
-	value, ok := os.LookupEnv("DF2_HOST")
+	value, ok := os.LookupEnv(LiveServer)
 	if !ok || value == "" {
 		home, _ := os.UserHomeDir()
 		assets = filepath.Join(home, "assets-defacto2")
@@ -91,9 +93,9 @@ func Defaults() Config {
 	return init
 }
 
-// MockDirs returns the directory paths but with the temporary directory as root.
+// TestData returns the directory paths but with the temporary directory as root.
 // This is intended for directories unit tests.
-func MockDirs() Config {
+func TestData() Config {
 	tmp := filepath.Join(os.TempDir(), "df2-mocker")
 	assets := filepath.Join(tmp, "assets-defacto2")
 	webRoot := filepath.Join(tmp, "github", "Defacto2-2020", "ROOT")
@@ -123,7 +125,10 @@ func Options() env.Options {
 // TODO: use the dir path colouriser to display paths
 // TODO: replace dir../dir...go Init() func.
 
-func (c Config) String() string { //nolint:funlen
+func (c Config) String(w io.Writer) { //nolint:funlen
+	if w == nil {
+		w = io.Discard
+	}
 	const (
 		minwidth = 2
 		tabwidth = 4
@@ -144,19 +149,17 @@ func (c Config) String() string { //nolint:funlen
 	// DBNAME defacto2-inno (italic, wrap HELP)
 	// then list all environment variables, types and help
 
-	b := new(strings.Builder)
-	w := tabwriter.NewWriter(b, minwidth, tabwidth, padding, padchar, flags)
-
+	tw := tabwriter.NewWriter(w, minwidth, tabwidth, padding, padchar, flags)
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("228")).
 		PaddingLeft(2).
 		PaddingRight(2).
 		Margin(1)
-	fmt.Fprintln(w, style.Render("Environment variables and configurations"))
+	fmt.Fprintln(tw, style.Render("Environment variables and configurations"))
 
-	fmt.Fprintf(w, "\t%s\t%s\t\t\n", h1, h2)
-	fmt.Fprintf(w, "\t%s\t%s\t\t\n",
+	fmt.Fprintf(tw, "\t%s\t%s\t\t\n", h1, h2)
+	fmt.Fprintf(tw, "\t%s\t%s\t\t\n",
 		strings.Repeat(line, len(h1)), strings.Repeat(line, len(h2)))
 
 	fields := reflect.VisibleFields(reflect.TypeOf(c))
@@ -166,28 +169,28 @@ func (c Config) String() string { //nolint:funlen
 			continue
 		}
 		val, def := values.FieldByName(field.Name), field.Tag.Get("envDefault")
-		fmt.Fprintf(w, "\t%s\t%v\t%v\t\n",
+		fmt.Fprintf(tw, "\t%s\t%v\t%v\t\n",
 			EnvPrefix+field.Tag.Get("env"),
 			val,
 			match(fmt.Sprint(val), def),
 		)
 	}
-	fmt.Fprintln(w)
-	w.Flush()
+	fmt.Fprintln(tw)
+	tw.Flush()
 
-	w = tabwriter.NewWriter(b, minwidth, tabwidth, padding, padchar, flags)
-	fmt.Fprintf(w, "\t%s\t%s\t%s\n", h3, h4, h5)
-	fmt.Fprintf(w, "\t%s\t%s\t%s\n",
+	tw = tabwriter.NewWriter(w, minwidth, tabwidth, padding, padchar, flags)
+	fmt.Fprintf(tw, "\t%s\t%s\t%s\n", h3, h4, h5)
+	fmt.Fprintf(tw, "\t%s\t%s\t%s\n",
 		strings.Repeat(line, len(h3)), strings.Repeat(line, len(h4)), strings.Repeat(line, len(h5)))
 	for j, field := range fields {
 		if !field.IsExported() {
 			continue
 		}
 		if j == donotuse {
-			fmt.Fprintf(w, "\t\t\t\t\n")
-			fmt.Fprintf(w, "\t\t\t  These variables below are not recommended.\t\n")
+			fmt.Fprintf(tw, "\t\t\t\t\n")
+			fmt.Fprintf(tw, "\t\t\t  These variables below are not recommended.\t\n")
 		}
-		fmt.Fprintf(w, "\t%s\t%s\t",
+		fmt.Fprintf(tw, "\t%s\t%s\t",
 			field.Tag.Get("env"),
 			types(field.Type),
 		)
@@ -195,15 +198,13 @@ func (c Config) String() string { //nolint:funlen
 		if field.Tag.Get("avoid") != "" {
 			sp = " "
 		}
-		fmt.Fprintf(w, "%s%s%s.\n",
+		fmt.Fprintf(tw, "%s%s%s.\n",
 			avoid(field.Tag.Get("avoid")),
 			sp,
 			field.Tag.Get("help"),
 		)
 	}
-	w.Flush()
-
-	return b.String()
+	tw.Flush()
 }
 
 func avoid(x string) string {

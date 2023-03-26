@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database/msql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +28,7 @@ func TestConnection_String(t *testing.T) {
 }
 
 func TestConnect(t *testing.T) {
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	got, err := msql.Connect(cfg)
 	assert.NotNil(t, got)
 	assert.Nil(t, err)
@@ -44,10 +44,10 @@ func TestMaskPass(t *testing.T) {
 }
 
 func TestConnInfo(t *testing.T) {
-	s, err := msql.ConnInfo(configger.Config{})
+	s, err := msql.ConnInfo(conf.Config{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
-	s, err = msql.ConnInfo(configger.Defaults())
+	s, err = msql.ConnInfo(conf.Defaults())
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }

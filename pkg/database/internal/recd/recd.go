@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database/internal/templ"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/str"
@@ -408,7 +408,7 @@ func Verbose(w io.Writer, v bool, i any) {
 
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
-func Queries(db *sql.DB, w io.Writer, cfg configger.Config, v bool) error {
+func Queries(db *sql.DB, w io.Writer, cfg conf.Config, v bool) error {
 	if db == nil {
 		return ErrDB
 	}
@@ -430,7 +430,7 @@ func Queries(db *sql.DB, w io.Writer, cfg configger.Config, v bool) error {
 	return query(db, w, cfg, v, rows, cols)
 }
 
-func query(db *sql.DB, w io.Writer, cfg configger.Config, v bool, rows *sql.Rows, columns []string) error {
+func query(db *sql.DB, w io.Writer, cfg conf.Config, v bool, rows *sql.Rows, columns []string) error {
 	if db == nil {
 		return ErrDB
 	}

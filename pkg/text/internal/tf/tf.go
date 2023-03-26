@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/archive"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/Defacto2/df2/pkg/str"
@@ -143,7 +143,7 @@ func (t *TextFile) Extract(w io.Writer, dir *directories.Dir) error {
 }
 
 // ExtractedImgs generates PNG and Webp image assets from a textfile extracted from an archive.
-func (t *TextFile) ExtractedImgs(w io.Writer, cfg configger.Config, dir string) error {
+func (t *TextFile) ExtractedImgs(w io.Writer, cfg conf.Config, dir string) error {
 	if w == nil {
 		w = io.Discard
 	}
@@ -166,7 +166,7 @@ func (t *TextFile) ExtractedImgs(w io.Writer, cfg configger.Config, dir string) 
 }
 
 // TextPNG generates PNG format image assets from a textfile.
-func (t *TextFile) TextPNG(w io.Writer, cfg configger.Config, count int, dir string) error {
+func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, count int, dir string) error {
 	if w == nil {
 		w = io.Discard
 	}

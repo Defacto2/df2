@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/stretchr/testify/assert"
@@ -15,18 +15,18 @@ import (
 )
 
 var (
-	cfg configger.Config
+	cfg conf.Config
 	db  *sql.DB
 	l   *zap.SugaredLogger
 )
 
 func init() {
 	var err error
-	db, err = database.Connect(configger.Defaults())
+	db, err = database.Connect(conf.Defaults())
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg = configger.Defaults()
+	cfg = conf.Defaults()
 	l = logger.Development().Sugar()
 }
 
@@ -50,11 +50,11 @@ func TestAPIs(t *testing.T) {
 }
 
 func TestDemozoo(t *testing.T) {
-	err := Demozoo(nil, nil, nil, configger.Config{}, arg.Demozoo{})
+	err := Demozoo(nil, nil, nil, conf.Config{}, arg.Demozoo{})
 	assert.NotNil(t, err)
-	err = Demozoo(db, nil, nil, configger.Config{}, arg.Demozoo{})
+	err = Demozoo(db, nil, nil, conf.Config{}, arg.Demozoo{})
 	assert.NotNil(t, err)
-	err = Demozoo(db, io.Discard, l, configger.Config{}, arg.Demozoo{})
+	err = Demozoo(db, io.Discard, l, conf.Config{}, arg.Demozoo{})
 	assert.ErrorIs(t, err, ErrNothing)
 }
 
@@ -68,9 +68,9 @@ func TestGroups(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	err := New(nil, nil, nil, configger.Config{})
+	err := New(nil, nil, nil, conf.Config{})
 	assert.NotNil(t, err)
-	err = New(db, io.Discard, l, configger.Config{})
+	err = New(db, io.Discard, l, conf.Config{})
 	assert.NotNil(t, err)
 }
 

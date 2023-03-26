@@ -4,7 +4,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ func TestClean(t *testing.T) {
 	_, err := rename.Clean(nil, nil, "")
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	_, err = rename.Clean(db, io.Discard, "")

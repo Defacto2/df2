@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/insert"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
@@ -21,7 +21,7 @@ func TestRecord_Insert(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Nil(t, res)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	r = insert.Record{}
@@ -47,7 +47,7 @@ func TestProds(t *testing.T) {
 	err := insert.Prods(nil, nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = insert.Prods(db, io.Discard, nil)
@@ -65,7 +65,7 @@ func TestProd(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Empty(t, r)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	r, err = insert.Prod(db, io.Discard, releases.ProductionV1{})

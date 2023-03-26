@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
@@ -20,7 +20,7 @@ func stmt() string {
 }
 
 // Fix the content of zip archives within in the database.
-func Fix(db *sql.DB, w io.Writer, cfg configger.Config, summary bool) error { //nolint:cyclop
+func Fix(db *sql.DB, w io.Writer, cfg conf.Config, summary bool) error { //nolint:cyclop
 	if db == nil {
 		return database.ErrDB
 	}

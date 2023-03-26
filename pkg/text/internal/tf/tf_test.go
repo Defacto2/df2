@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +40,7 @@ func TestTextFile(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.False(t, b)
 
-	dir, err := directories.Init(configger.Defaults(), false)
+	dir, err := directories.Init(conf.Defaults(), false)
 	assert.Nil(t, err)
 	b, err = s.Exist(&dir)
 	assert.Nil(t, err)
@@ -53,7 +53,7 @@ func TestTextFile_Extract(t *testing.T) {
 	err := s.Extract(nil, nil)
 	assert.NotNil(t, err)
 
-	dir, err := directories.Init(configger.Defaults(), false)
+	dir, err := directories.Init(conf.Defaults(), false)
 	assert.Nil(t, err)
 	err = s.Extract(io.Discard, &dir)
 	assert.NotNil(t, err)
@@ -75,9 +75,9 @@ func TestTextFile_Extract(t *testing.T) {
 func TestTextFile_ExtractedImgs(t *testing.T) {
 	t.Parallel()
 	s := tf.TextFile{}
-	err := s.ExtractedImgs(nil, configger.Config{}, "")
+	err := s.ExtractedImgs(nil, conf.Config{}, "")
 	assert.NotNil(t, err)
-	err = s.ExtractedImgs(io.Discard, configger.Defaults(), "")
+	err = s.ExtractedImgs(io.Discard, conf.Defaults(), "")
 	assert.NotNil(t, err)
 
 	s = tf.TextFile{
@@ -87,16 +87,16 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 		Ext:    ".zip",
 		Readme: sql.NullString{String: fileToExtract, Valid: true},
 	}
-	err = s.ExtractedImgs(io.Discard, configger.Defaults(), filepath.Join(dzDir, "extracted"))
+	err = s.ExtractedImgs(io.Discard, conf.Defaults(), filepath.Join(dzDir, "extracted"))
 	assert.Nil(t, err)
 }
 
 func TestTextFile_TextPNG(t *testing.T) {
 	t.Parallel()
 	s := tf.TextFile{}
-	err := s.TextPNG(nil, configger.Config{}, 0, "")
+	err := s.TextPNG(nil, conf.Config{}, 0, "")
 	assert.NotNil(t, err)
-	err = s.TextPNG(io.Discard, configger.Defaults(), 0, "")
+	err = s.TextPNG(io.Discard, conf.Defaults(), 0, "")
 	assert.NotNil(t, err)
 
 	s = tf.TextFile{
@@ -106,7 +106,7 @@ func TestTextFile_TextPNG(t *testing.T) {
 		Ext:    ".zip",
 		Readme: sql.NullString{String: fileToExtract, Valid: true},
 	}
-	err = s.TextPNG(io.Discard, configger.Defaults(), 0, dzDir)
+	err = s.TextPNG(io.Discard, conf.Defaults(), 0, dzDir)
 	assert.NotNil(t, err)
 	// further tests can be done using the those created for img.Make()
 }

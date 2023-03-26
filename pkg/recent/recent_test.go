@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/recent"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ func TestList(t *testing.T) {
 	err := recent.List(nil, nil, 1, false)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 

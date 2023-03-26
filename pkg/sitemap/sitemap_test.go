@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/sitemap"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ func TestCreate(t *testing.T) {
 	err := sitemap.Create(nil, nil, "")
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 
@@ -95,7 +95,7 @@ func TestAbsPathsH3(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Len(t, s, 0)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	s, err = sitemap.AbsPathsH3(db, io.Discard, "")
 	assert.Nil(t, err)
@@ -116,7 +116,7 @@ func TestGetBlocked(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Len(t, i, 0)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = sitemap.GetBlocked(db)
@@ -130,7 +130,7 @@ func TestGetKeys(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Len(t, i, 0)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = sitemap.GetKeys(db)
@@ -144,7 +144,7 @@ func TestGetSoftDeleteKeys(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Len(t, i, 0)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = sitemap.GetSoftDeleteKeys(db)
@@ -154,7 +154,7 @@ func TestGetSoftDeleteKeys(t *testing.T) {
 
 func TestRand(t *testing.T) {
 	t.Parallel()
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 

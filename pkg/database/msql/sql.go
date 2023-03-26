@@ -1,12 +1,12 @@
 package msql
 
-import "github.com/Defacto2/df2/pkg/configger"
+import "github.com/Defacto2/df2/pkg/conf"
 
 // sql.go contains custom MySQL queries and statements
 
 type Version string // Version of the MySQL in use.
 
-func (v *Version) Query(cfg configger.Config) error {
+func (v *Version) Query(cfg conf.Config) error {
 	conn, err := Connect(cfg)
 	if err != nil {
 		return err

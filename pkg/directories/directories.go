@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories/internal/create"
 )
 
@@ -44,7 +44,7 @@ type Dir struct {
 }
 
 // Init initialises the subdirectories and UUID structure.
-func Init(cfg configger.Config, create bool) (Dir, error) {
+func Init(cfg conf.Config, create bool) (Dir, error) {
 	d := Dir{
 		Img000: cfg.Images,
 		Img400: cfg.Thumbs,
@@ -128,7 +128,7 @@ func ArchiveExt(name string) bool {
 }
 
 // Files initialises the full path filenames for a UUID.
-func Files(cfg configger.Config, name string) (Dir, error) {
+func Files(cfg conf.Config, name string) (Dir, error) {
 	dirs, err := Init(cfg, false)
 	if err != nil {
 		return Dir{}, err

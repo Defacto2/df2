@@ -17,7 +17,7 @@ import (
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
 	"github.com/Defacto2/df2/pkg/archive/internal/file"
 	"github.com/Defacto2/df2/pkg/archive/internal/task"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
@@ -99,7 +99,7 @@ type Demozoo struct {
 	Source   string
 	UUID     string
 	VarNames *[]string
-	Config   configger.Config
+	Config   conf.Config
 }
 
 // Demozoo decompresses and parses archives fetched from https://demozoo.org.
@@ -222,7 +222,7 @@ type Proof struct {
 	Source string
 	Name   string
 	UUID   string
-	Config configger.Config
+	Config conf.Config
 }
 
 // Proof decompresses and parses a hosted file archive.

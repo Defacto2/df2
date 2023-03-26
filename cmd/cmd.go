@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/carlmjohnson/versioninfo"
 	"github.com/gookit/color"
@@ -192,7 +192,7 @@ func Vers(version string) string {
 
 // ProgInfo returns the response for the -version flag.
 func ProgInfo(version string) (string, error) {
-	bin, err := configger.BinPath()
+	bin, err := conf.BinPath()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}

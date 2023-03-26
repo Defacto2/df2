@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
@@ -26,7 +26,7 @@ func TestStat_NextRefresh(t *testing.T) {
 	s := demozoo.Stat{}
 	err := s.NextRefresh(nil, nil, demozoo.Records{})
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = s.NextRefresh(db, io.Discard, demozoo.Records{})
@@ -38,7 +38,7 @@ func TestStat_NewPouet(t *testing.T) {
 	s := demozoo.Stat{}
 	err := s.NextPouet(nil, nil, demozoo.Records{})
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = s.NextPouet(db, io.Discard, demozoo.Records{})
@@ -49,7 +49,7 @@ func TestCounter(t *testing.T) {
 	t.Parallel()
 	err := demozoo.Counter(nil, nil, 0)
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	w := strings.Builder{}
@@ -128,10 +128,10 @@ func TestRequest_Query(t *testing.T) {
 		All:       false,
 		Overwrite: false,
 		Refresh:   false,
-		Config:    configger.Defaults(),
+		Config:    conf.Defaults(),
 		Logger:    l.Sugar(),
 	}
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = r.Query(db, io.Discard, "")
@@ -243,13 +243,13 @@ func TestRecord_Download(t *testing.T) {
 func TestRecord_DoseeMeta(t *testing.T) {
 	t.Parallel()
 	r := demozoo.Record{}
-	conf := configger.Defaults()
-	err := r.DoseeMeta(nil, nil, conf)
+	c := conf.Defaults()
+	err := r.DoseeMeta(nil, nil, c)
 	assert.NotNil(t, err)
-	db, err := database.Connect(conf)
+	db, err := database.Connect(c)
 	assert.Nil(t, err)
 	defer db.Close()
-	err = r.DoseeMeta(nil, nil, conf)
+	err = r.DoseeMeta(nil, nil, c)
 	assert.NotNil(t, err)
 
 	type fields struct {
@@ -265,7 +265,7 @@ func TestRecord_DoseeMeta(t *testing.T) {
 		{"id", fields{ID: "22884"}, true},
 		{"uuid", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, true}, // because physical files are missing
 	}
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &demozoo.Record{

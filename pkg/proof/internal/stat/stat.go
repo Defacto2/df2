@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logger"
 )
@@ -24,7 +24,7 @@ type Proof struct {
 	start     time.Time       // processing time
 }
 
-func Init(cfg configger.Config) (Proof, error) {
+func Init(cfg conf.Config) (Proof, error) {
 	dir, err := directories.Init(cfg, false)
 	if err != nil {
 		return Proof{}, err

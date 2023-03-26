@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/Defacto2/df2/pkg/text/internal/img"
 	"github.com/stretchr/testify/assert"
@@ -29,9 +29,9 @@ func TestMake(t *testing.T) {
 	t.Parallel()
 	gif := filepath.Join(testDir, "images", "test.gif")
 	txt := filepath.Join(testDir, "text", "test.txt")
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 
-	err := img.Make(nil, configger.Config{}, "", "", false)
+	err := img.Make(nil, conf.Config{}, "", "", false)
 	assert.NotNil(t, err)
 	err = img.Make(io.Discard, cfg, "", "", false)
 	assert.NotNil(t, err)

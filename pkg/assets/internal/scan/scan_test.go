@@ -10,7 +10,7 @@ import (
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/assets"
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/stretchr/testify/assert"
@@ -73,7 +73,7 @@ func TestBackup(t *testing.T) {
 		list = append(list, i)
 	}
 
-	d, err := directories.Init(configger.Defaults(), false)
+	d, err := directories.Init(conf.Defaults(), false)
 	assert.Nil(t, err)
 	d.Backup = os.TempDir() // test override
 
@@ -87,7 +87,7 @@ func TestBackup(t *testing.T) {
 	err = scan.Backup(io.Discard, skip, &list, nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	_, uuids, err := assets.CreateUUIDMap(db)

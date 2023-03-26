@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/go-sql-driver/mysql"
 	"github.com/gookit/color"
 )
@@ -142,8 +142,8 @@ func (c Connection) Ping(db *sql.DB) error {
 
 // Connect to and open the database.
 // This must be closed after use.
-func Connect(cfg configger.Config) (*sql.DB, error) {
-	if cfg == (configger.Config{}) {
+func Connect(cfg conf.Config) (*sql.DB, error) {
+	if cfg == (conf.Config{}) {
 		return nil, ErrConfig
 	}
 	dsn := Connection{
@@ -171,7 +171,7 @@ func Connect(cfg configger.Config) (*sql.DB, error) {
 	return conn, nil
 }
 
-func ConnInfo(cfg configger.Config) (string, error) {
+func ConnInfo(cfg conf.Config) (string, error) {
 	db, err := Connect(cfg)
 	if err != nil {
 		return "", err

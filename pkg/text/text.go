@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
@@ -19,7 +19,7 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix(db *sql.DB, w io.Writer, cfg configger.Config) error {
+func Fix(db *sql.DB, w io.Writer, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -52,7 +52,7 @@ func Fix(db *sql.DB, w io.Writer, cfg configger.Config) error {
 	return nil
 }
 
-func fixRow(w io.Writer, cfg configger.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (int, int, error) {
+func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (int, int, error) {
 	var t tf.TextFile
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
@@ -84,7 +84,7 @@ func fixRow(w io.Writer, cfg configger.Config, i, c int, dir *directories.Dir, r
 	return i, c, nil
 }
 
-func extract(w io.Writer, cfg configger.Config, t tf.TextFile, dir *directories.Dir) error {
+func extract(w io.Writer, cfg conf.Config, t tf.TextFile, dir *directories.Dir) error {
 	if dir == nil {
 		return tf.ErrPointer
 	}

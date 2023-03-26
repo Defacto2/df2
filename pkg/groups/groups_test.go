@@ -4,7 +4,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ func TestRequest_DataList(t *testing.T) {
 	err := r.DataList(nil, nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = r.DataList(db, io.Discard, nil)
@@ -28,7 +28,7 @@ func TestCronjob(t *testing.T) {
 	err := groups.Cronjob(nil, nil, nil, "", false)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = groups.Cronjob(db, io.Discard, io.Discard, "", false)
@@ -43,7 +43,7 @@ func TestExact(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = groups.Exact(db, "")
@@ -59,7 +59,7 @@ func TestFix(t *testing.T) {
 	err := groups.Fix(nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = groups.Fix(db, io.Discard)
@@ -72,7 +72,7 @@ func TestVariations(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Empty(t, s)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	s, err = groups.Variations(db, "")

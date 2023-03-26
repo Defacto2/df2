@@ -5,7 +5,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +45,7 @@ func TestMatch(t *testing.T) {
 	err := groups.Match(nil, nil, -1)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = groups.Match(db, io.Discard, 100)

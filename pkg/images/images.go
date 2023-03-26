@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
@@ -58,7 +58,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 	if w == nil {
 		w = io.Discard
 	}
-	dir, err := directories.Init(configger.Defaults(), false)
+	dir, err := directories.Init(conf.Defaults(), false)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func Generate(w io.Writer, src, id string, remove bool) error {
 	if _, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("generate stat %q: %w", src, err)
 	}
-	f, err := directories.Files(configger.Defaults(), id)
+	f, err := directories.Files(conf.Defaults(), id)
 	if err != nil {
 		return err
 	}

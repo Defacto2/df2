@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/dustin/go-humanize"
@@ -39,7 +39,7 @@ const (
 // Name is the source text file required for conversion to an image.
 // UUID is the universal ID used for the image filename.
 // When the amiga bool is true the image text will use an Amiga era Topaz+, 80x50 font.
-func Make(w io.Writer, cfg configger.Config, name, uuid string, amiga bool) error {
+func Make(w io.Writer, cfg conf.Config, name, uuid string, amiga bool) error {
 	if w == nil {
 		w = io.Discard
 	}

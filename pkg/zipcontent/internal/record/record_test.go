@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
@@ -42,7 +42,7 @@ func TestRecord_Iterate(t *testing.T) {
 	err := r.Iterate(nil, nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 
@@ -77,7 +77,7 @@ func TestRecord_Archive(t *testing.T) {
 	err := r.Archive(nil, nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = r.Archive(db, io.Discard, nil)

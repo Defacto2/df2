@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logger"
@@ -24,7 +24,7 @@ type Request struct {
 	Overwrite bool   // Overwrite any existing files.
 	Refresh   bool   // Refresh all demozoo entries.
 	ByID      string // Filter by ID.
-	Config    configger.Config
+	Config    conf.Config
 	Logger    *zap.SugaredLogger
 }
 

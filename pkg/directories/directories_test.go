@@ -7,20 +7,20 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {
 	t.Parallel()
-	d, err := directories.Init(configger.Defaults(), false)
+	d, err := directories.Init(conf.Defaults(), false)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, d)
-	d, err = directories.Init(configger.MockDirs(), false)
+	d, err = directories.Init(conf.TestData(), false)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, d)
-	d, err = directories.Init(configger.MockDirs(), true)
+	d, err = directories.Init(conf.TestData(), true)
 	assert.Nil(t, err)
 	assert.NotEmpty(t, d)
 	tmp := filepath.Join(os.TempDir(), "df2-mocker")
@@ -53,10 +53,10 @@ func TestArchiveExt(t *testing.T) {
 
 func TestFiles(t *testing.T) {
 	t.Parallel()
-	d, err := directories.Files(configger.Defaults(), "")
+	d, err := directories.Files(conf.Defaults(), "")
 	assert.Nil(t, err)
 	assert.NotEmpty(t, d)
-	d, err = directories.Files(configger.Defaults(), "qwerty")
+	d, err = directories.Files(conf.Defaults(), "qwerty")
 	assert.Nil(t, err)
 	assert.Contains(t, d.Img000, "qwerty")
 }

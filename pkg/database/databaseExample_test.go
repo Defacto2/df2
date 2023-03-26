@@ -6,12 +6,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 )
 
 func ExampleConnect() {
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,7 +21,7 @@ func ExampleConnect() {
 }
 
 func ExampleColumns() {
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func ExampleColumns() {
 }
 
 func ExampleTotal() {
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func ExampleTotal() {
 }
 
 func ExampleWaiting() {
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	if err != nil {
 		log.Fatal(err)
 	}

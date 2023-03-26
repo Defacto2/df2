@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
@@ -39,7 +39,7 @@ func TestRecord_Approve(t *testing.T) {
 	err := r.Approve(nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = r.Approve(db, io.Discard)
@@ -55,13 +55,13 @@ func TestRecord_Approve(t *testing.T) {
 func TestRecord_Iterate(t *testing.T) {
 	t.Parallel()
 	r := record.Record{}
-	err := r.Iterate(nil, nil, configger.Config{}, stat.Proof{})
+	err := r.Iterate(nil, nil, conf.Config{}, stat.Proof{})
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
-	err = r.Iterate(db, io.Discard, configger.Config{}, stat.Proof{})
+	err = r.Iterate(db, io.Discard, conf.Config{}, stat.Proof{})
 	assert.NotNil(t, err)
 
 	r = record.Record{
@@ -77,7 +77,7 @@ func TestRecord_Iterate(t *testing.T) {
 		Columns: []string{"id", "createdat", "filename", "file_zip_content"},
 		Values:  &raw,
 	}
-	err = r.Iterate(db, io.Discard, configger.Config{}, p)
+	err = r.Iterate(db, io.Discard, conf.Config{}, p)
 	assert.Nil(t, err)
 }
 
@@ -86,7 +86,7 @@ func TestUpdateZipContent(t *testing.T) {
 	err := record.UpdateZipContent(nil, nil, "", "", "", -999)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = record.UpdateZipContent(db, io.Discard, "", "", "", -999)
@@ -98,14 +98,14 @@ func TestUpdateZipContent(t *testing.T) {
 func TestRecord_Zip(t *testing.T) {
 	t.Parallel()
 	r := record.Record{}
-	err := r.Zip(nil, nil, configger.Config{}, false)
+	err := r.Zip(nil, nil, conf.Config{}, false)
 	assert.NotNil(t, err)
 
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	db, err := database.Connect(cfg)
 	assert.Nil(t, err)
 	defer db.Close()
-	err = r.Zip(db, io.Discard, configger.Config{}, false)
+	err = r.Zip(db, io.Discard, conf.Config{}, false)
 	assert.NotNil(t, err)
 	err = r.Zip(db, io.Discard, cfg, false)
 	assert.NotNil(t, err)

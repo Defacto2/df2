@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/zipcontent"
 	"github.com/stretchr/testify/assert"
@@ -12,10 +12,10 @@ import (
 
 func TestFix(t *testing.T) {
 	t.Parallel()
-	err := zipcontent.Fix(nil, nil, configger.Config{}, false)
+	err := zipcontent.Fix(nil, nil, conf.Config{}, false)
 	assert.NotNil(t, err)
 
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	db, err := database.Connect(cfg)
 	assert.Nil(t, err)
 	defer db.Close()

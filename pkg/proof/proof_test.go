@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof"
 	"github.com/stretchr/testify/assert"
@@ -16,15 +16,15 @@ const uuid = "10000000-0000-0000-0000-000000000000"
 func TestQuery(t *testing.T) {
 	t.Parallel()
 	r := proof.Request{}
-	err := r.Query(nil, nil, configger.Config{}, "")
+	err := r.Query(nil, nil, conf.Config{}, "")
 	assert.NotNil(t, err)
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	db, err := database.Connect(cfg)
 	assert.Nil(t, err)
 	defer db.Close()
-	err = r.Query(db, io.Discard, configger.Config{}, "")
+	err = r.Query(db, io.Discard, conf.Config{}, "")
 	assert.NotNil(t, err)
-	err = r.Query(db, io.Discard, configger.Config{}, "1")
+	err = r.Query(db, io.Discard, conf.Config{}, "1")
 	assert.NotNil(t, err)
 	err = r.Query(db, io.Discard, cfg, "1")
 	assert.Nil(t, err)

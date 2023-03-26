@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/stretchr/testify/assert"
@@ -343,7 +343,7 @@ func TestFix(t *testing.T) {
 	t.Parallel()
 	err := images.Fix(nil, nil)
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = images.Fix(db, io.Discard)

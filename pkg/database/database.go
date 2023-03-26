@@ -16,7 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database/internal/export"
 	"github.com/Defacto2/df2/pkg/database/internal/recd"
 	"github.com/Defacto2/df2/pkg/database/internal/templ"
@@ -76,18 +76,18 @@ type Update update.Update
 
 // Connect the database and handle any errors.
 // The DB connection must be closed after use.
-func Connect(cfg configger.Config) (*sql.DB, error) {
+func Connect(cfg conf.Config) (*sql.DB, error) {
 	// In the future this could use either psql or msql.
 	return msql.Connect(cfg)
 }
 
 // ConnInfo will connect to the database and return any errors.
-func ConnInfo(cfg configger.Config) (string, error) {
+func ConnInfo(cfg conf.Config) (string, error) {
 	return msql.ConnInfo(cfg)
 }
 
 // Approve automatically checks and clears file records for live.
-func Approve(db *sql.DB, w io.Writer, cfg configger.Config, verbose bool) error {
+func Approve(db *sql.DB, w io.Writer, cfg conf.Config, verbose bool) error {
 	if db == nil {
 		return ErrDB
 	}

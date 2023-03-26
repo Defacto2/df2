@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/people"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
@@ -16,7 +16,7 @@ func TestCronjob(t *testing.T) {
 	t.Parallel()
 	err := people.Cronjob(nil, nil, "", false)
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = people.Cronjob(db, io.Discard, "", false)
@@ -27,7 +27,7 @@ func TestDataList(t *testing.T) {
 	t.Parallel()
 	err := people.DataList(nil, nil, "", people.Flags{})
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = people.DataList(db, io.Discard, "", people.Flags{})
@@ -50,7 +50,7 @@ func TestHTML(t *testing.T) {
 	t.Parallel()
 	err := people.HTML(nil, nil, "", people.Flags{})
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = people.HTML(db, io.Discard, "", people.Flags{})
@@ -65,7 +65,7 @@ func TestPrint(t *testing.T) {
 	t.Parallel()
 	err := people.Print(nil, nil, people.Flags{})
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = people.Print(db, io.Discard, people.Flags{})
@@ -80,7 +80,7 @@ func TestFix(t *testing.T) {
 	t.Parallel()
 	err := people.Fix(nil, nil)
 	assert.NotNil(t, err)
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	bb := &bytes.Buffer{}

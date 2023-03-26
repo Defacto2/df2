@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/archive"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
@@ -83,7 +83,7 @@ func (r Record) Approve(db *sql.DB, w io.Writer) error {
 }
 
 // Iterate through each stat value.
-func (r Record) Iterate(db *sql.DB, w io.Writer, cfg configger.Config, p stat.Proof) error { //nolint:cyclop
+func (r Record) Iterate(db *sql.DB, w io.Writer, cfg conf.Config, p stat.Proof) error { //nolint:cyclop
 	if db == nil {
 		return database.ErrDB
 	}
@@ -163,7 +163,7 @@ func (r Record) Prefix(w io.Writer, s *stat.Proof) error {
 }
 
 // Zip reads an archive and saves the content to the database.
-func (r Record) Zip(db *sql.DB, w io.Writer, cfg configger.Config, overwrite bool) error {
+func (r Record) Zip(db *sql.DB, w io.Writer, cfg conf.Config, overwrite bool) error {
 	if db == nil {
 		return database.ErrDB
 	}

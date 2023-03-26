@@ -14,7 +14,7 @@ import (
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/archive"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/directories"
@@ -84,7 +84,7 @@ func APIs(db *sql.DB, w io.Writer, a arg.APIs) error {
 	return nil
 }
 
-func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config, dz arg.Demozoo) error {
+func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, dz arg.Demozoo) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -205,7 +205,7 @@ func download(w io.Writer, id uint) error {
 	return nil
 }
 
-func extract(db *sql.DB, w io.Writer, cfg configger.Config, src string) error {
+func extract(db *sql.DB, w io.Writer, cfg conf.Config, src string) error {
 	empty := []string{}
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -252,7 +252,7 @@ func Groups(db *sql.DB, w, dest io.Writer, gro arg.Group) error {
 	return ErrNothing
 }
 
-func GroupCron(db *sql.DB, w io.Writer, cfg configger.Config, gro arg.Group) error {
+func GroupCron(db *sql.DB, w io.Writer, cfg conf.Config, gro arg.Group) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -306,7 +306,7 @@ func GroupCron(db *sql.DB, w io.Writer, cfg configger.Config, gro arg.Group) err
 	return nil
 }
 
-func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg configger.Config) error {
+func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
 	}

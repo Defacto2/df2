@@ -6,7 +6,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive/internal/content"
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/stretchr/testify/assert"
 )
@@ -116,12 +116,12 @@ func TestDOS(t *testing.T) {
 
 func Test_MoveText(t *testing.T) {
 	t.Parallel()
-	err := demozoo.MoveText(nil, configger.Config{}, "", "")
+	err := demozoo.MoveText(nil, conf.Config{}, "", "")
 	assert.ErrorIs(t, err, demozoo.ErrNoSrc)
 	tmp := os.TempDir()
-	err = demozoo.MoveText(nil, configger.Defaults(), tmp, "")
+	err = demozoo.MoveText(nil, conf.Defaults(), tmp, "")
 	assert.NotNil(t, err)
-	err = demozoo.MoveText(nil, configger.Defaults(), tmp, database.TestID)
+	err = demozoo.MoveText(nil, conf.Defaults(), tmp, database.TestID)
 	assert.Nil(t, err)
 }
 

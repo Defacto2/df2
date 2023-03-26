@@ -13,7 +13,7 @@ import (
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/archive/internal/content"
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/stretchr/testify/assert"
 )
@@ -207,7 +207,7 @@ func TestDemozoo_Decompress(t *testing.T) {
 	_, err := dz.Decompress(nil, nil)
 	assert.NotNil(t, err)
 
-	cfg := configger.Defaults()
+	cfg := conf.Defaults()
 	db, err := database.Connect(cfg)
 	assert.Nil(t, err)
 	defer db.Close()

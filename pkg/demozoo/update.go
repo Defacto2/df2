@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/archive"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/insert"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
@@ -103,7 +103,7 @@ func (r *Record) String(total int) string {
 }
 
 // DoseeMeta generates DOSee related metadata from the file archive.
-func (r *Record) DoseeMeta(db *sql.DB, w io.Writer, cfg configger.Config) error {
+func (r *Record) DoseeMeta(db *sql.DB, w io.Writer, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -428,7 +428,7 @@ func (r *Record) lastMod(w io.Writer, head http.Header) error {
 	return nil
 }
 
-func (r *Record) parse(db *sql.DB, w io.Writer, cfg configger.Config, api *prods.ProductionsAPIv1) error {
+func (r *Record) parse(db *sql.DB, w io.Writer, cfg conf.Config, api *prods.ProductionsAPIv1) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -479,7 +479,7 @@ func (r *Record) parse(db *sql.DB, w io.Writer, cfg configger.Config, api *prods
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(db *sql.DB, w io.Writer, cfg configger.Config, st Stat, overwrite bool, storage string) error {
+func (r *Record) parseAPI(db *sql.DB, w io.Writer, cfg conf.Config, st Stat, overwrite bool, storage string) error {
 	if db == nil {
 		return database.ErrDB
 	}

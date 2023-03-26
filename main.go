@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/cmd"
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database/msql"
 	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/caarlos0/env/v7"
@@ -57,9 +57,9 @@ func main() {
 	}()
 
 	// Environment configuration
-	configs := configger.Defaults()
+	configs := conf.Defaults()
 	if err := env.Parse(
-		&configs, configger.Options()); err != nil {
+		&configs, conf.Options()); err != nil {
 		logr.Fatalf("Environment variable probably contains an invalid value: %s.", err)
 	}
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/database/internal/update"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +18,7 @@ func TestUpdate_Execute(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, int64(0), i)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	i, err = u.Execute(db)
@@ -40,7 +40,7 @@ func TestColumn_NamedTitles(t *testing.T) {
 	err := c.NamedTitles(nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = c.NamedTitles(db, io.Discard)
@@ -53,7 +53,7 @@ func TestDistinct(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Empty(t, s)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	s, err = update.Distinct(db, "")
@@ -73,7 +73,7 @@ func TestSections(t *testing.T) {
 	err := update.Sections(nil, nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = update.Sections(db, io.Discard, nil)
@@ -91,7 +91,7 @@ func TestPlatforms(t *testing.T) {
 	err := update.Platforms(nil, nil, nil)
 	assert.NotNil(t, err)
 
-	db, err := database.Connect(configger.Defaults())
+	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
 	err = update.Platforms(db, io.Discard, nil)
