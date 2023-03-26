@@ -15,6 +15,7 @@ const pass = "hello-world-password"
 var conn = "root:" + pass + "@tcp(example.com:3360)/?allowCleartextPasswords=false&parseTime=true&timeout=30s"
 
 func TestConnection_String(t *testing.T) {
+	t.Parallel()
 	c := msql.Connection{}
 	assert.Equal(t, ":@tcp(:0)/?allowCleartextPasswords=true&parseTime=true&timeout=30s", c.String())
 	c = msql.Connection{
@@ -28,6 +29,7 @@ func TestConnection_String(t *testing.T) {
 }
 
 func TestConnect(t *testing.T) {
+	t.Parallel()
 	cfg := conf.Defaults()
 	got, err := msql.Connect(cfg)
 	assert.NotNil(t, got)
@@ -35,6 +37,7 @@ func TestConnect(t *testing.T) {
 }
 
 func TestMaskPass(t *testing.T) {
+	t.Parallel()
 	c := msql.Connection{
 		Pass: pass,
 	}
@@ -44,6 +47,7 @@ func TestMaskPass(t *testing.T) {
 }
 
 func TestConnInfo(t *testing.T) {
+	t.Parallel()
 	s, err := msql.ConnInfo(conf.Config{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)

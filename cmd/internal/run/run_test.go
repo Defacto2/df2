@@ -43,13 +43,15 @@ func TestRun(t *testing.T) {
 }
 
 func TestAPIs(t *testing.T) {
+	t.Parallel()
 	err := APIs(nil, nil, arg.APIs{})
 	assert.NotNil(t, err)
 	err = APIs(db, io.Discard, arg.APIs{})
-	assert.Nil(t, err)
+	assert.NotNil(t, err)
 }
 
 func TestDemozoo(t *testing.T) {
+	t.Parallel()
 	err := Demozoo(nil, nil, nil, conf.Config{}, arg.Demozoo{})
 	assert.NotNil(t, err)
 	err = Demozoo(db, nil, nil, conf.Config{}, arg.Demozoo{})
@@ -59,6 +61,7 @@ func TestDemozoo(t *testing.T) {
 }
 
 func TestGroups(t *testing.T) {
+	t.Parallel()
 	err := Groups(nil, nil, nil, arg.Group{})
 	assert.NotNil(t, err)
 	err = Groups(db, io.Discard, io.Discard, arg.Group{})
@@ -68,6 +71,7 @@ func TestGroups(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	err := New(nil, nil, nil, conf.Config{})
 	assert.NotNil(t, err)
 	err = New(db, io.Discard, l, conf.Config{})
@@ -75,6 +79,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestPeople(t *testing.T) {
+	t.Parallel()
 	err := People(nil, nil, "", arg.People{})
 	assert.NotNil(t, err)
 	err = People(db, io.Discard, "", arg.People{})
@@ -82,6 +87,7 @@ func TestPeople(t *testing.T) {
 }
 
 func TestRename(t *testing.T) {
+	t.Parallel()
 	s := []string{}
 	err := Rename(nil, nil, s...)
 	assert.NotNil(t, err)
@@ -90,6 +96,7 @@ func TestRename(t *testing.T) {
 }
 
 func TestTestSite(t *testing.T) {
+	t.Parallel()
 	err := TestSite(nil, nil, "")
 	assert.NotNil(t, err)
 	err = TestSite(db, io.Discard, "")

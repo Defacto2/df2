@@ -9,6 +9,7 @@ import (
 )
 
 func Test_options(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		a []string
 	}
@@ -31,6 +32,7 @@ func Test_options(t *testing.T) {
 }
 
 func TestInvalid(t *testing.T) {
+	t.Parallel()
 	args := []string{"abc", "def"}
 	err := arg.Invalid(nil, "", []string{}...)
 	assert.NotNil(t, err)

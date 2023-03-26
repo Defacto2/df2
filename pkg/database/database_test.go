@@ -15,6 +15,7 @@ import (
 	"github.com/Defacto2/df2/pkg/internal"
 	models "github.com/Defacto2/df2/pkg/models/mysql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -129,6 +130,7 @@ func TestColumns(t *testing.T) {
 
 func TestDateTime(t *testing.T) {
 	t.Parallel()
+	color.Enable = false
 	s, err := database.DateTime(nil)
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
