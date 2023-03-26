@@ -87,7 +87,7 @@ func progressDone(w io.Writer, name string, written int64) {
 	if w == nil {
 		w = io.Discard
 	}
-	logger.Printcrf(w, "%v download saved to: %v", humanize.Bytes(uint64(written)), name)
+	logger.PrintfCR(w, "%v download saved to: %v", humanize.Bytes(uint64(written)), name)
 }
 
 // GetSave downloads the url and saves it as the named file.

@@ -275,11 +275,11 @@ func Fix(db *sql.DB, w io.Writer) error {
 	}
 	switch {
 	case c == 1:
-		logger.Printcr(w, "1 fix applied")
+		logger.PrintCR(w, "1 fix applied")
 	case c > 0:
-		logger.Printcrf(w, "%d fixes applied", c)
+		logger.PrintfCR(w, "%d fixes applied", c)
 	default:
-		logger.Printcr(w, "no people fixes needed")
+		logger.PrintCR(w, "no people fixes needed")
 	}
 	elapsed := time.Since(start).Seconds()
 	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)

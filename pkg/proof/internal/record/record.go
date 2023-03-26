@@ -154,7 +154,7 @@ func (r Record) Prefix(w io.Writer, s *stat.Proof) error {
 	if w == nil {
 		w = io.Discard
 	}
-	logger.Printcrf(w, "%s %0*d. %v ",
+	logger.PrintfCR(w, "%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.Total)),
 		s.Count,

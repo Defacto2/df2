@@ -117,11 +117,11 @@ func Fix(db *sql.DB, w io.Writer) error {
 	}
 	switch {
 	case c == 1:
-		logger.Printcr(w, "1 fix applied")
+		logger.PrintCR(w, "1 fix applied")
 	case c > 0:
-		logger.Printcrf(w, "%d fixes applied", c)
+		logger.PrintfCR(w, "%d fixes applied", c)
 	default:
-		logger.Printcr(w, "no group fixes needed")
+		logger.PrintCR(w, "no group fixes needed")
 	}
 	// fix initialisms stored in the groupnames table
 	fmt.Fprint(w, " and...\n")
@@ -131,11 +131,11 @@ func Fix(db *sql.DB, w io.Writer) error {
 	}
 	switch i {
 	case 1:
-		logger.Printcr(w, "removed a broken initialism entry")
+		logger.PrintCR(w, "removed a broken initialism entry")
 	case 0:
-		logger.Printcr(w, "no initialism fixes needed")
+		logger.PrintCR(w, "no initialism fixes needed")
 	default:
-		logger.Printcrf(w, "%d broken initialism entries removed", i)
+		logger.PrintfCR(w, "%d broken initialism entries removed", i)
 	}
 	// report time taken
 	elapsed := time.Since(start).Seconds()

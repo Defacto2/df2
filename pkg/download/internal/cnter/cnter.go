@@ -26,10 +26,10 @@ func (wc *Writer) Write(p []byte) (int, error) {
 // Percent prints the current download progress.
 func (wc Writer) Percent() {
 	if pct := Percent(wc.Written, wc.Total); pct > 0 {
-		logger.Printcrf(wc.W, "downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
+		logger.PrintfCR(wc.W, "downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
 		return
 	}
-	logger.Printcrf(wc.W, "downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
+	logger.PrintfCR(wc.W, "downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
 }
 
 // Percent of count in total.

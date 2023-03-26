@@ -30,7 +30,7 @@ func Init(cfg conf.Config) (Proof, error) {
 		return Proof{}, err
 	}
 	return Proof{
-		Base:     logger.SprintPath(dir.UUID),
+		Base:     logger.SPrintPath(dir.UUID),
 		BasePath: dir.UUID,
 		start:    time.Now(),
 	}, nil

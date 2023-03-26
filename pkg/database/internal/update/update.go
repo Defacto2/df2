@@ -81,10 +81,10 @@ func (col Column) NamedTitles(db *sql.DB, w io.Writer) error {
 		return err
 	}
 	if rows == 0 {
-		logger.Printcrf(w, "no named title fixes needed")
+		logger.PrintfCR(w, "no named title fixes needed")
 		return nil
 	}
-	logger.Printcrf(w, "%d named title fixes applied", rows)
+	logger.PrintfCR(w, "%d named title fixes applied", rows)
 	return nil
 }
 
@@ -190,7 +190,7 @@ func Platforms(db *sql.DB, w io.Writer, platforms *[]string) error {
 
 func printcr(w io.Writer, i int64, s *string) {
 	if i == 0 {
-		logger.Printcr(w, *s)
+		logger.PrintCR(w, *s)
 		return
 	}
 	fmt.Fprintln(w, "\n"+*s)

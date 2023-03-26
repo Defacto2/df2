@@ -19,20 +19,20 @@ import (
 
 // Development logger prints all log levels to stdout.
 func Development() *zap.Logger {
-	cliEncoder := console()
-	defaultLogLevel := zapcore.DebugLevel
+	enc := console()
+	level := zapcore.DebugLevel
 	core := zapcore.NewTee(
-		zapcore.NewCore(cliEncoder, zapcore.AddSync(os.Stdout), defaultLogLevel),
+		zapcore.NewCore(enc, zapcore.AddSync(os.Stdout), level),
 	)
 	return zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 }
 
 // Production logger prints all info and higher log levels to stdout.
 func Production() *zap.Logger {
-	cliEncoder := console()
-	defaultLogLevel := zapcore.InfoLevel
+	enc := console()
+	level := zapcore.InfoLevel
 	core := zapcore.NewTee(
-		zapcore.NewCore(cliEncoder, zapcore.AddSync(os.Stdout), defaultLogLevel),
+		zapcore.NewCore(enc, zapcore.AddSync(os.Stderr), level),
 	)
 	return zap.New(core, zap.AddCaller())
 }
@@ -45,16 +45,17 @@ func console() zapcore.Encoder {
 	return zapcore.NewConsoleEncoder(config)
 }
 
-// SprintPath returns the named file or directory path with all missing elements marked in red.
-func SprintPath(name string) string {
-	a := strings.Split(name, "/")
-	var p, s string
-	for i, e := range a {
+// SPrintPath returns the named file or directory path with all missing elements marked in red.
+func SPrintPath(name string) string {
+	const sep = string(filepath.Separator)
+	paths := strings.Split(name, sep)
+	p, s := "", ""
+	for i, e := range paths {
 		if e == "" {
-			s = "/"
+			s = string(filepath.Separator)
 			continue
 		}
-		p = strings.Join(a[0:i+1], "/")
+		p = strings.Join(paths[0:i+1], string(filepath.Separator))
 		if _, err := os.Stat(p); errors.Is(err, fs.ErrNotExist) {
 			s = filepath.Join(s, color.Danger.Sprint(e))
 		} else {
@@ -64,21 +65,21 @@ func SprintPath(name string) string {
 	return fmt.Sprint(s)
 }
 
-// Printcr otherwise erases the current line and writes to standard output.
-func Printcr(w io.Writer, a ...any) {
+// PrintCR otherwise erases the current line and writes to standard output.
+func PrintCR(w io.Writer, a ...any) {
 	if w == nil {
 		w = io.Discard
 	}
-	fmt.Fprintf(w, "\r%s\r", strings.Repeat(" ", int(terminal.Size())))
+	fmt.Fprintf(w, "\r%s\r", strings.Repeat(" ", int(terminal.Columns())))
 	fmt.Fprint(w, a...)
 }
 
-// Printcrf erases the current line and formats according to a format specifier.
-func Printcrf(w io.Writer, format string, a ...any) {
+// PrintfCR erases the current line and formats according to a format specifier.
+func PrintfCR(w io.Writer, format string, a ...any) {
 	if w == nil {
 		w = io.Discard
 	}
 	fmt.Fprintf(w, "\r%s\r%s",
-		strings.Repeat(" ", int(terminal.Size())),
+		strings.Repeat(" ", int(terminal.Columns())),
 		fmt.Sprintf(format, a...))
 }

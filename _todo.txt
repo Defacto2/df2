@@ -1,6 +1,5 @@
 make unit tests 	t.Parallel()
 
-/cmd
 /logger/
 
 ErrPointer should always wrap
