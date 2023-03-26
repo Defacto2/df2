@@ -39,6 +39,12 @@ const (
 	WhereHidden        = "WHERE `deletedat` IS NOT NULL"
 )
 
+const SelNewFiles = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`," +
+	"`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`," +
+	"`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`\n" +
+	"FROM `files`\n" +
+	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
+
 const Table = `
 -- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump
 -- source:        https://defacto2.net/sql

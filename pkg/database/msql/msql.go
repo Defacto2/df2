@@ -99,7 +99,6 @@ func (c Connection) String() string {
 	v.Add("allowCleartextPasswords", fmt.Sprint(!c.NoSSLMode))
 	v.Add("timeout", fmt.Sprintf("%ds", c.Timeout))
 	v.Add("parseTime", "true") // parseTime is required by the SQL boiler pkg.
-
 	// example connector: "user:password@tcp(localhost:5432)/database?sslmode=false"
 	return fmt.Sprintf("%s@%s/%s?%s", login, address, c.Database, v.Encode())
 }
@@ -120,13 +119,13 @@ func (c Connection) Ping(db *sql.DB) error {
 	}
 	// filter the password and then print the datasource connection info
 	// to discover more errors, use log.Printf("%T", err)
-	me := &mysql.MySQLError{}
-	nop := &net.OpError{}
+	my := &mysql.MySQLError{}
+	op := &net.OpError{}
 	switch {
-	case errors.As(err, &me):
+	case errors.As(err, &my):
 		return fmt.Errorf("mysql connection: %w", err)
-	case errors.As(err, &nop):
-		switch nop.Op {
+	case errors.As(err, &op):
+		switch op.Op {
 		case "dial":
 			return fmt.Errorf("database server %v is either down or the %v %v port is blocked: %w",
 				c.Host, Protocol, c.Port, ErrConnect)
@@ -182,13 +181,13 @@ func ConnInfo(cfg configger.Config) (string, error) {
 	if err == nil {
 		return "", nil
 	}
-	me := &mysql.MySQLError{}
-	if ok := errors.As(err, &me); ok {
+	my := &mysql.MySQLError{}
+	if ok := errors.As(err, &my); ok {
 		e := strings.Replace(err.Error(), cfg.DBUser, color.Primary.Sprint(cfg.DBUser), 1)
 		return fmt.Sprintf("%s %v", color.Info.Sprint("MySQL"), color.Danger.Sprint(e)), nil
 	}
-	nop := &net.OpError{}
-	if ok := errors.As(err, &nop); ok {
+	op := &net.OpError{}
+	if ok := errors.As(err, &op); ok {
 		if strings.Contains(err.Error(), "connect: connection refused") {
 			return fmt.Sprintf("%s '%v' %s",
 				color.Danger.Sprint("database server"),

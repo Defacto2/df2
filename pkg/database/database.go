@@ -100,7 +100,8 @@ func Approve(db *sql.DB, w io.Writer, cfg configger.Config, verbose bool) error 
 // CheckID checks the syntax of the universal unique record id or MySQL auto-generated id.
 func CheckID(id string) error {
 	if !IsUUID(id) && !IsID(id) {
-		return fmt.Errorf("invalid id, it needs to be an auto-generated MySQL id or an uuid: %w", ErrSynID)
+		return fmt.Errorf("invalid id, it needs to be an auto-generated MySQL id or an uuid: %w",
+			ErrSynID)
 	}
 	return nil
 }
@@ -108,7 +109,8 @@ func CheckID(id string) error {
 // CheckUUID checks the syntax of the universal unique record id.
 func CheckUUID(uuid string) error {
 	if !IsUUID(uuid) {
-		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w", uuid, ExampleID, ErrSynID)
+		return fmt.Errorf("invalid uuid %q, it requires RFC 4122 syntax %s: %w",
+			uuid, ExampleID, ErrSynID)
 	}
 	return nil
 }
@@ -446,7 +448,8 @@ func LastUpdate(db *sql.DB) (time.Time, error) {
 	return t, nil
 }
 
-// ObfuscateParam hides the param value using the method implemented in CFWheels obfuscateParam() helper.
+// ObfuscateParam hides the param value using the method implemented in
+// CFWheels obfuscateParam() helper.
 func ObfuscateParam(param string) string {
 	if param == "" {
 		return ""

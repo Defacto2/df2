@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/configger"
+	"github.com/Defacto2/df2/pkg/database/internal/templ"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
@@ -303,8 +304,8 @@ func verbose(w io.Writer, v bool, i any) {
 	}
 }
 
-// duplicate or copy a file to the destination.
-// returns the number of bytes written.
+// dupe duplicates or copies the named file to the destination.
+// the returned value is the number of bytes written.
 func dupe(name, dest string) (int64, error) {
 	src, err := os.Open(name)
 	if err != nil {
@@ -322,8 +323,6 @@ func dupe(name, dest string) (int64, error) {
 	}
 	return written, dst.Close()
 }
-
-// -----------------
 
 // NewApprove reports if a new file record is set to unapproved.
 func NewApprove(b []sql.RawBytes) (bool, error) {
@@ -378,10 +377,7 @@ func ColLen(s *sql.ColumnType) string {
 
 // ReverseInt swaps the direction of the value, 12345 would return 54321.
 func ReverseInt(i int) (int, error) {
-	var (
-		n int
-		s string
-	)
+	n, s := 0, ""
 	v := strconv.Itoa(int(i))
 	for x := len(v); x > 0; x-- {
 		s += string(v[x-1])
@@ -410,12 +406,6 @@ func Verbose(w io.Writer, v bool, i any) {
 	}
 }
 
-const newFilesSQL = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`," +
-	"`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`," +
-	"`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`\n" +
-	"FROM `files`\n" +
-	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
-
 // queries parses all records waiting for approval skipping those that
 // are missing expected data or assets such as thumbnails.
 func Queries(db *sql.DB, w io.Writer, cfg configger.Config, v bool) error {
@@ -425,7 +415,7 @@ func Queries(db *sql.DB, w io.Writer, cfg configger.Config, v bool) error {
 	if w == nil {
 		w = io.Discard
 	}
-	rows, err := db.Query(newFilesSQL)
+	rows, err := db.Query(templ.SelNewFiles)
 	if err != nil {
 		return fmt.Errorf("queries query: %w", err)
 	}
@@ -454,9 +444,9 @@ func query(db *sql.DB, w io.Writer, cfg configger.Config, v bool, rows *sql.Rows
 		return fmt.Sprintf(" %s", str.X())
 	}
 	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]any, len(values))
+	args := make([]any, len(values))
 	for i := range values {
-		scanArgs[i] = &values[i]
+		args[i] = &values[i]
 	}
 	dir, err := directories.Init(cfg, false)
 	if err != nil {
@@ -469,7 +459,7 @@ func query(db *sql.DB, w io.Writer, cfg configger.Config, v bool, rows *sql.Rows
 	rowCnt := 0
 	for rows.Next() {
 		rowCnt++
-		if err := rows.Scan(scanArgs...); err != nil {
+		if err := rows.Scan(args...); err != nil {
 			return fmt.Errorf("queries row scan: %w", err)
 		}
 		Verbose(w, v, fmt.Sprintf("\nitem %04d (%v) %s %s ",

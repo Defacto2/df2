@@ -29,12 +29,12 @@ func (u Update) Execute(db *sql.DB) (int64, error) {
 	if db == nil {
 		return 0, ErrDB
 	}
-	update, err := db.Prepare(u.Query)
+	query, err := db.Prepare(u.Query)
 	if err != nil {
 		return 0, fmt.Errorf("update execute prepare: %w", err)
 	}
-	defer update.Close()
-	res, err := update.Exec(u.Args...)
+	defer query.Close()
+	res, err := query.Exec(u.Args...)
 	if err != nil {
 		return 0, fmt.Errorf("update execute exec: %w", err)
 	}

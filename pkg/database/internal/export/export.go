@@ -34,7 +34,6 @@ const (
 	Files        Table = iota // Files records.
 	Groups                    // Groups names.
 	Netresources              // Netresources for online websites.
-	Users                     // Users are site logins.
 )
 
 const (
@@ -48,7 +47,7 @@ const (
 )
 
 func (t Table) String() string {
-	return [...]string{"files", "groupnames", "netresources", "users"}[t]
+	return [...]string{"files", "groupnames", "netresources"}[t]
 }
 
 // Tbls are the available tables in the database.
@@ -57,7 +56,6 @@ func Tbls() string {
 		Files.String(),
 		Groups.String(),
 		Netresources.String(),
-		Users.String(),
 	}
 	return strings.Join(s, ", ")
 }
@@ -101,10 +99,10 @@ func (f *Flags) Run(db *sql.DB, w io.Writer) error {
 	f.Compress, f.Limit, f.Table = true, 0, Files
 	start := time.Now()
 	const delta = 2
-	var mu sync.Mutex
+	mu := sync.Mutex{}
 	switch f.Parallel {
 	case true:
-		var wg sync.WaitGroup
+		wg := sync.WaitGroup{}
 		var e1, e2 error
 		wg.Add(delta)
 		go func(f *Flags) {
@@ -185,8 +183,6 @@ func (f *Flags) ExportTable(db *sql.DB, w io.Writer) error {
 		f.Table = Groups
 	case Netresources.String(), "n":
 		f.Table = Netresources
-	case Users.String(), "u":
-		f.Table = Users
 	default:
 		return fmt.Errorf("invalid table: %w", ErrNoTable)
 	}
@@ -213,8 +209,6 @@ func (f *Flags) create() string {
 		s += templ.NewGroups
 	case Netresources:
 		s += templ.NewNetresources
-	case Users:
-		s += templ.NewUsers
 	}
 	return s
 }
@@ -228,7 +222,7 @@ func (f *Flags) fileName() string {
 	if f.Limit > 0 {
 		l = fmt.Sprintf("%d_", f.Limit)
 	}
-	if f.Table < Users {
+	if f.Table < Netresources {
 		t = f.Table.String()
 	}
 	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
@@ -261,16 +255,17 @@ func (f *Flags) queryDB(db *sql.DB) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query db columns: %w", err)
 	}
-	var names colNames = col
+	names := col
 	l := int(f.Limit)
 	if f.Limit == 0 {
-		l = -1 // list all
+		const listAll = -1
+		l = listAll
 	}
 	vals, err := rows(db, f.Table, l)
 	if err != nil {
 		return nil, fmt.Errorf("query db rows: %w", err)
 	}
-	var values colValues = vals
+	values := vals
 	data := templ.TablesData{
 		Table:   f.Table.String(),
 		Columns: fmt.Sprint(names),
@@ -280,7 +275,7 @@ func (f *Flags) queryDB(db *sql.DB) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query db template: %w", err)
 	}
-	var b bytes.Buffer
+	b := bytes.Buffer{}
 	if err = tmpl.Execute(&b, data); err != nil {
 		return nil, fmt.Errorf("query db template execute: %w", err)
 	}
@@ -299,7 +294,7 @@ func (f *Flags) queryTable(db *sql.DB) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query table columns: %w", err)
 	}
-	var names colNames = col
+	names := col
 	l := int(f.Limit)
 	if f.Limit == 0 {
 		l = -1 // list all
@@ -308,7 +303,7 @@ func (f *Flags) queryTable(db *sql.DB) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query table rows: %w", err)
 	}
-	var values colValues = vals
+	values := vals
 	dat := templ.TableData{
 		VER:    f.ver(),
 		CREATE: f.create(),
@@ -321,7 +316,7 @@ func (f *Flags) queryTable(db *sql.DB) (*bytes.Buffer, error) {
 		dat.UPDATE = dupes.String()
 	}
 	t := template.Must(template.New("stmt").Funcs(tmplFunc()).Parse(templ.Table))
-	var b bytes.Buffer
+	b := bytes.Buffer{}
 	if err = t.Execute(&b, dat); err != nil {
 		return nil, fmt.Errorf("query table template execute: %w", err)
 	}
@@ -360,7 +355,7 @@ func (f *Flags) queryTables(db *sql.DB) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query tables template: %w", err)
 	}
-	var b bytes.Buffer
+	b := bytes.Buffer{}
 	if err = tmpl.Execute(&b, &data); err != nil {
 		return nil, fmt.Errorf("query tables template execute: %w", err)
 	}
@@ -372,7 +367,7 @@ func (f *Flags) queryTablesWG(db *sql.DB) (buf1, buf2, buf3 *bytes.Buffer, err e
 		return nil, nil, nil, ErrDB
 	}
 	const delta = 3
-	var wg sync.WaitGroup
+	wg := sync.WaitGroup{}
 	var e1, e2, e3 error
 	wg.Add(delta)
 	go func(f *Flags) {
@@ -402,21 +397,17 @@ func (f *Flags) queryTablesSeq(db *sql.DB) (buf1, buf2, buf3 *bytes.Buffer, err 
 	}
 	buf1, err = f.reqDB(db, Files)
 	if err != nil {
-		return nil, nil, nil, qttErr(Files.String(), err)
+		return nil, nil, nil, fmt.Errorf("query file table: %w", err)
 	}
 	buf2, err = f.reqDB(db, Groups)
 	if err != nil {
-		return nil, nil, nil, qttErr(Groups.String(), err)
+		return nil, nil, nil, fmt.Errorf("query groups table: %w", err)
 	}
 	buf3, err = f.reqDB(db, Netresources)
 	if err != nil {
-		return nil, nil, nil, qttErr(Netresources.String(), err)
+		return nil, nil, nil, fmt.Errorf("query netresources table: %w", err)
 	}
 	return buf1, buf2, buf3, nil
-}
-
-func qttErr(s string, err error) error {
-	return fmt.Errorf("query tables %s: %w", s, err)
 }
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
@@ -493,18 +484,6 @@ func (f *Flags) write(w io.Writer, buf *bytes.Buffer) error {
 	}
 }
 
-type colNames []string
-
-func (c colNames) String() string {
-	return fmt.Sprintf("`%s`", strings.Join(c, "`,`"))
-}
-
-type colValues []string
-
-func (v colValues) String() string {
-	return strings.Join(v, ",\n")
-}
-
 type dupeKeys []string
 
 func (dk dupeKeys) String() string {
@@ -538,11 +517,6 @@ func columns(db *sql.DB, t Table) ([]string, error) {
 	if db == nil {
 		return nil, ErrDB
 	}
-	var (
-		columns []string
-		err     error
-		rows    *sql.Rows
-	)
 	query, info := "", ""
 	switch t {
 	case Files:
@@ -554,12 +528,9 @@ func columns(db *sql.DB, t Table) ([]string, error) {
 	case Netresources:
 		query = "SELECT * FROM netresources LIMIT 0"
 		info = "netresources"
-	case Users:
-		query = "SELECT * FROM users LIMIT 0"
-		info = "users"
 	}
 
-	rows, err = db.Query(query)
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("columns %s query: %w", info, err)
 	} else if err = rows.Err(); err != nil {
@@ -567,11 +538,11 @@ func columns(db *sql.DB, t Table) ([]string, error) {
 	}
 	defer rows.Close()
 
-	columns, err = rows.Columns()
+	cols, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("columns rows: %w", err)
 	}
-	return columns, nil
+	return cols, nil
 }
 
 // rows returns the values of table.
@@ -589,8 +560,6 @@ func rows(db *sql.DB, t Table, limit int) ([]string, error) {
 			return allGroups(db)
 		case Netresources:
 			return allNetresources(db)
-		case Users:
-			return allUsers(db)
 		}
 		return values(rows)
 	}
@@ -601,8 +570,6 @@ func rows(db *sql.DB, t Table, limit int) ([]string, error) {
 		return limitGroups(limit, db)
 	case Netresources:
 		return limitNetresources(limit, db)
-	case Users:
-		return limitUsers(limit, db)
 	}
 	return values(rows)
 }
@@ -644,20 +611,6 @@ func allNetresources(db *sql.DB) ([]string, error) {
 		return nil, fmt.Errorf("rows netresources query: %w", err)
 	} else if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows netresources query rows: %w", rows.Err())
-	}
-	defer rows.Close()
-	return values(rows)
-}
-
-func allUsers(db *sql.DB) ([]string, error) {
-	if db == nil {
-		return nil, ErrDB
-	}
-	rows, err := db.Query("SELECT * FROM users")
-	if err != nil {
-		return nil, fmt.Errorf("rows users query: %w", err)
-	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	return values(rows)
@@ -705,20 +658,6 @@ func limitNetresources(limit int, db *sql.DB) ([]string, error) {
 	return values(rows)
 }
 
-func limitUsers(limit int, db *sql.DB) ([]string, error) {
-	if db == nil {
-		return nil, ErrDB
-	}
-	rows, err := db.Query("SELECT * FROM users LIMIT ?", limit)
-	if err != nil {
-		return nil, fmt.Errorf("rows limit users query: %w", err)
-	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows limit users query rows: %w", rows.Err())
-	}
-	defer rows.Close()
-	return values(rows)
-}
-
 // format the value based on the database type name column type.
 func format(b sql.RawBytes, colType string) (string, error) {
 	switch {
@@ -753,7 +692,7 @@ func values(rows *sql.Rows) ([]string, error) {
 	if rows == nil {
 		return nil, ErrPointer
 	}
-	columns, err := rows.Columns()
+	cols, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("rows columns: %w", err)
 	}
@@ -761,14 +700,14 @@ func values(rows *sql.Rows) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("rows column types: %w", err)
 	}
-	vals := make([]sql.RawBytes, len(columns))
+	vals := make([]sql.RawBytes, len(cols))
 	dest := make([]any, len(vals))
 	for i := range vals {
 		dest[i] = &vals[i]
 	}
 	v := []string{}
 	for rows.Next() {
-		result := make([]string, len(columns))
+		result := make([]string, len(cols))
 		if err = rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("rows next: %w", err)
 		}
