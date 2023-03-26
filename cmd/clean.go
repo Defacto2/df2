@@ -23,8 +23,8 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 	Aliases: []string{"c"},
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
-		directories.Init(cfg, clean.MakeDirs)
-		db, err := msql.Connect(cfg)
+		directories.Init(confg, clean.MakeDirs)
+		db, err := msql.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -33,7 +33,7 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 			Name:   clean.Target,
 			Remove: clean.Delete,
 			Human:  clean.Humanise,
-			Config: cfg,
+			Config: confg,
 		}
 		if err := c.Walk(db, os.Stdout); err != nil {
 			logr.Error(err)

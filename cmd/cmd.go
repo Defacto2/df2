@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -19,6 +20,11 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+)
+
+var (
+	ErrNoOutput = errors.New("no output command used")
+	ErrPointer  = errors.New("pointer value cannot be nil")
 )
 
 // ProgData is used for holding the version flag template data.
@@ -76,19 +82,23 @@ func Arch() string {
 }
 
 // Brand prints the byte ASCII logo to the stdout.
-func Brand(w io.Writer, l *zap.SugaredLogger, b []byte) {
+func Brand(w io.Writer, l *zap.SugaredLogger, b []byte) error {
+	if l == nil {
+		return fmt.Errorf("l %w", ErrPointer)
+	}
 	if w == nil {
 		w = io.Discard
 	}
 	logo := string(b)
 	if len(logo) == 0 {
-		return
+		return nil
 	}
 	nw := bufio.NewWriter(w)
 	if _, err := fmt.Fprintf(nw, "%s\n\n", logo); err != nil {
 		l.Warnf("Could not print the brand logo: %s.", err)
 	}
 	nw.Flush()
+	return nil
 }
 
 // Commit returns a formatted, git commit description for this repository,
@@ -258,7 +268,7 @@ func check() (lookups, error) {
 		"unzip":    miss,
 		"zipinfo":  miss,
 	}
-	if info, err := database.ConnInfo(cfg); err == nil {
+	if info, err := database.ConnInfo(confg); err == nil {
 		l[d] = info
 	}
 	for file := range l {

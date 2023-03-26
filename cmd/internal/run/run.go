@@ -80,19 +80,20 @@ func APIs(db *sql.DB, w io.Writer, a arg.APIs) error {
 		return syncdos(db, w)
 	case a.SyncWin:
 		return syncwin(db, w)
+	default:
+		return fmt.Errorf("%v %w", a, ErrArg)
 	}
-	return nil
 }
 
 func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, dz arg.Demozoo) error {
 	if db == nil {
 		return database.ErrDB
 	}
-	if w == nil {
-		w = io.Discard
-	}
 	if l == nil {
 		return ErrZap
+	}
+	if w == nil {
+		w = io.Discard
 	}
 	empty := []string{}
 	r := demozoo.Request{
@@ -133,6 +134,12 @@ func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, dz 
 }
 
 func syncdos(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	p := demozoo.MsDosProducts{}
 	if err := p.Get(db, w); err != nil {
 		return err
@@ -142,6 +149,12 @@ func syncdos(db *sql.DB, w io.Writer) error {
 }
 
 func syncwin(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	p := demozoo.WindowsProducts{}
 	if err := p.Get(db, w); err != nil {
 		return err
@@ -151,6 +164,12 @@ func syncwin(db *sql.DB, w io.Writer) error {
 }
 
 func releaser(db *sql.DB, w io.Writer, id uint) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	r := demozoo.Releaser{}
 	if err := r.Get(id); err != nil {
 		return err
@@ -183,6 +202,9 @@ func releaser(db *sql.DB, w io.Writer, id uint) error {
 }
 
 func ping(w io.Writer, id uint) error {
+	if w == nil {
+		w = io.Discard
+	}
 	f := demozoo.Product{}
 	err := f.Get(id)
 	if err != nil {
@@ -195,6 +217,9 @@ func ping(w io.Writer, id uint) error {
 }
 
 func download(w io.Writer, id uint) error {
+	if w == nil {
+		w = io.Discard
+	}
 	f := demozoo.Product{}
 	if err := f.Get(id); err != nil {
 		return err
@@ -206,6 +231,12 @@ func download(w io.Writer, id uint) error {
 }
 
 func extract(db *sql.DB, w io.Writer, cfg conf.Config, src string) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	empty := []string{}
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -310,11 +341,11 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
 	}
-	if w == nil {
-		w = io.Discard
-	}
 	if l == nil {
 		return ErrZap
+	}
+	if w == nil {
+		w = io.Discard
 	}
 	i := 0
 	s := color.Primary.Sprint("Scans for new submissions and record cleanup")
@@ -484,23 +515,23 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 	fmt.Fprint(w, s)
 	sitemap.Success.Range(w, urls)
 
-	const pingCount = 10
-	total, ids, err := sitemap.RandIDs(db, pingCount)
+	const pings = 10
+	total, ids, err := sitemap.RandIDs(db, pings)
 	if err != nil {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.File)
-	s = color.Primary.Sprintf("\nRequesting the <title> of %d random files from %d public records\n", pingCount, total)
+	s = color.Primary.Sprintf("\nRequesting the <title> of %d random files from %d public records\n", pings, total)
 	fmt.Fprint(w, s)
 	sitemap.LinkSuccess.Range(w, urls)
 
-	total, ids, err = sitemap.RandIDs(db, pingCount)
+	total, ids, err = sitemap.RandIDs(db, pings)
 	if err != nil {
 		return err
 	}
 	urls = ids.JoinPaths(base, sitemap.Download)
 	s = color.Primary.Sprintf("\nRequesting the content disposition of %d random file download from %d public records\n",
-		pingCount, total)
+		pings, total)
 	fmt.Fprint(w, s)
 	sitemap.Success.RangeFiles(w, urls)
 

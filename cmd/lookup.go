@@ -19,7 +19,7 @@ var lookupCmd = &cobra.Command{
   uuid character groups are 8-4-4-16 (xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxxxxxx)`,
 	Hidden: false,
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -28,6 +28,7 @@ var lookupCmd = &cobra.Command{
 			if err := cmd.Usage(); err != nil {
 				logr.Fatal(err)
 			}
+			return
 		}
 		for _, a := range args {
 			if err := database.CheckID(a); err != nil {

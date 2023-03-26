@@ -1,8 +1,8 @@
 make unit tests 	t.Parallel()
 
 /cmd
-/configger/
-/database/
 /logger/
 
 ErrPointer should always wrap
+
+Finish /pkg/conf

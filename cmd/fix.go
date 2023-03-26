@@ -39,7 +39,7 @@ var fixCmd = &cobra.Command{
 		if err := cmd.Usage(); err != nil {
 			logr.Fatal(err)
 		}
-		logr.Errorf("%q subcommand for fix is an %s\n", args[0], ErrCmd)
+		logr.Errorf("%q subcommand for fix is an %s\n", args[0], ErrCommand)
 	},
 }
 
@@ -52,12 +52,12 @@ records that do not have this expected context.`,
 	Aliases: []string{"a"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := zipcontent.Fix(db, os.Stdout, cfg, true); err != nil {
+		if err := zipcontent.Fix(db, os.Stdout, confg, true); err != nil {
 			logr.Errorf("archives fix: %w", err)
 		}
 	},
@@ -71,7 +71,7 @@ This includes the formatting and trimming of groups, people, platforms and secti
 	Aliases: []string{"d", "db"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -95,7 +95,7 @@ var fixDemozooCmd = &cobra.Command{
 	Aliases: []string{"dz"},
 	GroupID: "groupU",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -114,7 +114,7 @@ that are raster images.`,
 	Aliases: []string{"i"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -133,7 +133,7 @@ var fixRenGroup = &cobra.Command{
 	Example: `  df2 fix rename "The Group" "New Group Name"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// in the future this command could be adapted to use a --person flag
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -159,12 +159,12 @@ that are plain text files.`,
 	Aliases: []string{"t", "txt"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := text.Fix(db, os.Stdout, cfg); err != nil {
+		if err := text.Fix(db, os.Stdout, confg); err != nil {
 			logr.Error(err)
 		}
 	},
@@ -179,12 +179,12 @@ var fixZipCmmtCmd = &cobra.Command{
 	Aliases: []string{"z"},
 	GroupID: "groupG",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := zipcmmt.Fix(db, os.Stdout, cfg, zipc.Unicode, zipc.OW, zipc.Stdout); err != nil {
+		if err := zipcmmt.Fix(db, os.Stdout, confg, zipc.Unicode, zipc.OW, zipc.Stdout); err != nil {
 			logr.Error(err)
 		}
 	},

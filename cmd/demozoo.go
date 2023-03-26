@@ -24,12 +24,12 @@ There are additional Demozoo commands found under the api command.`,
 	Example: `  df2 demozoo [--new|--all|--releases|--id] (--overwrite)
   df2 demozoo [--ping|--download]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		err = run.Demozoo(db, os.Stdout, logr, cfg, zoo)
+		err = run.Demozoo(db, os.Stdout, logr, confg, zoo)
 		switch {
 		case errors.Is(err, run.ErrNothing):
 			if err := cmd.Usage(); err != nil {

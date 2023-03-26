@@ -27,7 +27,7 @@ photos and text NFO files.`,
 			All:         proofs.All,
 			HideMissing: proofs.HideMissing,
 		}
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -35,11 +35,11 @@ photos and text NFO files.`,
 		w := os.Stdout
 		switch {
 		case proofs.ID != "":
-			if err := r.Query(db, w, cfg, proofs.ID); err != nil {
+			if err := r.Query(db, w, confg, proofs.ID); err != nil {
 				logr.Error(err)
 			}
 		default:
-			if err := r.Queries(db, w, cfg); err != nil {
+			if err := r.Queries(db, w, confg); err != nil {
 				logr.Error(err)
 			}
 		}

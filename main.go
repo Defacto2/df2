@@ -106,7 +106,10 @@ func main() {
 	// Print the compile and version details
 	if progInfo() {
 		w := os.Stdout
-		cmd.Brand(w, logr, brand)
+		err := cmd.Brand(w, logr, brand)
+		if err != nil {
+			logr.Error(err)
+		}
 		s, err := cmd.ProgInfo(version)
 		if err != nil {
 			logr.Error(err)

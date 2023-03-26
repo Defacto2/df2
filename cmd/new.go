@@ -24,12 +24,12 @@ This is the default df2 command when used without any flags or arguments.
       fix demozoo
       fix database`,
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := run.New(db, os.Stdout, logr, cfg); err != nil {
+		if err := run.New(db, os.Stdout, logr, confg); err != nil {
 			logr.Error(err)
 		}
 	},

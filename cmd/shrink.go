@@ -20,7 +20,7 @@ are 'waiting for approval.'`,
 	Aliases: []string{"s"},
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -31,19 +31,19 @@ are 'waiting for approval.'`,
 		const delta = 3
 		wg.Add(delta)
 		go func() {
-			if err := shrink.SQL(w, cfg.SQLDumps); err != nil {
+			if err := shrink.SQL(w, confg.SQLDumps); err != nil {
 				logr.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Files(db, w, cfg.IncomingFiles); err != nil {
+			if err := shrink.Files(db, w, confg.IncomingFiles); err != nil {
 				logr.Error(err)
 			}
 			wg.Done()
 		}()
 		go func() {
-			if err := shrink.Previews(db, w, cfg.IncomingImgs); err != nil {
+			if err := shrink.Previews(db, w, confg.IncomingImgs); err != nil {
 				logr.Error(err)
 			}
 			wg.Done()

@@ -20,17 +20,17 @@ import (
 )
 
 var (
-	ErrCfg    = errors.New("config cannot be empty")
-	ErrCmd    = errors.New("invalid command, please use one of the available commands")
-	ErrID     = errors.New("invalid id or uuid specified")
-	ErrLogger = errors.New("logger cannot be nil")
-	ErrNoID   = errors.New("requires an id or uuid argument")
+	ErrConfig  = errors.New("config cannot be empty")
+	ErrCommand = errors.New("invalid command, please use one of the available commands")
+	ErrID      = errors.New("invalid id or uuid specified")
+	ErrLogger  = errors.New("logger cannot be nil")
+	ErrNoID    = errors.New("requires an id or uuid argument")
 )
 
 var (
-	cfg  conf.Config        // Enviroment variables for configuration.
-	logr *zap.SugaredLogger // Zap sugared logger for printing and storing.
-	pers arg.Persistant     // Persistant, command-line bool flags.
+	confg   conf.Config        // Enviroment variables for configuration.
+	logr    *zap.SugaredLogger // Zap sugared logger for printing and storing.
+	persist arg.Persistant     // Persistant, command-line bool flags.
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -42,12 +42,12 @@ var rootCmd = &cobra.Command{
 		Copyright(),
 		color.Primary.Sprint(URL)),
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := run.New(db, os.Stdout, logr, cfg); err != nil {
+		if err := run.New(db, os.Stdout, logr, confg); err != nil {
 			logr.Fatal(err)
 		}
 	},
@@ -61,10 +61,10 @@ func Execute(log *zap.SugaredLogger, c conf.Config) error {
 		return ErrLogger
 	}
 	if c == (conf.Config{}) {
-		return ErrCfg
+		return ErrConfig
 	}
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	cfg = c
+	confg = c
 	if err := rootCmd.Execute(); err != nil {
 		logr.Warnln(err)
 		if e := err.Error(); strings.Contains(e, "required flag(s) \"name\"") {
@@ -87,13 +87,13 @@ func init() { //nolint:gochecknoinits
 	rootCmd.AddGroup(&cobra.Group{ID: "group1", Title: "Admin:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "group2", Title: "Drive:"})
 	rootCmd.AddGroup(&cobra.Group{ID: "group3", Title: "Remote:"})
-	rootCmd.PersistentFlags().BoolVar(&pers.ASCII, "ascii", false,
+	rootCmd.PersistentFlags().BoolVar(&persist.ASCII, "ascii", false,
 		"suppress all ANSI color feedback")
-	rootCmd.PersistentFlags().BoolVar(&pers.Quiet, "quiet", false,
+	rootCmd.PersistentFlags().BoolVar(&persist.Quiet, "quiet", false,
 		"suppress all feedback except for errors")
-	rootCmd.PersistentFlags().BoolVarP(&pers.Version, "version", "v", false,
+	rootCmd.PersistentFlags().BoolVarP(&persist.Version, "version", "v", false,
 		"version and information for this program")
-	rootCmd.PersistentFlags().BoolVar(&pers.Panic, "panic", false,
+	rootCmd.PersistentFlags().BoolVar(&persist.Panic, "panic", false,
 		"panic in the disco")
 	if err := rootCmd.PersistentFlags().MarkHidden("panic"); err != nil {
 		logr.Fatal(err)

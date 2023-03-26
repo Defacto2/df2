@@ -31,7 +31,7 @@ var testGroupNames = &cobra.Command{
 	Short:   "Scans over the various group names and attempts to match possible misnamed duplicates.",
 	Aliases: []string{"n"},
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
@@ -48,7 +48,7 @@ var testURLsCmd = &cobra.Command{
 	Short:   "Test the website by pinging or downloading a large, select number of URLs.",
 	Aliases: []string{"u"},
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}

@@ -19,13 +19,13 @@ var approveCmd = &cobra.Command{
 	Aliases: []string{"a"},
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}
 		defer db.Close()
 		w := os.Stdout
-		if err := database.Approve(db, w, cfg, approve.Verbose); err != nil {
+		if err := database.Approve(db, w, confg, approve.Verbose); err != nil {
 			logr.Error(err)
 		}
 		if err := database.Fix(db, w); err != nil {

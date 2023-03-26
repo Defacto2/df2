@@ -24,7 +24,7 @@ require the parsing of 10,000s of records.`,
 	GroupID: "group3",
 	Example: `  df2 apis [--refresh|--pouet|--msdos|--windows]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := database.Connect(cfg)
+		db, err := database.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)
 		}

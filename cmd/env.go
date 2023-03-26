@@ -15,7 +15,7 @@ var envCmd = &cobra.Command{
 		" used as configuations for this tool.",
 	Aliases: []string{"e"},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Fprintln(os.Stdout, cfg)
+		fmt.Fprintln(os.Stdout, confg)
 	},
 }
 
