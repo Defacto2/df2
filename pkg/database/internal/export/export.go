@@ -443,7 +443,7 @@ func (f *Flags) ver() string {
 // write the buffer to stdout, an SQL file or a compressed SQL file.
 func (f *Flags) write(w io.Writer, buf *bytes.Buffer) error {
 	if buf == nil {
-		return ErrPointer
+		return fmt.Errorf("buf %w", ErrPointer)
 	}
 	const bz2 = ".bz2"
 	name := path.Join(f.SQLDumps, f.fileName())
@@ -690,7 +690,7 @@ func tmplFunc() template.FuncMap {
 
 func values(rows *sql.Rows) ([]string, error) {
 	if rows == nil {
-		return nil, ErrPointer
+		return nil, fmt.Errorf("rows %w", ErrPointer)
 	}
 	cols, err := rows.Columns()
 	if err != nil {

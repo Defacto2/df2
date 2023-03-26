@@ -81,7 +81,7 @@ func (t *TextFile) Archive() bool {
 // Exist checks that [UUID].png exists in both thumbnail subdirectories.
 func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 	if dir == nil {
-		return false, ErrPointer
+		return false, fmt.Errorf("dir %w", ErrPointer)
 	}
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
@@ -104,7 +104,7 @@ func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 // Extract a textfile readme from an archive.
 func (t *TextFile) Extract(w io.Writer, dir *directories.Dir) error {
 	if dir == nil {
-		return ErrPointer
+		return fmt.Errorf("dir %w", ErrPointer)
 	}
 	if t.NoReadme.Valid && !t.NoReadme.Bool {
 		return ErrReadmeOff

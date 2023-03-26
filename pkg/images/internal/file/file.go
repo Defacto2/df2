@@ -53,7 +53,7 @@ func (i Image) IsExt() bool {
 
 func (i Image) IsDir(dir *directories.Dir) (bool, error) {
 	if dir == nil {
-		return false, ErrPointer
+		return false, fmt.Errorf("dir %w", ErrPointer)
 	}
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {

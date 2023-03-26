@@ -435,7 +435,7 @@ func query(db *sql.DB, w io.Writer, cfg conf.Config, v bool, rows *sql.Rows, col
 		return ErrDB
 	}
 	if rows == nil {
-		return ErrPointer
+		return fmt.Errorf("rows %w", ErrPointer)
 	}
 	if w == nil {
 		w = io.Discard

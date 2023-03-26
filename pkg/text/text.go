@@ -86,7 +86,7 @@ func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *
 
 func extract(w io.Writer, cfg conf.Config, t tf.TextFile, dir *directories.Dir) error {
 	if dir == nil {
-		return tf.ErrPointer
+		return fmt.Errorf("dir %w", tf.ErrPointer)
 	}
 	if w == nil {
 		w = io.Discard

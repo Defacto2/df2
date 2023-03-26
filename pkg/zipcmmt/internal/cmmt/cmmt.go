@@ -129,7 +129,7 @@ func (z *Zipfile) Save(w io.Writer, path string) (string, error) {
 
 func (z *Zipfile) Format(cmmt *string) (buffer.Buffer, error) {
 	if cmmt == nil {
-		return buffer.Buffer{}, ErrPointer
+		return buffer.Buffer{}, fmt.Errorf("cmmt %w", ErrPointer)
 	}
 	if *cmmt == "" {
 		return buffer.Buffer{}, nil
