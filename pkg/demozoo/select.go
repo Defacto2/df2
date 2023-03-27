@@ -12,10 +12,10 @@ const selectStmt = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`files
 	",`section`,`credit_illustration`,`credit_audio`,`credit_program`,`credit_text`"
 
 func selectByID(id string) string {
-	if id == "" {
-		return ""
-	}
 	stmt := " FROM `files` WHERE `web_id_demozoo` IS NOT NULL "
+	if id == "" {
+		return selectStmt + stmt
+	}
 	switch {
 	case database.IsUUID(id):
 		stmt += fmt.Sprintf("AND `uuid`=%q", id)
