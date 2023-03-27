@@ -10,6 +10,7 @@ import (
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
+	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +25,7 @@ var (
 
 func TestTextFile(t *testing.T) {
 	t.Parallel()
+	color.Enable = false
 	s := tf.TextFile{}
 	assert.Equal(t, "(0)  0 B ", s.String())
 	s = tf.TextFile{

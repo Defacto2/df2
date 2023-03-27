@@ -12,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
 	"github.com/Defacto2/df2/pkg/proof/internal/stat"
+	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/buffer"
 )
@@ -132,6 +133,7 @@ func TestRecord_Zip(t *testing.T) {
 
 func TestSkip(t *testing.T) {
 	t.Parallel()
+	color.Enable = false
 	b, err := record.Skip(nil, stat.Proof{}, record.Record{})
 	assert.NotNil(t, err)
 	assert.Equal(t, false, b)

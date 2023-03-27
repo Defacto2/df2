@@ -9,6 +9,7 @@ import (
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
 	"github.com/Defacto2/df2/pkg/images/internal/file"
+	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,6 +20,7 @@ func testDir() string {
 
 func TestImage(t *testing.T) {
 	t.Parallel()
+	color.Enable = false
 	i := file.Image{}
 	assert.Equal(t, "(0)  0 B ", i.String())
 	i = file.Image{

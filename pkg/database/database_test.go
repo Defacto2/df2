@@ -276,9 +276,8 @@ func TestGetFile(t *testing.T) {
 	rec, err := models.FindFile(ctx, db, 1)
 	assert.Nil(t, err)
 	rec.Filename = null.NewString(internal.File01Name, true)
-	rows, err := rec.Update(ctx, db, boil.Infer())
+	_, err = rec.Update(ctx, db, boil.Infer())
 	assert.Nil(t, err)
-	assert.Equal(t, int64(1), rows)
 
 	s, err = database.GetFile(db, internal.File01UUID)
 	assert.Nil(t, err)

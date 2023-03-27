@@ -21,6 +21,7 @@ func TestFix(t *testing.T) {
 	defer db.Close()
 	err = text.Fix(db, io.Discard, conf.Config{})
 	assert.NotNil(t, err)
+
 	err = text.Fix(db, io.Discard, cfg)
 	assert.Nil(t, err)
 }

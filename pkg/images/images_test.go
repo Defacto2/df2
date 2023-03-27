@@ -259,10 +259,7 @@ func TestToWebxp(t *testing.T) {
 				return
 			}
 			if str != "" {
-				// cleanup
-				if err := os.Remove(testDest(w)); err != nil {
-					t.Fatal(err)
-				}
+				defer os.Remove(testDest(w))
 			}
 		})
 	}

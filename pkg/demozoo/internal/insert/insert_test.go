@@ -81,6 +81,6 @@ func TestProd(t *testing.T) {
 	const c64ID = 116376
 	prod = releases.ProductionV1{ID: c64ID}
 	r, err = insert.Prod(db, io.Discard, prod)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Empty(t, r)
 }

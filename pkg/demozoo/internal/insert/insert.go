@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	ErrID      = errors.New("production id must be 1 or higher")
 	ErrNoQuery = errors.New("query statement is empty")
 	ErrProd    = errors.New("productions pointer cannot be nil")
 )
@@ -119,6 +120,9 @@ func Prod(db *sql.DB, w io.Writer, prod releases.ProductionV1) (Record, error) {
 	}
 	if w == nil {
 		w = io.Discard
+	}
+	if prod.ID < 1 {
+		return Record{}, fmt.Errorf("%w %d", ErrID, prod.ID)
 	}
 	id, err := database.DemozooID(db, uint(prod.ID))
 	if err != nil {

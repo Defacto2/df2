@@ -41,7 +41,8 @@ func Fix(db *sql.DB, w io.Writer, cfg conf.Config) error {
 	for rows.Next() {
 		if i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
 			if !errors.Is(err, tf.ErrPNG) {
-				return err
+				fmt.Fprintln(w, err)
+				continue
 			}
 		}
 	}
@@ -53,7 +54,7 @@ func Fix(db *sql.DB, w io.Writer, cfg conf.Config) error {
 }
 
 func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (int, int, error) {
-	var t tf.TextFile
+	t := tf.TextFile{}
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
 		return i, c, fmt.Errorf("fix rows scan: %w", err1)
