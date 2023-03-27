@@ -20,3 +20,9 @@ Importer of textfiles from RAR.
  approve            improve layout
 
  Change version to v2.0.0
+
+ UI changes
+  - https://github.com/charmbracelet/bubbles
+
+UUID generator
+  - https://github.com/oklog/ulid
