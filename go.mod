@@ -14,7 +14,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.0
-	github.com/gookit/color v1.5.2
+	github.com/gookit/color v1.5.3
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/muesli/go-app-paths v0.2.2
@@ -24,7 +24,7 @@ require (
 	github.com/spf13/viper v1.15.0
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	golang.org/x/image v0.3.0
-	golang.org/x/sys v0.4.0
+	golang.org/x/sys v0.6.0
 	golang.org/x/text v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )
