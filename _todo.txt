@@ -19,6 +19,8 @@ Importer of textfiles from RAR.
  fix zip            duplicate messages with invalid zipfile
  approve            improve layout
 
+ more local test consts and vars into pkg/internal
+
  Change version to v2.0.0
 
  UI changes
