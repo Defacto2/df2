@@ -2,7 +2,6 @@ package zwt
 
 import (
 	"bufio"
-	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,15 +10,13 @@ import (
 
 const Name = "Zero Waiting Time"
 
-func DizDate(r io.Reader) (year int, month time.Month, day int) {
-	if r == nil {
+func DizDate(body string) (year int, month time.Month, day int) {
+	if body == "" {
 		return 0, 0, 0
 	}
-	buf := &strings.Builder{}
-	_, _ = io.Copy(buf, r)
 
 	rx := regexp.MustCompile(`\[(\d\d\d\d)\-(\d\d)\-(\d\d)\]`)
-	f := rx.FindStringSubmatch(buf.String())
+	f := rx.FindStringSubmatch(body)
 
 	const expected = 4
 	if len(f) != expected {
@@ -31,24 +28,25 @@ func DizDate(r io.Reader) (year int, month time.Month, day int) {
 	return y, time.Month(m), d
 }
 
-func DizTitle(r io.Reader) (title string, pub string) {
-	if r == nil {
+func DizTitle(body string) (title string, pub string) {
+	if body == "" {
 		return "", ""
 	}
-	scanner := bufio.NewScanner(r)
 	t, p := "", ""
+	scanner := bufio.NewScanner(strings.NewReader(body))
+	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		s := scanner.Text()
-		s = strings.TrimSpace(s)
+		s := strings.TrimSpace(scanner.Text())
 		if len(s) == 0 {
 			continue
 		}
 		if t == "" {
-			t = strings.TrimSpace(s)
+			t = s
 			continue
 		}
 		if p == "" {
-			p = strings.TrimSpace(s)
+			// todo: confirm author isnt in title
+			p = s
 			break
 		}
 	}

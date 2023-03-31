@@ -1,6 +1,7 @@
 package dizzer
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/dizzer/record"
+	"github.com/Defacto2/df2/pkg/dizzer/zwt"
 	"github.com/mholt/archiver"
 )
 
@@ -26,12 +28,16 @@ var Rar = archiver.Rar{
 
 // Run the dizzer on the named .rar file.
 func Run(nameRar string) error {
+	if err := Rar.CheckExt(nameRar); err != nil {
+		return fmt.Errorf("%w: %s", err, nameRar)
+	}
 	if st, err := os.Stat(nameRar); err != nil {
 		return fmt.Errorf("%w: %s", err, nameRar)
 	} else if st.IsDir() {
 		return fmt.Errorf("%w: %s", err, nameRar)
 	}
-	// todo: confirm rar archive.
+
+	tick := time.Now()
 
 	// first stat the .rar file
 	st := Stat{}
@@ -44,52 +50,114 @@ func Run(nameRar string) error {
 	if err != nil {
 		return err
 	}
-	//defer os.RemoveAll(dir)
-	fmt.Println("pre unarchive")
+	defer os.RemoveAll(dir)
+
 	if err := Rar.Unarchive(nameRar, dir); err != nil {
 		return err
 	}
 
-	fmt.Println("unarchive okay")
-	// built a collection of records to insert to the db.
-	itemsToAdd := st.NFOs + st.DIZs
-	rec := make([]record.Record, itemsToAdd)
-	// i := -1
-	// file := ""
-	for rel, r := range st.Releases {
-		fmt.Printf("%s from %s with %d items.\n", rel, r.LastMod.Format("2006-01-02"), len(r.Files))
-		// if r.DIZ {
-		// 	i++
-		// 	file = filepath.Join(dir, r.Path, record.FileID)
-		// 	rec[i] = record.New(r.Path)
-		// 	rec[i].LastMod = r.LastMod // always use the oldest last modifier
-		// 	if err := rec[i].Stat(file); err != nil {
-		// 		return err
-		// 	}
-		// 	fmt.Printf(" --- > %s\n", r.Title)
-		// 	if err := rec[i].Read(file); err != nil {
-		// 		return err
-		// 	}
-		// }
-		// if r.NFO != "" {
-		// 	i++
-		// 	file = filepath.Join(dir, r.Path, r.NFO)
-		// 	rec[i] = record.New(r.Path)
-		// 	rec[i].LastMod = r.LastMod // always use the oldest last modifier
-		// 	if err := rec[i].Stat(file); err != nil {
-		// 		return err
-		// 	}
-		// 	if err := rec[i].Read(file); err != nil {
-		// 		return err
-		// 	}
-		// }
-		// todo: replace r.NFO bool with string containing filename
-		// match .nfo and file containing st.Group
+	// build a collection of records to insert to the db.
+	ch1 := make(chan record.Download)
+	ch2 := make(chan record.Download)
 
+	newRecs := 0
+	for key, r := range st.Releases {
+
+		go func() {
+			diz := filepath.Join(dir, r.Path, record.FileID)
+			if err := r.Diz.New(diz, st.Group); err != nil {
+				if !errors.Is(err, os.ErrNotExist) {
+					fmt.Fprintln(os.Stderr, err)
+				}
+			}
+			ch1 <- r.Diz
+		}()
+
+		go func() {
+			if r.Nfo.Name == "" {
+				ch2 <- r.Nfo
+			}
+			nfo := filepath.Join(dir, r.Path, r.Nfo.Name)
+			if err := r.Nfo.New(nfo, st.Group); err != nil {
+				if !errors.Is(err, os.ErrNotExist) {
+					fmt.Fprintln(os.Stderr, err)
+				}
+			}
+			ch2 <- r.Nfo
+		}()
+
+		diz := <-ch1
+		nfo := <-ch2
+
+		// match lastmod date to the earliest
+		if diz.LastMod.Before(nfo.LastMod) {
+			nfo.LastMod = diz.LastMod
+		} else if nfo.LastMod.Before(diz.LastMod) {
+			diz.LastMod = nfo.LastMod
+		}
+		// copy readdate to nfo
+		if nfo.ReadDate.IsZero() && !diz.ReadDate.IsZero() {
+			nfo.ReadDate = diz.ReadDate
+		}
+
+		// make a copy of the release
+		if entry, ok := st.Releases[key]; ok {
+			// modify the data of the copy
+			entry.Diz = diz
+			entry.Nfo = nfo
+			// reassign the copy to the original
+			st.Releases[key] = entry
+		}
+		if diz != (record.Download{}) {
+			newRecs++
+		}
+		if nfo != (record.Download{}) {
+			newRecs++
+		}
 	}
 
-	for i, r := range rec {
-		fmt.Printf("\n%d. %+v\n", i, r)
+	records := make([]record.Record, newRecs)
+	i, l := 0, len(records)
+	// TODO: build record collection
+	for _, r := range st.Releases {
+		if i >= l {
+			//break
+			fmt.Println("more than expacted?", i, l)
+			break
+		}
+		//fmt.Printf("\n%d. %+v\n", i, r)
+		title := ""
+		if r.Diz == (record.Download{}) {
+			fmt.Println("no file_id.diz for", r.Title)
+		} else {
+			records[i] = record.New(r.Path, st.Group)
+			title = r.Diz.ReadTitle
+			if title == "" {
+				title = r.Title
+			}
+			records[i].Copy(&r.Diz, title)
+			i++
+		}
+		if r.Nfo == (record.Download{}) {
+			fmt.Println("no readme for ", r.Title, "files inc.", r.Files)
+		} else {
+			records[i] = record.New(r.Path, st.Group)
+			if title == "" {
+				title = r.Title
+			}
+			records[i].Title = title
+			records[i].Copy(&r.Nfo, title)
+			i++
+		}
+	}
+
+	for i, r := range records {
+		u, err := json.MarshalIndent(r, "", " ")
+		if err != nil {
+			continue
+		}
+		fmt.Printf("%d.\t%+v of %s\n", i, r.Title, r.FileName)
+		fmt.Println(string(u))
 	}
 
 	fmt.Println("nfos:", st.NFOs)
@@ -97,6 +165,12 @@ func Run(nameRar string) error {
 	fmt.Println("other files:", st.Others)
 	fmt.Println("group:", st.Group)
 	fmt.Printf("years: %+v\n", st.LastMods)
+	fmt.Println("how many new records?", len(records), "vs i", i)
+
+	//	defer close(ch2)
+	time.Sleep(1 * time.Second)
+
+	fmt.Println("time taken", time.Since(tick).Seconds())
 
 	return nil
 }
@@ -118,10 +192,10 @@ type Release struct {
 	Path  string // Path is the subdirectory containing the release.
 	//DIZ     bool      // DIZ means a file_id.diz is included with the release.
 	//NFO     string    // NFO is the filename of the .nfo information file included with the release.
-	Files   []string  // Files named that are included in the release.
-	LastMod time.Time // The earliest file last modification time found in the release.
-	Diz     record.Download
-	Nfo     record.Download
+	Files []string // Files named that are included in the release.
+	//LastMod time.Time // The earliest file last modification time found in the release.
+	Diz record.Download
+	Nfo record.Download
 }
 
 // Walk the named .rar archive file to collect information and statistics.
@@ -136,7 +210,7 @@ func (st *Stat) Walk(name string) error {
 			return nil
 		}
 		if st.Group == "" {
-			st.Group = PathGroup(f.Name())
+			st.Group = Group(f.Name())
 		}
 		if filepath.Dir(f.Name()) != key {
 			key = filepath.Dir(f.Name())
@@ -145,15 +219,7 @@ func (st *Stat) Walk(name string) error {
 		store, exists := st.Releases[key]
 		if !exists {
 			store.Title = PathTitle(key)
-			store.LastMod = f.ModTime()
-		} else {
-			i := store.LastMod.Compare(f.ModTime())
-			olderModTime := i > 0
-			if olderModTime {
-				store.LastMod = f.ModTime()
-			}
 		}
-
 		store.Path = filepath.Dir(f.Name())
 		store.Files = append(store.Files, filepath.Base(f.Name()))
 
@@ -161,15 +227,17 @@ func (st *Stat) Walk(name string) error {
 		switch ext {
 		case ".diz":
 			st.DIZs++
-			//store.DIZ = true
-			store.Diz = record.Download{}
-			path := filepath.Join(dir, r.Path, r.NFO)
-			if err := store.Diz.New(); err != nil {
-				return err
+			store.Diz = record.Download{
+				Name:    filepath.Base(f.Name()),
+				LastMod: f.ModTime(),
 			}
 		case ".nfo":
 			st.NFOs++
-			//store.NFO = filepath.Base(f.Name()) // todo: func to confirm nfo has group name
+			store.Nfo = record.Download{
+				// TODO: find most appropriate NFO file
+				Name:    filepath.Base(f.Name()),
+				LastMod: f.ModTime(),
+			}
 		default:
 			st.Others++
 		}
@@ -185,6 +253,15 @@ func (st *Stat) Walk(name string) error {
 	}
 
 	return nil
+}
+
+func Group(key string) string {
+	s := PathGroup(key)
+	switch strings.ToLower(s) {
+	case "zwt":
+		return zwt.Name
+	}
+	return s
 }
 
 // Years counts the file last modified dates as years.

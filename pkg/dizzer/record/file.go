@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -44,5 +45,10 @@ func Determine(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(out), nil
+	s := strings.TrimSpace(string(out))
+	ss := strings.Split(s, ":")
+	if len(ss) > 1 {
+		return ss[1], nil
+	}
+	return s, nil
 }
