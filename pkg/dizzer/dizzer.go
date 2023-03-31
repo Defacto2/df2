@@ -130,23 +130,33 @@ func Run(nameRar string) error {
 		if r.Diz == (record.Download{}) {
 			fmt.Println("no file_id.diz for", r.Title)
 		} else {
-			records[i] = record.New(r.Path, st.Group)
+			records[i], err = record.New(r.Path, st.Group)
+			if err != nil {
+				fmt.Println(err)
+			}
 			title = r.Diz.ReadTitle
 			if title == "" {
 				title = r.Title
 			}
-			records[i].Copy(&r.Diz, title)
+			if err := records[i].Copy(&r.Diz, title); err != nil {
+				fmt.Println(err)
+			}
 			i++
 		}
 		if r.Nfo == (record.Download{}) {
 			fmt.Println("no readme for ", r.Title, "files inc.", r.Files)
 		} else {
-			records[i] = record.New(r.Path, st.Group)
+			records[i], err = record.New(r.Path, st.Group)
+			if err != nil {
+				fmt.Println(err)
+			}
 			if title == "" {
 				title = r.Title
 			}
 			records[i].Title = title
-			records[i].Copy(&r.Nfo, title)
+			if err := records[i].Copy(&r.Nfo, title); err != nil {
+				fmt.Println(err)
+			}
 			i++
 		}
 	}

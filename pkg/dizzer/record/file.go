@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"crypto/sha512"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,8 +13,15 @@ import (
 	"time"
 )
 
+var (
+	ErrFile = errors.New("os file cannot be nil")
+)
+
 // Sum386 returns the SHA-386 checksum value of the open file.
 func Sum386(f *os.File) (string, error) {
+	if f == nil {
+		return "", ErrFile
+	}
 	strong := sha512.New384()
 	if _, err := io.Copy(strong, f); err != nil {
 		return "", fmt.Errorf("%s: %w", f.Name(), err)
@@ -23,6 +31,9 @@ func Sum386(f *os.File) (string, error) {
 
 // SumMD5 returns the MD5 checksum value of the open file.
 func SumMD5(f *os.File) (string, error) {
+	if f == nil {
+		return "", ErrFile
+	}
 	weak := md5.New() //nolint: gosec
 	if _, err := io.Copy(weak, f); err != nil {
 		return "", fmt.Errorf("%s: %w", f.Name(), err)
@@ -33,6 +44,10 @@ func SumMD5(f *os.File) (string, error) {
 func Determine(name string) (string, error) {
 	const file = "file" // file — determine file type
 	path, err := exec.LookPath(file)
+	if err != nil {
+		return "", err
+	}
+	_, err = os.Stat(name)
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +63,7 @@ func Determine(name string) (string, error) {
 	s := strings.TrimSpace(string(out))
 	ss := strings.Split(s, ":")
 	if len(ss) > 1 {
-		return ss[1], nil
+		return strings.TrimSpace(ss[1]), nil
 	}
 	return s, nil
 }

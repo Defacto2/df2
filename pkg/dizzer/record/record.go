@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +14,9 @@ import (
 )
 
 var (
+	ErrDir     = errors.New("the named file points to a directory")
 	ErrGroup   = errors.New("record group field cannot be empty")
+	ErrNew     = errors.New("new record name and group cannot be empty")
 	ErrPointer = errors.New("pointer value cannot be nil")
 )
 
@@ -45,10 +46,16 @@ type Record struct {
 	Comment    string    // key *
 }
 
-func New(name, group string) Record {
+// New creates a Record with a unique UUID.
+// The required name must be the subdirectory of the release.
+// The required group is the formal release group name.
+func New(name, group string) (Record, error) {
+	if name == "" || group == "" {
+		return Record{}, ErrNew
+	}
 	uid, err := uuid.NewRandom()
 	if err != nil {
-		log.Fatal(err)
+		return Record{}, err
 	}
 	return Record{
 		UUID:     uid.String(),
@@ -56,13 +63,18 @@ func New(name, group string) Record {
 		Section:  Section,
 		Platform: Platform,
 		Comment:  fmt.Sprintf("release directory: %s", name),
-	}
+	}, nil
 }
 
-func (r *Record) Copy(d *Download, title string) {
+// Copy the Download values to a new Record.
+// The optional pathTitle should be the result of the PathTitle func.
+func (r *Record) Copy(d *Download, pathTitle string) error {
+	if d == nil {
+		return fmt.Errorf("d %w", ErrPointer)
+	}
 	r.Title = d.ReadTitle // create a fallback
 	if r.Title == "" {
-		r.Title = title
+		r.Title = pathTitle
 	}
 	r.FileName = d.Name
 	r.FileSize = d.Bytes
@@ -71,6 +83,7 @@ func (r *Record) Copy(d *Download, title string) {
 	r.HashWeak = d.HashWeak
 	r.LastMod = d.LastMod
 	r.Published = d.ReadDate
+	return nil
 }
 
 type Download struct {
@@ -85,12 +98,22 @@ type Download struct {
 	ReadDate   time.Time
 }
 
+// New creates a Download from the named file.
+// The required group is the formal release group name.
+// TODO lastmod arg?
 func (dl *Download) New(name, group string) error {
+	if group == "" {
+		return ErrGroup
+	}
 	st, err := os.Stat(name)
 	if err != nil {
 		return fmt.Errorf("%w: %s", err, name)
 	}
-	// dl.LastMod must be set using the RAR archive metadata.
+	if st.IsDir() {
+		return fmt.Errorf("%w: %s", ErrDir, name)
+	}
+	// the dl.LastMod value should not be set here,
+	// it MUST be set using the RAR archive metadata.
 	dl.Path = name
 	dl.Name = st.Name()
 	dl.Bytes = st.Size()
@@ -111,12 +134,23 @@ func (dl *Download) New(name, group string) error {
 		}
 	}
 
+	// hashes require the named file to be reopened after being read.
+	f, err = os.Open(name)
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, name)
+	}
+	defer f.Close()
 	strong, err := Sum386(f)
 	if err != nil {
 		return err
 	}
 	dl.HashStrong = strong
-
+	// hashes require the named file to be reopened after being read.
+	f, err = os.Open(name)
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, name)
+	}
+	defer f.Close()
 	weak, err := SumMD5(f)
 	if err != nil {
 		return err
@@ -132,13 +166,12 @@ func (dl *Download) New(name, group string) error {
 }
 
 func (dl *Download) ReadDIZ(body string, group string) error {
-
 	y, m, d := 0, time.Month(0), 0
 	title, pub := "", ""
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
-	case "zwt", zwt.Name:
+	case "zwt", strings.ToLower(zwt.Name):
 		y, m, d = zwt.DizDate(body)
 		title, pub = zwt.DizTitle(body)
 	default:

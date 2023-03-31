@@ -1,9 +1,11 @@
 package dizzer_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/dizzer"
+	"github.com/Defacto2/df2/pkg/internal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,6 +14,18 @@ const (
 	r2 = "Apollo-tech.No1.Video.Converter.v3.8.17.Incl.Keymaker-ZWT"
 	r3 = "SiSoftware.Sandra.Pro.Business.XI.SP3.2007.6.11.40.Multilingual.Retail.Incl.Keymaker-ZWT"
 )
+
+var (
+	dir = filepath.Join(internal.Testdata(2), "rar")
+	rar = filepath.Join(dir, "dizzer.rar")
+)
+
+func TestRun(t *testing.T) {
+	err := dizzer.Run("")
+	assert.NotNil(t, err)
+	err = dizzer.Run(rar)
+	assert.Nil(t, err)
+}
 
 func TestGroup(t *testing.T) {
 	s := dizzer.PathGroup("")
