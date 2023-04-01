@@ -43,3 +43,12 @@ tasks:
       - cmd: go get -u -x
       - cmd: go mod vendor
       - cmd: go mod verify
+  ver:
+    silent: false
+    desc: print the versions of tools
+    cmds:
+      - cmd: go version
+      - cmd: gofumpt --version
+      - cmd: task --version
+      - cmd: golangci-lint --version
+      - cmd: goreleaser --version
