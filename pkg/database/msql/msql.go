@@ -175,7 +175,7 @@ func Connect(cfg conf.Config) (*sql.DB, error) {
 	return conn, nil
 }
 
-func ConnInfo(cfg conf.Config) (string, error) {
+func ConnDebug(cfg conf.Config) (string, error) {
 	db, err := Connect(cfg)
 	if err != nil {
 		return "", err

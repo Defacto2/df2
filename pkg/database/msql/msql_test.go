@@ -48,12 +48,12 @@ func TestMaskPass(t *testing.T) {
 	assert.NotContains(t, err1.Error(), pass)
 }
 
-func TestConnInfo(t *testing.T) {
+func TestConnDebug(t *testing.T) {
 	t.Parallel()
-	s, err := msql.ConnInfo(conf.Config{})
+	s, err := msql.ConnDebug(conf.Config{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
-	s, err = msql.ConnInfo(conf.Defaults())
+	s, err = msql.ConnDebug(conf.Defaults())
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }

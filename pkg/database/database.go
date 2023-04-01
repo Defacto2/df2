@@ -84,9 +84,9 @@ func Connect(cfg conf.Config) (*sql.DB, error) {
 	return msql.Connect(cfg)
 }
 
-// ConnInfo will connect to the database and return any errors.
-func ConnInfo(cfg conf.Config) (string, error) {
-	return msql.ConnInfo(cfg)
+// ConnDebug will connect to the database and return any errors.
+func ConnDebug(cfg conf.Config) (string, error) {
+	return msql.ConnDebug(cfg)
 }
 
 // Approve automatically checks and clears file records for live.

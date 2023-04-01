@@ -82,8 +82,6 @@ func main() {
 		}
 		return
 	}
-	// Database check
-	checkDB(logr, configs)
 	// Print the compile and version details
 	if progInfo() {
 		execInfo(logr, configs)
@@ -94,6 +92,8 @@ func main() {
 		os.Stdout, _ = os.OpenFile(os.DevNull, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		defer os.Stdout.Close()
 	}
+	// Database check
+	checkDB(logr, configs)
 	// Execute the cobra flag library
 	if err := cmd.Execute(logr, configs); err != nil {
 		logr.Error(err)
@@ -131,7 +131,7 @@ func execInfo(logr *zap.SugaredLogger, c conf.Config) {
 	if err != nil {
 		logr.Error(err)
 	}
-	s, err := cmd.ProgInfo(c, version)
+	s, err := cmd.ProgInfo(logr, c, version)
 	if err != nil {
 		logr.Error(err)
 		return

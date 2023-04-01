@@ -201,12 +201,15 @@ func Vers(version string) string {
 }
 
 // ProgInfo returns the response for the -version flag.
-func ProgInfo(cfg conf.Config, version string) (string, error) {
+func ProgInfo(logr *zap.SugaredLogger, cfg conf.Config, version string) (string, error) {
+	if logr == nil {
+		return "", fmt.Errorf("logr %w", ErrPointer)
+	}
 	bin, err := conf.BinPath()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
-	l, err := check(cfg)
+	l, err := check(logr, cfg)
 	if err != nil {
 		return "", err
 	}
@@ -247,15 +250,18 @@ func ProgInfo(cfg conf.Config, version string) (string, error) {
 type lookups = map[string]string
 
 // check looks up the collection of dependencies and database connection.
-func check(cfg conf.Config) (lookups, error) {
+func check(logr *zap.SugaredLogger, cfg conf.Config) (lookups, error) {
+	if logr == nil {
+		return nil, fmt.Errorf("logr %w", ErrPointer)
+	}
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
 		miss       = "missing"
-		d          = "db"
+		db         = "db"
 	)
 	l := lookups{
-		"db":       disconnect,
+		"db":       ok,
 		"ansilove": miss,
 		"cwebp":    miss,
 		"convert":  miss,
@@ -268,16 +274,17 @@ func check(cfg conf.Config) (lookups, error) {
 		"unzip":    miss,
 		"zipinfo":  miss,
 	}
-	info, err := database.ConnInfo(cfg)
+	bug, err := database.ConnDebug(cfg)
 	if err != nil {
-		return nil, err
+		logr.Error(err)
+		l[db] = disconnect
 	}
-	l[d] = ok
-	if info != "" {
-		l[d] = info
+	if bug != "" {
+		logr.Info(bug)
+		l[db] = disconnect
 	}
 	for file := range l {
-		if file == d {
+		if file == db {
 			continue
 		}
 		if _, err := exec.LookPath(file); err == nil {

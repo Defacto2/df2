@@ -43,14 +43,14 @@ func TestConnect(t *testing.T) {
 
 func TestConnInfo0(t *testing.T) {
 	t.Parallel()
-	s, err := database.ConnInfo(conf.Config{})
+	s, err := database.ConnDebug(conf.Config{})
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
 }
 
 func TestConnInfo1(t *testing.T) {
 	t.Parallel()
-	s, err := database.ConnInfo(conf.Defaults())
+	s, err := database.ConnDebug(conf.Defaults())
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
@@ -60,7 +60,7 @@ func TestConnInfo2(t *testing.T) {
 	cfg := conf.Defaults()
 	cfg.DBName = "foo"
 	cfg.DBPass = "bar"
-	s, err := database.ConnInfo(cfg)
+	s, err := database.ConnDebug(cfg)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
 }
