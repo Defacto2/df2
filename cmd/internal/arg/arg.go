@@ -77,6 +77,10 @@ type Group struct {
 	Format   string
 }
 
+type Import struct {
+	Insert bool
+}
+
 type People struct {
 	Cronjob  bool
 	Forcejob bool

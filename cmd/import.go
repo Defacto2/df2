@@ -3,13 +3,16 @@ package cmd
 import (
 	"log"
 
+	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/dizzer"
 	"github.com/spf13/cobra"
 )
 
+var imrar arg.Import
+
 var importCmd = &cobra.Command{
 	Use:     "import (path to .rar)",
-	Short:   "Import a .rar archive collection containing NFO and textfile.",
+	Short:   "Import a .rar archive collection containing information NFO and text files.",
 	Aliases: []string{"i"},
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -22,36 +25,11 @@ var importCmd = &cobra.Command{
 		if err := dizzer.Run(args[0]); err != nil {
 			log.Fatal(err)
 		}
-
-		// id
-		// uuid
-		// group_brand_for
-		// record_title
-		// date_issued_year / date_issued_month / .. day
-		// filename
-		// filesize
-		// file_magic_type
-		// file_integrity_strong
-		// file_integrity_weak
-		// file_last_modified
-		// platform
-		// section
-		// comment
-		// createdat
-		// updatedat
-		// deletedat
-		// updatedby
-
-		// head, ok := f.Header.(zip.FileHeader)
-		// if ok {
-		// 	fmt.Println("Filename:", head.Name)
-		// 	fmt.Printf("%+v\n", head)
-		// }
-		// return nil
-
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(importCmd)
+	importCmd.PersistentFlags().BoolVarP(&imrar.Insert, "insert", "i", false,
+		"insert the found text files metadata to the database")
 }

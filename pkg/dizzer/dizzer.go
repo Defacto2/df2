@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,7 +22,7 @@ var (
 )
 
 var Rar = archiver.Rar{
-	OverwriteExisting:      false,
+	OverwriteExisting:      true,
 	MkdirAll:               true,
 	ImplicitTopLevelFolder: false,
 	ContinueOnError:        true,
@@ -52,9 +54,13 @@ func Run(nameRar string) error {
 	}
 	defer os.RemoveAll(dir)
 
+	// Unarchive prints useless errors but is much faster than using archiver.Extract(),
+	// so instead discard any logged errors.
+	log.SetOutput(io.Discard)
 	if err := Rar.Unarchive(nameRar, dir); err != nil {
 		return err
 	}
+	log.SetOutput(os.Stderr)
 
 	// build a collection of records to insert to the db.
 	ch1 := make(chan record.Download)
@@ -177,7 +183,6 @@ func Run(nameRar string) error {
 	fmt.Printf("years: %+v\n", st.LastMods)
 	fmt.Println("how many new records?", len(records), "vs i", i)
 
-	//	defer close(ch2)
 	time.Sleep(1 * time.Second)
 
 	fmt.Println("time taken", time.Since(tick).Seconds())
