@@ -48,7 +48,7 @@ func TestYN(t *testing.T) {
 	b, err := prompt.YN(nil, "", false)
 	assert.Nil(t, err)
 	assert.Equal(t, b, false)
-	b, err = prompt.YN(io.Discard, "blah blah", true)
+	b, err = prompt.YN(io.Discard, "blah-blah", true)
 	assert.Nil(t, err)
 	assert.Equal(t, b, true)
 }
