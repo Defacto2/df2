@@ -49,7 +49,6 @@ func DizTitle(body string) ( //nolint:nonamedreturns
 			continue
 		}
 		if p == "" {
-			// todo: confirm author isnt in title
 			p = s
 			break
 		}

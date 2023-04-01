@@ -121,7 +121,7 @@ func Type(name string) error {
 	mime := http.DetectContentType(dst.Bytes())
 	s := strings.Split(mime, "/")
 	if len(s) == 0 {
-		return err // todo
+		return fmt.Errorf("type cannot copy the named file: %w: %s", err, name)
 	}
 	const fallback = "application/octet-stream"
 	if mime == fallback {

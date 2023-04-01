@@ -16,6 +16,7 @@ linters:
     - varcheck
 
     # disabled
+    - cyclop          # disabled for performance
     - exhaustruct     # conflicts with the cobra pkg
     - nlreturn        # opinionated
     - tagliatelle     # naming suggestions interfere with external APIs
@@ -23,8 +24,6 @@ linters:
     - wrapcheck       # wrapping 3rd party errors is unnecessary
     - wsl             # whitespace linter, slow, aggressive and opinionated
 
-    - cyclop
-    - godox
 linters-settings:
   cyclop:
     # The maximal code complexity to report.
