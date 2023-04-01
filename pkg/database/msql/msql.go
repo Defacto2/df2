@@ -31,6 +31,7 @@ var (
 	ErrConnect  = errors.New("no connection to the mysql database server")
 	ErrDB       = errors.New("database handle pointer cannot be nil")
 	ErrDatabase = errors.New("name of the database to connect is missing")
+	ErrTimeout  = errors.New("connection timeout is too short")
 	ErrHost     = errors.New("host name of the database server is missing")
 	ErrUser     = errors.New("user for database login is missing")
 )
@@ -58,6 +59,9 @@ func (c *Connection) Check() error {
 	}
 	if c.User == "" {
 		errs = errors.Join(errs, ErrUser)
+	}
+	if c.Timeout < 1*time.Second {
+		errs = errors.Join(errs, fmt.Errorf("%w: %v", ErrTimeout, c.Timeout))
 	}
 	if errs != nil {
 		return errs
@@ -97,7 +101,7 @@ func (c Connection) String() string {
 		c.Timeout = Timeout
 	}
 	v.Add("allowCleartextPasswords", fmt.Sprint(!c.NoSSLMode))
-	v.Add("timeout", fmt.Sprintf("%ds", c.Timeout))
+	v.Add("timeout", fmt.Sprintf("%v", c.Timeout))
 	v.Add("parseTime", "true") // parseTime is required by the SQL boiler pkg.
 	// example connector: "user:password@tcp(localhost:5432)/database?sslmode=false"
 	return fmt.Sprintf("%s@%s/%s?%s", login, address, c.Database, v.Encode())
@@ -153,7 +157,7 @@ func Connect(cfg conf.Config) (*sql.DB, error) {
 		Host:      cfg.DBHost,
 		Port:      cfg.DBPort,
 		NoSSLMode: !cfg.IsProduction,
-		Timeout:   time.Duration(cfg.Timeout),
+		Timeout:   time.Duration(cfg.Timeout) * time.Second,
 	}
 	if dsn.Timeout == 0 {
 		dsn.Timeout = Timeout

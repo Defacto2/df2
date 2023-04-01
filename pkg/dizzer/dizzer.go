@@ -28,13 +28,8 @@ var Rar = archiver.Rar{
 
 // Run the dizzer on the named .rar file.
 func Run(w io.Writer, logger io.Writer, nameRar string) error {
-	if err := Rar.CheckExt(nameRar); err != nil {
-		return fmt.Errorf("%w: %s", err, nameRar)
-	}
-	if st, err := os.Stat(nameRar); err != nil {
-		return fmt.Errorf("%w: %s", err, nameRar)
-	} else if st.IsDir() {
-		return fmt.Errorf("%w: %s", err, nameRar)
+	if err := check(nameRar); err != nil {
+		return err
 	}
 	if w == nil {
 		w = io.Discard
@@ -66,6 +61,41 @@ func Run(w io.Writer, logger io.Writer, nameRar string) error {
 	}
 	log.SetOutput(os.Stderr)
 
+	newRels := st.releases(dir)
+	records := st.records(logger, newRels)
+
+	for i, r := range records {
+		u, err := json.MarshalIndent(r, "", " ")
+		if err != nil {
+			continue
+		}
+		fmt.Fprintf(w, "%d.\t%+v of %s\n", i, r.Title, r.FileName)
+		fmt.Fprintln(w, string(u))
+	}
+
+	fmt.Fprintln(w, "nfos:", st.NFOs)
+	fmt.Fprintln(w, "dizes:", st.DIZs)
+	fmt.Fprintln(w, "other files:", st.Others)
+	fmt.Fprintln(w, "group:", st.Group)
+	fmt.Fprintf(w, "years: %+v\n", st.LastMods)
+	fmt.Fprintln(logger, "time taken", time.Since(tick).Seconds())
+
+	return nil
+}
+
+func check(nameRar string) error {
+	if err := Rar.CheckExt(nameRar); err != nil {
+		return fmt.Errorf("%w: %s", err, nameRar)
+	}
+	if st, err := os.Stat(nameRar); err != nil {
+		return fmt.Errorf("%w: %s", err, nameRar)
+	} else if st.IsDir() {
+		return fmt.Errorf("%w: %s", err, nameRar)
+	}
+	return nil
+}
+
+func (st *Stat) releases(dir string) int {
 	// build a collection of records to insert to the db.
 	ch1 := make(chan record.Download)
 	ch2 := make(chan record.Download)
@@ -124,8 +154,11 @@ func Run(w io.Writer, logger io.Writer, nameRar string) error {
 			newRecs++
 		}
 	}
+	return newRecs
+}
 
-	records := make([]record.Record, newRecs)
+func (st *Stat) records(logger io.Writer, newRels int) []record.Record {
+	records := make([]record.Record, newRels)
 	i, l := 0, len(records)
 	for _, r := range st.Releases {
 		if i >= l {
@@ -136,6 +169,7 @@ func Run(w io.Writer, logger io.Writer, nameRar string) error {
 		if r.Diz == (record.Download{}) {
 			fmt.Fprintf(logger, "no file_id.diz for %s", r.Title)
 		} else {
+			var err error
 			records[i], err = record.New(r.Path, st.Group)
 			if err != nil {
 				fmt.Fprintln(logger, err)
@@ -152,6 +186,7 @@ func Run(w io.Writer, logger io.Writer, nameRar string) error {
 		if r.Nfo == (record.Download{}) {
 			fmt.Fprintf(logger, "no readme for %s files including %s", r.Title, r.Files)
 		} else {
+			var err error
 			records[i], err = record.New(r.Path, st.Group)
 			if err != nil {
 				fmt.Fprintln(logger, err)
@@ -166,28 +201,7 @@ func Run(w io.Writer, logger io.Writer, nameRar string) error {
 			i++
 		}
 	}
-
-	for i, r := range records {
-		u, err := json.MarshalIndent(r, "", " ")
-		if err != nil {
-			continue
-		}
-		fmt.Fprintf(w, "%d.\t%+v of %s\n", i, r.Title, r.FileName)
-		fmt.Fprintln(w, string(u))
-	}
-
-	fmt.Fprintln(w, "nfos:", st.NFOs)
-	fmt.Fprintln(w, "dizes:", st.DIZs)
-	fmt.Fprintln(w, "other files:", st.Others)
-	fmt.Fprintln(w, "group:", st.Group)
-	fmt.Fprintf(w, "years: %+v\n", st.LastMods)
-	fmt.Fprintln(w, "how many new records?", len(records), "vs i", i)
-
-	time.Sleep(1 * time.Second)
-
-	fmt.Fprintln(logger, "time taken", time.Since(tick).Seconds())
-
-	return nil
+	return records
 }
 
 // Stat the collection of NFO and file_id.diz files within an RAR archive.

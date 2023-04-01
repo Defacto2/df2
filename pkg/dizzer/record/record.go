@@ -124,17 +124,9 @@ func (dl *Download) New(name, group string) error {
 	}
 	defer f.Close()
 
-	if filepath.Base(name) == "file_id.diz" {
-		diz := strings.Builder{}
-		fileScanner := bufio.NewScanner(f)
-		for fileScanner.Scan() {
-			fmt.Fprintln(&diz, fileScanner.Text())
-		}
-		if err := dl.ReadDIZ(diz.String(), group); err != nil {
-			return err
-		}
+	if err := dl.ScanDIZ(f, name, group); err != nil {
+		return err
 	}
-
 	// hashes require the named file to be reopened after being read.
 	f, err = os.Open(name)
 	if err != nil {
@@ -164,6 +156,18 @@ func (dl *Download) New(name, group string) error {
 	}
 	dl.Magic = magic
 	return nil
+}
+
+func (dl *Download) ScanDIZ(f *os.File, name, group string) error {
+	if filepath.Base(name) != "file_id.diz" {
+		return nil
+	}
+	diz := strings.Builder{}
+	fileScanner := bufio.NewScanner(f)
+	for fileScanner.Scan() {
+		fmt.Fprintln(&diz, fileScanner.Text())
+	}
+	return dl.ReadDIZ(diz.String(), group)
 }
 
 func (dl *Download) ReadDIZ(body string, group string) error {

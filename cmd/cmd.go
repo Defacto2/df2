@@ -201,12 +201,12 @@ func Vers(version string) string {
 }
 
 // ProgInfo returns the response for the -version flag.
-func ProgInfo(version string) (string, error) {
+func ProgInfo(cfg conf.Config, version string) (string, error) {
 	bin, err := conf.BinPath()
 	if err != nil {
 		bin = fmt.Sprint(err)
 	}
-	l, err := check()
+	l, err := check(cfg)
 	if err != nil {
 		return "", err
 	}
@@ -247,7 +247,7 @@ func ProgInfo(version string) (string, error) {
 type lookups = map[string]string
 
 // check looks up the collection of dependencies and database connection.
-func check() (lookups, error) {
+func check(cfg conf.Config) (lookups, error) {
 	const (
 		disconnect = "disconnect"
 		ok         = "ok"
@@ -268,12 +268,12 @@ func check() (lookups, error) {
 		"unzip":    miss,
 		"zipinfo":  miss,
 	}
-	info, err := database.ConnInfo(confg)
+	info, err := database.ConnInfo(cfg)
 	if err != nil {
-		if errors.Is(err, ErrConfig) {
-			return nil, err
-		}
-	} else {
+		return nil, err
+	}
+	l[d] = ok
+	if info != "" {
 		l[d] = info
 	}
 	for file := range l {

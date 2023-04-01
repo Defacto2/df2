@@ -27,7 +27,6 @@ linters:
     - godox
     - gochecknoglobals
     - nonamedreturns
-    - funlen
 linters-settings:
   cyclop:
     # The maximal code complexity to report.

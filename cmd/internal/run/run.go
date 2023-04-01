@@ -337,6 +337,66 @@ func GroupCron(db *sql.DB, w io.Writer, cfg conf.Config, gro arg.Group) error {
 	return nil
 }
 
+func newDemozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, i string) error {
+	s := color.Info.Sprintf("%s. scan for new demozoo submissions\n", i)
+	fmt.Fprintln(w, s)
+	newDZ := demozoo.Request{
+		All:       false,
+		Overwrite: false,
+		Refresh:   false,
+		Config:    cfg,
+		Logger:    l,
+	}
+	return newDZ.Queries(db, w)
+}
+
+func newProof(db *sql.DB, w io.Writer, cfg conf.Config, i string) error {
+	s := color.Info.Sprintf("%s. scan for new proof submissions\n", i)
+	fmt.Fprintln(w, s)
+	newProof := proof.Request{
+		Overwrite:   false,
+		All:         false,
+		HideMissing: false,
+	}
+	return newProof.Queries(db, w, cfg)
+}
+
+func genZIPList(db *sql.DB, w io.Writer, cfg conf.Config, i string) error {
+	s := color.Info.Sprintf("%s. scan for empty archives\n", i)
+	fmt.Fprintln(w, s)
+	return zipcontent.Fix(db, w, cfg, true)
+}
+
+func genImage(db *sql.DB, w io.Writer, i string) error {
+	s := color.Info.Sprintf("%s. generate missing images\n", i)
+	fmt.Fprintln(w, s)
+	return images.Fix(db, w)
+}
+
+func genText(db *sql.DB, w io.Writer, cfg conf.Config, i string) error {
+	s := color.Info.Sprintf("%s. generate missing text previews\n", i)
+	fmt.Fprintln(w, s)
+	return text.Fix(db, w, cfg)
+}
+
+func fixDZ(db *sql.DB, w io.Writer, i string) error {
+	s := color.Info.Sprintf("%s. fix demozoo data conflicts\n", i)
+	fmt.Fprintln(w, s)
+	return demozoo.Fix(db, w)
+}
+
+func fixDB(db *sql.DB, w io.Writer, i string) error {
+	s := color.Info.Sprintf("%s. fix malformed database entries\n", i)
+	fmt.Fprintln(w, s)
+	return database.Fix(db, w)
+}
+
+func fixGroup(db *sql.DB, w io.Writer, i string) error {
+	s := color.Info.Sprintf("%s. fix malformed groups\n", i)
+	fmt.Fprintln(w, s)
+	return groups.Fix(db, w)
+}
+
 func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
@@ -347,64 +407,33 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if w == nil {
 		w = io.Discard
 	}
-	i := 0
 	s := color.Primary.Sprint("Scans for new submissions and record cleanup")
 	fmt.Fprintln(w, s)
-	i++
-	s = color.Info.Sprintf("%d. scan for new demozoo submissions\n", i)
-	fmt.Fprintln(w, s)
-	newDZ := demozoo.Request{
-		All:       false,
-		Overwrite: false,
-		Refresh:   false,
-		Config:    cfg,
-		Logger:    l,
+	if err := newDemozoo(db, w, l, cfg, "1"); err != nil {
+		l.Errorln(err)
 	}
-	if err := newDZ.Queries(db, w); err != nil {
-		return err
+	if err := newProof(db, w, cfg, "2"); err != nil {
+		l.Errorln(err)
 	}
-	i++
-	s = color.Info.Sprintf("%d. scan for new proof submissions\n", i)
-	fmt.Fprintln(w, s)
-	newProof := proof.Request{
-		Overwrite:   false,
-		All:         false,
-		HideMissing: false,
+	if err := genZIPList(db, w, cfg, "3"); err != nil {
+		l.Errorln(err)
 	}
-	if err := newProof.Queries(db, w, cfg); err != nil {
-		return err
+	if err := genImage(db, w, "4"); err != nil {
+		l.Errorln(err)
 	}
-	i++
-	s = color.Info.Sprintf("%d. scan for empty archives\n", i)
-	fmt.Fprintln(w, s)
-	if err := zipcontent.Fix(db, w, cfg, true); err != nil {
-		return err
+	if err := genText(db, w, cfg, "5"); err != nil {
+		l.Errorln(err)
 	}
-	i++
-	s = color.Info.Sprintf("%d. generate missing images\n", i)
-	fmt.Fprintln(w, s)
-	if err := images.Fix(db, w); err != nil {
-		return err
+	if err := fixDZ(db, w, "6"); err != nil {
+		l.Errorln(err)
 	}
-	i++
-	s = color.Info.Sprintf("%d. generate missing text previews\n", i)
-	fmt.Fprintln(w, s)
-	if err := text.Fix(db, w, cfg); err != nil {
-		return err
+	if err := fixDB(db, w, "7"); err != nil {
+		l.Errorln(err)
 	}
-	i++
-	s = color.Info.Sprintf("%d. fix demozoo data conflicts\n", i)
-	fmt.Fprintln(w, s)
-	if err := demozoo.Fix(db, w); err != nil {
-		return err
+	if err := fixGroup(db, w, "8"); err != nil {
+		l.Errorln(err)
 	}
-	i++
-	s = color.Info.Sprintf("%d. fix malformed database entries\n", i)
-	fmt.Fprintln(w, s)
-	if err := database.Fix(db, w); err != nil {
-		return err
-	}
-	return groups.Fix(db, w)
+	return nil
 }
 
 func People(db *sql.DB, w io.Writer, directory string, f arg.People) error {

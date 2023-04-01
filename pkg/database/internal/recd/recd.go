@@ -430,6 +430,10 @@ func Queries(db *sql.DB, w io.Writer, cfg conf.Config, v bool) error {
 	return query(db, w, cfg, v, rows, cols)
 }
 
+func x() string {
+	return fmt.Sprintf(" %s", str.X())
+}
+
 func query(db *sql.DB, w io.Writer, cfg conf.Config, v bool, rows *sql.Rows, columns []string) error {
 	if db == nil {
 		return ErrDB
@@ -440,9 +444,6 @@ func query(db *sql.DB, w io.Writer, cfg conf.Config, v bool, rows *sql.Rows, col
 	if w == nil {
 		w = io.Discard
 	}
-	x := func() string {
-		return fmt.Sprintf(" %s", str.X())
-	}
 	values := make([]sql.RawBytes, len(columns))
 	args := make([]any, len(values))
 	for i := range values {
@@ -452,10 +453,10 @@ func query(db *sql.DB, w io.Writer, cfg conf.Config, v bool, rows *sql.Rows, col
 	if err != nil {
 		return err
 	}
-	// fetch the rows
-	var r Record
-	r.C = 0
-	r.Verbose = v
+	r := Record{
+		C:       0,
+		Verbose: v,
+	}
 	rowCnt := 0
 	for rows.Next() {
 		rowCnt++
@@ -464,16 +465,7 @@ func query(db *sql.DB, w io.Writer, cfg conf.Config, v bool, rows *sql.Rows, col
 		}
 		Verbose(w, v, fmt.Sprintf("\nitem %04d (%v) %s %s ",
 			rowCnt, string(values[0]), color.Primary.Sprint(r.UUID), color.Info.Sprint(r.Filename)))
-		na, err := NewApprove(values)
-		if err != nil {
-			fmt.Fprintln(w, err)
-		}
-		dz, err := IsDemozoo(values)
-		if err != nil {
-			fmt.Fprintln(w, err)
-		}
-		if !na && !dz {
-			Verbose(w, v, x())
+		if skip(w, values, v) {
 			continue
 		}
 		r.UUID = string(values[1])
@@ -499,6 +491,22 @@ func query(db *sql.DB, w io.Writer, cfg conf.Config, v bool, rows *sql.Rows, col
 	}
 	r.Summary(w, rowCnt)
 	return nil
+}
+
+func skip(w io.Writer, values []sql.RawBytes, v bool) bool {
+	na, err := NewApprove(values)
+	if err != nil {
+		fmt.Fprintln(w, err)
+	}
+	dz, err := IsDemozoo(values)
+	if err != nil {
+		fmt.Fprintln(w, err)
+	}
+	if !na && !dz {
+		Verbose(w, v, x())
+		return true
+	}
+	return false
 }
 
 // IsDemozoo reports if a fetched demozoo file record is set to unapproved.

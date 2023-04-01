@@ -34,8 +34,7 @@ func Fix(db *sql.DB, w io.Writer, cfg conf.Config, summary bool) error { //nolin
 	rows, err := db.Query(stmt())
 	if err != nil {
 		return err
-	}
-	if rows.Err() != nil {
+	} else if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()
@@ -54,8 +53,7 @@ func Fix(db *sql.DB, w io.Writer, cfg conf.Config, summary bool) error { //nolin
 	rows, err = db.Query(stmt())
 	if err != nil {
 		return err
-	}
-	if rows.Err() != nil {
+	} else if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()

@@ -47,32 +47,25 @@ func main() {
 	}
 	defer l.Sync() //nolint:errcheck
 	logr := l.Sugar()
-
 	// Panic recovery to close any active connections and to log the problem.
 	defer func() {
 		if i := recover(); i != nil {
-			//debug.PrintStack() // uncomment to trace
+			// debug.PrintStack() // uncomment to trace
 			logr.DPanic(i)
 		}
 	}()
-
 	// Environment configuration
 	configs := conf.Defaults()
 	if err := env.Parse(
 		&configs, conf.Options()); err != nil {
 		logr.Fatalf("Environment variable probably contains an invalid value: %s.", err)
 	}
-
 	// Go runtime customizations
-	if i := configs.MaxProcs; i > 0 {
-		runtime.GOMAXPROCS(int(i))
-	}
-
+	setProcs(configs)
 	// Setup the production logger
 	if !configs.IsProduction {
 		logr = logger.Production().Sugar()
 	}
-
 	// Configuration sanity checks
 	if err := configs.Checks(logr); err != nil {
 		logr.Error(err)
@@ -80,7 +73,6 @@ func main() {
 	if ascii() {
 		color.Enable = false
 	}
-
 	// Execute help and exit
 	if help() {
 		if err := cmd.Execute(logr, configs); err != nil {
@@ -90,9 +82,33 @@ func main() {
 		}
 		return
 	}
-
 	// Database check
-	db, err := msql.Connect(configs)
+	checkDB(logr, configs)
+	// Print the compile and version details
+	if progInfo() {
+		execInfo(logr, configs)
+		return
+	}
+	// Suppress stdout
+	if quiet() {
+		os.Stdout, _ = os.OpenFile(os.DevNull, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+		defer os.Stdout.Close()
+	}
+	// Execute the cobra flag library
+	if err := cmd.Execute(logr, configs); err != nil {
+		logr.Error(err)
+		defer os.Exit(1)
+	}
+}
+
+func setProcs(c conf.Config) {
+	if i := c.MaxProcs; i > 0 {
+		runtime.GOMAXPROCS(int(i))
+	}
+}
+
+func checkDB(logr *zap.SugaredLogger, c conf.Config) {
+	db, err := msql.Connect(c)
 	if err != nil {
 		logr.Errorf("Could not connect to the database: %s.", err)
 	}
@@ -100,41 +116,27 @@ func main() {
 		if db == nil {
 			return
 		}
-		if !configs.IsProduction {
+		if !c.IsProduction {
 			logr.Info("Closed the tcp connection to the database.")
 		}
 		if err := db.Close(); err != nil {
 			logr.Error(err)
 		}
 	}()
+}
 
-	// Print the compile and version details
-	if progInfo() {
-		w := os.Stdout
-		err := cmd.Brand(w, logr, brand)
-		if err != nil {
-			logr.Error(err)
-		}
-		s, err := cmd.ProgInfo(version)
-		if err != nil {
-			logr.Error(err)
-			return
-		}
-		fmt.Fprint(w, s)
+func execInfo(logr *zap.SugaredLogger, c conf.Config) {
+	w := os.Stdout
+	err := cmd.Brand(w, logr, brand)
+	if err != nil {
+		logr.Error(err)
+	}
+	s, err := cmd.ProgInfo(c, version)
+	if err != nil {
+		logr.Error(err)
 		return
 	}
-
-	// Suppress stdout
-	if quiet() {
-		os.Stdout, _ = os.OpenFile(os.DevNull, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
-		defer os.Stdout.Close()
-	}
-
-	// Execute the cobra flag library
-	if err := cmd.Execute(logr, configs); err != nil {
-		logr.Error(err)
-		defer os.Exit(1)
-	}
+	fmt.Fprint(w, s)
 }
 
 // global flags that should not be handled by the Cobra library
