@@ -199,7 +199,7 @@ func TestArjItem(t *testing.T) {
 	}
 }
 
-func TestExtract(t *testing.T) {
+func TestExtract(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 	type args struct {
 		src     string

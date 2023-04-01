@@ -30,20 +30,21 @@ const (
 // new cli arg to --limit number of records to process
 // need to lookup strong checksum before commit record add, file generation
 
+// Record contains the fields that will be used as database cell values.
 type Record struct {
-	UUID       string    // uuid *+
-	Title      string    // record_title *+
-	Group      string    // group_brand_for *+
-	FileName   string    // filename *
-	FileSize   int64     // filesize *
-	FileMagic  string    // file_magic_type *
-	HashStrong string    // file_integrity_strong *
-	HashWeak   string    // file_integrity_weak *
-	LastMod    time.Time // file_last_modified *
-	Published  time.Time // date_issued_year,date_issued_month,date_issued_day *
-	Section    string    // todo use a constant default *+
-	Platform   string    // todo use a const default *+
-	Comment    string    // key *
+	UUID       string    `json:"uuid"`
+	Title      string    `json:"record_title"`
+	Group      string    `json:"group_brand_for"`
+	FileName   string    `json:"filename"`
+	FileSize   int64     `json:"filesize"`
+	FileMagic  string    `json:"file_magic_type"`
+	HashStrong string    `json:"file_integrity_strong"`
+	HashWeak   string    `json:"file_integrity_weak"`
+	LastMod    time.Time `json:"file_last_modified"`
+	Published  time.Time `json:"date_issued"`
+	Section    string    `json:"section"`
+	Platform   string    `json:"platform"`
+	Comment    string    `json:"comment"`
 }
 
 // New creates a Record with a unique UUID.

@@ -244,7 +244,7 @@ func TestRecord_Download(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestRecord_DoseeMeta(t *testing.T) {
+func TestRecord_DoseeMeta(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 	r := demozoo.Record{}
 	c := conf.Defaults()

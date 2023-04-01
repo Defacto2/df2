@@ -62,6 +62,9 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 	if err != nil {
 		return err
 	}
+	if rows.Err() != nil {
+		return err
+	}
 	dir, err := directories.Init(r.Config, false)
 	if err != nil {
 		return err

@@ -16,6 +16,9 @@ func (v *Version) Query(cfg conf.Config) error {
 	if err != nil {
 		return err
 	}
+	if rows.Err() != nil {
+		return err
+	}
 	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(v); err != nil {

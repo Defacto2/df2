@@ -268,7 +268,12 @@ func check() (lookups, error) {
 		"unzip":    miss,
 		"zipinfo":  miss,
 	}
-	if info, err := database.ConnInfo(confg); err == nil {
+	info, err := database.ConnInfo(confg)
+	if err != nil {
+		if errors.Is(err, ErrConfig) {
+			return nil, err
+		}
+	} else {
 		l[d] = info
 	}
 	for file := range l {
