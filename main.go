@@ -51,7 +51,7 @@ func main() {
 	// Panic recovery to close any active connections and to log the problem.
 	defer func() {
 		if i := recover(); i != nil {
-			// debug.PrintStack()
+			//debug.PrintStack() // uncomment to trace
 			logr.DPanic(i)
 		}
 	}()
@@ -97,6 +97,9 @@ func main() {
 		logr.Errorf("Could not connect to the database: %s.", err)
 	}
 	defer func() {
+		if db == nil {
+			return
+		}
 		if !configs.IsProduction {
 			logr.Info("Closed the tcp connection to the database.")
 		}
