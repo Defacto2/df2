@@ -19,11 +19,13 @@ import (
 
 var ErrDir = errors.New("named file points to a directory")
 
-var Rar = archiver.Rar{
-	OverwriteExisting:      true,
-	MkdirAll:               true,
-	ImplicitTopLevelFolder: false,
-	ContinueOnError:        true,
+func rar() archiver.Rar {
+	return archiver.Rar{
+		OverwriteExisting:      true,
+		MkdirAll:               true,
+		ImplicitTopLevelFolder: false,
+		ContinueOnError:        true,
+	}
 }
 
 // Run the dizzer on the named .rar file.
@@ -56,7 +58,8 @@ func Run(w io.Writer, logger io.Writer, nameRar string) error {
 	// Unarchive prints useless errors but is much faster than using archiver.Extract(),
 	// so instead discard any logged errors.
 	log.SetOutput(io.Discard)
-	if err := Rar.Unarchive(nameRar, dir); err != nil {
+	rar := rar()
+	if err := rar.Unarchive(nameRar, dir); err != nil {
 		return err
 	}
 	log.SetOutput(os.Stderr)
@@ -84,7 +87,8 @@ func Run(w io.Writer, logger io.Writer, nameRar string) error {
 }
 
 func check(nameRar string) error {
-	if err := Rar.CheckExt(nameRar); err != nil {
+	rar := rar()
+	if err := rar.CheckExt(nameRar); err != nil {
 		return fmt.Errorf("%w: %s", err, nameRar)
 	}
 	if st, err := os.Stat(nameRar); err != nil {
@@ -231,7 +235,8 @@ type Release struct {
 func (st *Stat) Walk(name string) error {
 	st.Releases = map[string]Release{}
 	key := ""
-	err := Rar.Walk(name, func(f archiver.File) error {
+	rar := rar()
+	err := rar.Walk(name, func(f archiver.File) error {
 		if st.Name == "" {
 			st.Name = name
 		}

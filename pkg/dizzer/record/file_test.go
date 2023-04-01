@@ -10,17 +10,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	dir = internal.Testdata(3)
-	rar = filepath.Join(dir, "rar", "dizzer.rar")
-	zip = filepath.Join(dir, "pkzip", "PKZ80A1.ZIP")
-)
-
 const (
 	sha384 = "749b328f5284e5c196f932a07194894e0fc50c1d9c414457883bc2d79a5ee8a94ac2981e5168ad4df1f4a6405dce99c7"
 	summd5 = "7c7d17c6faec74918f4a7047e1c50412"
 	magic  = "RAR archive data, v4, os"
 )
+
+func dir() string {
+	return internal.Testdata(3)
+}
+
+func rar() string {
+	return filepath.Join(dir(), "rar", "dizzer.rar")
+}
+
+func zip() string {
+	return filepath.Join(dir(), "pkzip", "PKZ80A1.ZIP")
+}
 
 func TestSum386(t *testing.T) {
 	t.Parallel()
@@ -28,7 +34,7 @@ func TestSum386(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "", sum)
 
-	f, err := os.Open(rar)
+	f, err := os.Open(rar())
 	assert.Nil(t, err)
 	defer f.Close()
 
@@ -43,7 +49,7 @@ func TestSumMD5(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "", sum)
 
-	f, err := os.Open(rar)
+	f, err := os.Open(rar())
 	assert.Nil(t, err)
 	defer f.Close()
 
@@ -57,10 +63,10 @@ func TestDetermine(t *testing.T) {
 	s, err := record.Determine("")
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
-	s, err = record.Determine(rar)
+	s, err = record.Determine(rar())
 	assert.Nil(t, err)
 	assert.Equal(t, magic, s)
-	s, err = record.Determine(zip)
+	s, err = record.Determine(zip())
 	assert.Nil(t, err)
 	assert.Equal(t, "Zip archive data, at least v1.0 to extract, compression method=Shrinking", s)
 }

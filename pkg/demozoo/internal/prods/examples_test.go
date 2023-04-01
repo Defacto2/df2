@@ -19,7 +19,9 @@ const (
 	ch3 = 3
 )
 
-var testDir = filepath.Join("..", "..", "..", "..", "testdata", "json")
+func testDir() string {
+	return filepath.Join("..", "..", "..", "..", "testdata", "json")
+}
 
 var example1, example2, example3 prods.ProductionsAPIv1 //nolint:gochecknoglobals
 
@@ -46,7 +48,7 @@ func loadExample(r int, c chan prods.ProductionsAPIv1) {
 	default:
 		log.Print(fmt.Errorf("load r %d: %w", r, ErrVal))
 	}
-	path, err := filepath.Abs(filepath.Join(testDir, fmt.Sprintf("record_%s.json", name)))
+	path, err := filepath.Abs(filepath.Join(testDir(), fmt.Sprintf("record_%s.json", name)))
 	if err != nil {
 		log.Print(fmt.Errorf("path %q: %w", path, err))
 	}

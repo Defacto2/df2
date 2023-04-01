@@ -25,7 +25,6 @@ linters:
 
     - cyclop
     - godox
-    - gochecknoglobals
 linters-settings:
   cyclop:
     # The maximal code complexity to report.

@@ -15,7 +15,9 @@ const (
 	uuid     = "ef73b9dc-58b5-11ec-bf63-0242ac130002"
 )
 
-var path = filepath.Join("..", "..", "..", "..", "testdata", "uuid")
+func path() string {
+	return filepath.Join("..", "..", "..", "..", "testdata", "uuid")
+}
 
 func TestZipfile_Exist(t *testing.T) {
 	t.Parallel()
@@ -27,7 +29,7 @@ func TestZipfile_Exist(t *testing.T) {
 	z = cmmt.Zipfile{
 		UUID: "foo",
 	}
-	b, err = z.Exist(path)
+	b, err = z.Exist(path())
 	assert.NotNil(t, err)
 	assert.False(t, b)
 
@@ -39,7 +41,7 @@ func TestZipfile_Exist(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.False(t, b)
 
-	b, err = z.Exist(path)
+	b, err = z.Exist(path())
 	assert.Nil(t, err)
 	assert.True(t, b)
 }
@@ -62,7 +64,7 @@ func TestZipfile_Save(t *testing.T) {
 		ID:   1,
 		UUID: uuid,
 	}
-	s, err = z.Save(io.Discard, path)
+	s, err = z.Save(io.Discard, path())
 	assert.Nil(t, err)
 	assert.NotEqual(t, "", s)
 }

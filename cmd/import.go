@@ -9,9 +9,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var imrar arg.Import
+var imrar arg.Import //nolint:gochecknoglobals
 
-var importCmd = &cobra.Command{
+var importCmd = &cobra.Command{ //nolint:gochecknoglobals
 	Use:     "import (path to .rar)",
 	Short:   "Import a .rar archive collection containing information NFO and text files.",
 	Aliases: []string{"i"},

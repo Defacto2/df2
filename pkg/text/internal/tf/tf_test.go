@@ -19,7 +19,9 @@ const (
 	fileToExtract = "test.txt"
 )
 
-var dzDir = filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
+func dzDir() string {
+	return filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
+}
 
 func TestTextFile(t *testing.T) {
 	t.Parallel()
@@ -58,7 +60,7 @@ func TestTextFile_Extract(t *testing.T) {
 	err = s.Extract(io.Discard, &dir)
 	assert.NotNil(t, err)
 
-	dir.UUID = dzDir // overwrite the UUID to use testdata
+	dir.UUID = dzDir() // overwrite the UUID to use testdata
 	s = tf.TextFile{
 		ID:     1,
 		UUID:   uuid,
@@ -69,7 +71,7 @@ func TestTextFile_Extract(t *testing.T) {
 	err = s.Extract(io.Discard, &dir)
 	assert.Nil(t, err)
 	// test.zip only contains 1 text file that should be removed after extraction
-	defer os.Remove(filepath.Join(dzDir, uuid+".txt"))
+	defer os.Remove(filepath.Join(dzDir(), uuid+".txt"))
 }
 
 func TestTextFile_ExtractedImgs(t *testing.T) {
@@ -87,7 +89,7 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 		Ext:    ".zip",
 		Readme: sql.NullString{String: fileToExtract, Valid: true},
 	}
-	err = s.ExtractedImgs(io.Discard, conf.Defaults(), filepath.Join(dzDir, "extracted"))
+	err = s.ExtractedImgs(io.Discard, conf.Defaults(), filepath.Join(dzDir(), "extracted"))
 	assert.Nil(t, err)
 }
 
@@ -106,7 +108,7 @@ func TestTextFile_TextPNG(t *testing.T) {
 		Ext:    ".zip",
 		Readme: sql.NullString{String: fileToExtract, Valid: true},
 	}
-	err = s.TextPNG(io.Discard, conf.Defaults(), 0, dzDir)
+	err = s.TextPNG(io.Discard, conf.Defaults(), 0, dzDir())
 	assert.NotNil(t, err)
 	// further tests can be done using the those created for img.Make()
 }
@@ -129,7 +131,7 @@ func TestTextFile_Webp(t *testing.T) {
 		Ext:    ".zip",
 		Readme: sql.NullString{String: fileToExtract, Valid: true},
 	}
-	i, err = s.WebP(io.Discard, 0, dzDir)
+	i, err = s.WebP(io.Discard, 0, dzDir())
 	assert.Nil(t, err)
 	assert.Equal(t, 1, i)
 }

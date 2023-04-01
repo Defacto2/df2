@@ -21,12 +21,12 @@ const (
 	uuid = "_0000000-0000-0000-0000-000000000000"
 )
 
-var testDir = filepath.Join("..", "..", "..", "..", "testdata")
+func testDir() string { return filepath.Join("..", "..", "..", "..", "testdata") }
 
 func TestMake(t *testing.T) {
 	t.Parallel()
-	gif := filepath.Join(testDir, "images", "test.gif")
-	txt := filepath.Join(testDir, "text", "test.txt")
+	gif := filepath.Join(testDir(), "images", "test.gif")
+	txt := filepath.Join(testDir(), "text", "test.txt")
 	cfg := conf.Defaults()
 
 	err := img.Make(nil, conf.Config{}, "", "", false)
@@ -50,18 +50,18 @@ func TestMake(t *testing.T) {
 
 func TestType(t *testing.T) {
 	t.Parallel()
-	gif := filepath.Join(testDir, "images", "test.gif")
-	iff := filepath.Join(testDir, "images", "test.iff")
-	png := filepath.Join(testDir, "images", "test.png")
-	wbm := filepath.Join(testDir, "images", "test.wbm")
+	gif := filepath.Join(testDir(), "images", "test.gif")
+	iff := filepath.Join(testDir(), "images", "test.iff")
+	png := filepath.Join(testDir(), "images", "test.png")
+	wbm := filepath.Join(testDir(), "images", "test.wbm")
 
-	zip08 := filepath.Join(testDir, "pkzip", "PKZ80A1.ZIP")
-	z7 := filepath.Join(testDir, "demozoo", "test.7z")
-	arj := filepath.Join(testDir, "demozoo", "test.arj")
-	lha := filepath.Join(testDir, "demozoo", "test.lha")
-	rar := filepath.Join(testDir, "demozoo", "test.rar")
-	xz := filepath.Join(testDir, "demozoo", "test.xz")
-	txt := filepath.Join(testDir, "text", "test.txt")
+	zip08 := filepath.Join(testDir(), "pkzip", "PKZ80A1.ZIP")
+	z7 := filepath.Join(testDir(), "demozoo", "test.7z")
+	arj := filepath.Join(testDir(), "demozoo", "test.arj")
+	lha := filepath.Join(testDir(), "demozoo", "test.lha")
+	rar := filepath.Join(testDir(), "demozoo", "test.rar")
+	xz := filepath.Join(testDir(), "demozoo", "test.xz")
+	txt := filepath.Join(testDir(), "text", "test.txt")
 
 	err := img.Type(gif)
 	assert.NotNil(t, err)

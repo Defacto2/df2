@@ -12,7 +12,9 @@ import (
 
 const pass = "hello-world-password"
 
-var conn = "root:" + pass + "@tcp(example.com:3360)/?allowCleartextPasswords=false&parseTime=true&timeout=30s"
+func conn() string {
+	return "root:" + pass + "@tcp(example.com:3360)/?allowCleartextPasswords=false&parseTime=true&timeout=30s"
+}
 
 func TestConnection_String(t *testing.T) {
 	t.Parallel()
@@ -41,7 +43,7 @@ func TestMaskPass(t *testing.T) {
 	c := msql.Connection{
 		Pass: pass,
 	}
-	err := fmt.Errorf("%w, %s", msql.ErrConnect, conn)
+	err := fmt.Errorf("%w, %s", msql.ErrConnect, conn())
 	err1 := c.MaskPass(err)
 	assert.NotContains(t, err1.Error(), pass)
 }

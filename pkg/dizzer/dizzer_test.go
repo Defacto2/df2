@@ -15,16 +15,19 @@ const (
 	r3 = "SiSoftware.Sandra.Pro.Business.XI.SP3.2007.6.11.40.Multilingual.Retail.Incl.Keymaker-ZWT"
 )
 
-var (
-	dir = filepath.Join(internal.Testdata(2), "rar")
-	rar = filepath.Join(dir, "dizzer.rar")
-)
+func dir() string {
+	return filepath.Join(internal.Testdata(2), "rar")
+}
+
+func rar() string {
+	return filepath.Join(dir(), "dizzer.rar")
+}
 
 func TestRun(t *testing.T) {
 	t.Parallel()
 	err := dizzer.Run(nil, nil, "")
 	assert.NotNil(t, err)
-	err = dizzer.Run(nil, nil, rar)
+	err = dizzer.Run(nil, nil, rar())
 	assert.Nil(t, err)
 }
 

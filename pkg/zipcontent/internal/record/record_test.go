@@ -15,7 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var dzDir = filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
+func dzDir() string {
+	return filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
+}
 
 func TestNew(t *testing.T) {
 	t.Parallel()
@@ -104,7 +106,7 @@ func TestRecord_Archive(t *testing.T) {
 	r = record.Record{
 		ID:   "1",
 		UUID: uuid,
-		File: filepath.Join(dzDir, "test.zip"),
+		File: filepath.Join(dzDir(), "test.zip"),
 		Name: "test.png",
 	}
 	err = r.Archive(db, io.Discard, &okSt)

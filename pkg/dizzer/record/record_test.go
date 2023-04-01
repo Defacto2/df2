@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var diz = filepath.Join(dir, "text", "file_id.diz")
-
 const (
 	grp    = "Some Group"
 	dizMd5 = "9565262e62cbc52cb2f53518e466663d"
@@ -30,6 +28,10 @@ Acronis
 
 TEAM Z.W.T ( ZERO WAiTiNG TiME ) 2005 
 `
+
+func diz() string {
+	return filepath.Join(dir(), "text", "file_id.diz")
+}
 
 func TestRecord_New(t *testing.T) {
 	t.Parallel()
@@ -58,7 +60,7 @@ func TestRecord_Copy(t *testing.T) {
 	assert.Nil(t, err)
 
 	dl := record.Download{}
-	err = dl.New(diz, zwt.Name)
+	err = dl.New(diz(), zwt.Name)
 	assert.Nil(t, err)
 	assert.Equal(t, diz, dl.Path)
 
@@ -93,10 +95,10 @@ func TestDownload_New(t *testing.T) {
 	err = dl.New("", grp)
 	assert.NotNil(t, err)
 
-	err = dl.New(dir, grp)
+	err = dl.New(dir(), grp)
 	assert.ErrorIs(t, err, record.ErrDir)
 
-	err = dl.New(rar, grp)
+	err = dl.New(rar(), grp)
 	assert.Nil(t, err)
 	assert.Equal(t, rar, dl.Path)
 	assert.Equal(t, "dizzer.rar", dl.Name)
@@ -108,7 +110,7 @@ func TestDownload_New(t *testing.T) {
 	assert.Equal(t, true, dl.ReadDate.IsZero())
 	assert.Equal(t, "", dl.ReadTitle)
 
-	err = dl.New(diz, zwt.Name)
+	err = dl.New(diz(), zwt.Name)
 	assert.Nil(t, err)
 	assert.Equal(t, diz, dl.Path)
 	assert.Equal(t, "file_id.diz", dl.Name)

@@ -18,7 +18,9 @@ const (
 	uuid = "29e0ca1f-c0a6-4b1a-b019-94a54243c093"
 )
 
-var testdata = filepath.Join("..", "..", "..", "..", "testdata", "uuid")
+func testdata() string {
+	return filepath.Join("..", "..", "..", "..", "testdata", "uuid")
+}
 
 func TestMonth(t *testing.T) {
 	t.Parallel()
@@ -75,7 +77,7 @@ func TestApprovals_Store(t *testing.T) {
 	path, err := data.Preview.Store(nil, "", "", false)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", path)
-	path, err = data.Preview.Store(io.Discard, testdata, "store-test", false)
+	path, err = data.Preview.Store(io.Discard, testdata(), "store-test", false)
 	assert.Nil(t, err)
 	assert.NotEqual(t, "", path)
 	defer os.Remove(path)
