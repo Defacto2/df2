@@ -21,9 +21,9 @@ var (
 )
 
 func TestRun(t *testing.T) {
-	err := dizzer.Run("")
+	err := dizzer.Run(nil, nil, "")
 	assert.NotNil(t, err)
-	err = dizzer.Run(rar)
+	err = dizzer.Run(nil, nil, rar)
 	assert.Nil(t, err)
 }
 

@@ -91,13 +91,13 @@ func TestAbsPaths(t *testing.T) {
 
 func TestAbsPathsH3(t *testing.T) {
 	t.Parallel()
-	s, err := sitemap.AbsPathsH3(nil, nil, "")
+	s, err := sitemap.AbsPathsH3(nil, "")
 	assert.NotNil(t, err)
 	assert.Len(t, s, 0)
 
 	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
-	s, err = sitemap.AbsPathsH3(db, io.Discard, "")
+	s, err = sitemap.AbsPathsH3(db, "")
 	assert.Nil(t, err)
 	assert.Len(t, s, 9)
 }

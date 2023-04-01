@@ -37,7 +37,7 @@ func Production() *zap.Logger {
 	return zap.New(core, zap.AddCaller())
 }
 
-func console() zapcore.Encoder {
+func console() zapcore.Encoder { //nolint:ireturn
 	config := zap.NewDevelopmentEncoderConfig()
 	config.EncodeCaller = nil
 	config.EncodeTime = nil

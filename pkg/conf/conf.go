@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	EnvPrefix  = "DF2_"     // EnvPrefix is the prefix applied to all enviroment variable names.
+	EnvPrefix  = "DF2_"     // EnvPrefix is the prefix applied to all environment variable names.
 	LiveServer = "DF2_HOST" // LiveServer is environment variable name to identify the live web server.
 	GapUser    = "df2"      // GapUser is the Go Application Paths username.
 )
@@ -63,6 +63,11 @@ func Defaults() Config {
 	// shared defaults
 	incoming := filepath.Join(webRoot, "incoming", "user_submissions")
 
+	const (
+		mysqlPort  = 3306
+		timeoutSec = 30
+	)
+
 	init := Config{
 		// program settings
 		IsProduction: false,
@@ -72,8 +77,8 @@ func Defaults() Config {
 		DBUser:  "root",
 		DBPass:  "example",
 		DBHost:  "localhost",
-		DBPort:  3306,
-		Timeout: 30, // Timeout value matches the 30s timeout for unit tests.
+		DBPort:  mysqlPort,
+		Timeout: timeoutSec, // Timeout value matches the 30s timeout for unit tests.
 		// directory paths
 		WebRoot:       webRoot,
 		Downloads:     filepath.Join(assets, "downloads"),
@@ -153,8 +158,8 @@ func (c Config) String(w io.Writer) { //nolint:funlen
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("228")).
-		PaddingLeft(2).
-		PaddingRight(2).
+		PaddingLeft(padding).
+		PaddingRight(padding).
 		Margin(1)
 	fmt.Fprintln(tw, style.Render("Environment variables and configurations"))
 

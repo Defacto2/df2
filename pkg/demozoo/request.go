@@ -104,7 +104,9 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 		if st.Total == 0 {
 			break
 		}
-		rec.save(db, w)
+		if err := rec.save(db, w); err != nil {
+			r.Logger.Errorf("queries save: %w", err)
+		}
 	}
 	if r.ByID != "" {
 		st.ByID = r.ByID

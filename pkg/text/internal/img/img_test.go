@@ -100,7 +100,8 @@ func TestResize(t *testing.T) {
 	assert.Nil(t, err)
 	defer f.Close()
 	// save the drawing as a png image file
-	png.Encode(f, tooLong)
+	err = png.Encode(f, tooLong)
+	assert.Nil(t, err)
 	name := f.Name()
 	defer os.Remove(name)
 	// obtain the filesize of the png image file
@@ -131,11 +132,12 @@ func TestReduce(t *testing.T) {
 	defer os.Remove(f.Name())
 	n := 0
 	for n < 600 {
-		n += 1
+		n++
 		_, err := f.WriteString(fmt.Sprintf("line %d\n", n))
 		assert.Nil(t, err)
 	}
-	f.Sync()
+	err = f.Sync()
+	assert.Nil(t, err)
 	// Reduce file
 	s, err = img.Reduce(io.Discard, f.Name(), uuid)
 	assert.Nil(t, err)

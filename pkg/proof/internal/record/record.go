@@ -103,7 +103,9 @@ func (r Record) Iterate(db *sql.DB, w io.Writer, cfg conf.Config, p stat.Proof) 
 		s := database.Val(raw)
 		switch p.Columns[i] {
 		case "id":
-			r.Prefix(w, &p)
+			if err := r.Prefix(w, &p); err != nil {
+				return err
+			}
 		case "createdat":
 			s, err := database.DateTime(raw)
 			if err != nil {

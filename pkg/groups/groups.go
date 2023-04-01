@@ -108,7 +108,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 	c, start := 0, time.Now()
 	for _, name := range names {
 		r, err := rename.Clean(db, w, name)
-		if err == nil {
+		if err != nil {
 			return err
 		}
 		if r {

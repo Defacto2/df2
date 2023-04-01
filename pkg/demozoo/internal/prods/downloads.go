@@ -82,7 +82,7 @@ func (p *ProductionsAPIv1) Download(w io.Writer, l DownloadsAPIv1) error {
 	const httpOk = 200
 	if err := l.parse(); err != nil {
 		fmt.Fprint(w, " not usable\n")
-		return nil
+		return nil //nolint:nilerr
 	}
 	ping, err := download.PingHead(l.URL, 0)
 	if err != nil {

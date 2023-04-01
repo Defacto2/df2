@@ -86,10 +86,7 @@ func Create(db *sql.DB, w io.Writer, dir string) error {
 			break
 		}
 	}
-	if err := createOutput(w, tmpl); err != nil {
-		return err
-	}
-	return nil
+	return createOutput(w, tmpl)
 }
 
 func createOutput(w io.Writer, tmpl *urlset.Set) error {

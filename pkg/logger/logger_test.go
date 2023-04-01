@@ -1,7 +1,6 @@
 package logger_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,6 +20,5 @@ func TestSPrintPath(t *testing.T) {
 	errDir := filepath.Join(dir, "some-subdir-not-exist", "another-false-dir")
 
 	s = logger.SPrintPath(errDir)
-	fmt.Println(s)
 	assert.Contains(t, s, "another-false-dir")
 }

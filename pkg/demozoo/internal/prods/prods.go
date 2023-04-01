@@ -99,7 +99,7 @@ func (p *ProductionsAPIv1) JSON() ([]byte, error) {
 }
 
 // PouetID returns the ID value used by Pouet's "which prod" URL query
-// and if ping is enabled, the recieved HTTP status code.
+// and if ping is enabled, the received HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
 func (p *ProductionsAPIv1) PouetID(ping bool) (id int, code int, err error) {
 	for _, l := range p.ExternalLinks {

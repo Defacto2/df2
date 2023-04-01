@@ -452,7 +452,9 @@ func (r *Record) parse(db *sql.DB, w io.Writer, cfg conf.Config, api *prods.Prod
 		}
 		fmt.Fprint(w, n)
 		r.Filename = n
-		r.save(db, w)
+		if err := r.save(db, w); err != nil {
+			return err
+		}
 		fallthrough
 	case
 		r.Filesize == "",
@@ -461,7 +463,10 @@ func (r *Record) parse(db *sql.DB, w io.Writer, cfg conf.Config, api *prods.Prod
 		if err := r.FileMeta(); err != nil {
 			return fmt.Errorf("%s%w", "parse api: ", err)
 		}
-		r.save(db, w)
+
+		if err := r.save(db, w); err != nil {
+			return err
+		}
 		fallthrough
 	case r.FileZipContent == "":
 		zip, err := r.ZipContent(w)
@@ -473,7 +478,10 @@ func (r *Record) parse(db *sql.DB, w io.Writer, cfg conf.Config, api *prods.Prod
 				return fmt.Errorf("%s%w", "parse api: ", err)
 			}
 		}
-		r.save(db, w)
+
+		if err := r.save(db, w); err != nil {
+			return err
+		}
 	}
 	return nil
 }

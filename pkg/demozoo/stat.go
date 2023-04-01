@@ -39,7 +39,7 @@ type Stat struct {
 	ByID    string // ByID filtering.
 }
 
-// FileExist returns false when the record FilePath points to a non-existant file.
+// FileExist returns false when the record FilePath points to a non-existent file.
 func (st *Stat) FileExist(r *Record) (bool, error) {
 	if r == nil {
 		return false, ErrRecord

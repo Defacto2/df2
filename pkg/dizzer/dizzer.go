@@ -27,7 +27,7 @@ var Rar = archiver.Rar{
 }
 
 // Run the dizzer on the named .rar file.
-func Run(nameRar string) error {
+func Run(w io.Writer, logger io.Writer, nameRar string) error {
 	if err := Rar.CheckExt(nameRar); err != nil {
 		return fmt.Errorf("%w: %s", err, nameRar)
 	}
@@ -35,6 +35,12 @@ func Run(nameRar string) error {
 		return fmt.Errorf("%w: %s", err, nameRar)
 	} else if st.IsDir() {
 		return fmt.Errorf("%w: %s", err, nameRar)
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if logger == nil {
+		logger = io.Discard
 	}
 
 	tick := time.Now()
@@ -66,7 +72,6 @@ func Run(nameRar string) error {
 
 	newRecs := 0
 	for key, r := range st.Releases {
-
 		go func() {
 			diz := filepath.Join(dir, r.Path, record.FileID)
 			if err := r.Diz.New(diz, st.Group); err != nil {
@@ -122,44 +127,41 @@ func Run(nameRar string) error {
 
 	records := make([]record.Record, newRecs)
 	i, l := 0, len(records)
-	// TODO: build record collection
 	for _, r := range st.Releases {
 		if i >= l {
-			// break
-			fmt.Println("more than expacted?", i, l)
+			fmt.Fprintf(logger, "there seems to be more %d releases than expected\n", i-l)
 			break
 		}
-		// fmt.Printf("\n%d. %+v\n", i, r)
 		title := ""
 		if r.Diz == (record.Download{}) {
-			fmt.Println("no file_id.diz for", r.Title)
+			fmt.Fprintf(logger, "no file_id.diz for %s", r.Title)
 		} else {
 			records[i], err = record.New(r.Path, st.Group)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(logger, err)
 			}
 			title = r.Diz.ReadTitle
 			if title == "" {
 				title = r.Title
 			}
 			if err := records[i].Copy(&r.Diz, title); err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(logger, err)
 			}
 			i++
 		}
 		if r.Nfo == (record.Download{}) {
-			fmt.Println("no readme for ", r.Title, "files inc.", r.Files)
+			fmt.Fprintf(logger, "no readme for %s files including %s", r.Title, r.Files)
 		} else {
 			records[i], err = record.New(r.Path, st.Group)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(logger, err)
 			}
 			if title == "" {
 				title = r.Title
 			}
 			records[i].Title = title
 			if err := records[i].Copy(&r.Nfo, title); err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(logger, err)
 			}
 			i++
 		}
@@ -170,20 +172,20 @@ func Run(nameRar string) error {
 		if err != nil {
 			continue
 		}
-		fmt.Printf("%d.\t%+v of %s\n", i, r.Title, r.FileName)
-		fmt.Println(string(u))
+		fmt.Fprintf(w, "%d.\t%+v of %s\n", i, r.Title, r.FileName)
+		fmt.Fprintln(w, string(u))
 	}
 
-	fmt.Println("nfos:", st.NFOs)
-	fmt.Println("dizes:", st.DIZs)
-	fmt.Println("other files:", st.Others)
-	fmt.Println("group:", st.Group)
-	fmt.Printf("years: %+v\n", st.LastMods)
-	fmt.Println("how many new records?", len(records), "vs i", i)
+	fmt.Fprintln(w, "nfos:", st.NFOs)
+	fmt.Fprintln(w, "dizes:", st.DIZs)
+	fmt.Fprintln(w, "other files:", st.Others)
+	fmt.Fprintln(w, "group:", st.Group)
+	fmt.Fprintf(w, "years: %+v\n", st.LastMods)
+	fmt.Fprintln(w, "how many new records?", len(records), "vs i", i)
 
 	time.Sleep(1 * time.Second)
 
-	fmt.Println("time taken", time.Since(tick).Seconds())
+	fmt.Fprintln(logger, "time taken", time.Since(tick).Seconds())
 
 	return nil
 }
@@ -271,6 +273,8 @@ func (st *Stat) Walk(name string) error {
 func Group(key string) string {
 	s := PathGroup(key)
 	switch strings.ToLower(s) {
+	case "df2":
+		return "Defacto2"
 	case "zwt":
 		return zwt.Name
 	}
@@ -289,14 +293,7 @@ func (y Years) Add(mod time.Time) Years {
 	return y
 }
 
-// Database fetches metadata for the database using the name directory,
-// and the file
-func Database(name string, f os.FileInfo) {
-	// return a new struct?
-	// Have sep func to parse directory name.
-}
-
-// PathGroup returns the group name or initalism extracted from the
+// PathGroup returns the group name or initialism extracted from the
 // named directory path of the release. This is intended as a fallback
 // when the file_id.diz cannot be parsed.
 func PathGroup(name string) string {

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	dir = filepath.Join(internal.Testdata(3))
+	dir = internal.Testdata(3)
 	rar = filepath.Join(dir, "rar", "dizzer.rar")
 	zip = filepath.Join(dir, "pkzip", "PKZ80A1.ZIP")
 )

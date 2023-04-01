@@ -142,7 +142,7 @@ func Generate(w io.Writer, src, id string, remove bool) error {
 	const width = 1500
 	s, err := ToPNG(src, pngDest, width, width)
 	if err != nil {
-		return fmt.Errorf("could not generate from %s: %s: %s", src, pngDest, err)
+		return fmt.Errorf("could not generate from %s: %s: %w", src, pngDest, err)
 	}
 	fmt.Fprintf(w, "  %s", s)
 	// use netpbm or imagemagick to convert unsupported image formats into PNG
@@ -159,11 +159,11 @@ func Generate(w io.Writer, src, id string, remove bool) error {
 	s, err = ToWebp(w, src, webpDest, true)
 	if err != nil {
 		if !errors.Is(err, ErrFormat) {
-			return fmt.Errorf("could not generate webp from %s: %s: %s", src, webpDest, err)
+			return fmt.Errorf("could not generate webp from %s: %s: %w", src, webpDest, err)
 		}
 		s, err = ToWebp(w, pngDest, webpDest, true)
 		if err != nil {
-			return fmt.Errorf("could not generate webp from %s: %s: %s", pngDest, webpDest, err)
+			return fmt.Errorf("could not generate webp from %s: %s: %w", pngDest, webpDest, err)
 		}
 	}
 	fmt.Fprintf(w, "  %s", s)
@@ -176,7 +176,7 @@ func Generate(w io.Writer, src, id string, remove bool) error {
 		s, err = ToThumb(webpDest, f.Img400, thumbWidth)
 	}
 	if err != nil {
-		return fmt.Errorf("could not generate thumbs from any sources: %s: %s", src, err)
+		return fmt.Errorf("could not generate thumbs from any sources: %s: %w", src, err)
 	}
 	fmt.Fprintf(w, "  %s", s)
 	return file.Remove(remove, src)

@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}
-	defer l.Sync()
+	defer l.Sync() //nolint:errcheck
 	logr := l.Sugar()
 
 	// Panic recovery to close any active connections and to log the problem.
@@ -74,7 +74,9 @@ func main() {
 	}
 
 	// Configuration sanity checks
-	configs.Checks(logr)
+	if err := configs.Checks(logr); err != nil {
+		logr.Error(err)
+	}
 	if ascii() {
 		color.Enable = false
 	}

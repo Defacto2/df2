@@ -583,7 +583,7 @@ func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 	fmt.Fprint(w, s)
 	sitemap.Success.Range(w, paths[:])
 
-	html3s, err := sitemap.AbsPathsH3(db, w, base)
+	html3s, err := sitemap.AbsPathsH3(db, base)
 	if err != nil {
 		return err
 	}

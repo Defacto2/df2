@@ -96,8 +96,8 @@ func FileList(base string) ([]string, error) {
 type IDs []int
 
 // Contains returns true whenever IDs contains x.
-func (i *IDs) Contains(x int) bool {
-	for _, n := range *i {
+func (ids *IDs) Contains(x int) bool {
+	for _, n := range *ids {
 		if x == n {
 			return true
 		}
@@ -106,8 +106,8 @@ func (i *IDs) Contains(x int) bool {
 }
 
 // Randomize the IDs and returns the first x results.
-func (a IDs) Randomize(x int) (IDs, error) {
-	l := len(a)
+func (ids IDs) Randomize(x int) (IDs, error) {
+	l := len(ids)
 	if l < 1 {
 		return nil, ErrNoIDs
 	}
@@ -126,7 +126,7 @@ func (a IDs) Randomize(x int) (IDs, error) {
 		seeded = seed
 		r := rand.New(rand.NewSource(seed)) //nolint:gosec
 		randIndex := r.Intn(l)
-		id := a[randIndex]
+		id := ids[randIndex]
 		if randoms.Contains(id) {
 			i--
 			continue
@@ -137,9 +137,9 @@ func (a IDs) Randomize(x int) (IDs, error) {
 }
 
 // JoinPaths return the URL strings of the IDs.
-func (a IDs) JoinPaths(base string, r Root) []string {
-	urls := make([]string, 0, len(a))
-	for _, id := range a {
+func (ids IDs) JoinPaths(base string, r Root) []string {
+	urls := make([]string, 0, len(ids))
+	for _, id := range ids {
 		obfus := database.ObfuscateParam(fmt.Sprint(id))
 		link, err := url.JoinPath(base, r.String(), obfus)
 		if err != nil {
@@ -235,12 +235,9 @@ func AbsPaths(base string) ([28]string, error) {
 }
 
 // AbsPaths returns all the HTML3 static URLs used by the sitemap.
-func AbsPathsH3(db *sql.DB, w io.Writer, base string) ([]string, error) {
+func AbsPathsH3(db *sql.DB, base string) ([]string, error) {
 	if db == nil {
 		return nil, database.ErrDB
-	}
-	if w == nil {
-		w = io.Discard
 	}
 	const root = "html3"
 	urls := urlset.HTML3Path()
@@ -253,7 +250,7 @@ func AbsPathsH3(db *sql.DB, w io.Writer, base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to platforms
-	plats, err := Platforms(db, w)
+	plats, err := Platforms(db)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +262,7 @@ func AbsPathsH3(db *sql.DB, w io.Writer, base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to sections
-	sects, err := Sections(db, w)
+	sects, err := Sections(db)
 	if err != nil {
 		return nil, err
 	}
@@ -414,7 +411,7 @@ func RandIDs(db *sql.DB, count int) (int, IDs, error) {
 }
 
 // Platforms lists the operating systems required by the files.
-func Platforms(db *sql.DB, w io.Writer) ([]string, error) {
+func Platforms(db *sql.DB) ([]string, error) {
 	if db == nil {
 		return nil, database.ErrDB
 	}
@@ -422,7 +419,7 @@ func Platforms(db *sql.DB, w io.Writer) ([]string, error) {
 }
 
 // Sections lists the categories of files.
-func Sections(db *sql.DB, w io.Writer) ([]string, error) {
+func Sections(db *sql.DB) ([]string, error) {
 	if db == nil {
 		return nil, database.ErrDB
 	}

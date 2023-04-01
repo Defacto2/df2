@@ -39,7 +39,7 @@ type mysqlTester struct {
 	skipSQLCmd bool
 }
 
-func init() {
+func init() { //nolint:gochecknoinits
 	dbMain = &mysqlTester{}
 }
 

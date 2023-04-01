@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var ErrCheck = errors.New("check err")
+
 func testDir() string {
 	dir, _ := os.Getwd()
 	return filepath.Join(dir, "..", "..", "..", "..", "testdata", "images")
@@ -65,8 +67,7 @@ func TestCheck(t *testing.T) {
 	t.Parallel()
 	b := file.Check("", nil)
 	assert.Equal(t, false, b)
-	err := errors.New("check err")
-	b = file.Check("", err)
+	b = file.Check("", ErrCheck)
 	assert.Equal(t, false, b)
 	b = file.Check(filepath.Join(testDir(), "test.iff"), nil)
 	assert.Equal(t, true, b)

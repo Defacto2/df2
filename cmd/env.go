@@ -10,8 +10,8 @@ import (
 
 var envCmd = &cobra.Command{
 	Use:   "env",
-	Short: "Show enviroment variables used for configuration.",
-	Long: "Display the operating system enviromental variables" +
+	Short: "Show environment variables used for configuration.",
+	Long: "Display the operating system environmental variables" +
 		" used as configuations for this tool.",
 	Aliases: []string{"e"},
 	Run: func(cmd *cobra.Command, args []string) {

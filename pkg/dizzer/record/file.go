@@ -2,7 +2,7 @@ package record
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec
 	"crypto/sha512"
 	"errors"
 	"fmt"

@@ -158,7 +158,7 @@ func Select(id string) string {
 // Total returns the sum of the records.
 func Total(s *stat.Proof, request Request) (string, error) {
 	if s == nil {
-		return "", fmt.Errorf("stat proof, %s", ErrPointer)
+		return "", fmt.Errorf("stat proof, %w", ErrPointer)
 	}
 	if s.Total < 1 && request.ByID != "" {
 		return fmt.Sprintf("file record id '%s' does not exist or is not a release proof\n", request.ByID), nil

@@ -66,12 +66,12 @@ func Write(tw *tar.Writer, path, filename string) error {
 		return fmt.Errorf("write tar write header:%w", err)
 	}
 	if head.Typeflag == tar.TypeReg {
-		return copy(tw, path)
+		return copier(tw, path)
 	}
 	return nil
 }
 
-func copy(tw *tar.Writer, name string) error {
+func copier(tw *tar.Writer, name string) error {
 	if tw == nil {
 		return ErrWriter
 	}

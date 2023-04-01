@@ -85,7 +85,6 @@ func TestCleanS(t *testing.T) {
 }
 
 func TestTrimThe(t *testing.T) {
-	t.Parallel()
 	type args struct {
 		g string
 	}
@@ -103,7 +102,9 @@ func TestTrimThe(t *testing.T) {
 		{"", args{"The High & Mighty Hello BBS"}, "High & Mighty Hello BBS"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := rename.TrimThe(tt.args.g); got != tt.want {
 				t.Errorf("TrimThe() = %v, want %v", got, tt.want)
 			}
@@ -112,7 +113,6 @@ func TestTrimThe(t *testing.T) {
 }
 
 func TestTrimDot(t *testing.T) {
-	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -126,7 +126,9 @@ func TestTrimDot(t *testing.T) {
 		{"dots", args{"hello."}, "hello"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := rename.TrimDot(tt.args.s); got != tt.want {
 				t.Errorf("TrimDot() = %v, want %v", got, tt.want)
 			}

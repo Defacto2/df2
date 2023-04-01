@@ -23,7 +23,9 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 	Aliases: []string{"c"},
 	GroupID: "group2",
 	Run: func(cmd *cobra.Command, args []string) {
-		directories.Init(confg, clean.MakeDirs)
+		if _, err := directories.Init(confg, clean.MakeDirs); err != nil {
+			logr.Fatal(err)
+		}
 		db, err := msql.Connect(confg)
 		if err != nil {
 			logr.Fatal(err)

@@ -112,10 +112,7 @@ func createDirectories(dir *Dir) error {
 	if err := mkdir(dir.Base); err != nil {
 		return err
 	}
-	if err := mkdir(dir.UUID); err != nil {
-		return err
-	}
-	return nil
+	return mkdir(dir.UUID)
 }
 
 // ArchiveExt checks that the named file uses a known archive extension.

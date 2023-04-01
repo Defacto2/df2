@@ -136,8 +136,7 @@ func TestRestore(t *testing.T) {
 	}
 }
 
-func TestExtract(t *testing.T) {
-	t.Parallel()
+func TestProof_Decompress(t *testing.T) {
 	const uuid = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 	type args struct {
 		archive  string
@@ -160,11 +159,17 @@ func TestExtract(t *testing.T) {
 		{"zip", args{testDir("demozoo/test.zip"), "test.zip", uuid}, false},
 		{"zip.bz2", args{testDir("demozoo/test.bz2.zip"), "test.bz2.zip", uuid}, false},
 	}
+
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			// if err := archive.Proof(nil, nil, cfg, tt.args.archive, tt.args.filename, tt.args.uuid); (err != nil) != tt.wantErr {
-			// 	t.Errorf("Proof(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)
-			// }
+			t.Parallel()
+			proof := archive.Proof{
+				tt.args.archive, tt.args.filename, tt.args.uuid, conf.Defaults(),
+			}
+			if err := proof.Decompress(io.Discard); (err != nil) != tt.wantErr {
+				t.Errorf("proof.Decompress(%s) error = %v, wantErr %v", tt.args.archive, err, tt.wantErr)
+			}
 		})
 	}
 }

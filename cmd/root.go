@@ -28,9 +28,9 @@ var (
 )
 
 var (
-	confg   conf.Config        // Enviroment variables for configuration.
+	confg   conf.Config        // Environment variables for configuration.
 	logr    *zap.SugaredLogger // Zap sugared logger for printing and storing.
-	persist arg.Persistant     // Persistant, command-line bool flags.
+	persist arg.Persistent     // Persistent, command-line bool flags.
 )
 
 // rootCmd represents the base command when called without any subcommands.

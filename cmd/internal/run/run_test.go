@@ -22,8 +22,7 @@ var (
 	l   *zap.SugaredLogger
 )
 
-//nolint:gochecknoinits
-func init() {
+func init() { //nolint:gochecknoinits
 	var err error
 	db, err = database.Connect(conf.Defaults())
 	if err != nil {

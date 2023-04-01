@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
 	"github.com/Defacto2/df2/pkg/dizzer"
@@ -22,13 +23,13 @@ var importCmd = &cobra.Command{
 			}
 			return
 		}
-		if err := dizzer.Run(args[0]); err != nil {
+		if err := dizzer.Run(os.Stdout, os.Stderr, args[0]); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func init() {
+func init() { //nolint:gochecknoinits
 	rootCmd.AddCommand(importCmd)
 	importCmd.PersistentFlags().BoolVarP(&imrar.Insert, "insert", "i", false,
 		"insert the found text files metadata to the database")

@@ -80,7 +80,7 @@ func (c Connection) MaskPass(err error) error {
 		return nil
 	}
 	s := strings.Replace(err.Error(), c.Pass, mask, 1)
-	return fmt.Errorf("mysql connection: %s", s)
+	return fmt.Errorf("mysql connection: %s", s) //nolint:goerr113
 }
 
 // String returns a MySQL database connection.
@@ -111,7 +111,7 @@ func (c Connection) Ping(db *sql.DB) error {
 		c.Timeout = Timeout
 	}
 	// ping the server to make sure the connection works
-	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 	err := db.PingContext(ctx)
 	if err == nil {

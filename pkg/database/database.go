@@ -37,9 +37,12 @@ var (
 const (
 	Datetime = "2006-01-02T15:04:05Z" // Datetime MySQL format.
 
-	ExampleID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" // ExampleID is an invalid placeholder UUID, where x represents a digit.
-	TestID    = "00000000-0000-0000-0000-000000000000" // TestID is a generic UUID that can be used for unit tests.
-	UpdateID  = "b66dc282-a029-4e99-85db-2cf2892fffcc" // UpdateID is a user id to use with the updatedby column.
+	// ExampleID is an invalid placeholder UUID, where x represents a digit.
+	ExampleID = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+	// TestID is a generic UUID that can be used for unit tests.
+	TestID = "00000000-0000-0000-0000-000000000000"
+	// UpdateID is a user id to use with the updatedby column.
+	UpdateID = "b66dc282-a029-4e99-85db-2cf2892fffcc"
 
 	WhereAvailable     = templ.WhereAvailable
 	WhereDownloadBlock = templ.WhereDownloadBlock
@@ -377,14 +380,14 @@ func GetFile(db *sql.DB, val string) (string, error) {
 	}
 	n := sql.NullString{}
 	if v, err := strconv.Atoi(val); err == nil {
-		err = db.QueryRow(templ.SelNames+" WHERE id=?", v).Scan(&n)
+		err = db.QueryRow(templ.SelNames+" WHERE id=?", v).Scan(&n) //nolint:execinquery
 		if err != nil {
 			return "", fmt.Errorf("lookup file by id queryrow %q: %w", val, err)
 		}
 		return n.String, nil
 	}
 	val = strings.ToLower(val)
-	err := db.QueryRow(templ.SelNames+" WHERE uuid=?", val).Scan(&n)
+	err := db.QueryRow(templ.SelNames+" WHERE uuid=?", val).Scan(&n) //nolint:execinquery
 	if err != nil {
 		return "", fmt.Errorf("lookup file by uuid queryrow %q: %w", val, err)
 	}

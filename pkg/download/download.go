@@ -144,7 +144,8 @@ func ping(url, method string, timeout time.Duration) (*http.Response, error) {
 // PingGet connects to a URL and returns its response.
 func Get(url string, timeout time.Duration) ([]byte, int, error) {
 	if timeout == 0 {
-		timeout = 15 * time.Second
+		const httpTimeout = 15 * time.Second
+		timeout = httpTimeout
 	}
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -170,7 +171,8 @@ func Get(url string, timeout time.Duration) ([]byte, int, error) {
 // PingHead connects to a URL and returns its HTTP status code and status text.
 func PingHead(url string, timeout time.Duration) (*http.Response, error) {
 	if timeout == 0 {
-		timeout = 5 * time.Second
+		const httpTimeout = 5 * time.Second
+		timeout = httpTimeout
 	}
 	return ping(url, http.MethodHead, timeout)
 }

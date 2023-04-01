@@ -123,7 +123,9 @@ func (z *Zipfile) Save(w io.Writer, path string) (string, error) {
 		defer os.Remove(dest)
 		return "", nil
 	}
-	f.Sync()
+	if err = f.Sync(); err != nil {
+		return "", err
+	}
 	return dest, nil
 }
 

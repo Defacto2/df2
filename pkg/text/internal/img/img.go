@@ -33,6 +33,12 @@ var (
 const (
 	png  = ".png"
 	webp = ".webp"
+
+	noExePath = `execute ansilove: executable file not found in $PATH`
+	killed    = "signal: killed"
+	note      = `
+this command requires the installation of AnsiLove/C
+installation instructions: https://github.com/ansilove/ansilove`
 )
 
 // Make both PNG and Webp preview images and a 400x PNG thumbnail from the named text files.
@@ -46,20 +52,17 @@ func Make(w io.Writer, cfg conf.Config, name, uuid string, amiga bool) error {
 	if err := Type(name); err != nil {
 		return err
 	}
-	const note = `
-this command requires the installation of AnsiLove/C
-installation instructions: https://github.com/ansilove/ansilove`
 	f, err := directories.Files(cfg, uuid)
 	if err != nil {
 		return err
 	}
 	s, err := Export(name, f.Img000, amiga)
-	if err != nil {
-		if err.Error() == `execute ansilove: executable file not found in $PATH` {
+	if err != nil { //nolint:nestif
+		if err.Error() == noExePath {
 			fmt.Fprintln(w, note)
 			return fmt.Errorf("generate, ansilove not found: %w", err)
 		}
-		if errors.Unwrap(err).Error() == "signal: killed" {
+		if errors.Unwrap(err).Error() == killed {
 			tmp, err1 := Reduce(w, f.UUID, uuid)
 			if err1 != nil {
 				return fmt.Errorf("ansilove reduce: %w", err1)
@@ -94,8 +97,7 @@ installation instructions: https://github.com/ansilove/ansilove`
 	return nil
 }
 
-// Type checks the the document type of the named file and returns an error
-// if it is a known binary format.
+// Type of the named document is checked and an error is returned for an unknown binary format.
 func Type(name string) error {
 	f, err := os.Open(name)
 	if err != nil {
@@ -235,7 +237,6 @@ func Export(name, dest string, amiga bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(saveAs)
 	return fmt.Sprintf("✓ text » png %v\n%s",
 		humanize.Bytes(i), color.Secondary.Sprintf("%s", out)), nil
 }
