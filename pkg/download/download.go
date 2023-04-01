@@ -178,7 +178,9 @@ func PingHead(url string, timeout time.Duration) (*http.Response, error) {
 }
 
 // PingFile connects to a URL file down and returns its status code, filename and file size.
-func PingFile(link string, timeout time.Duration) (code int, name string, size string, err error) {
+func PingFile(link string, timeout time.Duration) ( //nolint:nonamedreturns
+	code int, name string, size string, err error,
+) {
 	res, err := PingHead(link, timeout)
 	if err != nil {
 		if res != nil {

@@ -77,7 +77,7 @@ func HTML3Path() [7]string {
 	}
 }
 
-func (set *Set) StaticURLs(dir string) (c, i int) { //nolint:nonamedreturns
+func (set *Set) StaticURLs(dir string) (int, int) {
 	paths := Paths()
 	if set == nil || len(set.URLs) < len(paths) {
 		return 0, 0
@@ -87,7 +87,7 @@ func (set *Set) StaticURLs(dir string) (c, i int) { //nolint:nonamedreturns
 	uri := func(path string) string {
 		return static + path
 	}
-	c, i = 0, 0
+	var c, i int
 	for i, path := range paths {
 		file := filepath.Join(dir, path, index)
 		if s, err := os.Stat(file); !errors.Is(err, fs.ErrNotExist) {

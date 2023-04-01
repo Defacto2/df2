@@ -251,7 +251,9 @@ func Move(dest, src string) error {
 }
 
 // Info returns the image metadata.
-func Info(name string) (width, height int, format string, err error) { //nolint:nonamedreturns
+func Info(name string) ( //nolint:nonamedreturns
+	width int, height int, format string, err error,
+) {
 	file, err := os.Open(name)
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("info open %q: %w", name, err)

@@ -10,7 +10,9 @@ import (
 
 const Name = "Zero Waiting Time"
 
-func DizDate(body string) (year int, month time.Month, day int) {
+func DizDate(body string) ( //nolint:nonamedreturns
+	year int, month time.Month, day int,
+) {
 	if body == "" {
 		return 0, 0, 0
 	}
@@ -28,7 +30,9 @@ func DizDate(body string) (year int, month time.Month, day int) {
 	return y, time.Month(m), d
 }
 
-func DizTitle(body string) (title string, pub string) {
+func DizTitle(body string) ( //nolint:nonamedreturns
+	title string, pub string,
+) {
 	if body == "" {
 		return "", ""
 	}

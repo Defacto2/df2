@@ -362,13 +362,16 @@ func (f *Flags) queryTables(db *sql.DB) (*bytes.Buffer, error) {
 	return &b, nil
 }
 
-func (f *Flags) queryTablesWG(db *sql.DB) (buf1, buf2, buf3 *bytes.Buffer, err error) { //nolint:nonamedreturns
+func (f *Flags) queryTablesWG(db *sql.DB) (
+	*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error,
+) {
 	if db == nil {
 		return nil, nil, nil, ErrDB
 	}
 	const delta = 3
 	wg := sync.WaitGroup{}
 	var e1, e2, e3 error
+	var buf1, buf2, buf3 *bytes.Buffer
 	wg.Add(delta)
 	go func(f *Flags) {
 		defer wg.Done()
@@ -391,19 +394,21 @@ func (f *Flags) queryTablesWG(db *sql.DB) (buf1, buf2, buf3 *bytes.Buffer, err e
 	return buf1, buf2, buf3, nil
 }
 
-func (f *Flags) queryTablesSeq(db *sql.DB) (buf1, buf2, buf3 *bytes.Buffer, err error) { //nolint:nonamedreturns
+func (f *Flags) queryTablesSeq(db *sql.DB) (
+	*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error,
+) {
 	if db == nil {
 		return nil, nil, nil, ErrDB
 	}
-	buf1, err = f.reqDB(db, Files)
+	buf1, err := f.reqDB(db, Files)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("query file table: %w", err)
 	}
-	buf2, err = f.reqDB(db, Groups)
+	buf2, err := f.reqDB(db, Groups)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("query groups table: %w", err)
 	}
-	buf3, err = f.reqDB(db, Netresources)
+	buf3, err := f.reqDB(db, Netresources)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("query netresources table: %w", err)
 	}

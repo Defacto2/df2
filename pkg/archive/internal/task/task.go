@@ -35,7 +35,9 @@ func Init() Task {
 }
 
 // Run a scan for proofs in the provided temp directory.
-func Run(tempDir string) (th, tx Task, err error) { //nolint:cyclop,nonamedreturns
+func Run(tempDir string) ( //nolint:cyclop,nonamedreturns
+	th Task, tx Task, err error,
+) {
 	entries, err := os.ReadDir(tempDir)
 	if err != nil {
 		return th, tx, fmt.Errorf("extract archive read tempdir %q: %w", tempDir, err)
