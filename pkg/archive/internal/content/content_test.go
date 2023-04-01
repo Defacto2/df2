@@ -13,6 +13,7 @@ func testDir(name string) string {
 	dir, _ := os.Getwd()
 	return filepath.Join(dir, "..", "..", "..", "..", "testdata", name)
 }
+
 func TestFile_MIME(t *testing.T) {
 	t.Parallel()
 	f := content.File{}

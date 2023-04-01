@@ -72,7 +72,6 @@ func (r *ReleaserV1) Print(w io.Writer) error {
 	}
 	fmt.Fprintf(w, "%s\n", js)
 	return nil
-
 }
 
 // URL creates a releasers API v1 request link.

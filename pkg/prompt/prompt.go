@@ -10,9 +10,7 @@ import (
 	"strings"
 )
 
-var (
-	ErrReader = errors.New("reader io cannot be nil")
-)
+var ErrReader = errors.New("reader io cannot be nil")
 
 // Read and trim the reader and return the results.
 func Read(r io.Reader) (string, error) {

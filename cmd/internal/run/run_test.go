@@ -1,4 +1,4 @@
-package run
+package run_test
 
 import (
 	"database/sql"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
+	"github.com/Defacto2/df2/cmd/internal/run"
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/logger"
@@ -14,12 +15,14 @@ import (
 	"go.uber.org/zap"
 )
 
+//nolint:gochecknoglobals
 var (
 	cfg conf.Config
 	db  *sql.DB
 	l   *zap.SugaredLogger
 )
 
+//nolint:gochecknoinits
 func init() {
 	var err error
 	db, err = database.Connect(conf.Defaults())
@@ -32,73 +35,73 @@ func init() {
 
 func TestRun(t *testing.T) {
 	t.Parallel()
-	err := Data(nil, nil, database.Flags{})
+	err := run.Data(nil, nil, database.Flags{})
 	assert.NotNil(t, err)
-	err = Data(db, nil, database.Flags{})
+	err = run.Data(db, nil, database.Flags{})
 	assert.NotNil(t, err)
-	err = Data(db, nil, database.Flags{Type: "blah"})
+	err = run.Data(db, nil, database.Flags{Type: "blah"})
 	assert.NotNil(t, err)
-	err = Data(db, nil, database.Flags{Type: "create"})
+	err = run.Data(db, nil, database.Flags{Type: "create"})
 	assert.NotNil(t, err)
 }
 
 func TestAPIs(t *testing.T) {
 	t.Parallel()
-	err := APIs(nil, nil, arg.APIs{})
+	err := run.APIs(nil, nil, arg.APIs{})
 	assert.NotNil(t, err)
-	err = APIs(db, io.Discard, arg.APIs{})
+	err = run.APIs(db, io.Discard, arg.APIs{})
 	assert.NotNil(t, err)
 }
 
 func TestDemozoo(t *testing.T) {
 	t.Parallel()
-	err := Demozoo(nil, nil, nil, conf.Config{}, arg.Demozoo{})
+	err := run.Demozoo(nil, nil, nil, conf.Config{}, arg.Demozoo{})
 	assert.NotNil(t, err)
-	err = Demozoo(db, nil, nil, conf.Config{}, arg.Demozoo{})
+	err = run.Demozoo(db, nil, nil, conf.Config{}, arg.Demozoo{})
 	assert.NotNil(t, err)
-	err = Demozoo(db, io.Discard, l, conf.Config{}, arg.Demozoo{})
-	assert.ErrorIs(t, err, ErrNothing)
+	err = run.Demozoo(db, io.Discard, l, conf.Config{}, arg.Demozoo{})
+	assert.ErrorIs(t, err, run.ErrNothing)
 }
 
 func TestGroups(t *testing.T) {
 	t.Parallel()
-	err := Groups(nil, nil, nil, arg.Group{})
+	err := run.Groups(nil, nil, nil, arg.Group{})
 	assert.NotNil(t, err)
-	err = Groups(db, io.Discard, io.Discard, arg.Group{})
+	err = run.Groups(db, io.Discard, io.Discard, arg.Group{})
 	assert.NotNil(t, err)
-	err = Groups(db, io.Discard, io.Discard, arg.Group{Filter: "bbs"})
+	err = run.Groups(db, io.Discard, io.Discard, arg.Group{Filter: "bbs"})
 	assert.Nil(t, err)
 }
 
 func TestNew(t *testing.T) {
 	t.Parallel()
-	err := New(nil, nil, nil, conf.Config{})
+	err := run.New(nil, nil, nil, conf.Config{})
 	assert.NotNil(t, err)
-	err = New(db, io.Discard, l, conf.Config{})
+	err = run.New(db, io.Discard, l, conf.Config{})
 	assert.NotNil(t, err)
 }
 
 func TestPeople(t *testing.T) {
 	t.Parallel()
-	err := People(nil, nil, "", arg.People{})
+	err := run.People(nil, nil, "", arg.People{})
 	assert.NotNil(t, err)
-	err = People(db, io.Discard, "", arg.People{})
+	err = run.People(db, io.Discard, "", arg.People{})
 	assert.Nil(t, err)
 }
 
 func TestRename(t *testing.T) {
 	t.Parallel()
 	s := []string{}
-	err := Rename(nil, nil, s...)
+	err := run.Rename(nil, nil, s...)
 	assert.NotNil(t, err)
-	err = Rename(db, io.Discard, s...)
+	err = run.Rename(db, io.Discard, s...)
 	assert.NotNil(t, err)
 }
 
 func TestTestSite(t *testing.T) {
 	t.Parallel()
-	err := TestSite(nil, nil, "")
+	err := run.TestSite(nil, nil, "")
 	assert.NotNil(t, err)
-	err = TestSite(db, io.Discard, "")
+	err = run.TestSite(db, io.Discard, "")
 	assert.Nil(t, err)
 }

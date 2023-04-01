@@ -119,7 +119,7 @@ func Type(name string) error {
 	mime := http.DetectContentType(dst.Bytes())
 	s := strings.Split(mime, "/")
 	if len(s) == 0 {
-		return err //todo
+		return err // todo
 	}
 	const fallback = "application/octet-stream"
 	if mime == fallback {

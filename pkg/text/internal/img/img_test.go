@@ -21,9 +21,7 @@ const (
 	uuid = "_0000000-0000-0000-0000-000000000000"
 )
 
-var (
-	testDir = filepath.Join("..", "..", "..", "..", "testdata")
-)
+var testDir = filepath.Join("..", "..", "..", "..", "testdata")
 
 func TestMake(t *testing.T) {
 	t.Parallel()

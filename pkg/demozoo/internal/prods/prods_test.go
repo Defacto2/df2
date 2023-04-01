@@ -16,9 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	ErrAdd = errors.New("invalid add argument")
-)
+var ErrAdd = errors.New("invalid add argument")
 
 const (
 	cd      = "Content-Disposition"

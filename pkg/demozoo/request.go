@@ -14,9 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	ErrLogger = errors.New("zap logger cannot be nil")
-)
+var ErrLogger = errors.New("zap logger cannot be nil")
 
 // Request Demozoo entries.
 type Request struct {

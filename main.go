@@ -51,7 +51,7 @@ func main() {
 	// Panic recovery to close any active connections and to log the problem.
 	defer func() {
 		if i := recover(); i != nil {
-			//debug.PrintStack()
+			// debug.PrintStack()
 			logr.DPanic(i)
 		}
 	}()

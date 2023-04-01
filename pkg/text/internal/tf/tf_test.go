@@ -19,9 +19,7 @@ const (
 	fileToExtract = "test.txt"
 )
 
-var (
-	dzDir = filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
-)
+var dzDir = filepath.Join("..", "..", "..", "..", "testdata", "demozoo")
 
 func TestTextFile(t *testing.T) {
 	t.Parallel()

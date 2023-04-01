@@ -56,7 +56,6 @@ func TestProds(t *testing.T) {
 	r := releases.Productions{}
 	err = insert.Prods(db, io.Discard, &r)
 	assert.Nil(t, err)
-
 }
 
 func TestProd(t *testing.T) {

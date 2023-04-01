@@ -13,9 +13,7 @@ import (
 	"time"
 )
 
-var (
-	ErrFile = errors.New("os file cannot be nil")
-)
+var ErrFile = errors.New("os file cannot be nil")
 
 // Sum386 returns the SHA-386 checksum value of the open file.
 func Sum386(f *os.File) (string, error) {

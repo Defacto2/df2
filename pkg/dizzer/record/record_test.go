@@ -11,9 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	diz = filepath.Join(dir, "text", "file_id.diz")
-)
+var diz = filepath.Join(dir, "text", "file_id.diz")
 
 const (
 	grp    = "Some Group"

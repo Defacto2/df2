@@ -15,9 +15,7 @@ import (
 	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
 )
 
-var (
-	ErrPointer = errors.New("pointer value cannot be nil")
-)
+var ErrPointer = errors.New("pointer value cannot be nil")
 
 const (
 	// Location is the URL of the website.

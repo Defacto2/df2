@@ -20,7 +20,8 @@ func Targets() []string {
 		"all",
 		"download",
 		"emulation",
-		"image"}
+		"image",
+	}
 }
 
 type Approve struct {

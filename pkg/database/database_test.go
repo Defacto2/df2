@@ -47,12 +47,14 @@ func TestConnInfo0(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)
 }
+
 func TestConnInfo1(t *testing.T) {
 	t.Parallel()
 	s, err := database.ConnInfo(conf.Defaults())
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
+
 func TestConnInfo2(t *testing.T) {
 	t.Parallel()
 	cfg := conf.Defaults()

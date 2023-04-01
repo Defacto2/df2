@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 )
 
-var (
-	ErrNotDir = errors.New("testdata does not point to a directory")
-)
+var ErrNotDir = errors.New("testdata does not point to a directory")
 
 const (
 	DZ  = "demozoo"

@@ -18,9 +18,7 @@ const (
 	uuid = "29e0ca1f-c0a6-4b1a-b019-94a54243c093"
 )
 
-var (
-	testdata = filepath.Join("..", "..", "..", "..", "testdata", "uuid")
-)
+var testdata = filepath.Join("..", "..", "..", "..", "testdata", "uuid")
 
 func TestMonth(t *testing.T) {
 	t.Parallel()
@@ -32,7 +30,6 @@ func TestMonth(t *testing.T) {
 	assert.Equal(t, data.Months(1), m)
 	m = data.Month("dec")
 	assert.Equal(t, data.Months(12), m)
-
 }
 
 func TestApprovals_Approve(t *testing.T) {

@@ -93,7 +93,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 			return fmt.Errorf("images fix stat: %w", err)
 		}
 		if err := Generate(w, filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
-			//return fmt.Errorf("images fix generate: %w", err)
+			// return fmt.Errorf("images fix generate: %w", err)
 			fmt.Fprintf(w, "%s", err)
 		}
 		fmt.Fprintln(w)

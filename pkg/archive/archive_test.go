@@ -231,5 +231,4 @@ func TestExtractor(t *testing.T) {
 		"test.zip",
 		testDir("demozoo/test.zip"), "", tmp)
 	assert.Nil(t, err)
-
 }

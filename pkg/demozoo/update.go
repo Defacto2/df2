@@ -417,7 +417,7 @@ func (r *Record) lastMod(w io.Writer, head http.Header) error {
 	t, err := time.Parse(download.RFC5322, lm)
 	if err != nil {
 		fmt.Fprintf(w, " • last-mod value %q ?", lm)
-		return nil
+		return nil //nolint:nilerr
 	}
 	r.LastMod = t
 	if time.Now().Year() == t.Year() {

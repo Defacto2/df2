@@ -10,9 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	ErrPointer = errors.New("pointer value cannot be nil")
-)
+var ErrPointer = errors.New("pointer value cannot be nil")
 
 // Checks runs a number of sanity checks for the environment variable configurations.
 func (c Config) Checks(l *zap.SugaredLogger) error {

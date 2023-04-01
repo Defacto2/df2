@@ -34,7 +34,7 @@ func (dl *DownloadsAPIv1) parse() error {
 
 // DownloadLink parses the Demozoo DownloadLinks to return the filename
 // and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink(w io.Writer) (string, string) { //nolint:cyclop
+func (p *ProductionsAPIv1) DownloadLink(w io.Writer) (string, string) {
 	if w == nil {
 		w = io.Discard
 	}

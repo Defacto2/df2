@@ -17,9 +17,7 @@ import (
 	"github.com/mholt/archiver"
 )
 
-var (
-	ErrDir = errors.New("named file points to a directory")
-)
+var ErrDir = errors.New("named file points to a directory")
 
 var Rar = archiver.Rar{
 	OverwriteExisting:      true,
@@ -127,11 +125,11 @@ func Run(nameRar string) error {
 	// TODO: build record collection
 	for _, r := range st.Releases {
 		if i >= l {
-			//break
+			// break
 			fmt.Println("more than expacted?", i, l)
 			break
 		}
-		//fmt.Printf("\n%d. %+v\n", i, r)
+		// fmt.Printf("\n%d. %+v\n", i, r)
 		title := ""
 		if r.Diz == (record.Download{}) {
 			fmt.Println("no file_id.diz for", r.Title)
@@ -205,10 +203,10 @@ type Stat struct {
 type Release struct {
 	Title string // Title for the release.
 	Path  string // Path is the subdirectory containing the release.
-	//DIZ     bool      // DIZ means a file_id.diz is included with the release.
-	//NFO     string    // NFO is the filename of the .nfo information file included with the release.
+	// DIZ     bool      // DIZ means a file_id.diz is included with the release.
+	// NFO     string    // NFO is the filename of the .nfo information file included with the release.
 	Files []string // Files named that are included in the release.
-	//LastMod time.Time // The earliest file last modification time found in the release.
+	// LastMod time.Time // The earliest file last modification time found in the release.
 	Diz record.Download
 	Nfo record.Download
 }
