@@ -30,6 +30,7 @@ linters:
     - sqlclosecheck
     - wastedassign
 
+    - cyclop
 linters-settings:
   cyclop:
     # The maximal code complexity to report.
