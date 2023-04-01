@@ -71,9 +71,8 @@ func (r *Record) Iterate(db *sql.DB, w io.Writer, s *scan.Stats) error {
 		return fmt.Errorf("%w, columns: %d, values: %d",
 			ErrValues, len(s.Columns), len(*s.Values))
 	}
-	value := ""
 	for i, raw := range *s.Values {
-		value = database.Val(raw)
+		value := database.Val(raw)
 		switch s.Columns[i] {
 		case "id":
 			if err := r.id(w, s); err != nil {
@@ -197,7 +196,7 @@ func (r *Record) Save(db *sql.DB) (int64, error) {
 			"retrotxt_readme=?,retrotxt_no_readme=? WHERE id=?"
 	)
 	var err error
-	stmt := &sql.Stmt{}
+	var stmt *sql.Stmt
 	if r.NFO == "" {
 		stmt, err = db.Prepare(files)
 	} else {

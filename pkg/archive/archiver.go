@@ -78,7 +78,7 @@ func readr(src, filename string) ([]string, error) {
 		if f.IsDir() {
 			return nil
 		}
-		fn := ""
+		var fn string
 		switch h := f.Header.(type) {
 		case zip.FileHeader:
 			fn = h.Name

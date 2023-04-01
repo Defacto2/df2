@@ -166,8 +166,11 @@ func (dl *Download) New(name, group string) error {
 }
 
 func (dl *Download) ReadDIZ(body string, group string) error {
-	y, m, d := 0, time.Month(0), 0
-	title, pub := "", ""
+	var (
+		m          time.Month
+		y, d       int
+		pub, title string
+	)
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup

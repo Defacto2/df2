@@ -90,9 +90,8 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
 	if err != nil {
 		return fmt.Errorf("next fetch: %w", err)
 	}
-	ok := false
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err = r.confirm(db, w, code, status); err != nil {
+	if ok, err := r.confirm(db, w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
 	} else if !ok {
 		return nil
@@ -151,9 +150,8 @@ func (st *Stat) NextPouet(db *sql.DB, w io.Writer, rec Records) error {
 	if err != nil {
 		return fmt.Errorf("next fetch: %w", err)
 	}
-	ok := false
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err = r.confirm(db, w, code, status); err != nil {
+	if ok, err := r.confirm(db, w, code, status); err != nil {
 		return fmt.Errorf("next confirm: %w", err)
 	} else if !ok {
 		return nil

@@ -176,7 +176,7 @@ func SQLWhere(w io.Writer, f Filter, includeSoftDeletes bool) (string, error) {
 
 // SQLFilter returns a partial SQL WHERE statement to filter groups.
 func SQLFilter(f Filter) (string, error) {
-	s := ""
+	var s string
 	switch f {
 	case None:
 		return "", nil

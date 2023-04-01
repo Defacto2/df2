@@ -377,7 +377,7 @@ func ColLen(s *sql.ColumnType) string {
 
 // ReverseInt swaps the direction of the value, 12345 would return 54321.
 func ReverseInt(i int) (int, error) {
-	n, s := 0, ""
+	s := ""
 	v := strconv.Itoa(i)
 	for x := len(v); x > 0; x-- {
 		s += string(v[x-1])

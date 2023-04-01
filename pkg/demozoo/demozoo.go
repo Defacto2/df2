@@ -290,7 +290,7 @@ func Counter(db *sql.DB, w io.Writer, r request) error {
 		w = io.Discard
 	}
 	cnt := 0
-	stmt := ""
+	var stmt string
 	switch r {
 	case meta:
 		stmt = countDemozoo()

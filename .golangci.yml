@@ -28,7 +28,6 @@ linters:
     # generics
     - rowserrcheck
     - sqlclosecheck
-    - wastedassign
 
     - cyclop
     - tparallel

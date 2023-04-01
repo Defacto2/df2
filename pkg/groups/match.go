@@ -57,11 +57,11 @@ func Match(db *sql.DB, w io.Writer, maxCount int) error { //nolint:funlen
 	sort.Strings(list)
 
 	matches := []string{}
-	a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 := "", "", "", "", "", "", "", "", "", "", "", "", ""
-	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 := "", "", "", "", "", "", "", "", "", "", "", "", ""
-	f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 := "", "", "", "", "", "", "", "", "", "", "", ""
-	g0, g1, g2, g3, g4, g5, g6, g7, g8 := "", "", "", "", "", "", "", "", ""
-	h0, h1, h2, h3, h4, h5, h6, h7, h8 := "", "", "", "", "", "", "", "", ""
+	var a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 string
+	var e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 string
+	var f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 string
+	var g0, g1, g2, g3, g4, g5, g6, g7, g8 string
+	var h0, h1, h2, h3, h4, h5, h6, h7, h8 string
 	i := 0
 	for _, group := range list {
 		if len(group) == 0 {
@@ -224,11 +224,10 @@ func SwapAll(group, str, swap string) string {
 // SwapPrefix replaces the prefix value at the start of a group name and replaces it with swap.
 // An empty string is returned if the prefix does not exist in the name.
 func SwapPrefix(group, prefix, swap string) string {
-	s := ""
 	prefix = strings.ToLower(prefix)
 	group = strings.ToLower(group)
 	if strings.HasPrefix(group, prefix) {
-		s = swap + strings.TrimPrefix(group, prefix)
+		s := swap + strings.TrimPrefix(group, prefix)
 		return Format(s)
 	}
 	return ""
@@ -237,21 +236,20 @@ func SwapPrefix(group, prefix, swap string) string {
 // SwapSuffix replaces the suffix value at the end of a group name and replaces it with swap.
 // An empty string is returned if the suffix does not exist in the name.
 func SwapSuffix(group, suffix, swap string) string {
-	s := ""
 	suffix = strings.ToLower(suffix)
 	group = strings.ToLower(group)
 	if strings.HasSuffix(group, suffix) {
-		s = strings.TrimSuffix(group, suffix) + swap
+		s := strings.TrimSuffix(group, suffix) + swap
 		return Format(s)
 	}
 	suf := strings.ToLower(suffix + bbs)
 	if strings.HasSuffix(group, suf) {
-		s = strings.TrimSuffix(group, suf) + swap + bbs
+		s := strings.TrimSuffix(group, suf) + swap + bbs
 		return Format(s)
 	}
 	suf = strings.ToLower(suffix + ftp)
 	if strings.HasSuffix(group, suf) {
-		s = strings.TrimSuffix(group, suf) + swap + ftp
+		s := strings.TrimSuffix(group, suf) + swap + ftp
 		return Format(s)
 	}
 	return ""

@@ -49,13 +49,13 @@ func console() zapcore.Encoder { //nolint:ireturn
 func SPrintPath(name string) string {
 	const sep = string(filepath.Separator)
 	paths := strings.Split(name, sep)
-	p, s := "", ""
+	s := ""
 	for i, e := range paths {
 		if e == "" {
 			s = string(filepath.Separator)
 			continue
 		}
-		p = strings.Join(paths[0:i+1], string(filepath.Separator))
+		p := strings.Join(paths[0:i+1], string(filepath.Separator))
 		if _, err := os.Stat(p); errors.Is(err, fs.ErrNotExist) {
 			s = filepath.Join(s, color.Danger.Sprint(e))
 		} else {
