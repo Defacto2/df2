@@ -84,6 +84,7 @@ func TestStyle_Range(t *testing.T) {
 }
 
 func TestAbsPaths(t *testing.T) {
+	t.Parallel()
 	s, err := sitemap.AbsPaths(sitemap.Location)
 	assert.Nil(t, err)
 	assert.Contains(t, s, "https://defacto2.net/welcome")

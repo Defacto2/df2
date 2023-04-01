@@ -36,7 +36,9 @@ func TestRename(t *testing.T) {
 		{args{".txt", "some.file.text"}, "some.file.txt"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.args.filename, func(t *testing.T) {
+			t.Parallel()
 			if got := sys.Rename(tt.args.ext, tt.args.filename); got != tt.want {
 				t.Errorf("Rename() = %v, want %v", got, tt.want)
 			}
@@ -91,7 +93,9 @@ func TestPKZip(t *testing.T) {
 		{"deflate extra", args{v2x, "PKZ204EX.ZIP"}, okay, ".zip", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gots, got, err := sys.Readr(nil, tt.args.src, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
@@ -142,7 +146,9 @@ func TestReadr(t *testing.T) {
 		{"zip deflate", args{zip, "test.zip"}, okay, ".zip", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gots, got, err := sys.Readr(nil, tt.args.src, tt.args.filename)
 			// special case for macos which doesn't have easy access to arj.
 			if runtime.GOOS == "darwin" {
@@ -183,7 +189,9 @@ func TestArjItem(t *testing.T) {
 		{"999) somefile", true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.s, func(t *testing.T) {
+			t.Parallel()
 			if got := sys.ARJItem(tt.s); got != tt.want {
 				t.Errorf("ARJItem() = %v, want %v", got, tt.want)
 			}
@@ -219,7 +227,9 @@ func TestExtract(t *testing.T) {
 		{"zip", args{zip, tgt, tmp}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			name := filepath.Base(tt.args.src)
 			err := sys.Extract(name, tt.args.src, tt.args.targets, tt.args.dest)
 			// special case for macos which doesn't have easy access to arj.
@@ -247,7 +257,9 @@ func TestMagicLHA(t *testing.T) {
 		{"lha 2.x? archive data  [lha]", true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.magic, func(t *testing.T) {
+			t.Parallel()
 			if got := sys.MagicLHA(tt.magic); got != tt.want {
 				t.Errorf("MagicLHA() = %v, want %v", got, tt.want)
 			}

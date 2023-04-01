@@ -28,7 +28,9 @@ func TestData(t *testing.T) {
 		{"2", fields{"hi.exe", "hi.txt"}, "using \"hi.exe\" for DOSee and \"hi.txt\" as the NFO or text"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			d := demozoo.Data{
 				DOSee: tt.fields.DOSee,
 				NFO:   tt.fields.NFO,
@@ -52,7 +54,9 @@ func TestTop(t *testing.T) {
 		{"2", demozoo.Finds{"file.exe": 0, "file.bat": 9}, "file.exe"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := tt.f.Top(); got != tt.want {
 				t.Errorf("Top() = %v, want %v", got, tt.want)
 			}
@@ -169,7 +173,9 @@ func Test_NFO(t *testing.T) {
 		{"3 file", args{"hi.zip", ff2}, "hi.nfo"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := demozoo.NFO(tt.args.name, tt.args.files, &e); got != tt.want {
 				t.Errorf("NFO() = %v, want %v", got, tt.want)
 			}

@@ -60,7 +60,9 @@ func TestCheckTime(t *testing.T) {
 		{"-99 secs", -99, td(5)},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := download.CheckTime(tt.t); got != tt.want {
 				t.Errorf("CheckTime() = %v, want %v", got, tt.want)
 			}

@@ -29,7 +29,9 @@ func TestConvert(t *testing.T) {
 		{"iff", args{iff, dest}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if err := netpbm.Convert(nil, tt.args.src, tt.args.dest); (err != nil) != tt.wantErr {
 				t.Errorf("Convert() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -52,7 +54,9 @@ func TestID(t *testing.T) {
 		{"some.image.pic", netpbm.Ilbm, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.src, func(t *testing.T) {
+			t.Parallel()
 			got, err := netpbm.ID(tt.src)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ID() error = %v, wantErr %v", err, tt.wantErr)

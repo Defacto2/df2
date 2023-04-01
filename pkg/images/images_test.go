@@ -72,7 +72,9 @@ func TestDuplicate(t *testing.T) {
 		{"ok", args{path, "-duplicate"}, want, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotName, err := images.Duplicate(tt.args.filename, tt.args.prefix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Duplicate() error = %v, wantErr %v", err, tt.wantErr)
@@ -158,7 +160,9 @@ func TestWidth(t *testing.T) {
 		{testImg(p), 1280, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotWidth, err := images.Width(tt.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Width() error = %v, wantErr %v", err, tt.wantErr)
@@ -192,7 +196,9 @@ func TestToPNG(t *testing.T) {
 		{"unsupported format", args{testImg("wbm"), testDest(p), 0}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := images.ToPNG(tt.args.src, tt.args.dest, tt.args.height, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToPNG() error = %v, wantErr %v", err, tt.wantErr)
@@ -220,7 +226,9 @@ func TestToThumb(t *testing.T) {
 		{g, args{testImg(g), testSqr(), 100}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			str, err := images.ToThumb(tt.args.src, tt.args.dest, tt.args.sizeSquared)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToThumb() error = %v, wantErr %v", err, tt.wantErr)
@@ -252,7 +260,9 @@ func TestToWebxp(t *testing.T) {
 		{j, args{testImg(j), testDest(w)}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			str, err := images.ToWebp(nil, tt.args.src, tt.args.dest, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
@@ -283,7 +293,9 @@ func TestToWebp(t *testing.T) {
 		{j, args{testImg(j), testDest(w)}, "»webp", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotPrint, err := images.ToWebp(nil, tt.args.src, tt.args.dest, true)
 			if (err != nil) != tt.wantErr {
 				fmt.Fprintf(os.Stderr, "%s -> %s\n", tt.args.src, tt.args.dest)
@@ -324,7 +336,9 @@ func TestWebPCalc(t *testing.T) {
 		{"sm square", args{500, 500}, 500, 500},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotW, gotH := images.WebPCalc(tt.args.width, tt.args.height)
 			if gotW != tt.wantW {
 				t.Errorf("WebPCalc() gotW = %v, want %v", gotW, tt.wantW)

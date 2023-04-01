@@ -10,6 +10,7 @@ import (
 )
 
 func TestSPrintPath(t *testing.T) {
+	t.Parallel()
 	s := logger.SPrintPath("")
 	assert.Equal(t, "/", s)
 	dir, err := os.Getwd()

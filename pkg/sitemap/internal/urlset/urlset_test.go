@@ -85,7 +85,9 @@ func TestSet_StaticURLs(t *testing.T) {
 		}, 0, 0},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			set := &urlset.Set{
 				XMLName: tt.fields.XMLName,
 				XMLNS:   tt.fields.XMLNS,

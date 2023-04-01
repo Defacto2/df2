@@ -29,7 +29,9 @@ func TestRead(t *testing.T) {
 		{"nl", "\n\t\n\t\tb", "", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			stdin.Write([]byte(tt.in))
 			s, err := prompt.Read(&stdin)
 			if (err != nil) != tt.wantErr {

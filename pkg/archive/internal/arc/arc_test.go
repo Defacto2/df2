@@ -52,7 +52,9 @@ func TestConfigure(t *testing.T) {
 		{"zip", zip, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if err := arc.Configure(tt.f); (err != nil) != tt.wantErr {
 				t.Errorf("configure() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -76,7 +78,9 @@ func TestMagicExt(t *testing.T) {
 		{"tar", testDir("demozoo/test.tar"), ".tar", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := sys.MagicExt(tt.src)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MagicExt() error = %v, wantErr %v", err, tt.wantErr)

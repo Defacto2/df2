@@ -202,7 +202,9 @@ func TestNewRecord(t *testing.T) {
 		{"pouet", args{0, pouet}, "1", "somefile.zip", "dos", []string{"Lisa", "Linus"}, 50, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotR, gotErr := demozoo.NewRecord(tt.args.c, tt.args.values)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("newRecord() error = %v, wantErr %v", gotErr, tt.wantErr)
@@ -269,7 +271,9 @@ func TestRecord_DoseeMeta(t *testing.T) {
 	}
 	cfg := conf.Defaults()
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &demozoo.Record{
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
@@ -280,7 +284,9 @@ func TestRecord_DoseeMeta(t *testing.T) {
 		})
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &demozoo.Record{
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
@@ -368,7 +374,9 @@ func TestSQL(t *testing.T) { //nolint:funlen
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := demozoo.Record{
 				Count:          tt.fields.count,
 				FilePath:       tt.fields.FilePath,
@@ -427,7 +435,9 @@ func TestZipContent(t *testing.T) {
 		}, true, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &demozoo.Record{
 				FilePath: tt.fields.FilePath,
 				Filename: tt.fields.Filename,
@@ -513,7 +523,9 @@ func TestRecord_String(t *testing.T) {
 		{"eight", f, args{total: 12345678}, "→ 00000005. 99 (77) ?"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := demozoo.Record{
 				Count:        tt.fields.count,
 				ID:           tt.fields.ID,

@@ -121,7 +121,9 @@ func TestTargets(t *testing.T) {
 	}
 	color.Enable = false
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got, _ := assets.Targets(cfg, tt.target, &d); len(got) != tt.want {
 				t.Errorf("Targets() = %v, want %v", got, tt.want)
 			}

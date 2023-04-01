@@ -123,7 +123,9 @@ func TestRestore(t *testing.T) {
 		{"7z (unsupported)", args{z7, "test.7z", tmp}, nil, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotFiles, err := archive.Restore(nil, tt.args.source, tt.args.filename, tt.args.destination)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Restore() error = %v, wantErr %v", err, tt.wantErr)
@@ -137,6 +139,7 @@ func TestRestore(t *testing.T) {
 }
 
 func TestProof_Decompress(t *testing.T) {
+	t.Parallel()
 	const uuid = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 	type args struct {
 		archive  string
@@ -198,7 +201,9 @@ func TestNFO(t *testing.T) {
 		{"3 files", args{"hi.zip", []string{fileDiz, ff2, ff3}}, "hi.nfo"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := archive.NFO(tt.args.name, tt.args.files...); got != tt.want {
 				t.Errorf("NFO() = %v, want %v", got, tt.want)
 			}

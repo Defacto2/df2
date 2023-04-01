@@ -32,6 +32,7 @@ TEAM Z.W.T ( ZERO WAiTiNG TiME ) 2005
 `
 
 func TestRecord_New(t *testing.T) {
+	t.Parallel()
 	r, err := record.New("", "")
 	assert.NotNil(t, err)
 	assert.Empty(t, r)
@@ -47,6 +48,7 @@ func TestRecord_New(t *testing.T) {
 }
 
 func TestRecord_Copy(t *testing.T) {
+	t.Parallel()
 	x := record.Record{}
 	err := x.Copy(nil, "")
 	assert.ErrorIs(t, err, record.ErrPointer)
@@ -83,6 +85,7 @@ func TestRecord_Copy(t *testing.T) {
 }
 
 func TestDownload_New(t *testing.T) {
+	t.Parallel()
 	dl := record.Download{}
 	err := dl.New("", "")
 	assert.ErrorIs(t, err, record.ErrGroup)
@@ -121,6 +124,7 @@ func TestDownload_New(t *testing.T) {
 }
 
 func TestDownload_ReadDIZ(t *testing.T) {
+	t.Parallel()
 	dl := record.Download{}
 	err := dl.ReadDIZ("", "")
 	assert.ErrorIs(t, err, record.ErrGroup)

@@ -37,6 +37,7 @@ func TestFmtSyntax(t *testing.T) {
 }
 
 func TestCleanS(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -85,6 +86,7 @@ func TestCleanS(t *testing.T) {
 }
 
 func TestTrimThe(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		g string
 	}
@@ -113,6 +115,7 @@ func TestTrimThe(t *testing.T) {
 }
 
 func TestTrimDot(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}

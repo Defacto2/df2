@@ -55,7 +55,9 @@ func TestIsExt(t *testing.T) {
 		{"jpeg", file.Image{Name: "some.other.jpeg"}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if gotOk := tt.i.IsExt(); gotOk != tt.wantOk {
 				t.Errorf("IsExt() = %v, want %v", gotOk, tt.wantOk)
 			}

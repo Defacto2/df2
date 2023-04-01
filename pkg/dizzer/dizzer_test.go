@@ -21,6 +21,7 @@ var (
 )
 
 func TestRun(t *testing.T) {
+	t.Parallel()
 	err := dizzer.Run(nil, nil, "")
 	assert.NotNil(t, err)
 	err = dizzer.Run(nil, nil, rar)
@@ -28,6 +29,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestGroup(t *testing.T) {
+	t.Parallel()
 	s := dizzer.PathGroup("")
 	assert.Equal(t, "", s)
 	s = dizzer.PathGroup("HeLLo worLD! ")
@@ -39,6 +41,7 @@ func TestGroup(t *testing.T) {
 }
 
 func TestTitle(t *testing.T) {
+	t.Parallel()
 	s := dizzer.PathTitle("")
 	assert.Equal(t, "", s)
 	s = dizzer.PathTitle("HeLLo worLD! ")

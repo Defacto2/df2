@@ -23,7 +23,9 @@ func TestCreate(t *testing.T) {
 		{"temp", os.TempDir(), false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := create.MkDir(tt.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MkDir() error = %v, wantErr %v", err, tt.wantErr)
@@ -57,7 +59,9 @@ func TestHolders(t *testing.T) {
 		{"too big", args{tempDir, 50, 100}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if err := create.Holders(tt.args.dir, tt.args.size, tt.args.number); (err != nil) != tt.wantErr {
 				t.Errorf("Holders() error = %v, wantErr %v", err, tt.wantErr)
 			}

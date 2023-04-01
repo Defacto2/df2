@@ -62,7 +62,9 @@ func TestPeopleStmt(t *testing.T) {
 		{"all", args{"", true}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := role.PeopleStmt(role.Roles(tt.args.role), tt.args.includeSoftDeletes); len(got) > 0 != tt.want {
 				t.Errorf("sqlPeople() = %v, want = %v", len(got) > 0, tt.want)
 			}
@@ -87,7 +89,9 @@ func TestRoles(t *testing.T) {
 		{"error", args{"xxx"}, -1},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := role.Roles(tt.args.r); got != tt.want {
 				t.Errorf("Roles() = %v, want %v", got, tt.want)
 			}
@@ -166,7 +170,9 @@ func TestCleanS(t *testing.T) {
 		{"", args{"name1,name2,!name3!"}, "name1,name2,name3!"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := role.CleanS(tt.args.s); got != tt.want {
 				t.Errorf("CleanS() = %v, want %v", got, tt.want)
 			}
@@ -192,7 +198,9 @@ func TestTrim(t *testing.T) {
 		{"", args{"?!nick!!,--someone-else++"}, "nick,--someone-else"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := role.Trim(tt.args.s); got != tt.want {
 				t.Errorf("Trim() = %v, want %v", got, tt.want)
 			}

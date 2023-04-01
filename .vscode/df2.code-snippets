@@ -45,6 +45,11 @@
 			"}",
 		],
 	},
+	"tt := tt":{
+		"scope": "go",
+		"prefix": "tt",
+		"body": "tt:=tt",
+	},
 	"l zap logger is nil check":{
 		"scope": "go",
 		"prefix": "ifzap",

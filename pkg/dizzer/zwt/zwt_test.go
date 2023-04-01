@@ -22,6 +22,7 @@ TEAM Z.W.T ( ZERO WAiTiNG TiME ) 2005
 `
 
 func TestDizDate(t *testing.T) {
+	t.Parallel()
 	y, m, d := zwt.DizDate(internal.RandStr)
 	assert.Equal(t, 0, y)
 	assert.Equal(t, time.Month(0), m)
@@ -34,6 +35,7 @@ func TestDizDate(t *testing.T) {
 }
 
 func TestDizTitle(t *testing.T) {
+	t.Parallel()
 	a, b := zwt.DizTitle(diz1)
 	assert.Equal(t, "Disk Director Suite v10.0.2077", a)
 	assert.Equal(t, "Acronis", b)

@@ -41,7 +41,9 @@ func Test_capString(t *testing.T) {
 		{"y", args{"y", ""}, "✓"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if gotOutput := capString(tt.args.test, tt.args.text); gotOutput != tt.wantOutput {
 				t.Errorf("capString() = %v, want %v", gotOutput, tt.wantOutput)
 			}
@@ -68,7 +70,9 @@ func TestProgress(t *testing.T) {
 		{"decimal", args{"", 1, 99999}, float64(0.001000010000100001)},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := str.Progress(nil, tt.args.name, tt.args.count, tt.args.total); got != tt.want {
 				t.Errorf("Progress() = %v, want %v", got, tt.want)
 			}
@@ -94,7 +98,9 @@ func TestTruncate(t *testing.T) {
 		{"too long", args{"hello", 600}, "hello"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := str.Truncate(tt.args.text, tt.args.len); got != tt.want {
 				t.Errorf("Truncate() = %v, want %v", got, tt.want)
 			}

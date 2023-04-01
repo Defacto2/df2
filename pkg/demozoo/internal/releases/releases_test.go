@@ -20,7 +20,9 @@ func TestSite(t *testing.T) {
 		{"The Maximum Security FTP (2a)", "Maximum Security FTP"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.title, func(t *testing.T) {
+			t.Parallel()
 			if got := releases.Site(tt.title); got != tt.want {
 				t.Errorf("Site() = %v, want %v", got, tt.want)
 			}
@@ -43,7 +45,9 @@ func TestProductionV1_Released(t *testing.T) {
 		{"1970-11-31", 1970, 11, 31},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.ReleaseDate, func(t *testing.T) {
+			t.Parallel()
 			p := releases.ProductionV1{
 				ReleaseDate: tt.ReleaseDate,
 			}

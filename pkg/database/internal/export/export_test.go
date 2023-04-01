@@ -57,6 +57,7 @@ func TestFlags_Run(t *testing.T) {
 }
 
 func TestFlags_DB(t *testing.T) {
+	t.Parallel()
 	f := export.Flags{}
 	err := f.DB(nil, nil)
 	assert.NotNil(t, err)

@@ -94,7 +94,9 @@ func TestSQLWhere(t *testing.T) {
 			"RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine'"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got, _ := group.SQLWhere(nil, tt.args.f, tt.args.incSoftDeletes); got != tt.want {
 				t.Errorf("SQLWhere() = %q, want %q", got, tt.want)
 			}
@@ -120,7 +122,9 @@ func Test_hrElement(t *testing.T) {
 		{"Defacto2", args{"C", "Defacto2"}, "D", true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, got1 := group.UseHr(tt.args.cap, tt.args.group)
 			if got != tt.want {
 				t.Errorf("UseHr() got = %v, want %v", got, tt.want)
@@ -148,7 +152,9 @@ func TestSQLSelect(t *testing.T) {
 		{"invalid", args{group.Get("invalid filter"), false}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := group.SQLSelect(nil, tt.args.f, tt.args.includeSoftDeletes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SQLSelect() error = %v, wantErr %v", err, tt.wantErr)
@@ -174,7 +180,9 @@ func TestSlug(t *testing.T) {
 		{"", args{"Defacto  2"}, "defacto-2"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := group.Slug(tt.args.name); got != tt.want {
 				t.Errorf("Slug() = %v, want %v", got, tt.want)
 			}
@@ -202,7 +210,9 @@ func Test_FmtSyntax(t *testing.T) {
 		{"ok", ok, ok},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := rename.FmtSyntax(tt.w); got != tt.want {
 				t.Errorf("FmtSyntax() = %v, want %v", got, tt.want)
 			}

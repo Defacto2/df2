@@ -3,7 +3,7 @@
 linters:
   enable-all: true
   disable:
-    # deprecated
+    # deprecated 
     - deadcode
     - exhaustivestruct
     - ifshort
@@ -16,21 +16,14 @@ linters:
     - varcheck
 
     # disabled
-    - exhaustruct     # conflicts with Cobra pkg
+    - exhaustruct     # conflicts with the cobra pkg
     - nlreturn        # opinionated
-    - paralleltest    # causes tests to randomly fail
     - tagliatelle     # naming suggestions interfere with external APIs
-    - varnamelen      # too many false-pos.
+    - varnamelen      # way too many false-positives
     - wrapcheck       # wrapping 3rd party errors is unnecessary
     - wsl             # whitespace linter, slow, aggressive and opinionated
-    - musttag         # causes a false-pos with the std lib?
-
-    # generics
-    - rowserrcheck
-    - sqlclosecheck
 
     - cyclop
-    - tparallel
     - godox
     - gochecknoglobals
     - nonamedreturns

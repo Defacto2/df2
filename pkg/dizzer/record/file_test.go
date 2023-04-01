@@ -23,6 +23,7 @@ const (
 )
 
 func TestSum386(t *testing.T) {
+	t.Parallel()
 	sum, err := record.Sum386(nil)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", sum)
@@ -37,6 +38,7 @@ func TestSum386(t *testing.T) {
 }
 
 func TestSumMD5(t *testing.T) {
+	t.Parallel()
 	sum, err := record.SumMD5(nil)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", sum)
@@ -51,6 +53,7 @@ func TestSumMD5(t *testing.T) {
 }
 
 func TestDetermine(t *testing.T) {
+	t.Parallel()
 	s, err := record.Determine("")
 	assert.NotNil(t, err)
 	assert.Equal(t, "", s)

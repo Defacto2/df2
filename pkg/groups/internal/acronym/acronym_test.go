@@ -73,7 +73,9 @@ func TestTrim(t *testing.T) {
 		{"", args{"Defacto(DF)"}, "Defacto(DF)"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := acronym.Trim(tt.args.s); got != tt.want {
 				t.Errorf("Trim() = %v, want %v", got, tt.want)
 			}

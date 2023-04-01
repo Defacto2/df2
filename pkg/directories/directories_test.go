@@ -43,7 +43,9 @@ func TestArchiveExt(t *testing.T) {
 		{"caps", args{".ARJ"}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := directories.ArchiveExt(tt.args.name); got != tt.want {
 				t.Errorf("ArchiveExt() = %v, want %v", got, tt.want)
 			}

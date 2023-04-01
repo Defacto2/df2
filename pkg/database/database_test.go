@@ -468,7 +468,9 @@ func TestDeObfuscate(t *testing.T) {
 		{"https://defacto2.net/file/detail/af3d95", 8445},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.s, func(t *testing.T) {
+			t.Parallel()
 			got := database.DeObfuscate(tt.s)
 			if got != tt.want {
 				t.Errorf("DeObfuscate() = %v, want %v", got, tt.want)

@@ -25,7 +25,9 @@ func TestReadr(t *testing.T) {
 		{"zip", args{testDir("demozoo/test.zip"), "test.zip"}, []string{"test.png", "test.txt"}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotFiles, _, err := archive.Readr(nil, tt.args.archive, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
@@ -68,7 +70,9 @@ func TestUnarchiver(t *testing.T) {
 		{"7z", args{z7, zfn, dir}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if err := archive.Unarchiver(tt.args.source, tt.args.destination, tt.args.filename); (err != nil) != tt.wantErr {
 				t.Errorf("Unarchiver() error = %v, wantErr %v", err, tt.wantErr)
 			}

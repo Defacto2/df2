@@ -23,7 +23,9 @@ func Test_options(t *testing.T) {
 		{"test", args{[]string{"test"}}, "\noptions: test"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := arg.CleanOpts(tt.args.a...); got != tt.want {
 				t.Errorf("CleanOpts() = %q, want %q", got, tt.want)
 			}
