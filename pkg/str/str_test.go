@@ -10,8 +10,6 @@ import (
 func capString(test, text string) string {
 	color.Enable = false
 	switch test {
-	case "sec":
-		return str.Sec(text)
 	case "warn":
 		return str.Warn(text)
 	case "x":
@@ -34,7 +32,6 @@ func Test_capString(t *testing.T) {
 		wantOutput string
 	}{
 		{"sec empty", args{"sec", ""}, ""},
-		{"sec", args{"sec", "hello"}, "hello"},
 		{"warn empty", args{"warn", ""}, ""},
 		{"warn", args{"warn", "hello"}, "hello"},
 		{"x", args{"x", ""}, "✗"},

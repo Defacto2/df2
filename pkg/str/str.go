@@ -1,4 +1,4 @@
-// Package str are print to terminal display and colour functions.
+// Package str has custom print to terminal, display and colour functions.
 package str
 
 import (
@@ -59,11 +59,6 @@ func bar(r float64) string {
 			strings.Repeat(done, int(pos)), c,
 			strings.Repeat(pad, max-int(pos)))
 	}
-}
-
-// Sec prints a secondary notice.
-func Sec(s string) string {
-	return color.Secondary.Sprint(s)
 }
 
 // Truncate shortens a string to length characters.
