@@ -1,4 +1,4 @@
-//nolint:gochecknoglobals
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -19,6 +19,6 @@ var envCmd = &cobra.Command{
 	},
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	rootCmd.AddCommand(envCmd)
 }

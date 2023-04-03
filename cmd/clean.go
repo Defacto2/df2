@@ -1,4 +1,4 @@
-//nolint:gochecknoglobals
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -43,7 +43,7 @@ database. These can include UUID named thumbnails, previews, textfile previews.`
 	},
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	rootCmd.AddCommand(cleanCmd)
 	cleanCmd.Flags().StringVarP(&clean.Target, "target", "t", "all",
 		"which file section to clean"+arg.CleanOpts(arg.Targets()...))

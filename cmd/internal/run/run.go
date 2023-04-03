@@ -1,3 +1,5 @@
+// Package run is a collection of work functions used by the cobra.Command
+// methods.
 package run
 
 import (

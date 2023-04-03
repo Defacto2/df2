@@ -1,3 +1,5 @@
+// Package cmd uses the Cobra package to provide and handle all the interactions
+// with the command-line interface in Linux.
 package cmd
 
 import (

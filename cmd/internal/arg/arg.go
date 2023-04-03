@@ -1,3 +1,5 @@
+// Package arg has structures used to store the flag values used by the
+// cobra.Command methods.
 package arg
 
 import (

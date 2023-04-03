@@ -1,6 +1,4 @@
-// Package cmd handles the commandline user interface and interactions.
-//
-//nolint:gochecknoglobals
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -74,11 +72,10 @@ func Execute(log *zap.SugaredLogger, c conf.Config) error {
 		}
 		return nil
 	}
-	// config.Check()
 	return nil
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	// as init runs before anything, check for logger to avoid panics
 	if logr == nil {
 		logr = logger.Production().Sugar()

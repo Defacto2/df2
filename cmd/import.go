@@ -1,3 +1,4 @@
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -9,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var imrar arg.Import //nolint:gochecknoglobals
+var imrar arg.Import
 
-var importCmd = &cobra.Command{ //nolint:gochecknoglobals
+var importCmd = &cobra.Command{
 	Use:     "import (path to .rar)",
 	Short:   "Import a .rar archive collection containing information NFO and text files.",
 	Aliases: []string{"i"},
@@ -29,7 +30,7 @@ var importCmd = &cobra.Command{ //nolint:gochecknoglobals
 	},
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	rootCmd.AddCommand(importCmd)
 	importCmd.PersistentFlags().BoolVarP(&imrar.Insert, "insert", "i", false,
 		"insert the found text files metadata to the database")

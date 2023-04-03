@@ -1,4 +1,4 @@
-//nolint:gochecknoglobals
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -41,7 +41,7 @@ There are additional Demozoo commands found under the api command.`,
 	},
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	rootCmd.AddCommand(demozooCmd)
 	demozooCmd.Flags().BoolVarP(&zoo.New, "new", "n", false,
 		"scan for new demozoo submissions (recommended)")

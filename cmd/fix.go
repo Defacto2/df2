@@ -1,4 +1,4 @@
-//nolint:gochecknoglobals
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -190,7 +190,7 @@ var fixZipCmmtCmd = &cobra.Command{
 	},
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	rootCmd.AddCommand(fixCmd)
 	fixCmd.AddGroup(&cobra.Group{ID: "groupU", Title: "Repair:"})
 	fixCmd.AddGroup(&cobra.Group{ID: "groupG", Title: "Create:"})

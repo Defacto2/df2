@@ -1,4 +1,4 @@
-//nolint:gochecknoglobals
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -63,7 +63,7 @@ var testURLsCmd = &cobra.Command{
 	},
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	rootCmd.AddCommand(testCmd)
 	testCmd.AddCommand(testGroupNames)
 	testCmd.AddCommand(testURLsCmd)

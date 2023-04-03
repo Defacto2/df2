@@ -1,3 +1,4 @@
+//nolint:gochecknoglobals,gochecknoinits
 package run_test
 
 import (
@@ -15,14 +16,13 @@ import (
 	"go.uber.org/zap"
 )
 
-//nolint:gochecknoglobals
 var (
 	cfg conf.Config
 	db  *sql.DB
 	l   *zap.SugaredLogger
 )
 
-func init() { //nolint:gochecknoinits
+func init() {
 	var err error
 	db, err = database.Connect(conf.Defaults())
 	if err != nil {

@@ -1,4 +1,4 @@
-//nolint:gochecknoglobals
+//nolint:gochecknoglobals,gochecknoinits
 package cmd
 
 import (
@@ -40,7 +40,7 @@ var approveCmd = &cobra.Command{
 	},
 }
 
-func init() { //nolint:gochecknoinits
+func init() {
 	rootCmd.AddCommand(approveCmd)
 	approveCmd.Flags().BoolVar(&approve.Verbose, "verbose", false,
 		"display all file records that qualify to go public")
