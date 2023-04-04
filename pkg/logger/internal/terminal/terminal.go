@@ -1,5 +1,6 @@
 //go:build !windows
 
+// Package terminal returns information on the host Linux terminal.
 package terminal
 
 import (

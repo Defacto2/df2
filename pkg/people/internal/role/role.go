@@ -1,3 +1,4 @@
+// Package role handles the job or activity a person was credited with.
 package role
 
 import (

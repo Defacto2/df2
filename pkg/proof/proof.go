@@ -10,7 +10,6 @@ import (
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
-	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 )
 
 var ErrPointer = errors.New("pointer value cannot be nil")
@@ -49,7 +48,7 @@ func (request Request) Queries(db *sql.DB, w io.Writer, cfg conf.Config) error {
 	if w == nil {
 		w = io.Discard
 	}
-	s, err := stat.Init(cfg)
+	s, err := record.Init(cfg)
 	if err != nil {
 		return err
 	}
@@ -156,7 +155,7 @@ func Select(id string) string {
 }
 
 // Total returns the sum of the records.
-func Total(s *stat.Proof, request Request) (string, error) {
+func Total(s *record.Proof, request Request) (string, error) {
 	if s == nil {
 		return "", fmt.Errorf("stat proof, %w", ErrPointer)
 	}

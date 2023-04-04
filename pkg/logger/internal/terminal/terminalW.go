@@ -1,5 +1,6 @@
 //go:build windows
 
+// Package terminal returns information on the host Windows terminal.
 package terminal
 
 // Columns on Windows will always returns 80 characters.

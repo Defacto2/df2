@@ -1,5 +1,5 @@
-// Package logger uses the zap logging library for application logs.
-// The development mode prints all feedback to stdout.
+// Package logger uses the zap logging library for application logs. The
+// development mode prints all feedback to stdout.
 package logger
 
 import (

@@ -1,4 +1,4 @@
-// Package internal is intended as package wide test data.
+// Package internal has shared testdata.
 package internal
 
 import (

@@ -1,4 +1,4 @@
-// Package prompt are functions that parse stardard input loops.
+// Package prompt reads and returns standard input from the user.
 package prompt
 
 import (

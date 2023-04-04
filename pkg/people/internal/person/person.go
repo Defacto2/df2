@@ -1,3 +1,4 @@
+// Package person contains the shared Person object for individual people.
 package person
 
 import (

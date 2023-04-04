@@ -1,4 +1,4 @@
-// Package people deals with people, person names, aliases and their roles.
+// Package people handles scene persons, their names, aliases and roles.
 package people
 
 import (

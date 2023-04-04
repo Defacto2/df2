@@ -1,3 +1,4 @@
+// Package record handles the proof database record.
 package record
 
 import (
@@ -11,12 +12,13 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logger"
-	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 )
@@ -28,6 +30,48 @@ var (
 	ErrRecord  = errors.New("record structure cannot be empty")
 	ErrPointer = errors.New("pointer value cannot be nil")
 )
+
+// Proof data.
+type Proof struct {
+	Base      string          // Base is the relative path to file downloads which use UUID as filenames.
+	BasePath  string          // BasePath to file downloads which use UUID as filenames.
+	Columns   []string        // Column names.
+	Count     int             // Count row index.
+	Missing   int             // Missing UUID files count.
+	Overwrite bool            // Overwrite flag (--overwrite) value.
+	Total     int             // Total rows.
+	Values    *[]sql.RawBytes // Values of the rows.
+	start     time.Time       // processing time
+}
+
+func Init(cfg conf.Config) (Proof, error) {
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return Proof{}, err
+	}
+	return Proof{
+		Base:     logger.SPrintPath(dir.UUID),
+		BasePath: dir.UUID,
+		start:    time.Now(),
+	}, nil
+}
+
+// Summary of the proofs.
+func (p *Proof) Summary(id string) string {
+	if p == nil {
+		return ""
+	}
+	if id != "" && p.Total < 1 {
+		return ""
+	}
+	total := p.Count - p.Missing
+	if total == 0 {
+		return "nothing to do\n"
+	}
+	elapsed := time.Since(p.start).Seconds()
+	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, elapsed)
+	return fmt.Sprintf("\n%s\n%s\n", strings.Repeat("─", len(t)), t)
+}
 
 // Record of a file item.
 type Record struct {
@@ -83,14 +127,14 @@ func (r Record) Approve(db *sql.DB, w io.Writer) error {
 }
 
 // Iterate through each stat value.
-func (r Record) Iterate(db *sql.DB, w io.Writer, cfg conf.Config, p stat.Proof) error { //nolint:cyclop
+func (r Record) Iterate(db *sql.DB, w io.Writer, cfg conf.Config, p Proof) error { //nolint:cyclop
 	if db == nil {
 		return database.ErrDB
 	}
 	if r == (Record{}) {
 		return ErrRecord
 	}
-	if reflect.DeepEqual(p, stat.Proof{}) {
+	if reflect.DeepEqual(p, Proof{}) {
 		return ErrProof
 	}
 	if p.Values == nil {
@@ -149,7 +193,7 @@ func UpdateZipContent(db *sql.DB, w io.Writer, id, filename, content string, ite
 }
 
 // Prefix prints the stat count and record Id to stdout.
-func (r Record) Prefix(w io.Writer, s *stat.Proof) error {
+func (r Record) Prefix(w io.Writer, s *Proof) error {
 	if s == nil {
 		return fmt.Errorf("stat proof %w", ErrPointer)
 	}
@@ -222,8 +266,8 @@ func (r Record) fileZipContent(db *sql.DB, w io.Writer) (bool, error) {
 }
 
 // Skip checks if the file of the proof exists.
-func Skip(w io.Writer, s stat.Proof, r Record) (bool, error) {
-	if reflect.DeepEqual(s, stat.Proof{}) {
+func Skip(w io.Writer, s Proof, r Record) (bool, error) {
+	if reflect.DeepEqual(s, Proof{}) {
 		return false, ErrProof
 	}
 	if r == (Record{}) {

@@ -11,13 +11,28 @@ import (
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof/internal/record"
-	"github.com/Defacto2/df2/pkg/proof/internal/stat"
 	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/buffer"
 )
 
 const uuid = "d37e5b5f-f5bf-4138-9078-891e41b10a12"
+
+func TestProof_Summary(t *testing.T) {
+	t.Parallel()
+	p := record.Proof{}
+	s := p.Summary("")
+	assert.Contains(t, s, "nothing")
+	s = p.Summary("1")
+	assert.Contains(t, s, "")
+	p, err := record.Init(conf.Defaults())
+	assert.Nil(t, err)
+	p.Total = 5
+	p.Count = 4
+	p.Missing = 1
+	s = p.Summary("1")
+	assert.Contains(t, s, "Total proofs handled")
+}
 
 func TestNew(t *testing.T) {
 	t.Parallel()
@@ -56,13 +71,13 @@ func TestRecord_Approve(t *testing.T) {
 func TestRecord_Iterate(t *testing.T) {
 	t.Parallel()
 	r := record.Record{}
-	err := r.Iterate(nil, nil, conf.Config{}, stat.Proof{})
+	err := r.Iterate(nil, nil, conf.Config{}, record.Proof{})
 	assert.NotNil(t, err)
 
 	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
-	err = r.Iterate(db, io.Discard, conf.Config{}, stat.Proof{})
+	err = r.Iterate(db, io.Discard, conf.Config{}, record.Proof{})
 	assert.NotNil(t, err)
 
 	r = record.Record{
@@ -74,7 +89,7 @@ func TestRecord_Iterate(t *testing.T) {
 		sql.RawBytes("file.txt"),
 		sql.RawBytes("readme.txt,prog.exe"),
 	}
-	p := stat.Proof{
+	p := record.Proof{
 		Columns: []string{"id", "createdat", "filename", "file_zip_content"},
 		Values:  &raw,
 	}
@@ -134,7 +149,7 @@ func TestRecord_Zip(t *testing.T) {
 func TestSkip(t *testing.T) {
 	t.Parallel()
 	color.Enable = false
-	b, err := record.Skip(nil, stat.Proof{}, record.Record{})
+	b, err := record.Skip(nil, record.Proof{}, record.Record{})
 	assert.NotNil(t, err)
 	assert.Equal(t, false, b)
 
@@ -143,7 +158,7 @@ func TestSkip(t *testing.T) {
 		UUID: uuid,
 		File: "no-such-file",
 	}
-	p := stat.Proof{
+	p := record.Proof{
 		Total: 5,
 		Count: 1,
 	}
