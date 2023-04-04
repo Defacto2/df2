@@ -1,3 +1,5 @@
+// Package acronym handles the initalisms and acronyms frequently used by
+// the groups.
 package acronym
 
 import (

@@ -1,4 +1,4 @@
-package group_test
+package filter_test
 
 import (
 	"io"
@@ -6,52 +6,52 @@ import (
 
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/groups/internal/group"
+	"github.com/Defacto2/df2/pkg/groups/internal/filter"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFilter(t *testing.T) {
 	t.Parallel()
-	f := group.BBS
+	f := filter.BBS
 	assert.Equal(t, "bbs", f.String())
-	f = group.FTP
+	f = filter.FTP
 	assert.Equal(t, "ftp", f.String())
-	f = group.Group
+	f = filter.Group
 	assert.Equal(t, "group", f.String())
-	f = group.Magazine
+	f = filter.Magazine
 	assert.Equal(t, "magazine", f.String())
-	f = group.None
+	f = filter.None
 	assert.Equal(t, "", f.String())
 	f = 999
 	assert.Equal(t, "", f.String())
 
-	r := group.Get("BBS")
-	assert.Equal(t, group.BBS, r)
+	r := filter.Get("BBS")
+	assert.Equal(t, filter.BBS, r)
 }
 
 func TestCount(t *testing.T) {
 	t.Parallel()
-	i, err := group.Count(nil, "")
+	i, err := filter.Count(nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
 	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
-	i, err = group.Count(db, "")
+	i, err = filter.Count(db, "")
 	assert.Nil(t, err)
 	assert.Equal(t, 0, i)
-	i, err = group.Count(db, "qwertyuiopqwertyuiop")
+	i, err = filter.Count(db, "qwertyuiopqwertyuiop")
 	assert.Nil(t, err)
 	assert.Equal(t, 0, i)
-	i, err = group.Count(db, "Defacto2")
+	i, err = filter.Count(db, "Defacto2")
 	assert.Nil(t, err)
 	assert.Greater(t, i, 0)
 }
 
 func TestList(t *testing.T) {
 	t.Parallel()
-	s, i, err := group.List(nil, nil, "")
+	s, i, err := filter.List(nil, nil, "")
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, i)
 	assert.Len(t, s, 0)
@@ -59,12 +59,12 @@ func TestList(t *testing.T) {
 	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
-	s, i, err = group.List(db, io.Discard, "")
+	s, i, err = filter.List(db, io.Discard, "")
 	assert.Nil(t, err)
 	assert.Greater(t, i, 0)
 	assert.Greater(t, len(s), 0)
 
-	s, i, err = group.List(db, io.Discard, "bbs")
+	s, i, err = filter.List(db, io.Discard, "bbs")
 	assert.Nil(t, err)
 	assert.Greater(t, i, 0)
 	assert.Greater(t, len(s), 0)
@@ -74,7 +74,7 @@ func TestSQLWhere(t *testing.T) {
 	t.Parallel()
 	t.Helper()
 	type args struct {
-		f              group.Filter
+		f              filter.Filter
 		incSoftDeletes bool
 	}
 	tests := []struct {
@@ -82,22 +82,22 @@ func TestSQLWhere(t *testing.T) {
 		args args
 		want string
 	}{
-		{"mag-", args{group.Magazine, false}, "AND section = 'magazine' AND `deletedat` IS NULL"},
-		{"bbs-", args{group.BBS, false}, "AND RIGHT(group_brand_for,4) = ' BBS' AND `deletedat` IS NULL"},
-		{"ftp-", args{group.FTP, false}, "AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL"},
-		{"grp-", args{group.Group, false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
+		{"mag-", args{filter.Magazine, false}, "AND section = 'magazine' AND `deletedat` IS NULL"},
+		{"bbs-", args{filter.BBS, false}, "AND RIGHT(group_brand_for,4) = ' BBS' AND `deletedat` IS NULL"},
+		{"ftp-", args{filter.FTP, false}, "AND RIGHT(group_brand_for,4) = ' FTP' AND `deletedat` IS NULL"},
+		{"grp-", args{filter.Group, false}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
 			"RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine' AND `deletedat` IS NULL"},
-		{"mag+", args{group.Magazine, true}, "AND section = 'magazine'"},
-		{"bbs+", args{group.BBS, true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
-		{"ftp+", args{group.FTP, true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
-		{"grp+", args{group.Group, true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
+		{"mag+", args{filter.Magazine, true}, "AND section = 'magazine'"},
+		{"bbs+", args{filter.BBS, true}, "AND RIGHT(group_brand_for,4) = ' BBS'"},
+		{"ftp+", args{filter.FTP, true}, "AND RIGHT(group_brand_for,4) = ' FTP'"},
+		{"grp+", args{filter.Group, true}, "AND RIGHT(group_brand_for,4) != ' FTP' AND " +
 			"RIGHT(group_brand_for,4) != ' BBS' AND section != 'magazine'"},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got, _ := group.SQLWhere(nil, tt.args.f, tt.args.incSoftDeletes); got != tt.want {
+			if got, _ := filter.SQLWhere(nil, tt.args.f, tt.args.incSoftDeletes); got != tt.want {
 				t.Errorf("SQLWhere() = %q, want %q", got, tt.want)
 			}
 		})
@@ -125,7 +125,7 @@ func Test_hrElement(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, got1 := group.UseHr(tt.args.cap, tt.args.group)
+			got, got1 := filter.UseHr(tt.args.cap, tt.args.group)
 			if got != tt.want {
 				t.Errorf("UseHr() got = %v, want %v", got, tt.want)
 			}
@@ -139,7 +139,7 @@ func Test_hrElement(t *testing.T) {
 func TestSQLSelect(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		f                  group.Filter
+		f                  filter.Filter
 		includeSoftDeletes bool
 	}
 	tests := []struct {
@@ -147,15 +147,15 @@ func TestSQLSelect(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"valid soft", args{group.BBS, true}, false},
-		{"valid", args{group.BBS, false}, false},
-		{"invalid", args{group.Get("invalid filter"), false}, true},
+		{"valid soft", args{filter.BBS, true}, false},
+		{"valid", args{filter.BBS, false}, false},
+		{"invalid", args{filter.Get("invalid filter"), false}, true},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := group.SQLSelect(nil, tt.args.f, tt.args.includeSoftDeletes)
+			_, err := filter.SQLSelect(nil, tt.args.f, tt.args.includeSoftDeletes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SQLSelect() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -183,7 +183,7 @@ func TestSlug(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got := group.Slug(tt.args.name); got != tt.want {
+			if got := filter.Slug(tt.args.name); got != tt.want {
 				t.Errorf("Slug() = %v, want %v", got, tt.want)
 			}
 		})

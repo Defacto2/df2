@@ -11,7 +11,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
-	"github.com/Defacto2/df2/pkg/groups/internal/group"
+	"github.com/Defacto2/df2/pkg/groups/internal/filter"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
 	"github.com/Defacto2/df2/pkg/logger"
@@ -43,7 +43,7 @@ func (r Request) Print(db *sql.DB, w io.Writer) (int, error) {
 
 // Count returns the number of file entries associated with a named group.
 func Count(db *sql.DB, name string) (int, error) {
-	return group.Count(db, name)
+	return filter.Count(db, name)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
@@ -72,7 +72,7 @@ func Cronjob(db *sql.DB, w, dest io.Writer, tag string, force bool) error {
 	return r.HTML(db, w, dest)
 }
 
-// Exact returns the number of file entries that match an exact named group.
+// Exact returns the number of file entries that match an exact named filter.
 // The casing is ignored, but comma separated multi-groups are not matched to their parents.
 // The name "tristar" will match "Tristar" but will not match records using
 // "Tristar, Red Sector Inc".
@@ -101,7 +101,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 		w = io.Discard
 	}
 	// fix group names stored in the files table
-	names, _, err := group.List(db, w, "")
+	names, _, err := filter.List(db, w, "")
 	if err != nil {
 		return err
 	}
@@ -162,12 +162,12 @@ func Initialism(db *sql.DB, name string) (string, error) {
 
 // List returns all the distinct groups.
 func List(db *sql.DB, w io.Writer) ([]string, int, error) {
-	return group.List(db, w, "")
+	return filter.List(db, w, "")
 }
 
 // Slug takes a string and makes it into a URL friendly slug.
 func Slug(s string) string {
-	return group.Slug(s)
+	return filter.Slug(s)
 }
 
 // Update replaces all instances of the group name with the new group name.
@@ -175,7 +175,7 @@ func Update(db *sql.DB, newName, group string) (int64, error) {
 	return rename.Update(db, newName, group)
 }
 
-// Variations creates format variations for a named group.
+// Variations creates format variations for a named filter.
 func Variations(db *sql.DB, name string) ([]string, error) {
 	if db == nil {
 		return nil, database.ErrDB
@@ -209,9 +209,9 @@ func Variations(db *sql.DB, name string) ([]string, error) {
 // Tags are the group categories.
 func Tags() []string {
 	return []string{
-		group.BBS.String(),
-		group.FTP.String(),
-		group.Group.String(),
-		group.Magazine.String(),
+		filter.BBS.String(),
+		filter.FTP.String(),
+		filter.Group.String(),
+		filter.Magazine.String(),
 	}
 }

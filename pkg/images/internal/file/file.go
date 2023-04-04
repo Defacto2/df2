@@ -1,3 +1,4 @@
+// Package file handles the images as files.
 package file
 
 import (

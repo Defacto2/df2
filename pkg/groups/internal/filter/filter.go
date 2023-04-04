@@ -1,4 +1,5 @@
-package group
+// Package filter returns the groups based on a role or activity filter.
+package filter
 
 import (
 	"database/sql"

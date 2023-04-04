@@ -1,3 +1,4 @@
+// Package rename handles the renaming and formatting of the group title.
 package rename
 
 import (

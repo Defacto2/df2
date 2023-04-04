@@ -1,4 +1,16 @@
+// Package imagemagick interacts with ImageMagick graphic programs.
 package imagemagick
+
+/*
+imagemagick tools require the installation of ImageMagick v6.
+ubuntu: sudo apt install imagemagick
+
+List all supported formats
+identify -list format
+
+Convert Between Image Formats
+https://imagemagick.org/script/convert.php
+*/
 
 import (
 	"bytes"
@@ -9,15 +21,6 @@ import (
 	"os/exec"
 	"time"
 )
-
-// imagemagick tools require the installation of ImageMagick v6.
-// ubuntu: sudo apt install imagemagick
-//
-// List all supported formats
-// identify -list format
-//
-// Convert Between Image Formats
-// https://imagemagick.org/script/convert.php
 
 var ErrFmt = errors.New("imagemagick does not support this image")
 
@@ -54,6 +57,7 @@ func Convert(w io.Writer, src, dest string) error {
 	return nil
 }
 
+// ID identifies the format of the source image.
 func ID(src string) ([]byte, error) {
 	const file = "identify"
 	args := []string{src}

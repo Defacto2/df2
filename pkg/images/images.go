@@ -1,4 +1,5 @@
-// Package images generate thumbnails and converts between image formats.
+// Package images generate thumbnails and converts these between image
+// formats.
 package images
 
 import (

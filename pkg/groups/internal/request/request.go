@@ -1,3 +1,4 @@
+// Package request obtains and writes the data of the group to various formats.
 package request
 
 import (
@@ -12,7 +13,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
-	"github.com/Defacto2/df2/pkg/groups/internal/group"
+	"github.com/Defacto2/df2/pkg/groups/internal/filter"
 	"github.com/Defacto2/df2/pkg/str"
 )
 
@@ -84,14 +85,14 @@ func (r Flags) Files(db *sql.DB, name string) (int, error) {
 	if !r.Counts {
 		return 0, nil
 	}
-	total, err := group.Count(db, name)
+	total, err := filter.Count(db, name)
 	if err != nil {
 		return 0, fmt.Errorf("files %q: %w", name, err)
 	}
 	return total, nil
 }
 
-// Initialism returns the initialism of the named group.
+// Initialism returns the initialism of the named filter.
 func (r Flags) Initialism(db *sql.DB, name string) (string, error) {
 	if db == nil {
 		return "", database.ErrDB
@@ -124,7 +125,7 @@ func (r Flags) iterate(db *sql.DB, w io.Writer, groups ...string) (*[]Result, er
 		if !piped && r.Progress {
 			str.Progress(w, r.Filter, i+1, total)
 		}
-		lastLetter, hr = group.UseHr(lastLetter, grp)
+		lastLetter, hr = filter.UseHr(lastLetter, grp)
 		c, err := r.Files(db, grp)
 		if err != nil {
 			return nil, fmt.Errorf("iterate files %q: %w", grp, err)
@@ -134,7 +135,7 @@ func (r Flags) iterate(db *sql.DB, w io.Writer, groups ...string) (*[]Result, er
 			return nil, fmt.Errorf("iterate initialism %q: %w", grp, err)
 		}
 		data[i] = Result{
-			ID:         group.Slug(grp),
+			ID:         filter.Slug(grp),
 			Name:       grp,
 			Count:      c,
 			Initialism: init,
@@ -158,7 +159,7 @@ func (r Flags) Parse(db *sql.DB, w, dest io.Writer, tmpl string) error {
 	if dest == nil {
 		dest = io.Discard
 	}
-	list, count, err := group.List(db, w, r.Filter)
+	list, count, err := filter.List(db, w, r.Filter)
 	if err != nil {
 		return fmt.Errorf("parse list: %w", err)
 	}
@@ -193,15 +194,15 @@ func (r Flags) parse(t *template.Template, data *[]Result, dest io.Writer, count
 	if dest == nil {
 		dest = io.Discard
 	}
-	switch group.Get(r.Filter) {
-	case group.BBS, group.FTP, group.Group, group.Magazine:
+	switch filter.Get(r.Filter) {
+	case filter.BBS, filter.FTP, filter.Group, filter.Magazine:
 		fmt.Fprint(dest, r.prependHTML(count))
 		if err := t.Execute(dest, &data); err != nil {
 			return fmt.Errorf("parse execute: %w", err)
 		}
 		fmt.Fprintln(dest, "</div>")
-	case group.None:
-		return fmt.Errorf("parse %q: %w", r.Filter, group.ErrFilter)
+	case filter.None:
+		return fmt.Errorf("parse %q: %w", r.Filter, filter.ErrFilter)
 	}
 	return nil
 }
@@ -224,7 +225,7 @@ func Print(db *sql.DB, w io.Writer, r Flags) (int, error) {
 	if w == nil {
 		w = io.Discard
 	}
-	grp, total, err := group.List(db, w, r.Filter)
+	grp, total, err := filter.List(db, w, r.Filter)
 	if err != nil {
 		return 0, fmt.Errorf("print groups: %w", err)
 	}
@@ -244,7 +245,7 @@ func Print(db *sql.DB, w io.Writer, r Flags) (int, error) {
 		}
 		// file totals
 		if r.Counts {
-			c, err := group.Count(db, g)
+			c, err := filter.Count(db, g)
 			if err != nil {
 				return 0, fmt.Errorf("print counts: %w", err)
 			}

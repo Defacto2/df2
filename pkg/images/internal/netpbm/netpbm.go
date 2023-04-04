@@ -1,4 +1,14 @@
+// Package netpbm interacts with the netpdm graphics programs and
+// programming library.
 package netpbm
+
+/*
+netpbm requires the installation of Netpbm.
+ubuntu: sudo apt install netpbm
+
+Netpbm is a package of graphics programs and a programming library.
+http://netpbm.sourceforge.net/doc/
+*/
 
 import (
 	"context"
@@ -10,12 +20,6 @@ import (
 	"os/exec"
 	"path/filepath"
 )
-
-// netpbm requires the installation of Netpbm.
-// ubuntu: sudo apt install netpbm
-//
-// Netpbm is a package of graphics programs and a programming library.
-// http://netpbm.sourceforge.net/doc/
 
 var (
 	ErrFmt = errors.New("netpdm package hasn't been configured to support this image")
