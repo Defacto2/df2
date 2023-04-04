@@ -7,7 +7,7 @@ import (
 	"github.com/gookit/color"
 )
 
-func capString(test, text string) string {
+func capString(test string) string {
 	color.Enable = false
 	switch test {
 	case "x":
@@ -22,22 +22,21 @@ func Test_capString(t *testing.T) {
 	t.Parallel()
 	type args struct {
 		test string
-		text string
 	}
 	tests := []struct {
 		name       string
 		args       args
 		wantOutput string
 	}{
-		{"sec empty", args{"sec", ""}, ""},
-		{"x", args{"x", ""}, "✗"},
-		{"y", args{"y", ""}, "✓"},
+		{"empty", args{"sec"}, ""},
+		{"x", args{"x"}, "✗"},
+		{"y", args{"y"}, "✓"},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if gotOutput := capString(tt.args.test, tt.args.text); gotOutput != tt.wantOutput {
+			if gotOutput := capString(tt.args.test); gotOutput != tt.wantOutput {
 				t.Errorf("capString() = %v, want %v", gotOutput, tt.wantOutput)
 			}
 		})
