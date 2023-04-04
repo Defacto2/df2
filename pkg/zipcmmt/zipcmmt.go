@@ -1,3 +1,5 @@
+// Package zipcmmt processes the text adverts that are sometimes embedded
+// into Zip file archives.
 package zipcmmt
 
 import (

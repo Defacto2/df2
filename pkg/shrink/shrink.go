@@ -1,3 +1,4 @@
+// Package shrink reduces the hard drive space used by the web application.
 package shrink
 
 import (

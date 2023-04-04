@@ -1,4 +1,5 @@
-// Package text generates images from text files using the Ansilove/C program.
+// Package text generates preview images and thumbnails from text files using
+// the system installed Ansilove/C program.
 package text
 
 import (

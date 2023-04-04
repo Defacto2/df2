@@ -1,3 +1,4 @@
+// Package record saves to the database the data collected from the file archive.
 package record
 
 import (

@@ -1,7 +1,8 @@
+// Package main is the command-line tool to manage and optimize defacto2.net.
 package main
 
 /*
-Copyright © 2021-22 Ben Garrett <code.by.ben@gmail.com>
+Copyright © 2021-23 Ben Garrett <code.by.ben@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,9 +44,13 @@ func main() {
 	// Logger (use a preset config until env are read)
 	l, err := zap.NewProduction()
 	if err != nil {
-		log.Fatalf("can't initialize zap logger: %v", err)
+		log.Fatalf("can't initialize zap logger: %v\n", err)
 	}
-	defer l.Sync() //nolint:errcheck
+	defer func() {
+		// see issue on false-positive errors.
+		// https://github.com/uber-go/zap/issues/370
+		_ = l.Sync()
+	}()
 	logr := l.Sugar()
 	// Panic recovery to close any active connections and to log the problem.
 	defer func() {

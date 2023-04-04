@@ -1,3 +1,4 @@
+// Package tf has the functions to extract and convert text files into images.
 package tf
 
 import (

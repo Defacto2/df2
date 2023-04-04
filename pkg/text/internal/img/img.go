@@ -1,3 +1,4 @@
+// Package img has the functions to convert, compress and resize the images.
 package img
 
 import (

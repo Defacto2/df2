@@ -1,4 +1,4 @@
-// Package zipcontent scans archives for file and directory content.
+// Package zipcontent processes the directory and file content of a file archive.
 package zipcontent
 
 import (

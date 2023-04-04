@@ -1,3 +1,4 @@
+// Package scan initializes and stores statistics on a file archive.
 package scan
 
 import (

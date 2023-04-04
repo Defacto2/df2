@@ -1,3 +1,4 @@
+// Package urlset handles creation of XML formatted URLs.
 package urlset
 
 import (

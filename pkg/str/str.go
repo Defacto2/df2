@@ -1,4 +1,4 @@
-// Package str has custom print to terminal, display and colour functions.
+// Package str has string and stdout functions.
 package str
 
 import (
@@ -71,11 +71,6 @@ func Truncate(text string, length int) string {
 		return text
 	}
 	return text[0:length-utf8.RuneCountInString(s)] + s
-}
-
-// Warn prints a warning notice.
-func Warn(s string) string {
-	return color.Warn.Sprint(s)
 }
 
 // X returns a red ✗ cross mark.

@@ -1,3 +1,4 @@
+// Package data are various functions for the shrink package.
 package data
 
 import (

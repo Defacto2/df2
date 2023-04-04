@@ -1,3 +1,4 @@
+// Package cmmt discovers and stores any found zip comments.
 package cmmt
 
 import (
