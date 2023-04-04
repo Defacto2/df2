@@ -181,6 +181,9 @@ func TestWidth(t *testing.T) {
 
 func TestToPNG(t *testing.T) {
 	t.Parallel()
+	t.Cleanup(func() {
+		os.Remove(testDest(p))
+	})
 	type args struct {
 		src    string
 		dest   string
@@ -208,7 +211,6 @@ func TestToPNG(t *testing.T) {
 				t.Errorf("ToPNG() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			defer os.Remove(testDest(p))
 		})
 	}
 }

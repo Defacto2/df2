@@ -13,6 +13,9 @@ func TestConvert(t *testing.T) {
 	gif := filepath.Join("..", "..", "..", "..", "testdata", "images", "test.gif")
 	iff := filepath.Join("..", "..", "..", "..", "testdata", "images", "test.iff")
 	dest := filepath.Join(os.TempDir(), "test_netpbm.png")
+	t.Cleanup(func() {
+		os.Remove(dest)
+	})
 
 	type args struct {
 		src  string
@@ -35,7 +38,6 @@ func TestConvert(t *testing.T) {
 			if err := netpbm.Convert(nil, tt.args.src, tt.args.dest); (err != nil) != tt.wantErr {
 				t.Errorf("Convert() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			defer os.Remove(dest)
 		})
 	}
 }
