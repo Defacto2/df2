@@ -199,7 +199,7 @@ func TestArjItem(t *testing.T) {
 	}
 }
 
-func TestExtract(t *testing.T) { //nolint:tparallel
+func TestExtract(t *testing.T) {
 	t.Parallel()
 	tmp, err := os.MkdirTemp(os.TempDir(), "sys-extract")
 	if err != nil {
@@ -215,7 +215,6 @@ func TestExtract(t *testing.T) { //nolint:tparallel
 		dest    string
 	}
 	const tgt = "test.png"
-	//arj := testDir("demozoo/test.arj")
 	lha := testDir("demozoo/test.lha")
 	zip := testDir("demozoo/test.zip")
 	tests := []struct {
@@ -224,7 +223,6 @@ func TestExtract(t *testing.T) { //nolint:tparallel
 		wantErr bool
 	}{
 		{"empty", args{}, true},
-		//{"arj", args{arj, tgt, tmp}, false},
 		{"lha", args{lha, tgt, tmp}, false},
 		{"zip", args{zip, tgt, tmp}, false},
 	}

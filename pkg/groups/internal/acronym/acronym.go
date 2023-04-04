@@ -1,4 +1,4 @@
-// Package acronym handles the initalisms and acronyms frequently used by
+// Package acronym handles the initialisms and acronyms frequently used by
 // the groups.
 package acronym
 

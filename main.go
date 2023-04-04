@@ -80,11 +80,7 @@ func main() {
 	}
 	// Execute help and exit
 	if help() {
-		if err := cmd.Execute(logr, configs); err != nil {
-			logr.Error(err)
-			// use defer to close any open connections
-			defer os.Exit(1)
-		}
+		execHelp(logr, configs)
 		return
 	}
 	// Print the compile and version details
@@ -142,6 +138,14 @@ func execInfo(logr *zap.SugaredLogger, c conf.Config) {
 		return
 	}
 	fmt.Fprint(w, s)
+}
+
+func execHelp(logr *zap.SugaredLogger, c conf.Config) {
+	if err := cmd.Execute(logr, c); err != nil {
+		logr.Error(err)
+		// use defer to close any open connections
+		defer os.Exit(1)
+	}
 }
 
 // global flags that should not be handled by the Cobra library

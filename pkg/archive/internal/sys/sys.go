@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	ErrDest       = errors.New("dest directory points to a file")
 	ErrMagic      = errors.New("no unsupport for magic file type")
 	ErrProg       = errors.New("archive program error")
 	ErrReadr      = errors.New("system could not read the file archive")
@@ -157,9 +158,9 @@ func Extract(filename, src, targets, dest string) error {
 // to the dest directory using the Linux arj program.
 func ARJExtract(src, targets, dest string) error {
 	if st, err := os.Stat(dest); err != nil {
-		return fmt.Errorf("arj dest directory error: %w", err)
+		return fmt.Errorf("%w: %s", err, dest)
 	} else if !st.IsDir() {
-		return fmt.Errorf("arj dest directory points to a file")
+		return fmt.Errorf("%w: %s", ErrDest, dest)
 	}
 	// note: only use arj, as unarj offers limited functionality
 	prog, err := exec.LookPath("arj")
