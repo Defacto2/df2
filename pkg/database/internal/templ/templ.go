@@ -1,3 +1,4 @@
+// Package templ has the templates for the database SQL statements.
 package templ
 
 // TableData is a container for the tableTmpl template.

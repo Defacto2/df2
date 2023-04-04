@@ -1,3 +1,4 @@
+// Package create handles the making of directories.
 package create
 
 import (

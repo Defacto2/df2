@@ -1,3 +1,4 @@
+// Package file writes the results of an asset scan or walk.
 package file
 
 import (

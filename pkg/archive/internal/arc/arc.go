@@ -1,3 +1,6 @@
+// Package arc handles interactions with the mholt archiver package. This should
+// be used as the primary means of interacting with file archives before using
+// external archive programs.
 package arc
 
 import (

@@ -13,6 +13,9 @@ func TestCreate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	t.Cleanup(func() {
+		os.RemoveAll(tempDir)
+	})
 	tests := []struct {
 		name    string
 		path    string
@@ -33,9 +36,6 @@ func TestCreate(t *testing.T) {
 			}
 		})
 	}
-	if err := os.RemoveAll(tempDir); err != nil {
-		t.Error(err)
-	}
 }
 
 func TestHolders(t *testing.T) {
@@ -44,6 +44,10 @@ func TestHolders(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	t.Cleanup(func() {
+		os.RemoveAll(tempDir)
+		os.Remove("00000000-0000-0000-0000-000000000000")
+	})
 	type args struct {
 		dir    string
 		size   int
@@ -66,11 +70,5 @@ func TestHolders(t *testing.T) {
 				t.Errorf("Holders() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
-	}
-	if err := os.RemoveAll(tempDir); err != nil {
-		t.Error(err)
-	}
-	if err := os.Remove("00000000-0000-0000-0000-000000000000"); err != nil {
-		t.Error(err)
 	}
 }

@@ -1,3 +1,4 @@
+// Package recd has various checks for record values.
 package recd
 
 import (

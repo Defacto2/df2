@@ -1,3 +1,4 @@
+// Package prod obtains a Demozoo Production.
 package prod
 
 import (

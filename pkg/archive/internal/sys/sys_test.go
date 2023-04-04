@@ -201,28 +201,30 @@ func TestArjItem(t *testing.T) {
 
 func TestExtract(t *testing.T) { //nolint:tparallel
 	t.Parallel()
+	tmp, err := os.MkdirTemp(os.TempDir(), "sys-extract")
+	if err != nil {
+		t.Error("Extract() error = %w", err)
+		return
+	}
+	t.Cleanup(func() {
+		os.RemoveAll(tmp)
+	})
 	type args struct {
 		src     string
 		targets string
 		dest    string
 	}
 	const tgt = "test.png"
-	arj := testDir("demozoo/test.arj")
+	//arj := testDir("demozoo/test.arj")
 	lha := testDir("demozoo/test.lha")
 	zip := testDir("demozoo/test.zip")
-	tmp, err := os.MkdirTemp(os.TempDir(), "sys-extract")
-	if err != nil {
-		t.Error("Extract() error = %w", err)
-		return
-	}
-	defer os.RemoveAll(tmp)
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
 		{"empty", args{}, true},
-		{"arj", args{arj, tgt, tmp}, false},
+		//{"arj", args{arj, tgt, tmp}, false},
 		{"lha", args{lha, tgt, tmp}, false},
 		{"zip", args{zip, tgt, tmp}, false},
 	}

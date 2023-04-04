@@ -1,5 +1,5 @@
-// Package sys uses programs installed to the host operating system
-// to handle miscellaneous archives not usable with the Go packages.
+// Package sys uses programs installed to the host operating system to handle
+// miscellaneous archives not usable with the Go packages.
 package sys
 
 import (
@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -155,6 +156,11 @@ func Extract(filename, src, targets, dest string) error {
 // ARJExtract extracts the targets from the src ARJ archive
 // to the dest directory using the Linux arj program.
 func ARJExtract(src, targets, dest string) error {
+	if st, err := os.Stat(dest); err != nil {
+		return fmt.Errorf("arj dest directory error: %w", err)
+	} else if !st.IsDir() {
+		return fmt.Errorf("arj dest directory points to a file")
+	}
 	// note: only use arj, as unarj offers limited functionality
 	prog, err := exec.LookPath("arj")
 	if err != nil {
@@ -169,9 +175,9 @@ func ARJExtract(src, targets, dest string) error {
 	cmd.Stderr = &b
 	if err = cmd.Run(); err != nil {
 		if b.String() != "" {
-			return fmt.Errorf("%w: %s: %s", ErrProg, prog, strings.TrimSpace(b.String()))
+			return fmt.Errorf("%w: %s: %q", ErrProg, prog, strings.TrimSpace(b.String()))
 		}
-		return fmt.Errorf("%s: %w", prog, err)
+		return fmt.Errorf("%w: %s", err, prog)
 	}
 	return nil
 }

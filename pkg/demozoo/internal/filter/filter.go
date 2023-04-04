@@ -1,3 +1,5 @@
+// Package filter confirms a Demozoo Production is suitable for Defacto2.
+// A MS-DOS intro would be okay, while a demo for the Atari 2600 would be rejected.
 package filter
 
 import (

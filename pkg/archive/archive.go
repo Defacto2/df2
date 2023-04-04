@@ -1,4 +1,5 @@
-// Package archive handles collections of files that are either packaged together or compressed.
+// Package archive handles collections of files that are either packed together or
+// packed and compressed.
 package archive
 
 import (

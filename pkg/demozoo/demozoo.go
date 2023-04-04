@@ -1,4 +1,5 @@
-// Package demozoo interacts with the demozoo.org API for data scraping and file downloads.
+// Package demozoo interacts with the demozoo.org API for data scraping and
+// fetching user file downloads.
 package demozoo
 
 import (

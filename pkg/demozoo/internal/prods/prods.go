@@ -1,3 +1,4 @@
+// Package prods handles marshalling of a Demozoo Production.
 package prods
 
 import (

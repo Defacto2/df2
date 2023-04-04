@@ -1,3 +1,4 @@
+// Package export queries records for data exports.
 package export
 
 import (

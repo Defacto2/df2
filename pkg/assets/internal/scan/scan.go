@@ -1,3 +1,4 @@
+// Package scan handles individual directories housing specific assets.
 package scan
 
 import (

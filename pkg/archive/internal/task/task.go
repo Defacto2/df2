@@ -1,3 +1,4 @@
+// Package task handles the scanning of directories for release proofs.
 package task
 
 import (

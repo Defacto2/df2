@@ -1,3 +1,4 @@
+// Package content stats the content of an archive.
 package content
 
 import (

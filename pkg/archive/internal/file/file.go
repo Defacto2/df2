@@ -1,3 +1,5 @@
+// Package file handles common file system operations such as move, copy and
+// dir.
 package file
 
 import (

@@ -1,3 +1,5 @@
+// Package demozoo handles downloads fetched from Demozoo Productions
+// links.
 package demozoo
 
 import (

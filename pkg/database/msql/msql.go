@@ -1,3 +1,4 @@
+// Package msql creates connections to MySQL datastores.
 package msql
 
 import (
@@ -98,7 +99,7 @@ func (c Connection) String() string {
 		c.Port)
 	v := url.Values{}
 	if c.Timeout == 0 {
-		c.Timeout = Timeout
+		c.Timeout = Timeout * time.Second
 	}
 	v.Add("allowCleartextPasswords", fmt.Sprint(!c.NoSSLMode))
 	v.Add("timeout", fmt.Sprintf("%v", c.Timeout))

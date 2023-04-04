@@ -1,3 +1,5 @@
+// Package releases handles collections of Demozoo Productions that share a
+// common filter such as a platform or category type.
 package releases
 
 import (

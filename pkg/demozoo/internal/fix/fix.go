@@ -1,3 +1,5 @@
+// Package fix repairs any imported Demozoo production data that may conflict
+// or be incompatible with the Defacto2 database.
 package fix
 
 import (

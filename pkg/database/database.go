@@ -1,4 +1,5 @@
-// Package database interacts with the datastore of Defacto2.
+// Package database interacts with the remote datastore for Defacto2. Currently
+// MySQL is implemented with Postgres to be added later.
 package database
 
 import (

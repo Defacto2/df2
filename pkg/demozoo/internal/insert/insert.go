@@ -1,3 +1,4 @@
+// Package insert adds Demozoo productions to the Defacto2 database.
 package insert
 
 import (

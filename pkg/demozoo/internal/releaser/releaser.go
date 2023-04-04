@@ -1,3 +1,5 @@
+// Package releaser handles Demozoo Releasers which are objects for both scene
+// groups and people.
 package releaser
 
 import (

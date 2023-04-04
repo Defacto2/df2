@@ -1,3 +1,4 @@
+// Package update handles edits and updates to the database records.
 package update
 
 import (

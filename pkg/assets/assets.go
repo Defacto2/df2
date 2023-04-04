@@ -1,4 +1,5 @@
-// Package assets handles the site resources such as file downloads, thumbnails and backups.
+// Package assets handles the web resources of the site such as the file
+// downloads, thumbnails and backups.
 package assets
 
 import (

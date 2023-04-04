@@ -27,7 +27,7 @@ func TestConnection_String(t *testing.T) {
 		Port:      3360,
 		NoSSLMode: true,
 	}
-	assert.Equal(t, conn, c.String())
+	assert.Equal(t, conn(), c.String())
 }
 
 func TestConnect(t *testing.T) {

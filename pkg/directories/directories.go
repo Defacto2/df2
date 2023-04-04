@@ -1,4 +1,5 @@
-// Package directories interacts with the filepaths that hold files and assets.
+// Package directories interacts with the filepaths that hold both the user files
+// for downloads and website assets.
 package directories
 
 import (

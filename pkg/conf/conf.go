@@ -1,3 +1,5 @@
+// Package conf sets the configurations of this program using the host system
+// environment variables.
 package conf
 
 import (
