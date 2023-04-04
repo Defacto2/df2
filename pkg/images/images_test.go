@@ -139,12 +139,16 @@ func TestLibraries(t *testing.T) {
 		tg  = "testgen"
 	)
 	dir := testDir(imgs)
+	dest := filepath.Join(os.TempDir(), tg)
+	t.Cleanup(func() {
+		os.Remove(dest)
+	})
 
 	err := images.Libraries(nil, "", "", false)
 	assert.NotNil(t, err)
-	err = images.Libraries(io.Discard, "", tg, false)
+	err = images.Libraries(io.Discard, "", dest, false)
 	assert.NotNil(t, err)
-	err = images.Libraries(io.Discard, filepath.Join(dir, ts+gif), tg, false)
+	err = images.Libraries(io.Discard, filepath.Join(dir, ts+gif), dest, false)
 	assert.Nil(t, err)
 }
 
@@ -204,12 +208,16 @@ func TestToPNG(t *testing.T) {
 				t.Errorf("ToPNG() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			defer os.Remove(testDest(p))
 		})
 	}
 }
 
-func TestToThumb(t *testing.T) {
+func TestToThumb(t *testing.T) { //nolint:tparallel
 	t.Parallel()
+	t.Cleanup(func() {
+		os.Remove(testSqr())
+	})
 	type args struct {
 		src         string
 		dest        string
@@ -225,19 +233,12 @@ func TestToThumb(t *testing.T) {
 		{p, args{testImg(p), testSqr(), 100}, false},
 		{g, args{testImg(g), testSqr(), 100}, false},
 	}
-	for _, tt := range tests {
-		tt := tt
+	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			str, err := images.ToThumb(tt.args.src, tt.args.dest, tt.args.sizeSquared)
+			_, err := images.ToThumb(tt.args.src, tt.args.dest, tt.args.sizeSquared)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToThumb() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			} else if str != "" {
-				// cleanup
-				if err := os.Remove(testSqr()); err != nil {
-					t.Fatal(err)
-				}
 			}
 		})
 	}
@@ -245,6 +246,9 @@ func TestToThumb(t *testing.T) {
 
 func TestToWebxp(t *testing.T) {
 	t.Parallel()
+	t.Cleanup(func() {
+		os.Remove(testDest(w))
+	})
 	type args struct {
 		src  string
 		dest string
@@ -263,13 +267,10 @@ func TestToWebxp(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			str, err := images.ToWebp(nil, tt.args.src, tt.args.dest, false)
+			_, err := images.ToWebp(nil, tt.args.src, tt.args.dest, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ToWebp() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if str != "" {
-				defer os.Remove(testDest(w))
 			}
 		})
 	}
@@ -277,6 +278,9 @@ func TestToWebxp(t *testing.T) {
 
 func TestToWebp(t *testing.T) {
 	t.Parallel()
+	t.Cleanup(func() {
+		os.Remove(testDest(w))
+	})
 	type args struct {
 		src  string
 		dest string
@@ -304,12 +308,6 @@ func TestToWebp(t *testing.T) {
 			}
 			if gotPrint != tt.wantPrint {
 				t.Errorf("ToWebp() = %v, want %v", gotPrint, tt.wantPrint)
-			}
-			if gotPrint != "" {
-				// cleanup
-				if err := os.Remove(testDest(w)); err != nil {
-					t.Fatal(err)
-				}
 			}
 		})
 	}
