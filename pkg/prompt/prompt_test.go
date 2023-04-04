@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRead(t *testing.T) {
+func TestRead(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 	s, err := prompt.Read(nil)
 	assert.NotNil(t, err)
@@ -18,7 +18,7 @@ func TestRead(t *testing.T) {
 	stdin := bytes.Buffer{}
 	tests := []struct {
 		name      string
-		in        string
+		input     string
 		wantInput string
 		wantErr   bool
 	}{
@@ -28,11 +28,11 @@ func TestRead(t *testing.T) {
 		{"sentence", "I am hello world.", "I am hello world.", false},
 		{"nl", "\n\t\n\t\tb", "", false},
 	}
-	for _, tt := range tests {
-		tt := tt
+	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			stdin.Write([]byte(tt.in))
+			if _, err := stdin.Write([]byte(tt.input)); err != nil {
+				t.Error(err)
+			}
 			s, err := prompt.Read(&stdin)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
