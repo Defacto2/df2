@@ -1,4 +1,4 @@
-// Package download handles the fetching of remote files.
+// Package download fetches remote files used by this program and the website.
 package download
 
 import (

@@ -1,3 +1,4 @@
+// Package cnter is an optional progress counter for the remote file downloads.
 package cnter
 
 import (

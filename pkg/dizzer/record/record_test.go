@@ -62,7 +62,7 @@ func TestRecord_Copy(t *testing.T) {
 	dl := record.Download{}
 	err = dl.New(diz(), zwt.Name)
 	assert.Nil(t, err)
-	assert.Equal(t, diz, dl.Path)
+	assert.Equal(t, diz(), dl.Path)
 
 	dl.LastMod = time.Date(2000, 1, 15, 0, 0, 0, 0, time.Local)
 	err = r.Copy(&dl, tmp)
@@ -100,7 +100,7 @@ func TestDownload_New(t *testing.T) {
 
 	err = dl.New(rar(), grp)
 	assert.Nil(t, err)
-	assert.Equal(t, rar, dl.Path)
+	assert.Equal(t, rar(), dl.Path)
 	assert.Equal(t, "dizzer.rar", dl.Name)
 	assert.Equal(t, int64(14058), dl.Bytes)
 	assert.Equal(t, sha384, dl.HashStrong)
@@ -112,7 +112,7 @@ func TestDownload_New(t *testing.T) {
 
 	err = dl.New(diz(), zwt.Name)
 	assert.Nil(t, err)
-	assert.Equal(t, diz, dl.Path)
+	assert.Equal(t, diz(), dl.Path)
 	assert.Equal(t, "file_id.diz", dl.Name)
 	assert.Equal(t, int64(148), dl.Bytes)
 	assert.Equal(t, dizSha, dl.HashStrong)

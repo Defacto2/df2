@@ -1,3 +1,4 @@
+// Package zwt handles the .rar for the group Zero Waiting Time (ZWT).
 package zwt
 
 import (

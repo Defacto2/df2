@@ -1,3 +1,5 @@
+// Package record creates an object that can be written as JSON or used as a new
+// database record.
 package record
 
 import (

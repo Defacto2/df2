@@ -1,3 +1,5 @@
+// Package dizzer parses specific .NFO and file_id.DIZ file group-packs submitted
+// as .rar archives.
 package dizzer
 
 import (
