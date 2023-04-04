@@ -8,7 +8,6 @@ Importer of textfiles from RAR.
  Commands to complete or fix.
 
  env                table layouts etc.
- --version          database connection error
  demozoo --new      output with newlines and formatting
  shrink             errors should not halt the command
  proof all          formatting of output

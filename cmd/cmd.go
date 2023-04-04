@@ -56,7 +56,7 @@ type ProgData struct {
 }
 
 const (
-	About   = "A tool the optimise and manage " + Domain
+	About   = Title + " is the program to manage, maintain and optimise " + Domain + "."
 	Author  = "Ben Garrett"                     // Author is the primary programmer of this program.
 	Domain  = "defacto2.net"                    // Domain of the website.
 	Program = "df2"                             // Program command.
