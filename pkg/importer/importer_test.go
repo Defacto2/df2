@@ -1,10 +1,10 @@
-package dizzer_test
+package importer_test
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Defacto2/df2/pkg/dizzer"
+	dizzer "github.com/Defacto2/df2/pkg/importer"
 	"github.com/Defacto2/df2/pkg/internal"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,11 +23,11 @@ func rar() string {
 	return filepath.Join(dir(), "dizzer.rar")
 }
 
-func TestRun(t *testing.T) {
+func TestImport(t *testing.T) {
 	t.Parallel()
-	err := dizzer.Run(nil, nil, "")
+	err := dizzer.Import(nil, nil, "")
 	assert.NotNil(t, err)
-	err = dizzer.Run(nil, nil, rar())
+	err = dizzer.Import(nil, nil, rar())
 	assert.Nil(t, err)
 }
 

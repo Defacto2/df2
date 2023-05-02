@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
-	"github.com/Defacto2/df2/pkg/dizzer"
+	"github.com/Defacto2/df2/pkg/importer"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,7 @@ var importCmd = &cobra.Command{
 			}
 			return
 		}
-		if err := dizzer.Run(os.Stdout, os.Stderr, args[0]); err != nil {
+		if err := importer.Import(os.Stdout, os.Stderr, args[0]); err != nil {
 			log.Fatal(err)
 		}
 	},

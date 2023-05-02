@@ -1,6 +1,6 @@
-// Package dizzer parses specific .NFO and file_id.DIZ file group-packs submitted
+// Package importer parses specific .NFO and file_id.DIZ file group-packs submitted
 // as .rar archives.
-package dizzer
+package importer
 
 import (
 	"archive/zip"
@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/dizzer/record"
-	"github.com/Defacto2/df2/pkg/dizzer/zwt"
+	"github.com/Defacto2/df2/pkg/importer/record"
+	"github.com/Defacto2/df2/pkg/importer/zwt"
 	"github.com/google/uuid"
 	"github.com/mholt/archiver"
 )
@@ -36,15 +36,15 @@ type Records []record.Record
 // SubDirectory of the RAR archive.
 type SubDirectory struct {
 	Title    string      // Title for the subdirectory.
-	Path     string      // Path of the subdirectory.
+	Diz      []byte      // The body of an included file_id.diz file.
+	Nfo      []byte      // The body of a root information text file.
 	Files    []string    // Files named that are included in the subdirectory.
 	LastMods []time.Time // The file last modification times of the Files.
 	Publish  time.Time   // The earliest file last modification time found in the subdirectory.
+	Path     string      // Path of the subdirectory.
 	Readme   string      // Readme is the filename of the information file for display.
 	UUID     string      // UUID is the new unique id for the subdirectory.
 	Filename string      // Filename for the UUID download.
-	Diz      []byte      // The body of an included file_id.diz file.
-	Nfo      []byte      // The body of a root information text file.
 }
 
 // Stat the collection of NFO and file_id.diz files within an RAR archive.
@@ -60,8 +60,8 @@ type Stat struct {
 	SubDirs  map[string]SubDirectory // Releases lists every release included in the RAR archive.
 }
 
-// Run the dizzer on the named .rar file.
-func Run(w, logger io.Writer, name string) error {
+// Import the named .rar file.
+func Import(w, logger io.Writer, name string) error {
 	if err := check(name); err != nil {
 		return err
 	}

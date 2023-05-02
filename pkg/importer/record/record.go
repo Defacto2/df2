@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/dizzer/zwt"
+	"github.com/Defacto2/df2/pkg/importer/zwt"
 )
 
 var (
