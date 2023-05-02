@@ -3,16 +3,13 @@
 package record
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/dizzer/zwt"
-	"github.com/google/uuid"
 )
 
 var (
@@ -35,6 +32,7 @@ const (
 // Record contains the fields that will be used as database cell values.
 type Record struct {
 	UUID       string    `json:"uuid"`
+	Slug       string    `json:"slug"`
 	Title      string    `json:"record_title"`
 	Group      string    `json:"group_brand_for"`
 	FileName   string    `json:"filename"`
@@ -42,26 +40,26 @@ type Record struct {
 	FileMagic  string    `json:"file_magic_type"`
 	HashStrong string    `json:"file_integrity_strong"`
 	HashWeak   string    `json:"file_integrity_weak"`
-	LastMod    time.Time `json:"file_last_modified"`
+	LastMod    time.Time `json:"file_last_modified"` // X
 	Published  time.Time `json:"date_issued"`
 	Section    string    `json:"section"`
 	Platform   string    `json:"platform"`
 	Comment    string    `json:"comment"`
+	//ZipContent string    `json:"file_zip_content"`
+	//Package    bool      `json:"package"` // X
 }
 
-// New creates a Record with a unique UUID.
+// New creates a Record.
 // The required name must be the subdirectory of the release.
 // The required group is the formal release group name.
-func New(name, group string) (Record, error) {
-	if name == "" || group == "" {
+func New(uid, name, group string) (Record, error) {
+	if uid == "" || name == "" || group == "" {
 		return Record{}, ErrNew
 	}
-	uid, err := uuid.NewRandom()
-	if err != nil {
-		return Record{}, err
-	}
+	// todo: validate uuid
 	return Record{
-		UUID:     uid.String(),
+		UUID:     uid,
+		Slug:     name,
 		Group:    group,
 		Section:  Section,
 		Platform: Platform,
@@ -72,20 +70,20 @@ func New(name, group string) (Record, error) {
 // Copy the Download values to a new Record.
 // The optional pathTitle should be the result of the PathTitle func.
 func (r *Record) Copy(d *Download, pathTitle string) error {
-	if d == nil {
-		return fmt.Errorf("d %w", ErrPointer)
-	}
-	r.Title = d.ReadTitle // create a fallback
-	if r.Title == "" {
-		r.Title = pathTitle
-	}
-	r.FileName = d.Name
-	r.FileSize = d.Bytes
-	r.FileMagic = d.Magic
-	r.HashStrong = d.HashStrong
-	r.HashWeak = d.HashWeak
-	r.LastMod = d.LastMod
-	r.Published = d.ReadDate
+	// if d == nil {
+	// 	return fmt.Errorf("d %w", ErrPointer)
+	// }
+	// r.Title = d.ReadTitle // create a fallback
+	// if r.Title == "" {
+	// 	r.Title = pathTitle
+	// }
+	// r.FileName = d.Name
+	// r.FileSize = d.Bytes
+	// r.FileMagic = d.Magic
+	// r.HashStrong = d.HashStrong
+	// r.HashWeak = d.HashWeak
+	// r.LastMod = d.LastMod
+	// r.Published = d.ReadDate
 	return nil
 }
 
@@ -96,7 +94,6 @@ type Download struct {
 	HashStrong string
 	HashWeak   string
 	Magic      string
-	LastMod    time.Time
 	ReadTitle  string
 	ReadDate   time.Time
 }
@@ -126,9 +123,6 @@ func (dl *Download) New(name, group string) error {
 	}
 	defer f.Close()
 
-	if err := dl.ScanDIZ(f, name, group); err != nil {
-		return err
-	}
 	// hashes require the named file to be reopened after being read.
 	f, err = os.Open(name)
 	if err != nil {
@@ -160,18 +154,6 @@ func (dl *Download) New(name, group string) error {
 	return nil
 }
 
-func (dl *Download) ScanDIZ(f *os.File, name, group string) error {
-	if filepath.Base(name) != "file_id.diz" {
-		return nil
-	}
-	diz := strings.Builder{}
-	fileScanner := bufio.NewScanner(f)
-	for fileScanner.Scan() {
-		fmt.Fprintln(&diz, fileScanner.Text())
-	}
-	return dl.ReadDIZ(diz.String(), group)
-}
-
 func (dl *Download) ReadDIZ(body string, group string) error {
 	var (
 		m          time.Month
@@ -184,6 +166,8 @@ func (dl *Download) ReadDIZ(body string, group string) error {
 	case "zwt", strings.ToLower(zwt.Name):
 		y, m, d = zwt.DizDate(body)
 		title, pub = zwt.DizTitle(body)
+		fmt.Println("==================")
+		fmt.Println("==================")
 	default:
 		// todo: generic dizdate, title etc?
 		return nil

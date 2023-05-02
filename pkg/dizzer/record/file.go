@@ -15,28 +15,21 @@ import (
 
 var ErrFile = errors.New("os file cannot be nil")
 
-// Sum386 returns the SHA-386 checksum value of the open file.
-func Sum386(f *os.File) (string, error) {
-	if f == nil {
-		return "", ErrFile
+// Copy the src filepath to the dst.
+func Copy(dst, src string) (written int64, err error) {
+	s, err := os.Open(src)
+	if err != nil {
+		return 0, err
 	}
-	strong := sha512.New384()
-	if _, err := io.Copy(strong, f); err != nil {
-		return "", fmt.Errorf("%s: %w", f.Name(), err)
-	}
-	return fmt.Sprintf("%x", strong.Sum(nil)), nil
-}
+	defer s.Close()
 
-// SumMD5 returns the MD5 checksum value of the open file.
-func SumMD5(f *os.File) (string, error) {
-	if f == nil {
-		return "", ErrFile
+	d, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return 0, err
 	}
-	weak := md5.New() //nolint: gosec
-	if _, err := io.Copy(weak, f); err != nil {
-		return "", fmt.Errorf("%s: %w", f.Name(), err)
-	}
-	return fmt.Sprintf("%x", weak.Sum(nil)), nil
+	defer d.Close()
+
+	return io.Copy(d, s)
 }
 
 func Determine(name string) (string, error) {
@@ -64,4 +57,36 @@ func Determine(name string) (string, error) {
 		return strings.TrimSpace(ss[1]), nil
 	}
 	return s, nil
+}
+
+// Sum386 returns the SHA-386 checksum value of the open file.
+func Sum386(f *os.File) (string, error) {
+	if f == nil {
+		return "", ErrFile
+	}
+	strong := sha512.New384()
+	if _, err := io.Copy(strong, f); err != nil {
+		return "", fmt.Errorf("%s: %w", f.Name(), err)
+	}
+	return fmt.Sprintf("%x", strong.Sum(nil)), nil
+}
+
+// SumMD5 returns the MD5 checksum value of the open file.
+func SumMD5(f *os.File) (string, error) {
+	if f == nil {
+		return "", ErrFile
+	}
+	weak := md5.New() //nolint: gosec
+	if _, err := io.Copy(weak, f); err != nil {
+		return "", fmt.Errorf("%s: %w", f.Name(), err)
+	}
+	return fmt.Sprintf("%x", weak.Sum(nil)), nil
+}
+
+func Zip(s string) string {
+	x := strings.ToLower(s)
+	x = strings.ReplaceAll(x, ".", "_")
+	x = strings.ReplaceAll(x, " ", "_")
+	x = strings.ReplaceAll(x, "__", "_")
+	return fmt.Sprintf("%s.zip", x)
 }
