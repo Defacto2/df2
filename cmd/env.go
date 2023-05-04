@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -15,7 +16,11 @@ var envCmd = &cobra.Command{
 		" used as configuations for this tool.",
 	Aliases: []string{"e"},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Fprintln(os.Stdout, confg)
+		b, err := json.MarshalIndent(confg, "", " ")
+		if err != nil {
+			logr.Fatal(err)
+		}
+		fmt.Fprintf(os.Stdout, "%s\n", b)
 	},
 }
 

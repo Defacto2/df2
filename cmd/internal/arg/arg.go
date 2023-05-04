@@ -82,6 +82,7 @@ type Group struct {
 
 type Import struct {
 	Insert bool
+	Limit  uint
 }
 
 type People struct {

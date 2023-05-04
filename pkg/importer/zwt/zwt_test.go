@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/dizzer/zwt"
+	"github.com/Defacto2/df2/pkg/importer/zwt"
 	"github.com/Defacto2/df2/pkg/internal"
 	"github.com/stretchr/testify/assert"
 )

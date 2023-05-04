@@ -32,6 +32,7 @@ func Copy(dst, src string) (written int64, err error) {
 	return io.Copy(d, s)
 }
 
+// Determine the magic file definition of the named file.
 func Determine(name string) (string, error) {
 	const file = "file" // file — determine file type
 	path, err := exec.LookPath(file)

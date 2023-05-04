@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"github.com/Defacto2/df2/cmd"
@@ -55,7 +56,7 @@ func main() {
 	// Panic recovery to close any active connections and to log the problem.
 	defer func() {
 		if i := recover(); i != nil {
-			// debug.PrintStack() // uncomment to trace
+			debug.PrintStack() // uncomment to trace
 			logr.DPanic(i)
 		}
 	}()

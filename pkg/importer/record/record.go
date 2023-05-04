@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/importer/zwt"
+	"github.com/google/uuid"
+	"github.com/volatiletech/null/v8"
 )
 
 var (
@@ -25,83 +27,63 @@ const (
 	Platform = "text"               // Platform text is the default file format or NFOs and file_id.diz.
 )
 
-// todo: preview, readme, thumb400x
-// new cli arg to --limit number of records to process
-// need to lookup strong checksum before commit record add, file generation
-
 // Record contains the fields that will be used as database cell values.
 type Record struct {
-	UUID       string    `json:"uuid"`
-	Slug       string    `json:"slug"`
-	Title      string    `json:"record_title"`
-	Group      string    `json:"group_brand_for"`
-	FileName   string    `json:"filename"`
-	FileSize   int64     `json:"filesize"`
-	FileMagic  string    `json:"file_magic_type"`
-	HashStrong string    `json:"file_integrity_strong"`
-	HashWeak   string    `json:"file_integrity_weak"`
-	LastMod    time.Time `json:"file_last_modified"` // X
-	Published  time.Time `json:"date_issued"`
-	Section    string    `json:"section"`
-	Platform   string    `json:"platform"`
-	Comment    string    `json:"comment"`
-	//ZipContent string    `json:"file_zip_content"`
-	//Package    bool      `json:"package"` // X
+	UUID       null.String `json:"uuid"`
+	Slug       string      `json:"slug"`
+	Title      string      `json:"record_title"`
+	Group      null.String `json:"group_brand_for"`
+	FileName   string      `json:"filename"`
+	FileSize   int64       `json:"filesize"`
+	FileMagic  string      `json:"file_magic_type"`
+	HashStrong string      `json:"file_integrity_strong"`
+	HashWeak   string      `json:"file_integrity_weak"`
+	LastMod    time.Time   `json:"file_last_modified"`
+	Published  time.Time   `json:"date_issued"`
+	Section    string      `json:"section"`
+	Platform   string      `json:"platform"`
+	Comment    string      `json:"comment"`
+	ZipContent []string    `json:"zip_content"`
+	TempPath   string      `json:"temp_path"` // TempPath to the temporary UUID named file download.
 }
 
 // New creates a Record.
-// The required name must be the subdirectory of the release.
-// The required group is the formal release group name.
+// The uid must be a valid UUID or returns an error.
+// The name must be the subdirectory of the release.
+// The group must be the formal release-group name.
 func New(uid, name, group string) (Record, error) {
 	if uid == "" || name == "" || group == "" {
 		return Record{}, ErrNew
 	}
-	// todo: validate uuid
+	if _, err := uuid.Parse(uid); err != nil {
+		return Record{}, fmt.Errorf("%w: %s", err, uid)
+	}
 	return Record{
-		UUID:     uid,
+		UUID:     null.NewString(uid, true),
 		Slug:     name,
-		Group:    group,
+		Group:    null.NewString(group, true),
 		Section:  Section,
 		Platform: Platform,
 		Comment:  fmt.Sprintf("release directory: %s", name),
 	}, nil
 }
 
-// Copy the Download values to a new Record.
-// The optional pathTitle should be the result of the PathTitle func.
-func (r *Record) Copy(d *Download, pathTitle string) error {
-	// if d == nil {
-	// 	return fmt.Errorf("d %w", ErrPointer)
-	// }
-	// r.Title = d.ReadTitle // create a fallback
-	// if r.Title == "" {
-	// 	r.Title = pathTitle
-	// }
-	// r.FileName = d.Name
-	// r.FileSize = d.Bytes
-	// r.FileMagic = d.Magic
-	// r.HashStrong = d.HashStrong
-	// r.HashWeak = d.HashWeak
-	// r.LastMod = d.LastMod
-	// r.Published = d.ReadDate
-	return nil
-}
-
+// Download file metadata, the download is usually either a ZIP archive
+// or a single textfile such as an NFO or file_id.diz.
 type Download struct {
-	Path       string
-	Name       string
-	Bytes      int64
-	HashStrong string
-	HashWeak   string
-	Magic      string
-	ReadTitle  string
-	ReadDate   time.Time
+	Path       string    // Path to the file that is open for reading and checksums.
+	Name       string    // Name of the base file.
+	Bytes      int64     // Bytes size of the file.
+	HashStrong string    // HashStrong is the SHA-386 checksum.
+	HashWeak   string    // HashWeak is the MD5 checksum.
+	Magic      string    // Magic file type.
+	ReadTitle  string    // Title of the release, read from a file_id.diz.
+	ReadDate   time.Time // Publish date of the release, read from a file_id.diz.
 }
 
-// New creates a Download from the named file.
-// The required group is the formal release group name.
-// TODO lastmod arg?
-func (dl *Download) New(name, group string) error {
+// Create a download from the named file.
+// The group must be the formal release-group name.
+func (dl *Download) Create(name, group string) error {
 	if group == "" {
 		return ErrGroup
 	}
@@ -112,8 +94,8 @@ func (dl *Download) New(name, group string) error {
 	if st.IsDir() {
 		return fmt.Errorf("%w: %s", ErrDir, name)
 	}
-	// the dl.LastMod value should not be set here,
-	// it MUST be set using the RAR archive metadata.
+	// note: the dl.LastMod value should never be set here,
+	// it needs to be set using the RAR archive metadata.
 	dl.Path = name
 	dl.Name = st.Name()
 	dl.Bytes = st.Size()
@@ -123,7 +105,7 @@ func (dl *Download) New(name, group string) error {
 	}
 	defer f.Close()
 
-	// hashes require the named file to be reopened after being read.
+	// strong hashes require the named file to be reopened after being read.
 	f, err = os.Open(name)
 	if err != nil {
 		return fmt.Errorf("%w: %s", err, name)
@@ -134,7 +116,7 @@ func (dl *Download) New(name, group string) error {
 		return err
 	}
 	dl.HashStrong = strong
-	// hashes require the named file to be reopened after being read.
+	// weak hashes require the named file to be reopened after being read.
 	f, err = os.Open(name)
 	if err != nil {
 		return fmt.Errorf("%w: %s", err, name)
@@ -154,6 +136,8 @@ func (dl *Download) New(name, group string) error {
 	return nil
 }
 
+// ReadDIZ sets the title and publish date of the download using
+// the body string sourced from a file_id.diz metadata file.
 func (dl *Download) ReadDIZ(body string, group string) error {
 	var (
 		m          time.Month
@@ -166,8 +150,6 @@ func (dl *Download) ReadDIZ(body string, group string) error {
 	case "zwt", strings.ToLower(zwt.Name):
 		y, m, d = zwt.DizDate(body)
 		title, pub = zwt.DizTitle(body)
-		fmt.Println("==================")
-		fmt.Println("==================")
 	default:
 		// todo: generic dizdate, title etc?
 		return nil
