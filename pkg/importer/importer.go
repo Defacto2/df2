@@ -6,7 +6,6 @@ import (
 	"archive/zip"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -22,12 +21,7 @@ import (
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	"github.com/google/uuid"
 	"github.com/mholt/archiver"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"go.uber.org/zap"
-
-	models "github.com/Defacto2/df2/pkg/models/mysql"
 )
 
 var (
@@ -40,9 +34,6 @@ const (
 	input  = "dizzer-input"
 	output = "dizzer-dest"
 )
-
-// Records are a collection of Record items to insert into the database.
-type Records []record.Record
 
 // SubDirectory of the RAR archive.
 type SubDirectory struct {
@@ -72,9 +63,9 @@ type Stat struct {
 }
 
 type Importer struct {
-	RARFile string
-	Insert  bool
-	Limit   uint
+	RARFile string // RARFile is the absolute path to the RAR archive file.
+	Insert  bool   // Insert records to the database.
+	Limit   uint   // Limit the number of subdrectories to process.
 	Config  conf.Config
 	Logger  *zap.SugaredLogger
 }
@@ -87,28 +78,19 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 	if w == nil {
 		w = io.Discard
 	}
-
-	ticker := time.Now()
-	ctx := context.Background()
-	downloads := im.Config.Downloads
+	ctx, ticker := context.Background(), time.Now()
 	limit := im.Limit
-
-	// todo: move to internal/args?
-	if x, err := os.Stat(downloads); err != nil {
-		return fmt.Errorf("%w: %s", err, downloads)
-	} else if !x.IsDir() {
-		return fmt.Errorf("%w: %s", ErrDownloads, downloads)
+	if err := checkDL(im.Config.Downloads); err != nil {
+		return err
 	}
 	if im.Limit > 0 {
 		fmt.Fprintf(w, "\n%d item limit applied to the total number of found text files to process.\n", limit)
 	}
-
 	// first stat the .rar file
 	st := Stat{}
 	if err := st.Walk(im.RARFile, limit); err != nil {
 		return err
 	}
-
 	// if okay, then uncompress it to a tmpdir
 	dest, err := os.MkdirTemp(os.TempDir(), input)
 	if err != nil {
@@ -116,7 +98,6 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 	}
 	st.DestOpen = dest
 	defer os.RemoveAll(dest)
-
 	// Unarchive prints useless errors, but is much faster than using archiver.Extract().
 	// so set SetOutput to discard all logged errors.
 	log.SetOutput(io.Discard)
@@ -125,110 +106,25 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 		return err
 	}
 	log.SetOutput(os.Stderr)
-
-	if err := st.Store(nil, limit); err != nil {
+	// Store the subdirectories as UUID archives.
+	if err := st.Store(w, im.Logger, limit); err != nil {
 		return err
 	}
+	// Create a collection of database data.
 	imports, err := st.Create(w, limit)
 	if err != nil {
 		return err
 	}
-
-	// TODO:
-	// copy file to uuid dir
-	// insert record
-
-	for i, rec := range imports {
-		if limit > 0 && i > int(limit) {
-			break
-		}
-		// TODO: make funcs
-		cnt, err := models.Files(qm.Where("file_integrity_strong=?", rec.HashStrong)).Count(ctx, db)
+	// Copy archive and insert the data into the database.
+	if im.Insert {
+		err := imports.Insert(ctx, db, w, im.Config.Downloads, limit)
 		if err != nil {
 			return err
 		}
-		if cnt != 0 {
-			fmt.Fprintf(w, "Skipped %q as the file hash matches an existing database record", rec.Title)
-			continue
-		}
-		b, err := json.MarshalIndent(rec, "", " ")
-		if err != nil {
-			return err
-		}
-
-		if !im.Insert {
-			continue
-		}
-
-		newpath := filepath.Join(im.Config.Downloads, rec.UUID.String)
-		if err := os.Rename(rec.TempPath, newpath); err != nil {
-			return err
-		}
-
-		/*
-			type Record struct {
-				UUID       string    `json:"uuid"`
-				Slug       string    `json:"slug"`
-				Title      string    `json:"record_title"`
-				Group      string    `json:"group_brand_for"`
-				FileName   string    `json:"filename"`
-				FileSize   int64     `json:"filesize"`
-				FileMagic  string    `json:"file_magic_type"`
-				HashStrong string    `json:"file_integrity_strong"`
-				HashWeak   string    `json:"file_integrity_weak"`
-				LastMod    time.Time `json:"file_last_modified"`
-				Published  time.Time `json:"date_issued"`
-				Section    string    `json:"section"`
-				Platform   string    `json:"platform"`
-				Comment    string    `json:"comment"`
-				TempPath   string    `json:"temp_path"` // TempPath to the temporary UUID named file download.
-			}
-		*/
-
-		f1 := models.File{}
-		f1.UUID = rec.UUID
-		f1.RecordTitle = null.NewString(rec.Title, true)
-		f1.GroupBrandFor = rec.Group
-		if !rec.Published.IsZero() {
-			f1.DateIssuedYear = null.Int16From(int16(rec.Published.Year()))
-			f1.DateIssuedMonth = null.Int8From(int8(rec.Published.Month()))
-			f1.DateIssuedDay = null.Int8From(int8(rec.Published.Day()))
-		}
-		f1.Filename = null.NewString(rec.FileName, true)
-		f1.Filesize = null.NewInt(int(rec.FileSize), true)
-		f1.FileMagicType = null.NewString(rec.FileMagic, true)
-		//		f1.FileZipContent = null.NewString() ZipContent
-		f1.FileIntegrityStrong = null.NewString(rec.HashStrong, true)
-		f1.FileIntegrityWeak = null.NewString(rec.HashWeak, true)
-		f1.FileLastModified = null.NewTime(rec.LastMod, true)
-		f1.Platform = null.NewString(rec.Platform, true)
-		f1.Section = null.NewString(rec.Section, true)
-		f1.Comment = null.NewString(rec.Comment, true)
-		// DeletedAt
-		// UpdatedBy
-		// retrotxt_readme
-
-		err = f1.Insert(ctx, db, boil.Infer()) // Insert the first pilot with name "Larry"
-		if err != nil {
-			defer os.Remove(newpath)
-			return err
-		}
-		// p1 now has an ID field set to 1
-
-		// todo:
-		// check temppath
-		// mv file
-		// insert data
-		// if db throws error, delete copied file
-
-		fmt.Fprintf(w, "\n%d.\t%s\n", i, string(b))
-		fmt.Fprintf(w, "File:\t%s", rec.TempPath)
 	}
-
 	if !im.Insert {
 		fmt.Fprintln(w, "\nno records are to be inserted without the --insert flag")
 	}
-
 	fmt.Fprintln(w, "\nStats for nerds, totals")
 	fmt.Fprintln(w, "subdirs\t", len(st.SubDirs))
 	fmt.Fprintln(w, "nfos\t", st.NFOs)
@@ -236,8 +132,18 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 	fmt.Fprintln(w, "other files\t", st.Others)
 	fmt.Fprintln(w, "group\t", st.Group)
 	fmt.Fprintf(w, "years: %+v\n", st.LastMods)
-
 	fmt.Fprintln(w, "time taken", time.Since(ticker).Seconds())
+	return nil
+}
+
+func checkDL(name string) error {
+	st, err := os.Stat(name)
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, name)
+	}
+	if !st.IsDir() {
+		return fmt.Errorf("%w: %s", ErrDownloads, name)
+	}
 	return nil
 }
 
@@ -331,7 +237,7 @@ func (st *Stat) Walk(name string, limit uint) error {
 
 // Store creates a collection of UUID named, uncompressed zip archives
 // from the extracted sub-directories, of the imported RAR file archive.
-func (st *Stat) Store(w io.Writer, limit uint) error {
+func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger, limit uint) error {
 	if w == nil {
 		w = io.Discard
 	}
@@ -363,8 +269,6 @@ func (st *Stat) Store(w io.Writer, limit uint) error {
 		}
 		name := sub.UUID
 		dest := filepath.Join(p, name)
-
-		fmt.Println("------>", dest)
 
 		// read the content of any group nfo or file_id.diz
 		for _, src := range sources {
@@ -399,7 +303,7 @@ func (st *Stat) Store(w io.Writer, limit uint) error {
 			continue
 		}
 
-		_, err := sub.Zip(dest, sources...)
+		_, err := sub.Zip(l, dest, sources...)
 		if err != nil {
 			return err
 		}
@@ -414,41 +318,34 @@ func (st *Stat) Store(w io.Writer, limit uint) error {
 
 // Create a collection of records based on the extracted sub-directories,
 // of the imported RAR file archive.
-func (st *Stat) Create(w io.Writer, limit uint) (records Records, err error) {
+func (st *Stat) Create(w io.Writer, limit uint) (records record.Records, err error) {
 	if w == nil {
 		w = io.Discard
 	}
 
-	records = make(Records, len(st.SubDirs))
+	records = make(record.Records, len(st.SubDirs))
 	c, l := 0, len(records)
 	for key, meta := range st.SubDirs {
+		i := c
 		c++
-		i := c - 1
 		if limit > 0 && uint(i) >= limit {
 			fmt.Fprintf(w, " Item limit argument %d of %d reached\n", i, limit)
 			break
 		}
-
-		fmt.Println("---------->", key)
-		fmt.Println("--->>", meta.UUID)
-
 		records[i], err = record.New(meta.UUID, meta.Path, st.Group)
 		if err != nil {
 			return nil, err
 		}
-
 		d := record.Download{}
 		name := filepath.Join(st.DestUUID, meta.UUID)
 		err = d.Create(name, st.Group)
 		if err != nil {
 			return nil, err
 		}
-
 		err = d.ReadDIZ(string(meta.Diz), st.Group)
 		if err != nil {
 			return nil, err
 		}
-
 		records[i].Title = d.ReadTitle
 		if records[i].Title == "" {
 			records[i].Title = meta.Title
@@ -467,45 +364,47 @@ func (st *Stat) Create(w io.Writer, limit uint) (records Records, err error) {
 }
 
 // Zip creates an uncompressed zip archive at dst using the the named file sources.
-func (sub SubDirectory) Zip(dst string, sources ...string) (written int64, err error) {
+func (sub SubDirectory) Zip(l *zap.SugaredLogger, dst string, sources ...string) (written int64, err error) {
 	arch, err := os.Create(dst)
 	if err != nil {
 		return 0, err
 	}
 	defer arch.Close()
-
-	zipWriter := zip.NewWriter(arch)
+	// create a new zip file writer
+	zipWr := zip.NewWriter(arch)
 	if sub.Path != "" {
-		_ = zipWriter.SetComment(fmt.Sprintf("release directory: %s", sub.Path))
+		// apply an optional zip file comment
+		s := fmt.Sprintf("release directory: %s", sub.Path)
+		if err = zipWr.SetComment(s); err != nil {
+			l.Warnf("failed to set zip file comment")
+		}
 	}
-
+	// read, copy and store source files into the zip file writer
 	for i, src := range sources {
 		f, err := os.Open(src)
 		if err != nil {
 			return 0, err
 		}
 		defer f.Close()
-
+		// file header for each source
 		base := filepath.Base(src)
-
 		fh := zip.FileHeader{
 			Name:     base,
 			NonUTF8:  true,
 			Modified: sub.LastMods[i],
 		}
-		w, err := zipWriter.CreateHeader(&fh)
+		w, err := zipWr.CreateHeader(&fh)
 		if err != nil {
 			return 0, err
 		}
-
+		// copy source to the zip file
 		wr, err := io.Copy(w, f)
 		if err != nil {
 			return 0, err
 		}
 		written = written + wr
 	}
-	err = zipWriter.Close()
-	if err != nil {
+	if err = zipWr.Close(); err != nil {
 		return 0, err
 	}
 	return written, nil
@@ -563,7 +462,7 @@ func PathTitle(name string) string {
 	// match v1.0
 	r = regexp.MustCompile(`v(\d+)\.(\d+)`)
 	t = r.ReplaceAllString(t, "v$1-$2")
-
+	// word fixes
 	words := strings.Split(t, ".")
 	for i, word := range words {
 		switch strings.ToLower(word) {
@@ -573,7 +472,6 @@ func PathTitle(name string) string {
 			words[i] = "keymaker"
 		}
 	}
-
 	t = strings.Join(words, " ")
 	// restore v1.0.0
 	r = regexp.MustCompile(`v(\d+)-(\d+)-(\d+)`)
@@ -581,6 +479,5 @@ func PathTitle(name string) string {
 	// restore v1.0
 	r = regexp.MustCompile(`v(\d+)-(\d+)`)
 	t = r.ReplaceAllString(t, "v$1.$2")
-
 	return strings.TrimSpace(t)
 }

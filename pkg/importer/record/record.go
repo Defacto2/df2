@@ -3,15 +3,23 @@
 package record
 
 import (
+	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/importer/zwt"
+	models "github.com/Defacto2/df2/pkg/models/mysql"
 	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (
@@ -29,22 +37,92 @@ const (
 
 // Record contains the fields that will be used as database cell values.
 type Record struct {
-	UUID       null.String `json:"uuid"`
-	Slug       string      `json:"slug"`
-	Title      string      `json:"record_title"`
-	Group      null.String `json:"group_brand_for"`
-	FileName   string      `json:"filename"`
-	FileSize   int64       `json:"filesize"`
-	FileMagic  string      `json:"file_magic_type"`
-	HashStrong string      `json:"file_integrity_strong"`
-	HashWeak   string      `json:"file_integrity_weak"`
-	LastMod    time.Time   `json:"file_last_modified"`
-	Published  time.Time   `json:"date_issued"`
-	Section    string      `json:"section"`
-	Platform   string      `json:"platform"`
-	Comment    string      `json:"comment"`
-	ZipContent []string    `json:"zip_content"`
-	TempPath   string      `json:"temp_path"` // TempPath to the temporary UUID named file download.
+	UUID       string    `json:"uuid"`
+	Slug       string    `json:"slug"`
+	Title      string    `json:"record_title"`
+	Group      string    `json:"group_brand_for"`
+	FileName   string    `json:"filename"`
+	FileSize   int64     `json:"filesize"`
+	FileMagic  string    `json:"file_magic_type"`
+	HashStrong string    `json:"file_integrity_strong"`
+	HashWeak   string    `json:"file_integrity_weak"`
+	LastMod    time.Time `json:"file_last_modified"`
+	Published  time.Time `json:"date_issued"`
+	Section    string    `json:"section"`
+	Platform   string    `json:"platform"`
+	Comment    string    `json:"comment"`
+	ZipContent []string  `json:"zip_content"`
+	TempPath   string    `json:"temp_path"` // TempPath to the temporary UUID named file download.
+}
+
+func (rec Record) Insert(ctx context.Context, db *sql.DB, newpath string) error {
+	f1 := models.File{}
+	if _, err := uuid.Parse(rec.UUID); err != nil {
+		return fmt.Errorf("%w: %s", err, rec.UUID)
+	}
+	f1.UUID = null.NewString(rec.UUID, true)
+	f1.RecordTitle = null.NewString(rec.Title, true)
+	f1.GroupBrandFor = null.NewString(rec.Group, true)
+	if !rec.Published.IsZero() {
+		f1.DateIssuedYear = null.Int16From(int16(rec.Published.Year()))
+		f1.DateIssuedMonth = null.Int8From(int8(rec.Published.Month()))
+		f1.DateIssuedDay = null.Int8From(int8(rec.Published.Day()))
+	}
+	f1.Filename = null.NewString(rec.FileName, true)
+	f1.Filesize = null.NewInt(int(rec.FileSize), true)
+	f1.FileMagicType = null.NewString(rec.FileMagic, true)
+	//		f1.FileZipContent = null.NewString() ZipContent
+	f1.FileIntegrityStrong = null.NewString(rec.HashStrong, true)
+	f1.FileIntegrityWeak = null.NewString(rec.HashWeak, true)
+	f1.FileLastModified = null.NewTime(rec.LastMod, true)
+	f1.Platform = null.NewString(rec.Platform, true)
+	f1.Section = null.NewString(rec.Section, true)
+	f1.Comment = null.NewString(rec.Comment, true)
+	// DeletedAt
+	// UpdatedBy
+	// retrotxt_readme
+	err := f1.Insert(ctx, db, boil.Infer()) // Insert the first pilot with name "Larry"
+	if err != nil {
+		defer os.Remove(newpath)
+		return err
+	}
+	return nil
+}
+
+// Records are a collection of Record items to insert into the database.
+type Records []Record
+
+func (imports Records) Insert(ctx context.Context, db *sql.DB, w io.Writer, path string, limit uint) error {
+	if w == nil {
+		w = io.Discard
+	}
+	for i, rec := range imports {
+		if limit > 0 && i > int(limit) {
+			break
+		}
+		clause := qm.Where("file_integrity_strong=?", rec.HashStrong)
+		if cnt, err := models.Files(clause).Count(ctx, db); err != nil {
+			return err
+		} else if cnt != 0 {
+			fmt.Fprintf(w, "Skipped %q as the file hash matches an existing database record", rec.Title)
+			continue
+		}
+
+		newpath := filepath.Join(path, rec.UUID)
+		if err := os.Rename(rec.TempPath, newpath); err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "moved %q to %q\n", rec.TempPath, newpath)
+		if err := rec.Insert(ctx, db, newpath); err != nil {
+			return err
+		}
+		b, err := json.MarshalIndent(rec, "", " ")
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "\n%d.\t%s\n", i, string(b))
+	}
+	return nil
 }
 
 // New creates a Record.
@@ -59,9 +137,9 @@ func New(uid, name, group string) (Record, error) {
 		return Record{}, fmt.Errorf("%w: %s", err, uid)
 	}
 	return Record{
-		UUID:     null.NewString(uid, true),
+		UUID:     uid,
 		Slug:     name,
-		Group:    null.NewString(group, true),
+		Group:    group,
 		Section:  Section,
 		Platform: Platform,
 		Comment:  fmt.Sprintf("release directory: %s", name),
