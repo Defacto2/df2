@@ -77,7 +77,7 @@ func Defaults() Config {
 		// database connection
 		DBName:  "defacto2-inno",
 		DBUser:  "root",
-		DBPass:  "example",
+		DBPass:  "password",
 		DBHost:  "localhost",
 		DBPort:  mysqlPort,
 		Timeout: timeoutSec, // Timeout value matches the 30s timeout for unit tests.

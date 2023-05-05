@@ -81,10 +81,12 @@ func (rec Record) Insert(ctx context.Context, db *sql.DB, newpath string) error 
 	f1.Platform = null.NewString(rec.Platform, true)
 	f1.Section = null.NewString(rec.Section, true)
 	f1.Comment = null.NewString(rec.Comment, true)
-	f1.Updatedby = null.NewString(database.UpdateID, true)
 	if rec.Readme != "" {
 		f1.RetrotxtReadme = null.NewString(rec.Readme, true)
 	}
+	// hide the new record from public access
+	f1.Updatedby = null.NewString(database.UpdateID, true)
+	f1.Deletedat = null.NewTime(time.Now(), true)
 	err := f1.Insert(ctx, db, boil.Infer()) // Insert the first pilot with name "Larry"
 	if err != nil {
 		defer os.Remove(newpath)
@@ -96,28 +98,30 @@ func (rec Record) Insert(ctx context.Context, db *sql.DB, newpath string) error 
 // Records are a collection of Record items to insert into the database.
 type Records []Record
 
-func (imports Records) Insert(ctx context.Context, db *sql.DB, l *zap.SugaredLogger, path string, limit uint) error {
+func (imports Records) Insert(ctx context.Context, db *sql.DB, l *zap.SugaredLogger, path string, limit uint) (int, error) {
+	inserts := 0
 	for i, rec := range imports {
 		if limit > 0 && i > int(limit) {
 			break
 		}
 		clause := qm.Where("file_integrity_strong=?", rec.HashStrong)
 		if cnt, err := models.Files(clause).Count(ctx, db); err != nil {
-			return err
+			return 0, err
 		} else if cnt != 0 {
 			l.Errorf("SKIP, the hash matches a database entry: %q", rec.Title)
 			continue
 		}
 		newpath := filepath.Join(path, rec.UUID)
 		if err := os.Rename(rec.TempPath, newpath); err != nil {
-			return err
+			return 0, err
 		}
 		if err := rec.Insert(ctx, db, newpath); err != nil {
-			return err
+			return 0, err
 		}
 		l.Infof("✽ ADDED %s", rec.Title)
+		inserts++
 	}
-	return nil
+	return inserts, nil
 }
 
 // New creates a Record.

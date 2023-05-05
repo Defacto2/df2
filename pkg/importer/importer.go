@@ -94,16 +94,7 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 		return err
 	}
 	// apply the limit
-	// note: it is best to read the whole rar archive before
-	// asserting the subdirectory limit, otherwise some files
-	// might go missing.
-	dirs := 0
-	for key := range st.SubDirs {
-		dirs++
-		if dirs > int(limit) {
-			delete(st.SubDirs, key)
-		}
-	}
+	st.limit(im.Limit)
 	// if okay, then uncompress it to a tmpdir
 	dest, err := os.MkdirTemp(os.TempDir(), input)
 	if err != nil {
@@ -130,9 +121,12 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 	}
 	// Copy archive and insert the data into the database.
 	if im.Insert {
-		err := imports.Insert(ctx, db, im.Logger, im.Config.Downloads, limit)
+		inserts, err := imports.Insert(ctx, db, im.Logger, im.Config.Downloads, limit)
 		if err != nil {
 			return err
+		}
+		if inserts > 0 {
+			im.Logger.Infof("Inserted %d, non-public records\n\tdf2 new and df2 approve commands need to be used to make these public", inserts)
 		}
 	} else {
 		im.Logger.Warn("No database records will be created without the --insert flag")
@@ -199,6 +193,22 @@ func check(name string) error {
 		return fmt.Errorf("%w: %s", err, name)
 	}
 	return nil
+}
+
+// Limit the subdirectories.
+// It is best to read the whole rar archive before asserting the subdirectory limit,
+// otherwise some files might go missing.
+func (st *Stat) limit(i uint) {
+	if i == 0 {
+		return
+	}
+	dirs := 0
+	for key := range st.SubDirs {
+		dirs++
+		if dirs > int(i) {
+			delete(st.SubDirs, key)
+		}
+	}
 }
 
 // Walk the named .rar archive file to collect information and statistics.

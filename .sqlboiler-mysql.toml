@@ -25,7 +25,7 @@ dbname = "defacto2-inno"
 host = "localhost"
 port = 3306
 user = "root"
-pass = "example"
+pass = "password"
 sslmode = "false"
 
 [auto-columns]
