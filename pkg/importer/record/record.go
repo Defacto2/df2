@@ -5,10 +5,8 @@ package record
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +18,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"go.uber.org/zap"
 )
 
 var (
@@ -92,10 +91,7 @@ func (rec Record) Insert(ctx context.Context, db *sql.DB, newpath string) error 
 // Records are a collection of Record items to insert into the database.
 type Records []Record
 
-func (imports Records) Insert(ctx context.Context, db *sql.DB, w io.Writer, path string, limit uint) error {
-	if w == nil {
-		w = io.Discard
-	}
+func (imports Records) Insert(ctx context.Context, db *sql.DB, l *zap.SugaredLogger, path string, limit uint) error {
 	for i, rec := range imports {
 		if limit > 0 && i > int(limit) {
 			break
@@ -104,23 +100,17 @@ func (imports Records) Insert(ctx context.Context, db *sql.DB, w io.Writer, path
 		if cnt, err := models.Files(clause).Count(ctx, db); err != nil {
 			return err
 		} else if cnt != 0 {
-			fmt.Fprintf(w, "Skipped %q as the file hash matches an existing database record", rec.Title)
+			l.Errorf("SKIP, the hash matches a database entry: %q", rec.Title)
 			continue
 		}
-
 		newpath := filepath.Join(path, rec.UUID)
 		if err := os.Rename(rec.TempPath, newpath); err != nil {
 			return err
 		}
-		fmt.Fprintf(w, "moved %q to %q\n", rec.TempPath, newpath)
 		if err := rec.Insert(ctx, db, newpath); err != nil {
 			return err
 		}
-		b, err := json.MarshalIndent(rec, "", " ")
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(w, "\n%d.\t%s\n", i, string(b))
+		l.Infof("✽ ADDED %s", rec.Title)
 	}
 	return nil
 }

@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/conf"
@@ -84,12 +85,23 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 		return err
 	}
 	if im.Limit > 0 {
-		fmt.Fprintf(w, "\n%d item limit applied to the total number of found text files to process.\n", limit)
+		im.Logger.Infof("Only the first %d subdirectories of the RAR archive will be read.", limit)
 	}
 	// first stat the .rar file
 	st := Stat{}
 	if err := st.Walk(im.RARFile, limit); err != nil {
 		return err
+	}
+	// apply the limit
+	// note: it is best to read the whole rar archive before
+	// asserting the subdirectory limit, otherwise some files
+	// might go missing.
+	dirs := 0
+	for key := range st.SubDirs {
+		dirs++
+		if dirs > int(limit) {
+			delete(st.SubDirs, key)
+		}
 	}
 	// if okay, then uncompress it to a tmpdir
 	dest, err := os.MkdirTemp(os.TempDir(), input)
@@ -107,33 +119,52 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 	}
 	log.SetOutput(os.Stderr)
 	// Store the subdirectories as UUID archives.
-	if err := st.Store(w, im.Logger, limit); err != nil {
+	if err := st.Store(w, im.Logger); err != nil {
 		return err
 	}
 	// Create a collection of database data.
-	imports, err := st.Create(w, limit)
+	imports, err := st.Create()
 	if err != nil {
 		return err
 	}
 	// Copy archive and insert the data into the database.
 	if im.Insert {
-		err := imports.Insert(ctx, db, w, im.Config.Downloads, limit)
+		err := imports.Insert(ctx, db, im.Logger, im.Config.Downloads, limit)
 		if err != nil {
 			return err
 		}
+	} else {
+		im.Logger.Warn("No database records will be created without the --insert flag")
 	}
-	if !im.Insert {
-		fmt.Fprintln(w, "\nno records are to be inserted without the --insert flag")
+	if w != io.Discard {
+		im.Logger.Info("Statistics for the nerds")
+		stats(w, st, limit)
 	}
-	fmt.Fprintln(w, "\nStats for nerds, totals")
-	fmt.Fprintln(w, "subdirs\t", len(st.SubDirs))
-	fmt.Fprintln(w, "nfos\t", st.NFOs)
-	fmt.Fprintln(w, "dizes\t", st.DIZs)
-	fmt.Fprintln(w, "other files\t", st.Others)
-	fmt.Fprintln(w, "group\t", st.Group)
-	fmt.Fprintf(w, "years: %+v\n", st.LastMods)
-	fmt.Fprintln(w, "time taken", time.Since(ticker).Seconds())
+	im.Logger.Infof("Time taken, %v sec.", time.Since(ticker).Seconds())
 	return nil
+}
+
+func stats(w io.Writer, st Stat, limit uint) {
+	tw := new(tabwriter.Writer)
+	tw.Init(w, 0, 8, 0, '\t', 0)
+	fmt.Fprintf(tw, "\t\tThe releases for %q\n", st.Group)
+	fmt.Fprint(tw, " \t\tSubDirectories: ", "\t", len(st.SubDirs))
+	if limit > 0 {
+		fmt.Fprint(tw, " (--limit in use)", "\n")
+	} else {
+		fmt.Fprint(tw, "\n")
+	}
+	fmt.Fprint(tw, "\t\tNFO files found: ", "\t", st.NFOs, "\n")
+	fmt.Fprint(tw, "\t\tfile_id.diz files found: ", "\t", st.DIZs, "\n")
+	fmt.Fprint(tw, "\t\tOther file discoveries: ", "\t", st.Others, "\n")
+	fmt.Fprint(tw, "\t\tRange of years published: ", "\t")
+	s := []string{}
+	for year, cnt := range st.LastMods {
+		s = append(s, fmt.Sprintf("%s (%d)", year, cnt))
+	}
+	fmt.Fprint(tw, strings.Join(s, ", "))
+	fmt.Fprint(tw, "\n")
+	tw.Flush()
 }
 
 func checkDL(name string) error {
@@ -174,20 +205,17 @@ func (st *Stat) Walk(name string, limit uint) error {
 	st.SubDirs = map[string]SubDirectory{}
 	rar := rar()
 	key := ""
-	count := -1
-
 	return rar.Walk(name, func(f archiver.File) error {
-		if st.Name == "" {
-			st.Name = name
-		}
 		if f.IsDir() {
 			return nil
 		}
-		count++
-		if count > int(limit) {
-			return nil
+		// if limit > 0 && len(st.SubDirs) >= int(limit) {
+		// 	return nil
+		// }
+		if st.Name == "" {
+			st.Name = name
 		}
-
+		// find metadata
 		base := filepath.Base(f.Name())
 		if st.Group == "" {
 			st.Group = Group(f.Name())
@@ -195,7 +223,7 @@ func (st *Stat) Walk(name string, limit uint) error {
 		if filepath.Dir(f.Name()) != key {
 			key = filepath.Dir(f.Name())
 		}
-
+		// create subdirectory entry
 		sub, exists := st.SubDirs[key]
 		if !exists {
 			sub.Title = PathTitle(key)
@@ -203,14 +231,13 @@ func (st *Stat) Walk(name string, limit uint) error {
 		sub.Path = filepath.Dir(f.Name())
 		sub.Files = append(sub.Files, base)
 		sub.LastMods = append(sub.LastMods, f.ModTime())
-
 		uid, err := uuid.NewRandom()
 		if err != nil {
 			fmt.Println(err)
 			return nil
 		}
 		sub.UUID = uid.String()
-
+		// find readme text
 		ext := strings.ToLower(filepath.Ext(base))
 		switch ext {
 		case ".diz":
@@ -231,45 +258,42 @@ func (st *Stat) Walk(name string, limit uint) error {
 		}
 		st.LastMods = st.LastMods.Add(f.ModTime())
 		st.SubDirs[key] = sub
+		//fmt.Printf("\n%+v\n", sub)
 		return nil
 	})
 }
 
 // Store creates a collection of UUID named, uncompressed zip archives
 // from the extracted sub-directories, of the imported RAR file archive.
-func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger, limit uint) error {
+func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error {
 	if w == nil {
 		w = io.Discard
 	}
 	const noArchive = 1
 	i := 0
-
+	// make temp dest
 	p, err := os.MkdirTemp(os.TempDir(), output)
 	if err != nil {
 		return err
 	}
 	st.DestUUID = p
-
+	defer os.Remove(p)
+	// archive the subdirectories
+	l.Infof("Storing %d subdirectories", len(st.SubDirs))
 	for key, sub := range st.SubDirs {
 		if len(sub.Files) == 0 {
 			return fmt.Errorf("%w: %s", ErrNoFiles, sub.Title)
 		}
-		fmt.Println(i, ">", limit)
-		fmt.Println(key, sub)
-		fmt.Println()
-		if limit > 0 && uint(i) >= limit {
-			fmt.Println("=== BREAK")
-			break
-		}
-
 		i++
+		tw := new(tabwriter.Writer)
+		tw.Init(w, 0, 8, 0, '\t', 0)
+		fmt.Fprintf(tw, " \t%d. STORE key %s\n", i, key)
 		sources := []string{}
 		for _, f := range sub.Files {
 			sources = append(sources, filepath.Join(st.DestOpen, sub.Path, f))
 		}
 		name := sub.UUID
 		dest := filepath.Join(p, name)
-
 		// read the content of any group nfo or file_id.diz
 		for _, src := range sources {
 			base := filepath.Base(src)
@@ -287,10 +311,10 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger, limit uint) error {
 				}
 			}
 		}
-
+		// handle subdirectories containing only a single text file
 		if len(sub.Files) == noArchive {
 			dest = filepath.Join(p, sub.UUID)
-			_, err := record.Copy(dest, sources[0])
+			br, err := record.Copy(dest, sources[0])
 			if err != nil {
 				return err
 			}
@@ -299,18 +323,21 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger, limit uint) error {
 				return err
 			}
 			sub.Filename = filepath.Base(sources[0])
-			fmt.Fprintf(w, "new text file with %d bytes, %s\n", w, dest)
+			fmt.Fprintf(tw, " \t\tTEXT file, %d bytes: %s\n", br, dest)
+			tw.Flush()
+			// save the changes
+			st.SubDirs[key] = sub
 			continue
 		}
-
-		_, err := sub.Zip(l, dest, sources...)
+		// process subdirectory
+		br, err := sub.Zip(l, dest, sources...)
 		if err != nil {
 			return err
 		}
 		sub.Filename = record.Zip(sub.Path)
-		fmt.Fprintf(w, "new zip archive with %d bytes, %s\n", w, dest)
-
-		// apply the changes
+		fmt.Fprintf(tw, " \t\tZIP archive, %d bytes: %s\n", br, dest)
+		tw.Flush()
+		// save the changes
 		st.SubDirs[key] = sub
 	}
 	return nil
@@ -318,20 +345,11 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger, limit uint) error {
 
 // Create a collection of records based on the extracted sub-directories,
 // of the imported RAR file archive.
-func (st *Stat) Create(w io.Writer, limit uint) (records record.Records, err error) {
-	if w == nil {
-		w = io.Discard
-	}
-
+func (st *Stat) Create() (records record.Records, err error) {
 	records = make(record.Records, len(st.SubDirs))
-	c, l := 0, len(records)
-	for key, meta := range st.SubDirs {
-		i := c
-		c++
-		if limit > 0 && uint(i) >= limit {
-			fmt.Fprintf(w, " Item limit argument %d of %d reached\n", i, limit)
-			break
-		}
+	i := -1
+	for _, meta := range st.SubDirs {
+		i++
 		records[i], err = record.New(meta.UUID, meta.Path, st.Group)
 		if err != nil {
 			return nil, err
@@ -350,7 +368,7 @@ func (st *Stat) Create(w io.Writer, limit uint) (records record.Records, err err
 		if records[i].Title == "" {
 			records[i].Title = meta.Title
 		}
-		records[i].FileName = meta.Filename // this needs to be set earliy either zip filename or nfo filename
+		records[i].FileName = meta.Filename // TODO: this needs to be set earlier to either zip filename or nfo filename
 		records[i].FileSize = d.Bytes
 		records[i].FileMagic = d.Magic
 		records[i].HashStrong = d.HashStrong
@@ -358,7 +376,6 @@ func (st *Stat) Create(w io.Writer, limit uint) (records record.Records, err err
 		records[i].LastMod = time.Now()
 		records[i].Published = d.ReadDate
 		records[i].TempPath = name
-		fmt.Fprintf(w, "%d-%d.\t new record %q\n", c, l, key)
 	}
 	return records, nil
 }
@@ -376,7 +393,7 @@ func (sub SubDirectory) Zip(l *zap.SugaredLogger, dst string, sources ...string)
 		// apply an optional zip file comment
 		s := fmt.Sprintf("release directory: %s", sub.Path)
 		if err = zipWr.SetComment(s); err != nil {
-			l.Warnf("failed to set zip file comment")
+			l.Warnf("failed to set the optional zip file comment")
 		}
 	}
 	// read, copy and store source files into the zip file writer

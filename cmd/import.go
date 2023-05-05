@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -20,7 +19,6 @@ var importCmd = &cobra.Command{
 	Aliases: []string{"im"},
 	GroupID: "group1",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("-->:", args)
 		if len(args) == 0 {
 			if err := cmd.Usage(); err != nil {
 				logr.Fatal(err)
