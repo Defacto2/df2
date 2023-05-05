@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	models "github.com/Defacto2/df2/pkg/models/mysql"
 	"github.com/google/uuid"
@@ -46,11 +47,12 @@ type Record struct {
 	HashStrong string    `json:"file_integrity_strong"`
 	HashWeak   string    `json:"file_integrity_weak"`
 	LastMod    time.Time `json:"file_last_modified"`
+	ZipContent string    `json:"file_zip_content"`
 	Published  time.Time `json:"date_issued"`
 	Section    string    `json:"section"`
 	Platform   string    `json:"platform"`
 	Comment    string    `json:"comment"`
-	ZipContent []string  `json:"zip_content"`
+	Readme     string    `json:"retrotxt_readme"`
 	TempPath   string    `json:"temp_path"` // TempPath to the temporary UUID named file download.
 }
 
@@ -70,16 +72,19 @@ func (rec Record) Insert(ctx context.Context, db *sql.DB, newpath string) error 
 	f1.Filename = null.NewString(rec.FileName, true)
 	f1.Filesize = null.NewInt(int(rec.FileSize), true)
 	f1.FileMagicType = null.NewString(rec.FileMagic, true)
-	//		f1.FileZipContent = null.NewString() ZipContent
+	if rec.ZipContent != "" {
+		f1.FileZipContent = null.NewString(rec.ZipContent, true)
+	}
 	f1.FileIntegrityStrong = null.NewString(rec.HashStrong, true)
 	f1.FileIntegrityWeak = null.NewString(rec.HashWeak, true)
 	f1.FileLastModified = null.NewTime(rec.LastMod, true)
 	f1.Platform = null.NewString(rec.Platform, true)
 	f1.Section = null.NewString(rec.Section, true)
 	f1.Comment = null.NewString(rec.Comment, true)
-	// DeletedAt
-	// UpdatedBy
-	// retrotxt_readme
+	f1.Updatedby = null.NewString(database.UpdateID, true)
+	if rec.Readme != "" {
+		f1.RetrotxtReadme = null.NewString(rec.Readme, true)
+	}
 	err := f1.Insert(ctx, db, boil.Infer()) // Insert the first pilot with name "Larry"
 	if err != nil {
 		defer os.Remove(newpath)
@@ -145,6 +150,7 @@ type Download struct {
 	HashStrong string    // HashStrong is the SHA-386 checksum.
 	HashWeak   string    // HashWeak is the MD5 checksum.
 	Magic      string    // Magic file type.
+	ModTime    time.Time // ModTime is the last modification date of the file.
 	ReadTitle  string    // Title of the release, read from a file_id.diz.
 	ReadDate   time.Time // Publish date of the release, read from a file_id.diz.
 }
@@ -162,11 +168,10 @@ func (dl *Download) Create(name, group string) error {
 	if st.IsDir() {
 		return fmt.Errorf("%w: %s", ErrDir, name)
 	}
-	// note: the dl.LastMod value should never be set here,
-	// it needs to be set using the RAR archive metadata.
 	dl.Path = name
 	dl.Name = st.Name()
 	dl.Bytes = st.Size()
+	dl.ModTime = st.ModTime()
 	f, err := os.Open(name)
 	if err != nil {
 		return fmt.Errorf("%w: %s", err, name)
@@ -206,7 +211,7 @@ func (dl *Download) Create(name, group string) error {
 
 // ReadDIZ sets the title and publish date of the download using
 // the body string sourced from a file_id.diz metadata file.
-func (dl *Download) ReadDIZ(body string, group string) error {
+func (dl *Download) ReadDIZ(body, group string) error {
 	var (
 		m          time.Month
 		y, d       int
@@ -222,14 +227,34 @@ func (dl *Download) ReadDIZ(body string, group string) error {
 		// todo: generic dizdate, title etc?
 		return nil
 	}
-
 	if y > 0 {
 		dl.ReadDate = time.Date(y, m, d, 0, 0, 0, 0, time.Local)
 	}
-
 	dl.ReadTitle = title
 	if pub != "" && !strings.Contains(title, pub) {
 		dl.ReadTitle = fmt.Sprintf("%s by %s", title, pub)
+	}
+	return nil
+}
+
+// ReadNfo sets the publish date of the download using
+// the body string sourced from a group.nfo file.
+// This is a fallback for when ReadDIZ cannot be used.
+func (dl *Download) ReadNfo(body, group string) error {
+	var (
+		m    time.Month
+		y, d int
+	)
+	switch strings.ToLower(group) {
+	case "":
+		return ErrGroup
+	case "zwt", strings.ToLower(zwt.Name):
+		y, m, d = zwt.NfoDate(body)
+	default:
+		return nil
+	}
+	if y > 0 {
+		dl.ReadDate = time.Date(y, m, d, 0, 0, 0, 0, time.Local)
 	}
 	return nil
 }

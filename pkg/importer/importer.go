@@ -52,15 +52,16 @@ type SubDirectory struct {
 
 // Stat the collection of NFO and file_id.diz files within an RAR archive.
 type Stat struct {
-	Name     string                  // Name of the RAR archive file.
-	Group    string                  // Group for the collection.
-	DestOpen string                  // DestOpen is the temp destination path for the extracted files.
-	DestUUID string                  // DestUUID is the temp destination path for the created UUID files.
-	DIZs     int                     // DIZs file_id.diz count.
-	NFOs     int                     // NFOs count.
-	Others   int                     // Other types of files count.
-	LastMods Years                   // LastMods counts the last modified years.
-	SubDirs  map[string]SubDirectory // Releases lists every release included in the RAR archive.
+	Name      string                  // Name of the RAR archive file.
+	Group     string                  // Group for the collection.
+	GroupPath string                  // GroupPath is the directory path used for the group.
+	DestOpen  string                  // DestOpen is the temp destination path for the extracted files.
+	DestUUID  string                  // DestUUID is the temp destination path for the created UUID files.
+	DIZs      int                     // DIZs file_id.diz count.
+	NFOs      int                     // NFOs count.
+	Others    int                     // Other types of files count.
+	LastMods  Years                   // LastMods counts the last modified years.
+	SubDirs   map[string]SubDirectory // Releases lists every release included in the RAR archive.
 }
 
 type Importer struct {
@@ -85,7 +86,7 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 		return err
 	}
 	if im.Limit > 0 {
-		im.Logger.Infof("Only the first %d subdirectories of the RAR archive will be read.", limit)
+		im.Logger.Infof("Only the first %d, randomized subdirectories of the RAR archive will be read.", limit)
 	}
 	// first stat the .rar file
 	st := Stat{}
@@ -209,9 +210,6 @@ func (st *Stat) Walk(name string, limit uint) error {
 		if f.IsDir() {
 			return nil
 		}
-		// if limit > 0 && len(st.SubDirs) >= int(limit) {
-		// 	return nil
-		// }
 		if st.Name == "" {
 			st.Name = name
 		}
@@ -219,6 +217,9 @@ func (st *Stat) Walk(name string, limit uint) error {
 		base := filepath.Base(f.Name())
 		if st.Group == "" {
 			st.Group = Group(f.Name())
+		}
+		if st.GroupPath == "" {
+			st.GroupPath = strings.ToLower(PathGroup(f.Name()))
 		}
 		if filepath.Dir(f.Name()) != key {
 			key = filepath.Dir(f.Name())
@@ -249,7 +250,7 @@ func (st *Stat) Walk(name string, limit uint) error {
 			}
 		case ".nfo":
 			st.NFOs++
-			g := fmt.Sprintf("%s.nfo", strings.ToLower(st.Group))
+			g := fmt.Sprintf("%s.nfo", st.GroupPath)
 			if strings.ToLower(base) == g {
 				sub.Readme = filepath.Base(g)
 			}
@@ -297,7 +298,7 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error {
 		// read the content of any group nfo or file_id.diz
 		for _, src := range sources {
 			base := filepath.Base(src)
-			g := fmt.Sprintf("%s.nfo", strings.ToLower(st.Group))
+			g := fmt.Sprintf("%s.nfo", strings.ToLower(st.GroupPath))
 			if strings.ToLower(base) == g {
 				sub.Nfo, err = os.ReadFile(src)
 				if err != nil {
@@ -309,6 +310,11 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error {
 				if err != nil {
 					return err
 				}
+			}
+			if len(sub.Nfo) > 0 && len(sub.Diz) > 0 {
+				// as only one of these byte arrays are required,
+				// save system memory by deleting the unused one
+				sub.Nfo = nil
 			}
 		}
 		// handle subdirectories containing only a single text file
@@ -322,6 +328,7 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error {
 			if err != nil {
 				return err
 			}
+
 			sub.Filename = filepath.Base(sources[0])
 			fmt.Fprintf(tw, " \t\tTEXT file, %d bytes: %s\n", br, dest)
 			tw.Flush()
@@ -364,6 +371,13 @@ func (st *Stat) Create() (records record.Records, err error) {
 		if err != nil {
 			return nil, err
 		}
+		if d.ReadDate.IsZero() {
+			// fallback when there is no file_id.diz or no date within the diz
+			err = d.ReadNfo(string(meta.Nfo), st.Group)
+			if err != nil {
+				return nil, err
+			}
+		}
 		records[i].Title = d.ReadTitle
 		if records[i].Title == "" {
 			records[i].Title = meta.Title
@@ -373,8 +387,15 @@ func (st *Stat) Create() (records record.Records, err error) {
 		records[i].FileMagic = d.Magic
 		records[i].HashStrong = d.HashStrong
 		records[i].HashWeak = d.HashWeak
-		records[i].LastMod = time.Now()
 		records[i].Published = d.ReadDate
+		if len(meta.Files) > 1 {
+			records[i].LastMod = time.Now()
+			records[i].ZipContent = strings.Join(meta.Files, "\n")
+		}
+		if len(meta.Files) == 1 {
+			records[i].LastMod = d.ModTime
+		}
+		records[i].Readme = meta.Readme
 		records[i].TempPath = name
 	}
 	return records, nil

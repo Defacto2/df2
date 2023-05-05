@@ -56,3 +56,23 @@ func DizTitle(body string) ( //nolint:nonamedreturns
 	}
 	return t, p
 }
+
+func NfoDate(body string) ( //nolint:nonamedreturns
+	year int, month time.Month, day int,
+) {
+	if body == "" {
+		return 0, 0, 0
+	}
+
+	rx := regexp.MustCompile(`RELEASE DATE  : (\d\d\d\d)\-(\d\d)\-(\d\d)`)
+	f := rx.FindStringSubmatch(body)
+
+	const expected = 4
+	if len(f) != expected {
+		return 0, 0, 0
+	}
+	y, _ := strconv.Atoi(f[1])
+	m, _ := strconv.Atoi(f[2])
+	d, _ := strconv.Atoi(f[3])
+	return y, time.Month(m), d
+}
