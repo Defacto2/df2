@@ -15,15 +15,19 @@ import (
 
 var ErrFile = errors.New("os file cannot be nil")
 
+const (
+	CreateMode = 0o666
+)
+
 // Copy the src filepath to the dst.
-func Copy(dst, src string) (written int64, err error) {
+func Copy(dst, src string) (written int64, err error) { //nolint:nonamedreturns
 	s, err := os.Open(src)
 	if err != nil {
 		return 0, err
 	}
 	defer s.Close()
 
-	d, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, 0666)
+	d, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, CreateMode)
 	if err != nil {
 		return 0, err
 	}

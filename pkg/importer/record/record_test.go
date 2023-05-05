@@ -70,7 +70,6 @@ func TestDownload_Create(t *testing.T) {
 	assert.Equal(t, sha384, dl.HashStrong)
 	assert.Equal(t, summd5, dl.HashWeak)
 	assert.Equal(t, magic, dl.Magic)
-	//assert.Equal(t, true, dl.LastMod.IsZero())
 	assert.Equal(t, true, dl.ReadDate.IsZero())
 	assert.Equal(t, "", dl.ReadTitle)
 
@@ -82,7 +81,6 @@ func TestDownload_Create(t *testing.T) {
 	assert.Equal(t, dizSha, dl.HashStrong)
 	assert.Equal(t, dizMd5, dl.HashWeak)
 	assert.Equal(t, "ASCII text, with CRLF line terminators", dl.Magic)
-	//assert.Equal(t, true, dl.LastMod.IsZero())
 	assert.Equal(t, 2005, dl.ReadDate.Year())
 	assert.Equal(t, time.Month(9), dl.ReadDate.Month())
 	assert.Equal(t, 5, dl.ReadDate.Day())

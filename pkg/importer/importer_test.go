@@ -1,11 +1,9 @@
 package importer_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	dizzer "github.com/Defacto2/df2/pkg/importer"
-	"github.com/Defacto2/df2/pkg/internal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,22 +12,6 @@ const (
 	r2 = "Apollo-tech.No1.Video.Converter.v3.8.17.Incl.Keymaker-ZWT"
 	r3 = "SiSoftware.Sandra.Pro.Business.XI.SP3.2007.6.11.40.Multilingual.Retail.Incl.Keymaker-ZWT"
 )
-
-func dir() string {
-	return filepath.Join(internal.Testdata(2), "rar")
-}
-
-func rar() string {
-	return filepath.Join(dir(), "dizzer.rar")
-}
-
-func TestImport(t *testing.T) {
-	// t.Parallel()
-	// err := dizzer.Import(nil, "")
-	// assert.NotNil(t, err)
-	// err = dizzer.Import(nil, rar())
-	// assert.Nil(t, err)
-}
 
 func TestGroup(t *testing.T) {
 	t.Parallel()

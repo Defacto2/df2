@@ -98,7 +98,9 @@ func (rec Record) Insert(ctx context.Context, db *sql.DB, newpath string) error 
 // Records are a collection of Record items to insert into the database.
 type Records []Record
 
-func (imports Records) Insert(ctx context.Context, db *sql.DB, l *zap.SugaredLogger, path string, limit uint) (int, error) {
+func (imports Records) Insert(
+	ctx context.Context, db *sql.DB, l *zap.SugaredLogger, path string, limit uint,
+) (int, error) {
 	inserts := 0
 	for i, rec := range imports {
 		if limit > 0 && i > int(limit) {
@@ -228,7 +230,7 @@ func (dl *Download) ReadDIZ(body, group string) error {
 		y, m, d = zwt.DizDate(body)
 		title, pub = zwt.DizTitle(body)
 	default:
-		// todo: generic dizdate, title etc?
+		// in the future, handle generic dizdate, title etc?
 		return nil
 	}
 	if y > 0 {

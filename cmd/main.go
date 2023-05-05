@@ -3,7 +3,7 @@ package cmd
 
 /*
 main.go contains the main Execute() and init() funcs for the Cobra CLI package,
-as well as the base commmand.
+as well as the base command.
 */
 
 import (
