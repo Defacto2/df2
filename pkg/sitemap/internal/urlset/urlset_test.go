@@ -19,6 +19,7 @@ type mockedFileInfo struct {
 func (m mockedFileInfo) ModTime() time.Time { return m.modtime }
 
 func TestLastmod(t *testing.T) {
+	t.Parallel()
 	const year, month, day, hour, want = 1980, 1, 1, 12, "1980-01-01"
 	nyd := time.Date(year, month, day, hour, 0, 0, 0, time.UTC)
 	mfi := mockedFileInfo{
@@ -30,6 +31,7 @@ func TestLastmod(t *testing.T) {
 }
 
 func TestPaths(t *testing.T) {
+	t.Parallel()
 	got := urlset.Paths()
 	const expected = 28
 	if l := len(got); l != expected {
@@ -46,10 +48,10 @@ func TestPaths(t *testing.T) {
 }
 
 func tags() []urlset.Tag {
-	l := len(urlset.Paths())
-	urls := make([]urlset.Tag, l)
+	size := 29
+	urls := make([]urlset.Tag, size)
 	tag := urlset.Tag{Location: "/url-path-"}
-	for i := 1; i < l; i++ {
+	for i := 1; i < size; i++ {
 		urls[i] = tag
 		urls[i].Location += fmt.Sprint(i)
 	}
@@ -57,11 +59,12 @@ func tags() []urlset.Tag {
 }
 
 func TestSet_StaticURLs(t *testing.T) {
+	t.Parallel()
 	tag := urlset.Tag{Location: "/url-path-1"}
 	type fields struct {
-		XMLName xml.Name
-		XMLNS   string
-		Urls    []urlset.Tag
+		XMLName xml.Name     `xml:"urlset,omitempty"`
+		XMLNS   string       `xml:"xmlns,attr,omitempty"`
+		URLs    []urlset.Tag `xml:"url,omitempty"`
 	}
 	tests := []struct {
 		name   string
@@ -73,22 +76,24 @@ func TestSet_StaticURLs(t *testing.T) {
 		{"too small", fields{
 			XMLName: xml.Name{Space: " ", Local: "set.Urls"},
 			XMLNS:   "pretend namespace",
-			Urls:    []urlset.Tag{tag},
+			URLs:    []urlset.Tag{tag},
 		}, 0, 0},
 		{"okay", fields{
 			XMLName: xml.Name{Space: " ", Local: "set.Urls"},
 			XMLNS:   "pretend namespace",
-			Urls:    tags(),
+			URLs:    tags(),
 		}, 0, 0},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			set := &urlset.Set{
 				XMLName: tt.fields.XMLName,
 				XMLNS:   tt.fields.XMLNS,
-				Urls:    tt.fields.Urls,
+				URLs:    tt.fields.URLs,
 			}
-			gotC, gotI := set.StaticURLs()
+			gotC, gotI := set.StaticURLs("")
 			if gotC != tt.wantC {
 				t.Errorf("Set.StaticURLs() gotC = %v, want %v", gotC, tt.wantC)
 			}

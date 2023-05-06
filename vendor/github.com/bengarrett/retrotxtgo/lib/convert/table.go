@@ -2,6 +2,7 @@ package convert
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -24,19 +25,34 @@ const (
 	ascii67 = "ascii-67"
 )
 
+var (
+	ErrNoName = errors.New("there is no encoding name")
+)
+
+func ISO11Name(name string) bool {
+	switch strings.ToUpper(name) {
+	case
+		"ISO 8859-11",
+		"ISO-8859-11",
+		"ISO8859-11",
+		"11",
+		"ISO885911":
+		return true
+	}
+	return false
+}
+
 // Table prints out all the characters in the named 8-bit character set.
-func Table(name string) (*bytes.Buffer, error) {
+func Table(name string) (*bytes.Buffer, error) { //nolint:funlen
 	cp, err := codepager(name)
 	if err != nil {
 		return nil, err
 	}
 	h := fmt.Sprintf("%s", cp)
-	if a := encodeAlias(shorten(name)); a == "iso-8859-11" {
+	if ISO11Name(name) {
 		h = "ISO 8859-11"
-		cp = charmap.XUserDefined
 	}
-	h += charmapAlias(cp)
-	h += charmapStandard(cp)
+	h += charmapAlias(cp) + charmapStandard(cp)
 	var buf bytes.Buffer
 	const tabWidth = 8
 	w := new(tabwriter.Writer).Init(&buf, 0, tabWidth, 0, '\t', 0)
@@ -90,6 +106,12 @@ func Table(name string) (*bytes.Buffer, error) {
 }
 
 func codepager(name string) (encoding.Encoding, error) {
+	if name == "" {
+		return nil, ErrNoName
+	}
+	if ISO11Name(name) {
+		return charmap.Windows874, nil
+	}
 	switch strings.ToLower(name) {
 	case ascii63:
 		return AsaX34_1963, nil
@@ -135,6 +157,9 @@ func encoder(name string, cp encoding.Encoding) Convert {
 }
 
 func revert(name string) encoding.Encoding {
+	if ISO11Name(name) {
+		return charmap.XUserDefined
+	}
 	switch strings.ToLower(name) {
 	case ascii63:
 		return AsaX34_1963
@@ -282,7 +307,7 @@ func character(pos int, r rune, cp encoding.Encoding) string {
 }
 
 // charmapAlias humanizes encodings.
-func charmapAlias(cp encoding.Encoding) string { // nolint:gocyclo
+func charmapAlias(cp encoding.Encoding) string { //nolint:cyclop
 	if c := charmapDOS(cp); c != "" {
 		return c
 	}

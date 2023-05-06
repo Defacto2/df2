@@ -1,37 +1,29 @@
 package prods_test
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProductionsAPIv1_Authors(t *testing.T) {
-	tests := []struct {
-		name string
-		p    prods.ProductionsAPIv1
-		want prods.Authors
-	}{
-		{"empty", prods.ProductionsAPIv1{}, prods.Authors{}},
-		{
-			"record 1", example1,
-			prods.Authors{nil, []string{"Ile"}, []string{"Ile"}, nil},
-		},
-		{
-			"record 2", example2,
-			prods.Authors{nil, []string{"Deep Freeze"}, []string{"The Cardinal"}, nil},
-		},
-		{
-			"nick is_group", example3,
-			prods.Authors{nil, nil, nil, nil},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Authors(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("prods.ProductionsAPIv1.Authors() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Parallel()
+	p := prods.ProductionsAPIv1{}
+	a := p.Authors()
+	assert.Empty(t, a)
+
+	p = example1
+	a = p.Authors()
+	assert.Nil(t, a.Text)
+	assert.Contains(t, a.Code, "Ile")
+	assert.Contains(t, a.Art, "Ile")
+	assert.Nil(t, a.Audio)
+
+	p = example3
+	a = p.Authors()
+	assert.Nil(t, a.Text)
+	assert.Nil(t, a.Code)
+	assert.Nil(t, a.Art)
+	assert.Nil(t, a.Audio)
 }

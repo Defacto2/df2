@@ -1,8 +1,10 @@
 package sitemap
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -13,13 +15,27 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/sitemap/internal/urlset"
 	"github.com/google/go-querystring/query"
 	"github.com/gookit/color"
 )
 
 var ErrNoIDs = errors.New("no ids to randomise")
+
+// Style the result of a link and its status code.
+type Style int
+
+const (
+	LinkNotFound Style = iota // LinkNotFound first prints the link and expects 404 status codes.
+	LinkSuccess               // LinkSuccess first prints the link and expects 200 status codes.
+	NotFound                  // NotFound expects 404 status codes.
+	Success                   // Success expects 200 status codes.
+)
+
+const (
+	// TitleSuffix is the string normally appended to most browser tabs.
+	TitleSuffix = " | Defacto2"
+)
 
 // Root URL element.
 type Root int
@@ -76,24 +92,12 @@ func FileList(base string) ([]string, error) {
 	return urls, nil
 }
 
-const (
-	LinkNotFound Style = iota // LinkNotFound first prints the link and expects 404 status codes.
-	LinkSuccess               // LinkSuccess first prints the link and expects 200 status codes.
-	NotFound                  // NotFound expects 404 status codes.
-	Success                   // Success expects 200 status codes.
-)
-
-const (
-	// TitleSuffix is the string normally appended to most browser tabs.
-	TitleSuffix = " | Defacto2"
-)
-
 // IDs are the primary keys of the file records.
 type IDs []int
 
-// Contains returns true whenever a contains x.
-func (a *IDs) Contains(x int) bool {
-	for _, n := range *a {
+// Contains returns true whenever IDs contains x.
+func (ids *IDs) Contains(x int) bool {
+	for _, n := range *ids {
 		if x == n {
 			return true
 		}
@@ -102,8 +106,8 @@ func (a *IDs) Contains(x int) bool {
 }
 
 // Randomize the IDs and returns the first x results.
-func (a IDs) Randomize(x int) (IDs, error) {
-	l := len(a)
+func (ids IDs) Randomize(x int) (IDs, error) {
+	l := len(ids)
 	if l < 1 {
 		return nil, ErrNoIDs
 	}
@@ -111,7 +115,7 @@ func (a IDs) Randomize(x int) (IDs, error) {
 		x = l
 	}
 	randoms := make(IDs, 0, x)
-	var seeded int64
+	seeded := int64(0)
 	for i := 1; i <= x; i++ {
 		seed := time.Now().UnixNano()
 		if seed == seeded {
@@ -120,9 +124,9 @@ func (a IDs) Randomize(x int) (IDs, error) {
 			continue
 		}
 		seeded = seed
-		rand.Seed(seed)
-		randomIndex := rand.Intn(l) //nolint:gosec
-		id := a[randomIndex]
+		r := rand.New(rand.NewSource(seed)) //nolint:gosec
+		randIndex := r.Intn(l)
+		id := ids[randIndex]
 		if randoms.Contains(id) {
 			i--
 			continue
@@ -133,9 +137,9 @@ func (a IDs) Randomize(x int) (IDs, error) {
 }
 
 // JoinPaths return the URL strings of the IDs.
-func (a IDs) JoinPaths(base string, r Root) []string {
-	urls := make([]string, 0, len(a))
-	for _, id := range a {
+func (ids IDs) JoinPaths(base string, r Root) []string {
+	urls := make([]string, 0, len(ids))
+	for _, id := range ids {
 		obfus := database.ObfuscateParam(fmt.Sprint(id))
 		link, err := url.JoinPath(base, r.String(), obfus)
 		if err != nil {
@@ -146,32 +150,31 @@ func (a IDs) JoinPaths(base string, r Root) []string {
 	return urls
 }
 
-// Style the result of a link and its status code.
-type Style int
-
 // RangeFiles ranges over the file download URLs.
-func (p Style) RangeFiles(urls []string) {
-	wg := &sync.WaitGroup{}
+func (p Style) RangeFiles(w io.Writer, urls []string) {
+	if w == nil {
+		w = io.Discard
+	}
+	var wg sync.WaitGroup
 	for _, link := range urls {
 		if link == "" {
 			continue
 		}
 		wg.Add(1)
 		go func(link string) {
-			link = strings.TrimSpace(link)
-			code, name, size, err := download.PingFile(link)
+			code, name, size, err := download.PingFile(strings.TrimSpace(link), 0)
 			if err != nil {
-				logs.Printf("%s\t%s\n", ColorCode(code), err)
+				fmt.Fprintf(w, "%s\t%s\n", ColorCode(code), err)
 				wg.Done()
 				return
 			}
 			switch p {
 			case NotFound:
-				fmt.Printf("%s\t%s  ↳ %s - %s\n", link, Color404(code), size, name)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s - %s\n", link, Color404(code), size, name)
 			case Success:
-				fmt.Printf("%s\t%s  ↳ %s - %s\n", link, ColorCode(code), size, name)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s - %s\n", link, ColorCode(code), size, name)
 			case LinkNotFound, LinkSuccess:
-				fmt.Printf("%q formatting is unused in RangeFiles", p)
+				fmt.Fprintf(w, "%q formatting is unused in RangeFiles", p)
 			}
 			wg.Done()
 		}(link)
@@ -180,7 +183,7 @@ func (p Style) RangeFiles(urls []string) {
 }
 
 // Range over the file URLs.
-func (p Style) Range(urls []string) {
+func (p Style) Range(w io.Writer, urls []string) {
 	const (
 		pauseOnItem = 10
 		pauseSecs   = 5
@@ -194,26 +197,26 @@ func (p Style) Range(urls []string) {
 			time.Sleep(pauseSecs * time.Second)
 		}
 		wg.Add(1)
-		go func(link string) {
+		go func(w io.Writer, link string) {
 			link = strings.TrimSpace(link)
 			s, code, err := GetTitle(true, link)
 			if err != nil {
-				logs.Printf("%s\t%s\n", ColorCode(code), err)
+				fmt.Fprintf(w, "%s\t%s\n", ColorCode(code), err)
 				wg.Done()
 				return
 			}
 			switch p {
 			case LinkNotFound:
-				fmt.Printf("%s\t%s  ↳ %s\n", link, Color404(code), s)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s\n", link, Color404(code), s)
 			case LinkSuccess:
-				fmt.Printf("%s\t%s  ↳ %s\n", link, ColorCode(code), s)
+				fmt.Fprintf(w, "%s\t%s  ↳ %s\n", link, ColorCode(code), s)
 			case NotFound:
-				fmt.Printf("%s\t%s  -  %s\n", Color404(code), link, s)
+				fmt.Fprintf(w, "%s\t%s  -  %s\n", Color404(code), link, s)
 			case Success:
-				fmt.Printf("%s\t%s  -  %s\n", ColorCode(code), link, s)
+				fmt.Fprintf(w, "%s\t%s  -  %s\n", ColorCode(code), link, s)
 			}
 			wg.Done()
-		}(link)
+		}(w, link)
 	}
 	wg.Wait()
 }
@@ -232,7 +235,10 @@ func AbsPaths(base string) ([28]string, error) {
 }
 
 // AbsPaths returns all the HTML3 static URLs used by the sitemap.
-func AbsPathsH3(base string) ([]string, error) {
+func AbsPathsH3(db *sql.DB, base string) ([]string, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	const root = "html3"
 	urls := urlset.HTML3Path()
 	paths := make([]string, 0, len(urls))
@@ -244,7 +250,7 @@ func AbsPathsH3(base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to platforms
-	plats, err := Platforms()
+	plats, err := Platforms(db)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +262,7 @@ func AbsPathsH3(base string) ([]string, error) {
 		paths = append(paths, path)
 	}
 	// create links to sections
-	sects, err := Sections()
+	sects, err := Sections(db)
 	if err != nil {
 		return nil, err
 	}
@@ -297,8 +303,11 @@ func ColorCode(i int) string {
 }
 
 // GetBlocked returns all the primary keys of the records with blocked file downloads.
-func GetBlocked() (IDs, error) {
-	ids, err := database.GetKeys(database.WhereDownloadBlock)
+func GetBlocked(db *sql.DB) (IDs, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	ids, err := database.GetKeys(db, database.WhereDownloadBlock)
 	if err != nil {
 		return nil, fmt.Errorf("%w: blocked downloads", err)
 	}
@@ -306,8 +315,11 @@ func GetBlocked() (IDs, error) {
 }
 
 // GetKeys returns all the primary keys of the file records that are public.
-func GetKeys() (IDs, error) {
-	ids, err := database.GetKeys(database.WhereAvailable)
+func GetKeys(db *sql.DB) (IDs, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	ids, err := database.GetKeys(db, database.WhereAvailable)
 	if err != nil {
 		return nil, fmt.Errorf("%w: keys", err)
 	}
@@ -315,8 +327,11 @@ func GetKeys() (IDs, error) {
 }
 
 // GetSoftDeleteKeys returns all the primary keys of the file records that are not public and hidden.
-func GetSoftDeleteKeys() (IDs, error) {
-	ids, err := database.GetKeys(database.WhereHidden)
+func GetSoftDeleteKeys(db *sql.DB) (IDs, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	ids, err := database.GetKeys(db, database.WhereHidden)
 	if err != nil {
 		return nil, fmt.Errorf("%w: hidden keys", err)
 	}
@@ -325,7 +340,7 @@ func GetSoftDeleteKeys() (IDs, error) {
 
 // GetTitle returns the string value of the HTML <title> element and status code of a URL.
 func GetTitle(trimSuffix bool, url string) (string, int, error) {
-	b, status, err := download.Get(url)
+	b, status, err := download.Get(url, 0)
 	if err != nil {
 		return "", status, err
 	}
@@ -348,11 +363,14 @@ func FindTitle(b []byte) string {
 }
 
 // RandBlocked returns a randomized count of primary keys for records with blocked file downloads.
-func RandBlocked(count int) (int, IDs, error) {
+func RandBlocked(db *sql.DB, count int) (int, IDs, error) {
+	if db == nil {
+		return 0, nil, database.ErrDB
+	}
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetBlocked()
+	keys, err := GetBlocked(db)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -361,11 +379,14 @@ func RandBlocked(count int) (int, IDs, error) {
 }
 
 // RandDeleted returns a randomized count of primary keys for hidden file records.
-func RandDeleted(count int) (int, IDs, error) {
+func RandDeleted(db *sql.DB, count int) (int, IDs, error) {
+	if db == nil {
+		return 0, nil, database.ErrDB
+	}
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetSoftDeleteKeys()
+	keys, err := GetSoftDeleteKeys(db)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -374,11 +395,14 @@ func RandDeleted(count int) (int, IDs, error) {
 }
 
 // RandBlocked returns a randomized count of primary keys for public file records.
-func RandIDs(count int) (int, IDs, error) {
+func RandIDs(db *sql.DB, count int) (int, IDs, error) {
+	if db == nil {
+		return 0, nil, database.ErrDB
+	}
 	if count < 1 {
 		return 0, nil, nil
 	}
-	keys, err := GetKeys()
+	keys, err := GetKeys(db)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -387,11 +411,17 @@ func RandIDs(count int) (int, IDs, error) {
 }
 
 // Platforms lists the operating systems required by the files.
-func Platforms() ([]string, error) {
-	return database.Distinct("platform")
+func Platforms(db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	return database.Distinct(db, "platform")
 }
 
 // Sections lists the categories of files.
-func Sections() ([]string, error) {
-	return database.Distinct("section")
+func Sections(db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	return database.Distinct(db, "section")
 }

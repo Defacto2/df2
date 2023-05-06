@@ -1,9 +1,10 @@
+// Package prods handles marshalling of a Demozoo Production.
 package prods
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,13 +13,10 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 const (
-	cd  = "Content-Disposition"
-	cls = "PouetProduction"
-	df2 = "defacto2.net"
+	pouet = "PouetProduction"
 )
 
 // ProductionsAPIv1 productions API v1.
@@ -101,71 +99,76 @@ func (p *ProductionsAPIv1) JSON() ([]byte, error) {
 	return js, nil
 }
 
-// PouetID returns the ID value used by Pouet's which prod URL syntax
-// and its HTTP status code.
+// PouetID returns the ID value used by Pouet's "which prod" URL query
+// and if ping is enabled, the received HTTP status code.
 // example: https://www.pouet.net/prod.php?which=30352
-func (p *ProductionsAPIv1) PouetID(ping bool) (id, statusCode int, err error) {
+func (p *ProductionsAPIv1) PouetID(ping bool) ( //nolint:nonamedreturns
+	id int, code int, err error,
+) {
 	for _, l := range p.ExternalLinks {
-		if l.LinkClass != cls {
+		if l.LinkClass != pouet {
 			continue
 		}
 		id, err := Parse(l.URL)
 		if err != nil {
 			return 0, 0, fmt.Errorf("pouet id parse: %w", err)
 		}
-		if ping {
-			resp, err := download.PingHead(l.URL)
-			if err != nil {
-				return 0, 0, fmt.Errorf("pouet id ping: %w", err)
-			}
-			resp.Body.Close()
-			return id, resp.StatusCode, nil
+		if !ping {
+			return id, 0, nil
 		}
-		return id, 0, nil
+		resp, err := download.PingHead(l.URL, 0)
+		if err != nil {
+			return 0, 0, fmt.Errorf("pouet id ping: %w", err)
+		}
+		resp.Body.Close()
+		return id, resp.StatusCode, nil
 	}
 	return 0, 0, nil
 }
 
-// Print to stdout the production API results as tabbed JSON.
-func (p *ProductionsAPIv1) Print() error {
+// Print to the writer the production API results as tabbed JSON.
+func (p *ProductionsAPIv1) Print(w io.Writer) error {
+	if w == nil {
+		w = io.Discard
+	}
 	js, err := json.MarshalIndent(&p, "", "  ")
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	logs.Println(string(js))
+	fmt.Fprintf(w, "%s\n", js)
 	return nil
 }
 
 // Filename is obtained from the http header metadata.
 func Filename(h http.Header) string {
-	gh := h.Get(cd)
-	if gh == "" {
+	head := h.Get("Content-Disposition")
+	if head == "" {
 		return ""
 	}
-	rh := strings.Split(gh, ";")
+	vals := strings.Split(head, ";")
 	const want = 2
-	for _, v := range rh {
-		r := strings.Split(v, "=")
-		r[0] = strings.TrimSpace(r[0])
-		if len(r) != want {
+	for _, v := range vals {
+		s := strings.Split(v, "=")
+		s[0] = strings.TrimSpace(s[0])
+		if len(s) != want {
 			continue
 		}
-		switch r[0] {
+		switch s[0] {
 		case "filename*", "filename":
-			return r[1]
+			return s[1]
 		}
 	}
 	return ""
 }
 
 // Mutate applies fixes to known problematic URLs.
-func Mutate(u *url.URL) *url.URL {
+func Mutate(u *url.URL) (*url.URL, error) {
 	if u == nil {
 		s, err := url.Parse("")
 		if err != nil {
-			log.Print(fmt.Errorf("mutate url parse: %w", err))
+			return nil, fmt.Errorf("mutate url parse: %w", err)
 		}
-		return s
+		return s, nil
 	}
 	switch u.Hostname() {
 	case "files.scene.org":
@@ -178,11 +181,11 @@ func Mutate(u *url.URL) *url.URL {
 		}
 	default:
 	}
-	return u
+	return u, nil
 }
 
 // Parse takes a Pouet prod URL and extracts the ID.
-func Parse(rawURL string) (id int, err error) {
+func Parse(rawURL string) (int, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return 0, fmt.Errorf(" url parse: %w", err)
@@ -192,7 +195,7 @@ func Parse(rawURL string) (id int, err error) {
 	if w == "" {
 		return 0, fmt.Errorf("parse pouet production &which=%v: %w", w, err)
 	}
-	id, err = strconv.Atoi(w)
+	id, err := strconv.Atoi(w)
 	if err != nil {
 		return 0, fmt.Errorf("parse pouet production &which=%v: %w", w, err)
 	}
@@ -208,9 +211,7 @@ func RandomName() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("random name tempfile: %w", err)
 	}
-	if err := os.Remove(s); err != nil {
-		logs.Log(fmt.Errorf("random name remove tempfile %q: %w", s, err))
-	}
+	defer os.Remove(s)
 	return s, nil
 }
 

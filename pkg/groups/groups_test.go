@@ -1,55 +1,91 @@
 package groups_test
 
 import (
-	"reflect"
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestVariations(t *testing.T) {
-	type args struct {
-		name string
-	}
-	tests := []struct {
-		name     string
-		args     args
-		wantVars []string
-		wantErr  bool
-	}{
-		{"0", args{""}, []string{}, false},
-		{"1", args{"hello"}, []string{"hello"}, false},
-		{"2", args{"hello world"}, []string{
-			"hello world",
-			"helloworld", "hello-world", "hello_world", "hello.world",
-		}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotVars, err := groups.Variations(tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Variations() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotVars, tt.wantVars) {
-				t.Errorf("Variations() = %v, want %v", gotVars, tt.wantVars)
-			}
-		})
-	}
+func TestRequest_DataList(t *testing.T) {
+	t.Parallel()
+	r := groups.Request{}
+	err := r.DataList(nil, nil, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.DataList(db, io.Discard, nil)
+	assert.NotNil(t, err)
+}
+
+func TestCronjob(t *testing.T) {
+	t.Parallel()
+	err := groups.Cronjob(nil, nil, nil, "", false)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = groups.Cronjob(db, io.Discard, io.Discard, "", false)
+	assert.NotNil(t, err)
+	err = groups.Cronjob(db, io.Discard, io.Discard, "invalid-tag", false)
+	assert.NotNil(t, err)
+}
+
+func TestExact(t *testing.T) {
+	t.Parallel()
+	i, err := groups.Exact(nil, "")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	i, err = groups.Exact(db, "")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, i)
+	i, err = groups.Exact(db, "Defacto2")
+	assert.Nil(t, err)
+	assert.Greater(t, i, 1)
 }
 
 func TestFix(t *testing.T) {
-	tests := []struct {
-		name    string
-		wantErr bool
-	}{
-		{"fix", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := groups.Fix(); (err != nil) != tt.wantErr {
-				t.Errorf("Fix() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	t.Parallel()
+	err := groups.Fix(nil, nil)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = groups.Fix(db, io.Discard)
+	assert.Nil(t, err)
+}
+
+func TestVariations(t *testing.T) {
+	t.Parallel()
+	s, err := groups.Variations(nil, "")
+	assert.NotNil(t, err)
+	assert.Empty(t, s)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	s, err = groups.Variations(db, "")
+	assert.Nil(t, err)
+	assert.Empty(t, s)
+	s, err = groups.Variations(db, "hello")
+	assert.Nil(t, err)
+	assert.Contains(t, s, "hello")
+	s, err = groups.Variations(db, "hello world")
+	assert.Nil(t, err)
+	assert.Contains(t, s, "hello world")
+	assert.Contains(t, s, "helloworld")
+	assert.Contains(t, s, "hello-world")
+	assert.Contains(t, s, "hello_world")
+	assert.Contains(t, s, "hello.world")
 }

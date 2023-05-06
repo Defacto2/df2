@@ -1,13 +1,15 @@
+// Package rename handles the renaming and formatting of the group title.
 package rename
 
 import (
+	"database/sql"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 	"golang.org/x/text/cases"
@@ -17,25 +19,31 @@ import (
 const space = " "
 
 // Clean a malformed group name and save the fix to the database.
-func Clean(name string) (ok bool) {
-	fix := CleanStr(name)
-	if fix == name {
-		return false
+func Clean(db *sql.DB, w io.Writer, name string) (bool, error) {
+	if db == nil {
+		return false, database.ErrDB
 	}
-	count, status := int64(0), str.Y()
-	ok = true
-	count, err := Update(fix, name)
+	if w == nil {
+		w = io.Discard
+	}
+	fix := CleanS(name)
+	if fix == name {
+		return false, nil
+	}
+	status := str.Y()
+	count, err := Update(db, fix, name)
+	success := true
 	if err != nil {
 		status = str.X()
-		ok = false
+		success = false
 	}
-	logs.Printf("%s %q %s %s (%d)\n",
+	fmt.Fprintf(w, "%s %q %s %s (%d)\n",
 		status, name, color.Question.Sprint("⟫"), color.Info.Sprint(fix), count)
-	return ok
+	return success, nil
 }
 
-// CleanStr fixes the malformed string.
-func CleanStr(s string) string {
+// CleanS fixes the malformed string.
+func CleanS(s string) string {
 	f := database.TrimSP(s)
 	f = database.StripChars(f)
 	f = database.StripStart(f)
@@ -58,7 +66,7 @@ func Format(s string) string {
 	for j, group := range groups {
 		g := strings.ToLower(strings.TrimSpace(group))
 		g = FmtSyntax(g)
-		if fix := fmtExact(g); fix != "" {
+		if fix := FmtExact(g); fix != "" {
 			groups[j] = fix
 			continue
 		}
@@ -126,9 +134,7 @@ func TrimThe(s string) string {
 }
 
 // Update replaces all instances of the group name with a new group name.
-func Update(newName, group string) (count int64, err error) {
-	db := database.Connect()
-	defer db.Close()
+func Update(db *sql.DB, newName, group string) (int64, error) {
 	stmt, err := db.Prepare("UPDATE `files` SET group_brand_for=?," +
 		" group_brand_by=? WHERE (group_brand_for=? OR group_brand_by=?)")
 	if err != nil {
@@ -139,16 +145,16 @@ func Update(newName, group string) (count int64, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("rename exec: %w", err)
 	}
-	count, err = res.RowsAffected()
+	count, err := res.RowsAffected()
 	if err != nil {
 		return 0, fmt.Errorf("rename rows affected: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
-// fmtExact matches the exact group name to apply a format.
-func fmtExact(g string) string {
-	switch g {
+// FmtExact matches the exact group name to apply a format.
+func FmtExact(g string) string {
+	switch strings.ToLower(g) {
 	// all uppercase full groups
 	case "anz ftp", "mor ftp", "msv ftp", "nos ftp", "pox ftp", "scf ftp", "scsi ftp",
 		"tbb ftp", "tog ftp", "top ftp", "tph-qqt", "tpw ftp", "u4ea ftp", "zoo ftp",
@@ -163,67 +169,51 @@ func fmtExact(g string) string {
 		// all lowercase full groups
 		return strings.ToLower(g)
 	}
-	return fmtByName(g)
+	return FmtByName(g)
 }
 
-func fmtByName(g string) string { //nolint:funlen
-	// reformat groups
-	switch g {
-	case "drm ftp":
-		return "dRM FTP"
-	case "dst ftp":
-		return "dst FTP"
-	case "nofx bbs":
-		return "NoFX BBS"
-	case "noclass":
-		return "NoClass"
-	case "pjs tower":
-		return "PJs Tower BBS"
-	case "tsg ftp":
-		return "tSG FTP"
-	case "xquizit ftp":
-		return "XquiziT FTP"
-	case "vdr lake ftp":
-		return "VDR Lake FTP"
-	case "ptl club":
-		return "PTL Club"
-	case "dvtiso":
-		return "DVTiSO"
-	case "rhvid":
-		return "RHViD"
-	case "trsi":
-		return "TRSi"
-	case "htbzine":
-		return "HTBZine"
-	case "mci escapes":
-		return "mci escapes"
-	case "79th trac":
-		return "79th TRAC"
-	case "unreal magazine":
-		return "UnReal Magazine"
-	case "ice weekly newsletter":
-		return "iCE Weekly Newsletter"
-	case "biased":
-		return "bIASED"
-	case "dreadloc":
-		return "DREADLoC"
-	case "cybermail":
-		return "CyberMail"
-	case "excretion anarchy":
-		return "eXCReTION Anarchy"
-	case "pocketheaven":
-		return "PocketHeaven"
-	case "rzsoft ftp":
-		return "RZSoft FTP"
+// FmtByName formats the group name using stylized casing.
+func FmtByName(s string) string {
+	name := strings.ToLower(s)
+	fmtGroups := map[string]string{
+		"drm ftp":               "dRM FTP",
+		"dst ftp":               "dst FTP",
+		"nofx bbs":              "NoFX BBS",
+		"noclass":               "NoClass",
+		"pjs tower":             "PJs Tower BBS",
+		"tsg ftp":               "tSG FTP",
+		"xquizit ftp":           "XquiziT FTP",
+		"vdr lake ftp":          "VDR Lake FTP",
+		"ptl club":              "PTL Club",
+		"dvtiso":                "DVTiSO",
+		"rhvid":                 "RHViD",
+		"trsi":                  "TRSi",
+		"htbzine":               "HTBZine",
+		"mci escapes":           "mci escapes",
+		"79th trac":             "79th TRAC",
+		"unreal magazine":       "UnReal Magazine",
+		"ice weekly newsletter": "iCE Weekly Newsletter",
+		"biased":                "bIASED",
+		"dreadloc":              "DREADLoC",
+		"cybermail":             "CyberMail",
+		"excretion anarchy":     "eXCReTION Anarchy",
+		"pocketheaven":          "PocketHeaven",
+		"rzsoft ftp":            "RZSoft FTP",
 	}
-	// rename groups (demozoo vs defacto2 formatting etc.)
-	switch g {
-	case "2000 ad":
-		return "2000AD"
-	case "hashx":
-		return "Hash X"
-	case "phoenixbbs":
-		return "Phoenix BBS"
+	for group, replace := range fmtGroups {
+		if name == group {
+			return replace
+		}
+	}
+	renGroups := map[string]string{
+		"2000 ad":    "2000AD",
+		"hashx":      "Hash X",
+		"phoenixbbs": "Phoenix BBS",
+	}
+	for group, replace := range renGroups {
+		if name == group {
+			return replace
+		}
 	}
 	return ""
 }
@@ -247,27 +237,13 @@ func fmtWord(w string) string {
 }
 
 func fmtSuffix(w string, title cases.Caser) string {
+	uppers := []string{"ad", "bc", "am", "pm"}
+	for _, x := range uppers {
+		if val := upperSuffix(w, x); val != "" {
+			return val
+		}
+	}
 	switch {
-	case strings.HasSuffix(w, "ad"):
-		x := strings.TrimSuffix(w, "ad")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dAD", val)
-		}
-	case strings.HasSuffix(w, "bc"):
-		x := strings.TrimSuffix(w, "bc")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dBC", val)
-		}
-	case strings.HasSuffix(w, "am"):
-		x := strings.TrimSuffix(w, "am")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dAM", val)
-		}
-	case strings.HasSuffix(w, "pm"):
-		x := strings.TrimSuffix(w, "pm")
-		if val, err := strconv.Atoi(x); err == nil {
-			return fmt.Sprintf("%dPM", val)
-		}
 	case strings.HasSuffix(w, "dox"):
 		val := strings.TrimSuffix(w, "dox")
 		return fmt.Sprintf("%sDox", title.String(val))
@@ -286,6 +262,17 @@ func fmtSuffix(w string, title cases.Caser) string {
 	case strings.HasPrefix(w, "lsd"):
 		val := strings.TrimPrefix(w, "lsd")
 		return fmt.Sprintf("LSD%s", title.String(val))
+	}
+	return ""
+}
+
+func upperSuffix(s, suffix string) string {
+	if !strings.HasSuffix(s, suffix) {
+		return ""
+	}
+	x := strings.TrimSuffix(s, suffix)
+	if val, err := strconv.Atoi(x); err == nil {
+		return fmt.Sprintf("%d%s", val, strings.ToUpper(suffix))
 	}
 	return ""
 }

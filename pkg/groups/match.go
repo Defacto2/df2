@@ -1,13 +1,16 @@
 package groups
 
 import (
+	"database/sql"
 	"fmt"
+	"io"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/gookit/color"
 )
 
@@ -32,34 +35,42 @@ func Contains(x string, sorted []string) bool {
 	return sorted[o] == x
 }
 
-// MatchStdOut scans over the groups and attempts to match possible misnamed duplicates.
+// Match scans over the groups and attempts to match possible misnamed duplicates.
 // The results are printed to stdout in realtime.
-func MatchStdOut() error { //nolint:funlen
-	tick := time.Now()
+// maxCount is intended for tests and will limit the number of groups to scan.
+func Match(db *sql.DB, w io.Writer, maxCount int) error { //nolint:funlen
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 
 	const (
 		n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12 = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 	)
-
-	list, total, err := List()
+	tick := time.Now()
+	list, total, err := List(db, w)
 	if err != nil {
 		return err
 	}
 	sort.Strings(list)
 
-	l := 0
-	var matches []string
-	a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 := "", "", "", "", "", "", "", "", "", "", "", "", ""
-	e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 := "", "", "", "", "", "", "", "", "", "", "", "", ""
-	f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 := "", "", "", "", "", "", "", "", "", "", "", ""
-	g0, g1, g2, g3, g4, g5, g6, g7, g8 := "", "", "", "", "", "", "", "", ""
-	h0, h1, h2, h3, h4, h5, h6, h7, h8 := "", "", "", "", "", "", "", "", ""
+	matches := []string{}
+	var a0, a1, a2, b0, b1, b2, c0, c1, d0, d1, d2, d3, d4 string
+	var e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12 string
+	var f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12 string
+	var g0, g1, g2, g3, g4, g5, g6, g7, g8 string
+	var h0, h1, h2, h3, h4, h5, h6, h7, h8 string
+	i := 0
 	for _, group := range list {
-		l = len(group)
-		if l == 0 {
+		if len(group) == 0 {
 			continue
 		}
-
+		i++
+		if maxCount > 0 && i > maxCount {
+			break
+		}
 		a0 = SwapSuffix(group, "s", "z")
 		a1 = group + "s"
 		a2 = group + "z"
@@ -114,7 +125,6 @@ func MatchStdOut() error { //nolint:funlen
 		h7 = SwapAll(group, "b", "8")
 		g8 = SwapAll(group, "9", "g")
 		h8 = SwapAll(group, "g", "9")
-
 		for _, match := range list {
 			if Contains(match, matches) {
 				continue
@@ -127,15 +137,15 @@ func MatchStdOut() error { //nolint:funlen
 				f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12,
 				g0, g1, g2, g3, g4, g5, g6, g7, g8,
 				h0, h1, h2, h3, h4, h5, h6, h7, h8:
-				g, err1 := Count(group)
-				m, err2 := Count(match)
-				fmt.Printf("%s %s %s (%d%s%d)\n", group, approx, match,
+				g, err1 := Count(db, group)
+				m, err2 := Count(db, match)
+				fmt.Fprintf(w, "%s %s %s (%d%s%d)\n", group, approx, match,
 					g, approx, m)
 				if err1 != nil {
-					fmt.Println(err1)
+					fmt.Fprintln(w, err1)
 				}
 				if err2 != nil {
-					fmt.Println(err2)
+					fmt.Fprintln(w, err2)
 				}
 				matches = append(matches, match)
 				sort.Strings(matches)
@@ -143,16 +153,19 @@ func MatchStdOut() error { //nolint:funlen
 			}
 		}
 	}
-	l = len(matches)
+	return matchSummary(w, tick, len(matches), total)
+}
+
+func matchSummary(w io.Writer, tick time.Time, l, total int) error {
 	elapsed := time.Since(tick)
-	fmt.Printf("\nProcessing time %s\n", elapsed)
+	fmt.Fprintf(w, "\nProcessing time %s\n", elapsed)
 	switch l {
 	case 0:
-		fmt.Printf("\nGreat, there are no known duplicate names from %d groups\n", total)
+		fmt.Fprintf(w, "\nGreat, there are no known duplicate names from %d groups\n", total)
 	default:
-		color.Primary.Printf("\n%d matches from %d groups\n", l, total)
-		fmt.Printf("To rename groups: df2 fix rename \"group name\" \"replacement name\"\n")
-		fmt.Printf("Example: df2 fix rename %q %q\n", "defacto ii", "defacto2")
+		fmt.Fprint(w, color.Primary.Sprintf("\n%d matches from %d groups\n", l, total))
+		fmt.Fprintf(w, "To rename groups: df2 fix rename \"group name\" \"replacement name\"\n")
+		fmt.Fprintf(w, "Example: df2 fix rename %q %q\n", "defacto ii", "defacto2")
 	}
 	return nil
 }
@@ -211,11 +224,10 @@ func SwapAll(group, str, swap string) string {
 // SwapPrefix replaces the prefix value at the start of a group name and replaces it with swap.
 // An empty string is returned if the prefix does not exist in the name.
 func SwapPrefix(group, prefix, swap string) string {
-	s := ""
 	prefix = strings.ToLower(prefix)
 	group = strings.ToLower(group)
 	if strings.HasPrefix(group, prefix) {
-		s = swap + strings.TrimPrefix(group, prefix)
+		s := swap + strings.TrimPrefix(group, prefix)
 		return Format(s)
 	}
 	return ""
@@ -224,21 +236,20 @@ func SwapPrefix(group, prefix, swap string) string {
 // SwapSuffix replaces the suffix value at the end of a group name and replaces it with swap.
 // An empty string is returned if the suffix does not exist in the name.
 func SwapSuffix(group, suffix, swap string) string {
-	s := ""
 	suffix = strings.ToLower(suffix)
 	group = strings.ToLower(group)
 	if strings.HasSuffix(group, suffix) {
-		s = strings.TrimSuffix(group, suffix) + swap
+		s := strings.TrimSuffix(group, suffix) + swap
 		return Format(s)
 	}
 	suf := strings.ToLower(suffix + bbs)
 	if strings.HasSuffix(group, suf) {
-		s = strings.TrimSuffix(group, suf) + swap + bbs
+		s := strings.TrimSuffix(group, suf) + swap + bbs
 		return Format(s)
 	}
 	suf = strings.ToLower(suffix + ftp)
 	if strings.HasSuffix(group, suf) {
-		s = strings.TrimSuffix(group, suf) + swap + ftp
+		s := strings.TrimSuffix(group, suf) + swap + ftp
 		return Format(s)
 	}
 	return ""

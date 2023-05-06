@@ -8,14 +8,31 @@ import (
 	"github.com/Defacto2/df2/pkg/archive/internal/arc"
 	"github.com/Defacto2/df2/pkg/archive/internal/sys"
 	"github.com/mholt/archiver"
+	"github.com/stretchr/testify/assert"
 )
 
 func testDir(name string) string {
 	dir, _ := os.Getwd()
-	return filepath.Join(dir, "..", "..", "..", "..", "tests", name)
+	return filepath.Join(dir, "..", "..", "..", "..", "testdata", name)
+}
+
+func TestWalkr(t *testing.T) {
+	t.Parallel()
+	err := arc.Walkr("", "", nil)
+	assert.NotNil(t, err)
+	// test panic
+	err = arc.Walkr(testDir("demozoo/test.tar"), "test.tar", nil)
+	assert.NotNil(t, err)
+
+	err = arc.Walkr(testDir("demozoo/test.zip"), "test.zip",
+		func(f archiver.File) error {
+			return nil
+		})
+	assert.Nil(t, err)
 }
 
 func TestConfigure(t *testing.T) {
+	t.Parallel()
 	rar, err := archiver.ByExtension(".tar")
 	if err != nil {
 		t.Error(err)
@@ -35,7 +52,9 @@ func TestConfigure(t *testing.T) {
 		{"zip", zip, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if err := arc.Configure(tt.f); (err != nil) != tt.wantErr {
 				t.Errorf("configure() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -44,6 +63,7 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestMagicExt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		src     string
@@ -58,7 +78,9 @@ func TestMagicExt(t *testing.T) {
 		{"tar", testDir("demozoo/test.tar"), ".tar", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := sys.MagicExt(tt.src)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MagicExt() error = %v, wantErr %v", err, tt.wantErr)

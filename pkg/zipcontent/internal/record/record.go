@@ -1,10 +1,12 @@
+// Package record saves to the database the data collected from the file archive.
 package record
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -12,7 +14,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
 	"github.com/gookit/color"
@@ -23,20 +25,20 @@ const (
 )
 
 var (
-	ErrCols     = errors.New("the number of values is not the same as the number of columns")
 	ErrID       = errors.New("record does not contain a valid value for the id column")
 	ErrUUID     = errors.New("record does not contain a valid value for the uuid column")
-	ErrRawBytes = errors.New("sql rawbytes is missing expected table columns")
-	ErrStatNil  = errors.New("stats pointer is nil or the stats.values field is missing")
+	ErrRawBytes = errors.New("sql rawbytes is missing an expected table columns")
+	ErrStatNil  = errors.New("scan stats pointer is nil or the stats.values field is missing")
+	ErrValues   = errors.New("the number of values is not the same as the number of columns")
 )
 
-// Record of a file item.
+// Record object.
 type Record struct {
-	ID    string   // MySQL auto increment Id.
-	UUID  string   // Unique Id.
-	File  string   // Absolute path to file.
-	Name  string   // Filename.
-	Files []string // A list of files contained in the archive.
+	ID    string   // ID is the database auto increment ID.
+	UUID  string   // Universal unique Id.
+	File  string   // File is the absolute path to file archive.
+	Name  string   // Name of the file archive.
+	Files []string // Files contained in the archive.
 	NFO   string   // NFO or textfile to display on the site.
 }
 
@@ -56,27 +58,35 @@ func New(values []sql.RawBytes, path string) (Record, error) {
 }
 
 // Iterate through each sql rawbyte value.
-func (r *Record) Iterate(s *scan.Stats) error {
+func (r *Record) Iterate(db *sql.DB, w io.Writer, s *scan.Stats) error {
+	if db == nil {
+		return database.ErrDB
+	}
 	if s == nil || s.Values == nil {
 		return ErrStatNil
 	}
+	if w == nil {
+		w = io.Discard
+	}
 	if len(s.Columns) != len(*s.Values) {
 		return fmt.Errorf("%w, columns: %d, values: %d",
-			ErrCols, len(s.Columns), len(*s.Values))
+			ErrValues, len(s.Columns), len(*s.Values))
 	}
-	var value string
 	for i, raw := range *s.Values {
-		value = database.Val(raw)
+		value := database.Val(raw)
 		switch s.Columns[i] {
 		case "id":
-			if err := r.id(s); err != nil {
+			if err := r.id(w, s); err != nil {
 				return err
 			}
 		case "createdat":
-			database.DateTime(raw)
+			s, err := database.DateTime(raw)
+			if err == nil {
+				fmt.Fprintf(w, "  %v", s)
+			}
 		case "filename":
-			logs.Printf("%v", value)
-			if err := r.Read(s); err != nil {
+			fmt.Fprintf(w, "  %v", value)
+			if err := r.Archive(db, w, s); err != nil {
 				return err
 			}
 		default:
@@ -85,76 +95,87 @@ func (r *Record) Iterate(s *scan.Stats) error {
 	return nil
 }
 
-// Read and save the archive content to the database.
-func (r *Record) Read(s *scan.Stats) error {
+// Archive reads and saves the archive content to the database.
+func (r *Record) Archive(db *sql.DB, w io.Writer, s *scan.Stats) error {
+	if db == nil {
+		return database.ErrDB
+	}
 	if s == nil {
 		return ErrStatNil
 	}
 	if r.UUID == "" {
 		return fmt.Errorf("%w, quoted uuid: %q", ErrUUID, r.NFO)
 	}
+	if w == nil {
+		w = io.Discard
+	}
 	var err error
-	logs.Print(" • ")
-	r.Files, r.Name, err = archive.Read(r.File, r.Name)
+	r.Files, r.Name, err = archive.Read(w, r.File, r.Name)
 	if err != nil {
 		s.Missing++
 		return fmt.Errorf("%s archive read: %w", errPrefix, err)
 	}
-	logs.Printf("%d items", len(r.Files))
-	if err := r.Nfo(s); err != nil {
+	fmt.Fprintf(w, "%d items", len(r.Files))
+	if err := r.Textfile(w, s); err != nil {
 		// instead of returning the error, print it.
 		// otherwise the results of archive.Read will never be saved
-		log.Printf(" %s", err)
+		fmt.Fprintf(w, " %s %s", str.X(), err)
+		//str.X()
 	}
-	updates, err := r.Save()
+	updates, err := r.Save(db)
 	if err != nil {
-		log.Printf(" %s", str.X())
+		fmt.Fprintf(w, " %s", str.X())
 		return err
 	}
 	if updates == 0 {
-		logs.Printf(" %s", str.X())
+		fmt.Fprintf(w, " %s", str.X())
 		return nil
 	}
-	logs.Printf(" %s", str.Y())
+	fmt.Fprintf(w, " %s", str.Y())
 	return nil
 }
 
-// Nfo finds an appropriate textfile and saves it to the database.
-func (r *Record) Nfo(s *scan.Stats) error {
+// Textfile finds an appropriate text or NFO file and saves it to the database.
+func (r *Record) Textfile(w io.Writer, s *scan.Stats) error {
 	if s == nil {
 		return ErrStatNil
+	}
+	if w == nil {
+		w = io.Discard
 	}
 	const txt = ".txt"
 	r.NFO = archive.NFO(r.Name, r.Files...)
 	if r.NFO == "" {
 		return nil
 	}
-	logs.Printf(", text file: %s", r.NFO)
-	if _, err := os.Stat(r.File + txt); os.IsNotExist(err) {
+	fmt.Fprintf(w, ", text file: %s", r.NFO)
+	if _, err := os.Stat(r.File + txt); errors.Is(err, fs.ErrNotExist) {
 		tmp, err1 := os.MkdirTemp(os.TempDir(), "zipcontent")
 		if err1 != nil {
 			return err1
 		}
 		defer os.RemoveAll(tmp)
-		if err2 := archive.Extractor(r.File, r.Name, r.NFO, tmp); err2 != nil {
+		if err2 := archive.Extractor(r.Name, r.File, r.NFO, tmp); err2 != nil {
 			return err2
 		}
 		src := filepath.Join(tmp, r.NFO)
 		if _, err3 := archive.Move(src, filepath.Join(s.BasePath, r.UUID+txt)); err3 != nil {
 			return err3
 		}
-		logs.Print(", extracted")
+		fmt.Fprint(w, ", extracted")
 	}
 	return nil
 }
 
 // Id prints the record ID to stdout.
-func (r *Record) id(s *scan.Stats) error {
+func (r *Record) id(w io.Writer, s *scan.Stats) error {
 	if s == nil {
 		return ErrStatNil
 	}
-	logs.Printcrf("%s %0*d. %v ",
-		color.Question.Sprint("→"),
+	if w == nil {
+		w = io.Discard
+	}
+	logger.PrintfCR(w, "\t%0*d. %v",
 		len(strconv.Itoa(s.Total)),
 		s.Count,
 		color.Primary.Sprint(r.ID))
@@ -162,7 +183,10 @@ func (r *Record) id(s *scan.Stats) error {
 }
 
 // Save updates the record in the database.
-func (r *Record) Save() (int64, error) {
+func (r *Record) Save(db *sql.DB) (int64, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	if r.ID == "" {
 		return 0, ErrID
 	}
@@ -172,18 +196,16 @@ func (r *Record) Save() (int64, error) {
 			"retrotxt_readme=?,retrotxt_no_readme=? WHERE id=?"
 	)
 	var err error
-	var update *sql.Stmt
-	db := database.Connect()
-	defer db.Close()
+	var stmt *sql.Stmt
 	if r.NFO == "" {
-		update, err = db.Prepare(files)
+		stmt, err = db.Prepare(files)
 	} else {
-		update, err = db.Prepare(nfo)
+		stmt, err = db.Prepare(nfo)
 	}
 	if err != nil {
 		return 0, fmt.Errorf("%s db prepare: %w", errPrefix, err)
 	}
-	defer update.Close()
+	defer stmt.Close()
 	content := strings.Join(r.Files, "\n")
 	var args []any
 	switch r.NFO {
@@ -192,7 +214,7 @@ func (r *Record) Save() (int64, error) {
 	default:
 		args = []any{r.Name, content, database.UpdateID, r.NFO, 0, r.ID}
 	}
-	res, err := update.Exec(args...)
+	res, err := stmt.Exec(args...)
 	if err != nil {
 		return 0, fmt.Errorf("%s db exec: %w", errPrefix, err)
 	}

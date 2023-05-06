@@ -1,39 +1,50 @@
+// Package update handles edits and updates to the database records.
 package update
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 
-	"github.com/Defacto2/df2/pkg/database/internal/connect"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
+	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
+)
+
+var (
+	ErrColumn  = errors.New("column value must be either platform or section")
+	ErrDB      = errors.New("database handle pointer cannot be nil")
+	ErrPointer = errors.New("pointer value cannot be nil")
 )
 
 // Update row values based on conditions.
 type Update struct {
-	Query string
-	Args  []any
+	Query string // Query is an SQL statement.
+	Args  []any  // Args are SQL statement values.
 }
 
 // Execute Query and Args to update the database and returns the total number of changes.
-func (u Update) Execute() (int64, error) {
-	db := connect.Connect()
-	defer db.Close()
-	update, err := db.Prepare(u.Query)
-	if err != nil {
-		return 0, fmt.Errorf("update execute db prepare: %w", err)
+func (u Update) Execute(db *sql.DB) (int64, error) {
+	if db == nil {
+		return 0, ErrDB
 	}
-	defer update.Close()
-	res, err := update.Exec(u.Args...)
+	query, err := db.Prepare(u.Query)
 	if err != nil {
-		return 0, fmt.Errorf("update execute db exec: %w", err)
+		return 0, fmt.Errorf("update execute prepare: %w", err)
+	}
+	defer query.Close()
+	res, err := query.Exec(u.Args...)
+	if err != nil {
+		return 0, fmt.Errorf("update execute exec: %w", err)
 	}
 	count, err := res.RowsAffected()
 	if err != nil {
 		return 0, fmt.Errorf("update execute rows affected: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
 type Column string
@@ -45,41 +56,54 @@ const (
 )
 
 // NamedTitles remove record titles that match the filename.
-func (col Column) NamedTitles() error {
+func (col Column) NamedTitles(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	ctx := context.Background()
-	db := connect.Connect()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	result, err := tx.ExecContext(ctx, "UPDATE files SET record_title = \"\" WHERE files.record_title = ?", string(col))
+	res, err := tx.ExecContext(ctx, "UPDATE files SET record_title = \"\" WHERE files.record_title = ?", string(col))
 	if err != nil {
-		if err1 := tx.Rollback(); err1 != nil {
-			return err1
+		if err := tx.Rollback(); err != nil {
+			return err
 		}
 		return err
 	}
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	rows, err := result.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if rows == 0 {
-		logs.Printcrf("no named title fixes needed")
+		fmt.Fprintf(w, "\t%s `%s`\n", str.NothingToDo, string(col))
 		return nil
 	}
-	logs.Printcrf("%d named title fixes applied", rows)
+	fmt.Fprintf(w, "\t%d named title fixes applied, `%s`\n", rows, string(col))
 	return nil
 }
 
 // Distinct returns a unique list of values from the table column.
-func Distinct(column string) ([]string, error) {
-	var result string
-	db := connect.Connect()
-	defer db.Close()
-	rows, err := db.Query("SELECT DISTINCT ? AS `result` FROM `files` WHERE ? != \"\"", column, column)
+// Column must be either platform or section.
+func Distinct(db *sql.DB, column string) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
+	if column != "platform" && column != "section" {
+		return nil, ErrColumn
+	}
+	stmt := "SELECT DISTINCT platform FROM `files` WHERE platform != \"\""
+	if column == "section" {
+		stmt = "SELECT DISTINCT section FROM `files` WHERE section != \"\""
+	}
+	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, fmt.Errorf("distinct query %q: %w", column, err)
 	}
@@ -87,6 +111,7 @@ func Distinct(column string) ([]string, error) {
 	if rows.Err() != nil {
 		return nil, rows.Err()
 	}
+	result := ""
 	values := []string{}
 	for rows.Next() {
 		if err := rows.Scan(&result); err != nil {
@@ -94,63 +119,81 @@ func Distinct(column string) ([]string, error) {
 		}
 		values = append(values, result)
 	}
-	return values, db.Close()
+	return values, nil
 }
 
-func Sections(sections *[]string) {
-	var u Update
-	u.Query = "UPDATE files SET section=? WHERE `section`=?"
+func Sections(db *sql.DB, w io.Writer, sections *[]string) error {
+	if db == nil {
+		return ErrDB
+	}
+	if sections == nil {
+		return fmt.Errorf("sections %w", ErrPointer)
+	}
+	u := Update{
+		Query: "UPDATE files SET section=? WHERE `section`=?",
+	}
 	for _, s := range *sections {
 		u.Args = []any{strings.ToLower(s), s}
-		c, err := u.Execute()
+		c, err := u.Execute(db)
 		if err != nil {
-			logs.Log(err)
+			fmt.Fprintln(w, err)
 		}
 		if c == 0 {
 			continue
 		}
 		str := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("section ⟫"), color.Primary.Sprint(s))
-		printcr(c, &str)
+		printcr(w, c, &str)
 	}
 	// set all audio platform files to use intro section
 	// releaseadvert
-	u.Query = "UPDATE files SET section=? WHERE `platform`=?"
-	u.Args = []any{"releaseadvert", "audio"}
-	c, err := u.Execute()
+	u = Update{
+		Query: "UPDATE files SET section=? WHERE `platform`=?",
+		Args:  []any{"releaseadvert", "audio"},
+	}
+	c, err := u.Execute(db)
 	if err != nil {
-		logs.Log(err)
+		return fmt.Errorf("execute %w", err)
 	}
 	if c == 0 {
-		return
+		return nil
 	}
 	str := fmt.Sprintf("%s %s \"%s\"",
 		color.Question.Sprint(c), color.Info.Sprint("platform ⟫ audio ⟫"), color.Primary.Sprint("releaseadvert"))
-	printcr(c, &str)
+	printcr(w, c, &str)
+	return nil
 }
 
-func Platforms(platforms *[]string) {
-	var u Update
-	u.Query = "UPDATE files SET platform=? WHERE `platform`=?"
+func Platforms(db *sql.DB, w io.Writer, platforms *[]string) error {
+	if db == nil {
+		return ErrDB
+	}
+	if platforms == nil {
+		return fmt.Errorf("platforms %w", ErrPointer)
+	}
+	u := Update{
+		Query: "UPDATE files SET platform=? WHERE `platform`=?",
+	}
 	for _, p := range *platforms {
 		u.Args = []any{strings.ToLower(p), p}
-		c, err := u.Execute()
+		c, err := u.Execute(db)
 		if err != nil {
-			logs.Log(err)
+			fmt.Fprintln(w, err)
 		}
 		if c == 0 {
 			continue
 		}
 		s := fmt.Sprintf("%s %s \"%s\"",
 			color.Question.Sprint(c), color.Info.Sprint("platform ⟫"), color.Primary.Sprint(p))
-		printcr(c, &s)
+		printcr(w, c, &s)
 	}
+	return nil
 }
 
-func printcr(i int64, s *string) {
+func printcr(w io.Writer, i int64, s *string) {
 	if i == 0 {
-		logs.Printcr(*s)
+		logger.PrintCR(w, *s)
 		return
 	}
-	logs.Println("\n" + *s)
+	fmt.Fprintln(w, "\n"+*s)
 }

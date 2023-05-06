@@ -1,19 +1,24 @@
+// Package file handles the images as files.
 package file
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 	gap "github.com/muesli/go-app-paths"
 )
+
+var ErrPointer = errors.New("pointer value cannot be nil")
 
 const (
 	gif  = ".gif"
@@ -39,7 +44,7 @@ func (i Image) String() string {
 		color.Info.Sprint(humanize.Bytes(uint64(i.Size))))
 }
 
-func (i Image) IsExt() (ok bool) {
+func (i Image) IsExt() bool {
 	switch filepath.Ext(strings.ToLower(i.Name)) {
 	case gif, jpg, jpeg, _png, tif, tiff:
 		return true
@@ -47,14 +52,18 @@ func (i Image) IsExt() (ok bool) {
 	return false
 }
 
-func (i Image) IsDir(dir *directories.Dir) (ok bool) {
+func (i Image) IsDir(dir *directories.Dir) (bool, error) {
+	if dir == nil {
+		return false, fmt.Errorf("dir %w", ErrPointer)
+	}
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
-		if _, err := os.Stat(filepath.Join(path, i.UUID+_png)); !os.IsNotExist(err) {
-			return true
+		_, err := os.Stat(filepath.Join(path, i.UUID+_png))
+		if !errors.Is(err, fs.ErrNotExist) {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 // Check the existence of the named file and
@@ -84,17 +93,18 @@ func Remove(confirm bool, name string) error {
 	return nil
 }
 
-func RemoveWebP(name string) error {
+// Remove0byte removes the named file but only if it is 0 bytes in size.
+func Remove0byte(name string) error {
 	s, err := os.Stat(name)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("removewebp stat: %w", err)
+		return fmt.Errorf("remove 0byte stat: %w", err)
 	}
 	if s.Size() == 0 {
 		if err := os.Remove(name); err != nil {
-			return fmt.Errorf("removewebp: %w", err)
+			return fmt.Errorf("remove 0byte: %w", err)
 		}
 	}
 	return nil
@@ -102,7 +112,7 @@ func RemoveWebP(name string) error {
 
 // Vendor is the absolute path to store webpbin vendor downloads.
 func Vendor() string {
-	fp, err := gap.NewScope(gap.User, logs.GapUser).CacheDir()
+	fp, err := gap.NewScope(gap.User, conf.GapUser).CacheDir()
 	if err != nil {
 		h, err := os.UserHomeDir()
 		if err != nil {

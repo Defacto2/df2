@@ -1,8 +1,11 @@
 package sys_test
 
 import (
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -11,10 +14,11 @@ import (
 
 func testDir(name string) string {
 	dir, _ := os.Getwd()
-	return filepath.Join(dir, "..", "..", "..", "..", "tests", name)
+	return filepath.Join(dir, "..", "..", "..", "..", "testdata", name)
 }
 
 func TestRename(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		ext      string
 		filename string
@@ -32,7 +36,9 @@ func TestRename(t *testing.T) {
 		{args{".txt", "some.file.text"}, "some.file.txt"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.args.filename, func(t *testing.T) {
+			t.Parallel()
 			if got := sys.Rename(tt.args.ext, tt.args.filename); got != tt.want {
 				t.Errorf("Rename() = %v, want %v", got, tt.want)
 			}
@@ -47,6 +53,7 @@ func TestRename(t *testing.T) {
 // The test files were created by me but sourced from:
 // https://github.com/jvilk/browserfs-zipfs-extras/tree/master/test/fixtures
 func TestPKZip(t *testing.T) {
+	t.Parallel()
 	const okay = "TEST.ANS;TEST.ASC;TEST.BMP;TEST.CAP;TEST.DIZ;TEST.DOC;TEST.EXE;TEST.GIF;" +
 		"TEST.JPG;TEST.ME;TEST.NFO;TEST.PCX;TEST.PNG;TEST.TXT;TEST~1.JPE;"
 	v080a1 := testDir("pkzip/PKZ80A1.ZIP")
@@ -86,8 +93,10 @@ func TestPKZip(t *testing.T) {
 		{"deflate extra", args{v2x, "PKZ204EX.ZIP"}, okay, ".zip", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			gots, got, err := sys.Readr(tt.args.src, tt.args.filename)
+			t.Parallel()
+			gots, got, err := sys.Readr(nil, tt.args.src, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -105,6 +114,7 @@ func TestPKZip(t *testing.T) {
 }
 
 func TestReadr(t *testing.T) {
+	t.Parallel()
 	const okay = "test.png;test.txt;"
 	const extra = "ext dir/test file.text;test.png;test.txt;"
 	const rarextra = "ext dir/test file.text;test.png;test.txt;ext dir;"
@@ -136,8 +146,16 @@ func TestReadr(t *testing.T) {
 		{"zip deflate", args{zip, "test.zip"}, okay, ".zip", false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			gots, got, err := sys.Readr(tt.args.src, tt.args.filename)
+			t.Parallel()
+			gots, got, err := sys.Readr(nil, tt.args.src, tt.args.filename)
+			// special case for macos which doesn't have easy access to arj.
+			if runtime.GOOS == "darwin" {
+				if errors.Is(err, exec.ErrNotFound) {
+					return
+				}
+			}
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -155,6 +173,7 @@ func TestReadr(t *testing.T) {
 }
 
 func TestArjItem(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		s    string
 		want bool
@@ -170,44 +189,56 @@ func TestArjItem(t *testing.T) {
 		{"999) somefile", true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.s, func(t *testing.T) {
-			if got := sys.ArjItem(tt.s); got != tt.want {
-				t.Errorf("ArjItem() = %v, want %v", got, tt.want)
+			t.Parallel()
+			if got := sys.ARJItem(tt.s); got != tt.want {
+				t.Errorf("ARJItem() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestExtract(t *testing.T) {
+	t.Parallel()
+	tmp, err := os.MkdirTemp(os.TempDir(), "sys-extract")
+	if err != nil {
+		t.Error("Extract() error = %w", err)
+		return
+	}
+	t.Cleanup(func() {
+		os.RemoveAll(tmp)
+	})
 	type args struct {
 		src     string
 		targets string
 		dest    string
 	}
 	const tgt = "test.png"
-	arj := testDir("demozoo/test.arj")
 	lha := testDir("demozoo/test.lha")
 	zip := testDir("demozoo/test.zip")
-	tmp, err := os.MkdirTemp(os.TempDir(), "sys-extract")
-	if err != nil {
-		t.Error("Extract() error = %w", err)
-		return
-	}
-	defer os.RemoveAll(tmp)
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
 		{"empty", args{}, true},
-		{"arj", args{arj, tgt, tmp}, false},
 		{"lha", args{lha, tgt, tmp}, false},
 		{"zip", args{zip, tgt, tmp}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			name := filepath.Base(tt.args.src)
-			if err := sys.Extract(name, tt.args.src, tt.args.targets, tt.args.dest); (err != nil) != tt.wantErr {
+			err := sys.Extract(name, tt.args.src, tt.args.targets, tt.args.dest)
+			// special case for macos which doesn't have easy access to arj.
+			if runtime.GOOS == "darwin" {
+				if errors.Is(err, exec.ErrNotFound) {
+					return
+				}
+			}
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Extract() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -215,6 +246,7 @@ func TestExtract(t *testing.T) {
 }
 
 func TestMagicLHA(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		magic string
 		want  bool
@@ -225,7 +257,9 @@ func TestMagicLHA(t *testing.T) {
 		{"lha 2.x? archive data  [lha]", true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.magic, func(t *testing.T) {
+			t.Parallel()
 			if got := sys.MagicLHA(tt.magic); got != tt.want {
 				t.Errorf("MagicLHA() = %v, want %v", got, tt.want)
 			}

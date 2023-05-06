@@ -1,16 +1,16 @@
 package prods
 
 import (
-	"flag"
 	"fmt"
-	"log"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
 
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 )
+
+const df2 = "defacto2.net"
 
 // DownloadsAPIv1 are DownloadLinks for ProductionsAPIv1.
 type DownloadsAPIv1 struct {
@@ -19,44 +19,46 @@ type DownloadsAPIv1 struct {
 }
 
 // parse corrects any known errors with a Downloads API link.
-func (dl *DownloadsAPIv1) parse() (ok bool) {
+func (dl *DownloadsAPIv1) parse() error {
 	u, err := url.Parse(dl.URL) // validate url
 	if err != nil {
-		return false
+		return err
 	}
-	u = Mutate(u)
-	dl.URL = u.String()
-	return true
+	m, err := Mutate(u)
+	if err != nil {
+		return err
+	}
+	dl.URL = m.String()
+	return nil
 }
 
-// DownloadLink parses the Demozoo DownloadLinks to return the filename and link of the first suitable download.
-func (p *ProductionsAPIv1) DownloadLink() (name, link string) {
-	const (
-		found       = 200
-		internalErr = 500
-	)
+// DownloadLink parses the Demozoo DownloadLinks to return the filename
+// and link of the first suitable download.
+func (p *ProductionsAPIv1) DownloadLink(w io.Writer) (string, string) {
+	if w == nil {
+		w = io.Discard
+	}
+	const httpOk = 200
+	link, name := "", ""
 	total := len(p.DownloadLinks)
 	for _, l := range p.DownloadLinks {
-		var l DownloadsAPIv1 = l // apply type so we can use it with methods
-		if ok := l.parse(); !ok {
+		var l DownloadsAPIv1 = l // apply the DownloadsAPIv1 type so we can use the value it with other methods
+		if err := l.parse(); err != nil {
+			fmt.Fprintf(w, "dl.Parse(%s) error = %q\n", l.URL, err)
 			continue
 		}
 		// skip defacto2 links if others are available
 		if u, err := url.Parse(l.URL); total > 1 && u.Hostname() == df2 {
-			if flag.Lookup("test.v") != nil {
-				log.Printf("url.Parse(%s) error = %q\n", l.URL, err)
-			}
+			fmt.Fprintf(w, "url.Parse(%s) error = %q\n", l.URL, err)
 			continue
 		}
-		ping, err := download.PingHead(l.URL)
-		if err != nil || ping.StatusCode != found {
-			if flag.Lookup("test.v") != nil {
-				if err != nil {
-					log.Printf("download.Ping(%s) error = %q\n", l.URL, err)
-				} else {
-					log.Printf("download.Ping(%s) %v != %v\n", l.URL, ping.StatusCode, found)
-				}
-			}
+		ping, err := download.PingHead(l.URL, 0)
+		if err != nil {
+			fmt.Fprintf(w, "download.Ping(%s) error = %q\n", l.URL, err)
+			continue
+		}
+		if ping.StatusCode != httpOk {
+			fmt.Fprintf(w, "download.Ping(%s) %v != %v\n", l.URL, ping.StatusCode, httpOk)
 			continue
 		}
 		defer ping.Body.Close()
@@ -73,47 +75,53 @@ func (p *ProductionsAPIv1) DownloadLink() (name, link string) {
 	return name, link
 }
 
-func (p *ProductionsAPIv1) Download(l DownloadsAPIv1) error {
-	const found = 200
-	if ok := l.parse(); !ok {
-		logs.Print(" not usable\n")
-		return nil
+func (p *ProductionsAPIv1) Download(w io.Writer, l DownloadsAPIv1) error {
+	if w == nil {
+		w = io.Discard
 	}
-	ping, err := download.PingHead(l.URL)
+	const httpOk = 200
+	if err := l.parse(); err != nil {
+		fmt.Fprint(w, " not usable\n")
+		return nil //nolint:nilerr
+	}
+	ping, err := download.PingHead(l.URL, 0)
 	if err != nil {
-		return fmt.Errorf("download off demozoo ping: %w", err)
+		return fmt.Errorf("ping download from demozoo: %w", err)
 	}
 	defer ping.Body.Close()
-	if ping.StatusCode != found {
-		logs.Printf(" %s", ping.Status) // print the HTTP status
+	if ping.StatusCode != httpOk {
+		fmt.Fprintf(w, " %s", ping.Status) // print the HTTP status
 		return nil
 	}
 	save, err := SaveName(l.URL)
 	if err != nil {
-		return fmt.Errorf("download off demozoo: %w", err)
+		return fmt.Errorf("save download from demozoo: %w", err)
 	}
-	temp, err := os.MkdirTemp("", "demozoo-download")
+	tmp, err := os.MkdirTemp("", "demozoo-download")
 	if err != nil {
-		return fmt.Errorf("download off demozoo temp dir: %w", err)
+		return fmt.Errorf("tmpdir download from demozoo: %w", err)
 	}
-	dest, err := filepath.Abs(filepath.Join(temp, save))
+	dest, err := filepath.Abs(filepath.Join(tmp, save))
 	if err != nil {
-		return fmt.Errorf("download off demozoo abs filepath: %w", err)
+		return fmt.Errorf("abs download from demozoo: %w", err)
 	}
-	_, err = download.GetSave(dest, l.URL)
+	_, err = download.GetSave(w, dest, l.URL)
 	if err != nil {
-		return fmt.Errorf("download off demozoo download: %w", err)
+		return fmt.Errorf("get download from demozoo: %w", err)
 	}
 	return nil
 }
 
 // Downloads parses the Demozoo DownloadLinks and saves the first suitable download.
-func (p *ProductionsAPIv1) Downloads() {
+func (p *ProductionsAPIv1) Downloads(w io.Writer) {
+	if w == nil {
+		w = io.Discard
+	}
 	for _, l := range p.DownloadLinks {
-		if err := p.Download(l); err != nil {
-			log.Printf(" %s", err)
-		} else {
-			break
+		if err := p.Download(w, l); err != nil {
+			fmt.Fprintf(w, " %s", err)
+			continue
 		}
+		break
 	}
 }

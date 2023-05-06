@@ -1,3 +1,4 @@
+// Package export queries records for data exports.
 package export
 
 import (
@@ -13,18 +14,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/database/internal/connect"
 	"github.com/Defacto2/df2/pkg/database/internal/templ"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/mholt/archiver"
-	"github.com/spf13/viper"
 )
 
 var (
 	ErrColType  = errors.New("the value type is not usable with the mysql column")
+	ErrDB       = errors.New("database handle pointer cannot be nil")
 	ErrNoTable  = errors.New("unknown database table")
-	ErrNoMethod = errors.New("unknown database export type")
+	ErrMethod   = errors.New("unknown database export type")
+	ErrNoMethod = errors.New("no database export type provided")
+	ErrPointer  = errors.New("pointer value cannot be nil")
 )
 
 // A database table.
@@ -34,7 +35,6 @@ const (
 	Files        Table = iota // Files records.
 	Groups                    // Groups names.
 	Netresources              // Netresources for online websites.
-	Users                     // Users are site logins.
 )
 
 const (
@@ -48,7 +48,7 @@ const (
 )
 
 func (t Table) String() string {
-	return [...]string{"files", "groupnames", "netresources", "users"}[t]
+	return [...]string{"files", "groupnames", "netresources"}[t]
 }
 
 // Tbls are the available tables in the database.
@@ -57,7 +57,6 @@ func Tbls() string {
 		Files.String(),
 		Groups.String(),
 		Netresources.String(),
-		Users.String(),
 	}
 	return strings.Join(s, ", ")
 }
@@ -86,70 +85,95 @@ type Flags struct {
 	Type     string // Type of export (create|update)
 	Version  string // df2 app version pass-through
 	Limit    uint   // Limit the number of records
+	SQLDumps string // SQLDumps should be the value of config.SQLDumps
 }
 
 // Run is intended for an operating system time-based job scheduler.
 // It creates both create and update types exports for the files table.
-func (f *Flags) Run() error {
+func (f *Flags) Run(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	f.Compress, f.Limit, f.Table = true, 0, Files
 	start := time.Now()
 	const delta = 2
+	mu := sync.Mutex{}
 	switch f.Parallel {
 	case true:
-		var wg sync.WaitGroup
+		wg := sync.WaitGroup{}
 		var e1, e2 error
 		wg.Add(delta)
 		go func(f *Flags) {
 			defer wg.Done()
+			mu.Lock()
 			f.Method = Create
-			e1 = f.ExportTable()
+			e1 = f.ExportTable(db, w)
+			mu.Unlock()
 		}(f)
 		go func(f *Flags) {
 			defer wg.Done()
+			mu.Lock()
 			f.Method = Insert
-			e2 = f.ExportTable()
+			e2 = f.ExportTable(db, w)
+			mu.Unlock()
 		}(f)
 		wg.Wait()
 		if e1 != nil {
 			return fmt.Errorf("run e1: %w", e1)
-		} else if e2 != nil {
+		}
+		if e2 != nil {
 			return fmt.Errorf("run e2: %w", e2)
 		}
 	default:
 		f.Method = Create
-		if err := f.ExportTable(); err != nil {
+		if err := f.ExportTable(db, w); err != nil {
 			return fmt.Errorf("run create: %w", err)
 		}
 		f.Method = Insert
-		if err := f.ExportTable(); err != nil {
+		if err := f.ExportTable(db, w); err != nil {
 			return fmt.Errorf("run update: %w", err)
 		}
 	}
 	elapsed := time.Since(start)
-	logs.Printf("cronjob export took %s\n", elapsed)
+	fmt.Fprintf(w, "cronjob export took %s\n", elapsed)
 	return nil
 }
 
 // DB saves or prints a MySQL compatible SQL import database statement.
-func (f *Flags) DB() error {
+func (f *Flags) DB(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	start := time.Now()
 	if err := f.method(); err != nil {
 		return fmt.Errorf("db: %w", err)
 	}
-	buf, err := f.queryTables()
+	buf, err := f.queryTables(db)
 	if err != nil {
 		return fmt.Errorf("db query: %w", err)
 	}
-	if err = f.write(buf); err != nil {
+	if err = f.write(w, buf); err != nil {
 		return fmt.Errorf("db write: %w", err)
 	}
 	elapsed := time.Since(start)
-	logs.Printf("sql exports took %s\n", elapsed)
+	fmt.Fprintf(w, "sql exports took %s\n", elapsed)
 	return nil
 }
 
 // ExportTable saves or prints a MySQL compatible SQL import table statement.
-func (f *Flags) ExportTable() error {
+func (f *Flags) ExportTable(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	if err := f.method(); err != nil {
 		return fmt.Errorf("table: %w", err)
 	}
@@ -160,16 +184,14 @@ func (f *Flags) ExportTable() error {
 		f.Table = Groups
 	case Netresources.String(), "n":
 		f.Table = Netresources
-	case Users.String(), "u":
-		f.Table = Users
 	default:
 		return fmt.Errorf("invalid table: %w", ErrNoTable)
 	}
-	buf, err := f.queryTable()
+	buf, err := f.queryTable(db)
 	if err != nil {
 		return fmt.Errorf("table query: %w", err)
 	}
-	if err := f.write(buf); err != nil {
+	if err := f.write(w, buf); err != nil {
 		return fmt.Errorf("table write: %w", err)
 	}
 	return nil
@@ -188,8 +210,6 @@ func (f *Flags) create() string {
 		s += templ.NewGroups
 	case Netresources:
 		s += templ.NewNetresources
-	case Users:
-		s += templ.NewUsers
 	}
 	return s
 }
@@ -203,43 +223,50 @@ func (f *Flags) fileName() string {
 	if f.Limit > 0 {
 		l = fmt.Sprintf("%d_", f.Limit)
 	}
-	if f.Table < Users {
+	if f.Table < Netresources {
 		t = f.Table.String()
 	}
 	return fmt.Sprintf("d2-%s_%s%s.sql", y, l, t)
 }
 
 func (f *Flags) method() error {
+	if f.Type == "" {
+		return fmt.Errorf("method %w", ErrNoMethod)
+	}
 	switch strings.ToLower(f.Type) {
 	case cr, "c":
 		f.Method = Create
 	case up, "u":
 		f.Method = Insert
 	default:
-		return fmt.Errorf("method %w", ErrNoMethod)
+		return fmt.Errorf("method %w: %s", ErrMethod, f.Type)
 	}
 	return nil
 }
 
 // queryDB requests columns and values of f.Table to create an INSERT INTO ? VALUES ? SQL statement.
-func (f *Flags) queryDB() (*bytes.Buffer, error) {
+func (f *Flags) queryDB(db *sql.DB) (*bytes.Buffer, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query db table: %w", err)
 	}
-	col, err := columns(f.Table)
+	col, err := columns(db, f.Table)
 	if err != nil {
 		return nil, fmt.Errorf("query db columns: %w", err)
 	}
-	var names colNames = col
+	names := col
 	l := int(f.Limit)
 	if f.Limit == 0 {
-		l = -1 // list all
+		const listAll = -1
+		l = listAll
 	}
-	vals, err := rows(f.Table, l)
+	vals, err := rows(db, f.Table, l)
 	if err != nil {
 		return nil, fmt.Errorf("query db rows: %w", err)
 	}
-	var values colValues = vals
+	values := vals
 	data := templ.TablesData{
 		Table:   f.Table.String(),
 		Columns: fmt.Sprint(names),
@@ -249,7 +276,7 @@ func (f *Flags) queryDB() (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query db template: %w", err)
 	}
-	var b bytes.Buffer
+	b := bytes.Buffer{}
 	if err = tmpl.Execute(&b, data); err != nil {
 		return nil, fmt.Errorf("query db template execute: %w", err)
 	}
@@ -257,24 +284,27 @@ func (f *Flags) queryDB() (*bytes.Buffer, error) {
 }
 
 // query generates the SQL import table statement.
-func (f *Flags) queryTable() (*bytes.Buffer, error) {
+func (f *Flags) queryTable(db *sql.DB) (*bytes.Buffer, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	if err := f.Table.check(); err != nil {
 		return nil, fmt.Errorf("query table check: %w", err)
 	}
-	col, err := columns(f.Table)
+	col, err := columns(db, f.Table)
 	if err != nil {
 		return nil, fmt.Errorf("query table columns: %w", err)
 	}
-	var names colNames = col
+	names := col
 	l := int(f.Limit)
 	if f.Limit == 0 {
 		l = -1 // list all
 	}
-	vals, err := rows(f.Table, l)
+	vals, err := rows(db, f.Table, l)
 	if err != nil {
 		return nil, fmt.Errorf("query table rows: %w", err)
 	}
-	var values colValues = vals
+	values := vals
 	dat := templ.TableData{
 		VER:    f.ver(),
 		CREATE: f.create(),
@@ -287,7 +317,7 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 		dat.UPDATE = dupes.String()
 	}
 	t := template.Must(template.New("stmt").Funcs(tmplFunc()).Parse(templ.Table))
-	var b bytes.Buffer
+	b := bytes.Buffer{}
 	if err = t.Execute(&b, dat); err != nil {
 		return nil, fmt.Errorf("query table template execute: %w", err)
 	}
@@ -295,17 +325,20 @@ func (f *Flags) queryTable() (*bytes.Buffer, error) {
 }
 
 // queryTables generates the SQL import database and tables statement.
-func (f *Flags) queryTables() (*bytes.Buffer, error) {
-	var buf1, buf2, buf3, buf4 *bytes.Buffer
+func (f *Flags) queryTables(db *sql.DB) (*bytes.Buffer, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
+	var buf1, buf2, buf3 *bytes.Buffer
 	var err error
 	switch f.Parallel {
 	case true:
-		buf1, buf2, buf3, buf4, err = f.queryTablesWG()
+		buf1, buf2, buf3, err = f.queryTablesWG(db)
 		if err != nil {
 			return nil, err
 		}
 	default:
-		buf1, buf2, buf3, buf4, err = f.queryTablesSeq()
+		buf1, buf2, buf3, err = f.queryTablesSeq(db)
 		if err != nil {
 			return nil, err
 		}
@@ -317,76 +350,77 @@ func (f *Flags) queryTables() (*bytes.Buffer, error) {
 			{Columns: templ.NewFiles, Rows: buf1.String(), Table: ""},
 			{Columns: templ.NewGroups, Rows: buf2.String(), Table: ""},
 			{Columns: templ.NewNetresources, Rows: buf3.String(), Table: ""},
-			{Columns: templ.NewUsers, Rows: buf4.String(), Table: ""},
 		},
 	}
 	tmpl, err := template.New("test").Funcs(tmplFunc()).Parse(templ.Tables)
 	if err != nil {
 		return nil, fmt.Errorf("query tables template: %w", err)
 	}
-	var b bytes.Buffer
+	b := bytes.Buffer{}
 	if err = tmpl.Execute(&b, &data); err != nil {
 		return nil, fmt.Errorf("query tables template execute: %w", err)
 	}
 	return &b, nil
 }
 
-func (f *Flags) queryTablesWG() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) {
-	const delta = 4
-	var wg sync.WaitGroup
-	var e1, e2, e3, e4 error
+func (f *Flags) queryTablesWG(db *sql.DB) (
+	*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error,
+) {
+	if db == nil {
+		return nil, nil, nil, ErrDB
+	}
+	const delta = 3
+	wg := sync.WaitGroup{}
+	var e1, e2, e3 error
+	var buf1, buf2, buf3 *bytes.Buffer
 	wg.Add(delta)
 	go func(f *Flags) {
 		defer wg.Done()
-		buf1, e1 = f.reqDB(Files)
+		buf1, e1 = f.reqDB(db, Files)
 	}(f)
 	go func(f *Flags) {
 		defer wg.Done()
-		buf2, e2 = f.reqDB(Groups)
+		buf2, e2 = f.reqDB(db, Groups)
 	}(f)
 	go func(f *Flags) {
 		defer wg.Done()
-		buf3, e3 = f.reqDB(Netresources)
-	}(f)
-	go func(f *Flags) {
-		defer wg.Done()
-		buf4, e4 = f.reqDB(Users)
+		buf3, e3 = f.reqDB(db, Netresources)
 	}(f)
 	wg.Wait()
-	for _, err := range []error{e1, e2, e3, e4} {
+	for _, err := range []error{e1, e2, e3} {
 		if err != nil {
-			return nil, nil, nil, nil, fmt.Errorf("query tables: %w", err)
+			return nil, nil, nil, fmt.Errorf("query tables: %w", err)
 		}
 	}
-	return buf1, buf2, buf3, buf4, nil
+	return buf1, buf2, buf3, nil
 }
 
-func (f *Flags) queryTablesSeq() (buf1, buf2, buf3, buf4 *bytes.Buffer, err error) {
-	buf1, err = f.reqDB(Files)
-	if err != nil {
-		return nil, nil, nil, nil, qttErr(Files.String(), err)
+func (f *Flags) queryTablesSeq(db *sql.DB) (
+	*bytes.Buffer, *bytes.Buffer, *bytes.Buffer, error,
+) {
+	if db == nil {
+		return nil, nil, nil, ErrDB
 	}
-	buf2, err = f.reqDB(Groups)
+	buf1, err := f.reqDB(db, Files)
 	if err != nil {
-		return nil, nil, nil, nil, qttErr(Groups.String(), err)
+		return nil, nil, nil, fmt.Errorf("query file table: %w", err)
 	}
-	buf3, err = f.reqDB(Netresources)
+	buf2, err := f.reqDB(db, Groups)
 	if err != nil {
-		return nil, nil, nil, nil, qttErr(Netresources.String(), err)
+		return nil, nil, nil, fmt.Errorf("query groups table: %w", err)
 	}
-	buf4, err = f.reqDB(Users)
+	buf3, err := f.reqDB(db, Netresources)
 	if err != nil {
-		return nil, nil, nil, nil, qttErr(Users.String(), err)
+		return nil, nil, nil, fmt.Errorf("query netresources table: %w", err)
 	}
-	return buf1, buf2, buf3, buf4, nil
-}
-
-func qttErr(s string, err error) error {
-	return fmt.Errorf("query tables %s: %w", s, err)
+	return buf1, buf2, buf3, nil
 }
 
 // reqDB requests an INSERT INTO ? VALUES ? SQL statement for table.
-func (f *Flags) reqDB(t Table) (*bytes.Buffer, error) {
+func (f *Flags) reqDB(db *sql.DB, t Table) (*bytes.Buffer, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	if f.Table.check() != nil {
 		return nil, fmt.Errorf("reqdb table: %w", ErrNoTable)
 	}
@@ -395,7 +429,7 @@ func (f *Flags) reqDB(t Table) (*bytes.Buffer, error) {
 		Method: Create,
 		Limit:  f.Limit,
 	}
-	buf, err := c.queryDB()
+	buf, err := c.queryDB(db)
 	if err != nil {
 		return nil, fmt.Errorf("reqdb: %w", err)
 	}
@@ -413,9 +447,12 @@ func (f *Flags) ver() string {
 }
 
 // write the buffer to stdout, an SQL file or a compressed SQL file.
-func (f *Flags) write(buf *bytes.Buffer) error {
+func (f *Flags) write(w io.Writer, buf *bytes.Buffer) error {
+	if buf == nil {
+		return fmt.Errorf("buf %w", ErrPointer)
+	}
 	const bz2 = ".bz2"
-	name := path.Join(viper.GetString("directory.sql"), f.fileName())
+	name := path.Join(f.SQLDumps, f.fileName())
 	switch {
 	case f.Compress:
 		name += bz2
@@ -431,7 +468,7 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 		if err != nil {
 			return fmt.Errorf("flags write compress stat: %w", err)
 		}
-		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(stat.Size())), name)
+		fmt.Fprintf(w, "Saved %s to %s\n", humanize.Bytes(uint64(stat.Size())), name)
 		return file.Close()
 	case f.Save:
 		file, err := os.OpenFile(name, fo, fsql)
@@ -443,7 +480,7 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 		if err != nil {
 			return fmt.Errorf("flags write save io copy: %w", err)
 		}
-		logs.Printf("Saved %s to %s\n", humanize.Bytes(uint64(n)), name)
+		fmt.Fprintf(w, "Saved %s to %s\n", humanize.Bytes(uint64(n)), name)
 		return file.Close()
 	default:
 		if _, err := io.WriteString(os.Stdout, buf.String()); err != nil {
@@ -451,18 +488,6 @@ func (f *Flags) write(buf *bytes.Buffer) error {
 		}
 		return nil
 	}
-}
-
-type colNames []string
-
-func (c colNames) String() string {
-	return fmt.Sprintf("`%s`", strings.Join(c, "`,`"))
-}
-
-type colValues []string
-
-func (v colValues) String() string {
-	return strings.Join(v, ",\n")
 }
 
 type dupeKeys []string
@@ -494,59 +519,43 @@ func (t Table) check() error {
 }
 
 // columns returns the column names of table.
-func columns(t Table) ([]string, error) {
-	var (
-		columns []string
-		err     error
-		rows    *sql.Rows
-		db      = connect.Connect()
-	)
-	defer db.Close()
+func columns(db *sql.DB, t Table) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
+	query, info := "", ""
 	switch t {
 	case Files:
-		rows, err = db.Query("SELECT * FROM files LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns files query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns files query rows: %w", rows.Err())
-		}
-		defer rows.Close()
+		query = "SELECT * FROM files LIMIT 0"
+		info = "files"
 	case Groups:
-		rows, err = db.Query("SELECT * FROM groupnames LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns groupnames query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns groupnames query rows: %w", rows.Err())
-		}
-		defer rows.Close()
+		query = "SELECT * FROM groupnames LIMIT 0"
+		info = "groupnames"
 	case Netresources:
-		rows, err = db.Query("SELECT * FROM netresources LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns netresources query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns netresources query rows: %w", rows.Err())
-		}
-		defer rows.Close()
-	case Users:
-		rows, err = db.Query("SELECT * FROM users LIMIT 0")
-		if err != nil {
-			return nil, fmt.Errorf("columns users query: %w", err)
-		} else if err = rows.Err(); err != nil {
-			return nil, fmt.Errorf("columns users query rows: %w", rows.Err())
-		}
-		defer rows.Close()
+		query = "SELECT * FROM netresources LIMIT 0"
+		info = "netresources"
 	}
-	columns, err = rows.Columns()
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("columns %s query: %w", info, err)
+	} else if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("columns %s query rows: %w", info, rows.Err())
+	}
+	defer rows.Close()
+
+	cols, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("columns rows: %w", err)
 	}
-	return columns, nil
+	return cols, nil
 }
 
 // rows returns the values of table.
-func rows(t Table, limit int) ([]string, error) {
-	db := connect.Connect()
-	defer db.Close()
+func rows(db *sql.DB, t Table, limit int) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	var rows *sql.Rows
 	const listAll = 0
 	if limit < listAll {
@@ -557,8 +566,6 @@ func rows(t Table, limit int) ([]string, error) {
 			return allGroups(db)
 		case Netresources:
 			return allNetresources(db)
-		case Users:
-			return allUsers(db)
 		}
 		return values(rows)
 	}
@@ -569,13 +576,14 @@ func rows(t Table, limit int) ([]string, error) {
 		return limitGroups(limit, db)
 	case Netresources:
 		return limitNetresources(limit, db)
-	case Users:
-		return limitUsers(limit, db)
 	}
 	return values(rows)
 }
 
 func allFiles(db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	rows, err := db.Query("SELECT * FROM files")
 	if err != nil {
 		return nil, fmt.Errorf("rows files query: %w", err)
@@ -587,6 +595,9 @@ func allFiles(db *sql.DB) ([]string, error) {
 }
 
 func allGroups(db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	rows, err := db.Query("SELECT * FROM groupnames")
 	if err != nil {
 		return nil, fmt.Errorf("rows groupnames query: %w", err)
@@ -598,28 +609,23 @@ func allGroups(db *sql.DB) ([]string, error) {
 }
 
 func allNetresources(db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT * FROM users")
-	if err != nil {
-		return nil, fmt.Errorf("rows users query: %w", err)
-	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
+	if db == nil {
+		return nil, ErrDB
 	}
-	defer rows.Close()
-	return values(rows)
-}
-
-func allUsers(db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT * FROM users")
+	rows, err := db.Query("SELECT * FROM netresources")
 	if err != nil {
-		return nil, fmt.Errorf("rows users query: %w", err)
+		return nil, fmt.Errorf("rows netresources query: %w", err)
 	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows users query rows: %w", rows.Err())
+		return nil, fmt.Errorf("rows netresources query rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	return values(rows)
 }
 
 func limitFiles(limit int, db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	rows, err := db.Query("SELECT * FROM files LIMIT ?", limit)
 	if err != nil {
 		return nil, fmt.Errorf("rows limit files query: %w", err)
@@ -631,6 +637,9 @@ func limitFiles(limit int, db *sql.DB) ([]string, error) {
 }
 
 func limitGroups(limit int, db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	rows, err := db.Query("SELECT * FROM groupnames LIMIT ?", limit)
 	if err != nil {
 		return nil, fmt.Errorf("rows limit groupnames query: %w", err)
@@ -642,22 +651,14 @@ func limitGroups(limit int, db *sql.DB) ([]string, error) {
 }
 
 func limitNetresources(limit int, db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, ErrDB
+	}
 	rows, err := db.Query("SELECT * FROM netresources LIMIT ?", limit)
 	if err != nil {
 		return nil, fmt.Errorf("rows limit netresources query: %w", err)
 	} else if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows limit netresources query rows: %w", rows.Err())
-	}
-	defer rows.Close()
-	return values(rows)
-}
-
-func limitUsers(limit int, db *sql.DB) ([]string, error) {
-	rows, err := db.Query("SELECT * FROM users LIMIT ?", limit)
-	if err != nil {
-		return nil, fmt.Errorf("rows limit users query: %w", err)
-	} else if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows limit users query rows: %w", rows.Err())
 	}
 	defer rows.Close()
 	return values(rows)
@@ -694,7 +695,10 @@ func tmplFunc() template.FuncMap {
 }
 
 func values(rows *sql.Rows) ([]string, error) {
-	columns, err := rows.Columns()
+	if rows == nil {
+		return nil, fmt.Errorf("rows %w", ErrPointer)
+	}
+	cols, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("rows columns: %w", err)
 	}
@@ -702,14 +706,14 @@ func values(rows *sql.Rows) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("rows column types: %w", err)
 	}
-	vals := make([]sql.RawBytes, len(columns))
+	vals := make([]sql.RawBytes, len(cols))
 	dest := make([]any, len(vals))
 	for i := range vals {
 		dest[i] = &vals[i]
 	}
 	v := []string{}
 	for rows.Next() {
-		result := make([]string, len(columns))
+		result := make([]string, len(cols))
 		if err = rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("rows next: %w", err)
 		}

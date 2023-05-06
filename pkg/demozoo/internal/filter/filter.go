@@ -1,8 +1,12 @@
+// Package filter confirms a Demozoo Production is suitable for Defacto2.
+// A MS-DOS intro would be okay, while a demo for the Atari 2600 would be rejected.
 package filter
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -11,28 +15,30 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prod"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
-const maxTries = 5
+const (
+	domain   = "defacto2.net"
+	maxTries = 5
+)
 
 // Productions API production request.
 type Productions struct {
-	Filter     releases.Filter
-	Count      int           // Total productions
-	Finds      int           // Found productions to add
-	Timeout    time.Duration // HTTP request timeout in seconds (default 5)
-	Link       string        // URL link to send the request
-	StatusCode int           // received HTTP statuscode
-	Status     string        // received HTTP status
+	Filter  releases.Filter
+	Count   int           // Count the total productions.
+	Finds   int           // Finds are the number of productions to use.
+	Link    string        // Link URL to receive the request.
+	Code    int           // Code received by the HTTP request.
+	Status  string        // Status received by the HTTP request.
+	Timeout time.Duration // Timeout in seconds for the HTTP request (default 5).
 }
 
-// Production List result.
+// ProductionList result.
 type ProductionList struct {
-	Count    int                     `json:"count"`    // Total productions
-	Next     string                  `json:"next"`     // URL for the next page
-	Previous interface{}             `json:"previous"` // URL for the previous page
-	Results  []releases.ProductionV1 `json:"results"`
+	Count    int                     `json:"count"`    // Count the total productions.
+	Next     string                  `json:"next"`     // Next page URL.
+	Previous interface{}             `json:"previous"` // Previous page object.
+	Results  []releases.ProductionV1 `json:"results"`  // Results of the productions.
 }
 
 func empty() []releases.ProductionV1 {
@@ -40,18 +46,24 @@ func empty() []releases.ProductionV1 {
 }
 
 // Prods gets all the productions of a releaser and normalises the results.
-func (p *Productions) Prods() ([]releases.ProductionV1, error) { //nolint:funlen
-	const endOfRecords, maxPage = "", 1000
-	var next []releases.ProductionV1
-	var dz ProductionList
-	totalFinds := 0
+// The maxPage are the maximum number of API pages to iterate, but if set to 0 it will default to 1000.
+func (p *Productions) Prods(db *sql.DB, w io.Writer, maxPage int) ([]releases.ProductionV1, error) { //nolint:funlen
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	const endOfRecords = ""
+	dz := ProductionList{}
+	finds := 0
 
-	url, err := p.Filter.URL(0)
+	link, err := p.Filter.URL(0)
 	if err != nil {
 		return empty(), err
 	}
-	req := download.Request{Link: url}
-	logs.Printf("Fetching the first 100 of many records from Demozoo\n")
+	req := download.Request{Link: link}
+	fmt.Fprintf(w, "Fetching the first 100 of many records from Demozoo\n")
 	tries := 0
 	for {
 		tries++
@@ -63,55 +75,65 @@ func (p *Productions) Prods() ([]releases.ProductionV1, error) { //nolint:funlen
 		}
 		break
 	}
-
 	p.Status = req.Status
-	p.StatusCode = req.StatusCode
+	p.Code = req.Code
 	if len(req.Read) > 0 {
 		if err := json.Unmarshal(req.Read, &dz); err != nil {
 			return empty(), fmt.Errorf("filter data json unmarshal: %w", err)
 		}
 	}
 	p.Count = dz.Count
-	logs.Printf("There are %d %s production matches\n", dz.Count, p.Filter)
-	finds, prods := Filter(dz.Results)
-	pp(1, finds)
-	nu, page := dz.Next, 1
+	fmt.Fprintf(w, "There are %d %s production matches\n", dz.Count, p.Filter)
+	rels, err := Filter(db, w, dz.Results)
+	if err != nil {
+		return nil, err
+	}
+	f := len(rels)
+	wp(w, f, 1)
+	np, page := dz.Next, 1
+	if maxPage < 1 {
+		maxPage = 1000
+	}
 	for {
 		page++
-		next, nu, err = Next(nu)
+		rel, next, err := Next(np)
 		if err != nil {
 			return empty(), err
 		}
-		finds, next = Filter(next)
-		totalFinds += finds
-		pp(page, finds)
-		prods = append(prods, next...)
-		if nu == endOfRecords {
+		rel, err = Filter(db, w, rel)
+		if err != nil {
+			return nil, err
+		}
+		f = len(rel)
+		finds += f
+		wp(w, f, page)
+		rels = append(rels, rel...)
+		if next == endOfRecords {
 			break
 		}
 		if page > maxPage {
 			break
 		}
 	}
-	p.Finds = totalFinds
-	return prods, nil
+	p.Finds = finds
+	return rels, nil
 }
 
-func pp(page, finds int) {
+func wp(w io.Writer, finds, page int) {
 	if finds == 0 {
-		logs.Printf("   Page %d, no new records found\n", page)
+		fmt.Fprintf(w, "   Page %d, no new records found\n", page)
 		return
 	}
 	if finds == 1 {
-		logs.Printf("   Page %d, new record found, 1\n", page)
+		fmt.Fprintf(w, "   Page %d, new record found, 1\n", page)
 		return
 	}
-	logs.Printf("   Page %d, new records found, %d\n", page, finds)
+	fmt.Fprintf(w, "   Page %d, new records found, %d\n", page, finds)
 }
 
 // Next gets all the next page of productions.
-func Next(url string) ([]releases.ProductionV1, string, error) {
-	req := download.Request{Link: url}
+func Next(link string) ([]releases.ProductionV1, string, error) {
+	req := download.Request{Link: link}
 	tries := 0
 	for {
 		tries++
@@ -123,7 +145,7 @@ func Next(url string) ([]releases.ProductionV1, string, error) {
 		}
 		break
 	}
-	var dz ProductionList
+	dz := ProductionList{}
 	if len(req.Read) > 0 {
 		if err := json.Unmarshal(req.Read, &dz); err != nil {
 			return empty(), "", fmt.Errorf("filter data json unmarshal: %w", err)
@@ -132,11 +154,17 @@ func Next(url string) ([]releases.ProductionV1, string, error) {
 	return dz.Results, dz.Next, nil
 }
 
-// Filter productions removes any records that are not suitable for Defacto2.
-func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
+// Filter removes any productions that are not suitable for Defacto2.
+func Filter(db *sql.DB, w io.Writer, prods []releases.ProductionV1) ([]releases.ProductionV1, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	finds := 0
-	var prods []releases.ProductionV1 //nolint:prealloc
-	for _, prod := range p {
+	p := []releases.ProductionV1{}
+	for _, prod := range prods {
 		if !prodType(prod.Types) {
 			continue
 		}
@@ -144,43 +172,51 @@ func Filter(p []releases.ProductionV1) (int, []releases.ProductionV1) {
 			continue
 		}
 		// confirm ID is not already used in a defacto2 file record
-		if id, _ := database.DemozooID(uint(prod.ID)); id > 0 {
+		if id, _ := database.DemozooID(db, uint(prod.ID)); id > 0 {
 			continue
 		}
 		if l, _ := linked(prod.ID); l != "" {
-			sync(prod.ID, database.DeObfuscate(l))
+			if err := sync(db, w, prod.ID, database.DeObfuscate(l)); err != nil {
+				fmt.Fprintln(w, err)
+			}
 			continue
 		}
 		rec := make(releases.Productions, 1)
 		rec[0] = prod
-		if err := insert.Prods(&rec); err != nil {
-			logs.Println(err)
+		if err := insert.Prods(db, w, &rec); err != nil {
+			fmt.Fprintln(w, err)
 			continue
 		}
-		logs.Printf("%d. (%d) %s\n", finds+1, prod.ID, prod.Title)
 		finds++
-		prods = append(prods, prod)
+		fmt.Fprintf(w, "\t%d. (%d) %s\n", finds, prod.ID, prod.Title)
+		p = append(p, prod)
 	}
-	return finds, prods
+	return p, nil
 }
 
-func sync(demozooID, recordID int) {
-	i, err := update(demozooID, recordID)
+func sync(db *sql.DB, w io.Writer, demozooID, recordID int) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	i, err := update(db, demozooID, recordID)
 	if err != nil {
-		logs.Printf(" Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
+		fmt.Fprintf(w, " Found an unlinked Demozoo record %d, that points to Defacto2 ID %d\n",
 			demozooID, recordID)
-		logs.Println(err)
-		return
+		return err
 	}
-	logs.Printf(" Updated %d record, the Demozoo ID %d was saved to record id: %v\n", i,
+	fmt.Fprintf(w, " Updated %d record, the Demozoo ID %d was saved to record id: %v\n", i,
 		demozooID, recordID)
+	return nil
 }
 
-func update(demozooID, recordID int) (int64, error) {
-	var up database.Update
+func update(db *sql.DB, demozooID, recordID int) (int64, error) {
+	up := database.Update{}
 	up.Query = "UPDATE files SET web_id_demozoo=? WHERE `id` = ?"
 	up.Args = []any{demozooID, recordID}
-	count, err := database.Execute(up)
+	count, err := database.Execute(db, up)
 	if err != nil {
 		return 0, fmt.Errorf("update installers: %w", err)
 	}
@@ -189,8 +225,7 @@ func update(demozooID, recordID int) (int64, error) {
 
 // linked returns the Defacto2 URL linked to a Demozoo ID that points to a download or external link.
 func linked(id int) (string, error) {
-	const domain = "defacto2.net"
-	var p prod.Production
+	p := prod.Production{}
 	p.ID = int64(id)
 	api, err := p.Get()
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 )
 
 func TestWrite(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Name    string
 		Total   uint64
@@ -27,7 +28,9 @@ func TestWrite(t *testing.T) {
 		{"some filler text", fields{"x", 2, 6}, args{[]byte("some filler text")}, 16, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			wc := &cnter.Writer{
 				Name:    tt.fields.Name,
 				Total:   tt.fields.Total,
@@ -46,6 +49,7 @@ func TestWrite(t *testing.T) {
 }
 
 func TestPercent(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		count uint64
 		total uint64
@@ -61,7 +65,9 @@ func TestPercent(t *testing.T) {
 		{"100", args{100, 100}, 100},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := cnter.Percent(tt.args.count, tt.args.total); got != tt.want {
 				t.Errorf("Percent() = %v, want %v", got, tt.want)
 			}

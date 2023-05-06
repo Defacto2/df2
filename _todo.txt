@@ -1,0 +1,29 @@
+Finish /pkg/conf
+
+Importer of textfiles from RAR.
+ - github.com/gabriel-vasile/mimetype
+ - github.com/mholt/archiver
+ - github.com/nwaples/rardecode
+
+ Commands to complete or fix.
+
+ env                table layouts etc.
+ demozoo --new      output with newlines and formatting
+ shrink             errors should not halt the command
+ proof all          formatting of output
+ fix archives       formatting output of this and the other fix sub-commands
+ fix database       something is causing a timeout?
+ fix text           duplicate messages could be consolidated with a count #1
+                    > noreadme bool cannot be false (5x)
+ fix zip            duplicate messages with invalid zipfile
+ approve            improve layout
+
+ more local test consts and vars into pkg/internal
+
+ Change version to v2.0.0
+
+ UI changes
+  - https://github.com/charmbracelet/bubbles
+
+UUID generator
+  - https://github.com/oklog/ulid

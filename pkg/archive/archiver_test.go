@@ -10,6 +10,7 @@ import (
 )
 
 func TestReadr(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		archive  string
 		filename string
@@ -24,8 +25,10 @@ func TestReadr(t *testing.T) {
 		{"zip", args{testDir("demozoo/test.zip"), "test.zip"}, []string{"test.png", "test.txt"}, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, _, err := archive.Readr(tt.args.archive, tt.args.filename)
+			t.Parallel()
+			gotFiles, _, err := archive.Readr(nil, tt.args.archive, tt.args.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Readr() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -38,6 +41,7 @@ func TestReadr(t *testing.T) {
 }
 
 func TestUnarchiver(t *testing.T) {
+	t.Parallel()
 	dir, err := os.MkdirTemp(os.TempDir(), "unarchiver")
 	var (
 		src = testDir("demozoo/test.zip")
@@ -66,8 +70,10 @@ func TestUnarchiver(t *testing.T) {
 		{"7z", args{z7, zfn, dir}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if err := archive.Unarchiver(tt.args.source, tt.args.filename, tt.args.destination); (err != nil) != tt.wantErr {
+			t.Parallel()
+			if err := archive.Unarchiver(tt.args.source, tt.args.destination, tt.args.filename); (err != nil) != tt.wantErr {
 				t.Errorf("Unarchiver() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

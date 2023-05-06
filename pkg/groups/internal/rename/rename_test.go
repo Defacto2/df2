@@ -1,34 +1,43 @@
 package rename_test
 
 import (
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestClean(t *testing.T) {
-	tests := []struct {
-		name   string
-		wantOk bool
-	}{
-		{"", false},
-		{"Defacto2", false},
-		{"defacto2", true},
-		{"d-e-f-a-c-t-o-2", true},
-		{"d_f", true},
-		{"D2", false},
-		{"this is the group,the group is this", true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := rename.Clean(tt.name); gotOk != tt.wantOk {
-				t.Errorf("Clean() = %v, want %v", gotOk, tt.wantOk)
-			}
-		})
-	}
+	t.Parallel()
+	_, err := rename.Clean(nil, nil, "")
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	_, err = rename.Clean(db, io.Discard, "")
+	assert.Nil(t, err)
+	b, err := rename.Clean(db, io.Discard, "Defacto2")
+	assert.Nil(t, err)
+	assert.Equal(t, false, b)
+	b, err = rename.Clean(db, io.Discard, "d-e-f-a-c-t-o-2")
+	assert.Nil(t, err)
+	assert.Equal(t, true, b)
 }
 
-func TestCleanStr(t *testing.T) {
+func TestFmtSyntax(t *testing.T) {
+	t.Parallel()
+	s := rename.FmtSyntax("")
+	assert.Equal(t, "", s)
+	s = rename.FmtSyntax("hello&&&&world")
+	assert.Equal(t, "hello & world", s)
+}
+
+func TestCleanS(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -66,15 +75,18 @@ func TestCleanStr(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if got := rename.CleanStr(tt.args.s); got != tt.want {
-				t.Errorf("CleanStr() = %v, want %v", got, tt.want)
+			t.Parallel()
+			if got := rename.CleanS(tt.args.s); got != tt.want {
+				t.Errorf("CleanS() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrimThe(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		g string
 	}
@@ -92,7 +104,9 @@ func TestTrimThe(t *testing.T) {
 		{"", args{"The High & Mighty Hello BBS"}, "High & Mighty Hello BBS"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := rename.TrimThe(tt.args.g); got != tt.want {
 				t.Errorf("TrimThe() = %v, want %v", got, tt.want)
 			}
@@ -101,6 +115,7 @@ func TestTrimThe(t *testing.T) {
 }
 
 func TestTrimDot(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -114,10 +129,52 @@ func TestTrimDot(t *testing.T) {
 		{"dots", args{"hello."}, "hello"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := rename.TrimDot(tt.args.s); got != tt.want {
 				t.Errorf("TrimDot() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+func TestFmtByName(t *testing.T) {
+	t.Parallel()
+	s := rename.FmtByName("")
+	assert.Equal(t, "", s)
+	s = rename.FmtByName("abc")
+	assert.Equal(t, "", s)
+	s = rename.FmtByName("rzsoft ftp")
+	assert.Equal(t, "RZSoft FTP", s)
+	s = rename.FmtByName("Hashx")
+	assert.Equal(t, "Hash X", s)
+}
+
+func TestFormat(t *testing.T) {
+	t.Parallel()
+	s := rename.Format("")
+	assert.Equal(t, "", s)
+	s = rename.Format("mydox")
+	assert.Equal(t, "MyDox", s)
+	s = rename.Format("myfxp")
+	assert.Equal(t, "MyFXP", s)
+	s = rename.Format("myiso")
+	assert.Equal(t, "MyISO", s)
+	s = rename.Format("mynfo")
+	assert.Equal(t, "MyNFO", s)
+	s = rename.Format("pc-my")
+	assert.Equal(t, "PC-My", s)
+	s = rename.Format("lsdstuff")
+	assert.Equal(t, "LSDStuff", s)
+}
+
+func TestFmtExact(t *testing.T) {
+	t.Parallel()
+	s := rename.FmtExact("")
+	assert.Equal(t, "", s)
+	s = rename.FmtExact("tcsm bbs")
+	assert.Equal(t, "TCSM BBS", s)
+	s = rename.FmtExact("Scenet")
+	assert.Equal(t, "scenet", s)
 }

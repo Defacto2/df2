@@ -12,33 +12,32 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive/internal/arc"
 	"github.com/Defacto2/df2/pkg/archive/internal/sys"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/mholt/archiver"
 	"github.com/nwaples/rardecode"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
 )
 
-// Extractor extracts a file from the given archive file into the destination folder.
+// Extractor extracts the named file from the given archive file into the destination folder.
 // The archive format is selected implicitly.
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
-func Extractor(src, filename, target, dest string) error {
-	filename = strings.ToLower(filename)
-	f, err := archiver.ByExtension(filename)
+func Extractor(name, src, target, dest string) error {
+	name = strings.ToLower(name)
+	f, err := archiver.ByExtension(name)
 	if err != nil {
-		return fmt.Errorf("extractor byextension %q: %w", filename, err)
+		return fmt.Errorf("extractor byextension %q: %w", name, err)
 	}
 	if err := arc.Configure(f); err != nil {
 		return fmt.Errorf("extractor configure: %w", err)
 	}
 	e, ok := f.(archiver.Extractor)
 	if !ok {
-		return fmt.Errorf("extractor %s (%T): %w", filename, f, ErrNotArc)
+		return fmt.Errorf("extractor %s (%T): %w", name, f, ErrArchive)
 	}
 	if err := e.Extract(src, target, dest); err != nil {
 		// second attempt at extraction using a system archiver program
-		if err := sys.Extract(filename, src, target, dest); err != nil {
+		if err := sys.Extract(name, src, target, dest); err != nil {
 			return fmt.Errorf("extractor, system attempt: %w", err)
 		}
 		return fmt.Errorf("extractor: %w", err)
@@ -50,14 +49,17 @@ func Extractor(src, filename, target, dest string) error {
 // and a suitable archive filename string.
 // If there are problems reading the archive due to an incorrect filename
 // extension, the returned filename string will be corrected.
-func Readr(src, filename string) ([]string, string, error) {
+func Readr(w io.Writer, src, filename string) ([]string, string, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	if files, err := readr(src, filename); err == nil {
 		return files, filename, nil
 	}
-	files, ext, err := sys.Readr(src, filename)
+	files, ext, err := sys.Readr(w, src, filename)
 	if errors.Is(err, sys.ErrWrongExt) {
 		newname := sys.Rename(ext, filename)
-		logs.Printf("rename to %s; ", newname)
+		fmt.Fprintf(w, "rename to %s; ", newname)
 		files, err = readr(src, newname)
 		if err != nil {
 			return nil, "", fmt.Errorf("readr fix: %w", err)
@@ -103,11 +105,11 @@ func readr(src, filename string) ([]string, error) {
 	})
 }
 
-// Unarchiver unarchives the given archive file into the destination folder.
+// Unarchiver decompresses the given archive file into the destination folder.
 // The archive format is selected implicitly.
 // Archiver relies on the filename extension to determine which
 // decompression format to use, which must be supplied using filename.
-func Unarchiver(src, filename, dest string) error {
+func Unarchiver(src, dest, filename string) error {
 	f, err := archiver.ByExtension(filename)
 	if err != nil {
 		return fmt.Errorf("unarchiver byextension %q: %w", filename, err)
@@ -117,7 +119,7 @@ func Unarchiver(src, filename, dest string) error {
 	}
 	un, ok := f.(archiver.Unarchiver)
 	if !ok {
-		return fmt.Errorf("unarchiver %s (%T): %w", filename, f, ErrNotArc)
+		return fmt.Errorf("unarchiver %s (%T): %w", filename, f, ErrArchive)
 	}
 	if err := un.Unarchive(src, dest); err != nil {
 		return fmt.Errorf("unarchiver: %w", err)

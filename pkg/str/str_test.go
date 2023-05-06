@@ -7,13 +7,9 @@ import (
 	"github.com/gookit/color"
 )
 
-func capString(test, text string) string {
+func capString(test string) string {
 	color.Enable = false
 	switch test {
-	case "sec":
-		return str.Sec(text)
-	case "warn":
-		return str.Warn(text)
 	case "x":
 		return str.X()
 	case "y":
@@ -23,25 +19,24 @@ func capString(test, text string) string {
 }
 
 func Test_capString(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		test string
-		text string
 	}
 	tests := []struct {
 		name       string
 		args       args
 		wantOutput string
 	}{
-		{"sec empty", args{"sec", ""}, ""},
-		{"sec", args{"sec", "hello"}, "hello"},
-		{"warn empty", args{"warn", ""}, ""},
-		{"warn", args{"warn", "hello"}, "hello"},
-		{"x", args{"x", ""}, "✗"},
-		{"y", args{"y", ""}, "✓"},
+		{"empty", args{"sec"}, ""},
+		{"x", args{"x"}, "✗"},
+		{"y", args{"y"}, "✓"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOutput := capString(tt.args.test, tt.args.text); gotOutput != tt.wantOutput {
+			t.Parallel()
+			if gotOutput := capString(tt.args.test); gotOutput != tt.wantOutput {
 				t.Errorf("capString() = %v, want %v", gotOutput, tt.wantOutput)
 			}
 		})
@@ -49,6 +44,7 @@ func Test_capString(t *testing.T) {
 }
 
 func TestProgress(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		name  string
 		count int
@@ -66,8 +62,10 @@ func TestProgress(t *testing.T) {
 		{"decimal", args{"", 1, 99999}, float64(0.001000010000100001)},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if got := str.Progress(tt.args.name, tt.args.count, tt.args.total); got != tt.want {
+			t.Parallel()
+			if got := str.Progress(nil, tt.args.name, tt.args.count, tt.args.total); got != tt.want {
 				t.Errorf("Progress() = %v, want %v", got, tt.want)
 			}
 		})
@@ -75,6 +73,7 @@ func TestProgress(t *testing.T) {
 }
 
 func TestTruncate(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		text string
 		len  int
@@ -91,7 +90,9 @@ func TestTruncate(t *testing.T) {
 		{"too long", args{"hello", 600}, "hello"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := str.Truncate(tt.args.text, tt.args.len); got != tt.want {
 				t.Errorf("Truncate() = %v, want %v", got, tt.want)
 			}

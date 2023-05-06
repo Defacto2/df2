@@ -2,102 +2,51 @@ package proof_test
 
 import (
 	"database/sql"
-	"strings"
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/proof"
-	"github.com/Defacto2/df2/pkg/proof/internal/stat"
+	"github.com/stretchr/testify/assert"
 )
 
-const uuid = "10000000-0000-0000-0000000000000000"
+const uuid = "10000000-0000-0000-0000-000000000000"
 
 func TestQuery(t *testing.T) {
-	type fields struct {
-		Overwrite   bool
-		AllProofs   bool
-		HideMissing bool
-	}
-	no := fields{false, false, false}
-	tests := []struct {
-		name    string
-		id      string
-		fields  fields
-		wantErr bool
-	}{
-		{"empty", "", no, true},
-		{"missing", "1", no, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			request := proof.Request{
-				Overwrite:   tt.fields.Overwrite,
-				AllProofs:   tt.fields.AllProofs,
-				HideMissing: tt.fields.HideMissing,
-			}
-			if err := request.Query(tt.id); (err != nil) != tt.wantErr {
-				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	t.Parallel()
+	r := proof.Request{}
+	err := r.Query(nil, nil, conf.Config{}, "")
+	assert.NotNil(t, err)
+	cfg := conf.Defaults()
+	db, err := database.Connect(cfg)
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.Query(db, io.Discard, conf.Config{}, "")
+	assert.NotNil(t, err)
+	err = r.Query(db, io.Discard, conf.Config{}, "1")
+	assert.NotNil(t, err)
+	err = r.Query(db, io.Discard, cfg, "1")
+	assert.Nil(t, err)
+	err = r.Query(db, io.Discard, cfg, uuid)
+	assert.Nil(t, err)
 }
 
 func Test_Select(t *testing.T) {
-	tests := []struct {
-		name string
-		id   string
-		want int
-	}{
-		{"empty", "", 141},
-		{"id", "1", 154},
-		{"uuid", uuid, 141},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := proof.Select(tt.id); len(got) != tt.want {
-				t.Errorf("Select() = %v, want %v", len(got), tt.want)
-			}
-		})
-	}
-}
-
-func TestTotal(t *testing.T) {
-	zero := stat.Proof{
-		Total: 0,
-	}
-	ten := stat.Proof{
-		Total: 10,
-	}
-	type args struct {
-		s       *stat.Proof
-		request proof.Request
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"empty", args{}, ""},
-		{"no req", args{&zero, proof.Request{}}, ""},
-		{
-			"zero",
-			args{&zero, proof.Request{ByID: "1"}},
-			"file record id '1' does not exist or is not a release proof",
-		},
-		{"ten", args{&ten, proof.Request{ByID: "1"}}, "Total records 10"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := strings.TrimSpace(proof.Total(tt.args.s, tt.args.request)); got != tt.want {
-				t.Errorf("Total() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Parallel()
+	s := proof.Select("")
+	assert.Contains(t, s, "FROM `files` WHERE `section` = 'releaseproof'")
+	s = proof.Select("1")
+	assert.Contains(t, s, `="1"`)
+	s = proof.Select(uuid)
+	assert.Contains(t, s, `uuid`)
 }
 
 func TestRequest_Skip(t *testing.T) {
+	t.Parallel()
 	type fields struct {
 		Overwrite   bool
-		AllProofs   bool
+		All         bool
 		HideMissing bool
 		ByID        string
 	}
@@ -111,14 +60,16 @@ func TestRequest_Skip(t *testing.T) {
 		{"false", fields{ByID: "1", Overwrite: true}, nil, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			request := proof.Request{
 				Overwrite:   tt.fields.Overwrite,
-				AllProofs:   tt.fields.AllProofs,
+				All:         tt.fields.All,
 				HideMissing: tt.fields.HideMissing,
 				ByID:        tt.fields.ByID,
 			}
-			if got := request.Skip(tt.values); got != tt.want {
+			if got, _ := request.Skip(nil, tt.values); got != tt.want {
 				t.Errorf("Request.Skip() = %v, want %v", got, tt.want)
 			}
 		})

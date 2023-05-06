@@ -1,15 +1,16 @@
+// Package releases handles collections of Demozoo Productions that share a
+// common filter such as a platform or category type.
 package releases
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
-
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
@@ -108,43 +109,57 @@ type Type struct {
 	Name string `json:"name"`
 }
 
-func Tags(platforms, types, title string) (platform, section string) {
-	const logo = "logo"
+func isDemo(types string) bool {
 	switch types {
-	case "Diskmag", "Textmag":
-		section = "magazine"
 	case "Game", "Intro", "Demo",
-		"96K Intro", "64K Intro", "40k Intro", "32K Intro", "16K Intro", "8K Intro", "4K Intro", "1K Intro", "256b Intro":
-		section = "demo"
-	case "BBStro":
-		section = "bbs"
-	case "Cracktro":
-		section = "releaseadvert"
-	case "Tool":
-		section = "programmingtool"
-	case "Executable Graphics":
-		section = logo
-		platform = "dos"
-	case "ASCII Collection":
-		section = "package"
-		platform = "text"
-	case "Artpack", "Pack":
-		section = "package"
-		platform = "bbs"
-	case "Graphics":
-		section = logo
-		platform = "image"
-	case "ANSI":
-		section = logo
-		platform = "ansi"
-	case "ASCII":
-		section = logo
-		platform = "text"
-	case "Music", "Musicdisk", "Tracked Music":
-		section = "demo"
-		platform = "audio"
-	default:
+		"96K Intro", "64K Intro",
+		"40k Intro", "32K Intro",
+		"16K Intro", "8K Intro",
+		"4K Intro", "1K Intro",
+		"256b Intro":
+		return true
 	}
+	return false
+}
+
+type tag struct {
+	section  string
+	platform string
+}
+
+func typeTags(types string) (string, string) {
+	const logo = "logo"
+	if isDemo(types) {
+		return "demo", ""
+	}
+	tags := map[string]tag{
+		"Diskmag":             {"", "magazine"},
+		"Textmag":             {"", "magazine"},
+		"BBStro":              {"bbs", ""},
+		"Cracktro":            {"releaseadvert", ""},
+		"Tool":                {"programmingtool", ""},
+		"Executable Graphics": {logo, "dos"},
+		"ASCII Collection":    {"package", "text"},
+		"Artpack":             {"package", "bbs"},
+		"Pack":                {"package", "bbs"},
+		"Graphics":            {logo, "image"},
+		"ANSI":                {logo, "ansi"},
+		"ASCII":               {logo, "text"},
+		"Music":               {"demo", "audio"},
+		"Musicdisk":           {"demo", "audio"},
+		"Tracked Music":       {"demo", "audio"},
+	}
+	for s, data := range tags {
+		if types == s {
+			return data.section, data.platform
+		}
+	}
+	return "", ""
+}
+
+// Tags returns the platform and section.
+func Tags(platforms, types, title string) (string, string) {
+	section, platform := typeTags(types)
 	if strings.Contains(strings.ToLower(title), "application generator") {
 		section = "groupapplication"
 	}
@@ -172,7 +187,9 @@ func tagPlatform(platforms string) string {
 }
 
 // Released returns the production's release date as date_issued_ year, month, day values.
-func (p ProductionV1) Released() (year, month, day int) {
+func (p ProductionV1) Released() ( //nolint:nonamedreturns
+	year int, month int, day int,
+) {
 	dates := strings.Split(p.ReleaseDate, "-")
 	const (
 		y    = 0
@@ -200,9 +217,10 @@ func (p ProductionV1) Released() (year, month, day int) {
 // Groups returns the first two names in the production that have is_group as true.
 // The one exception is if the production title contains a reference to a BBS or FTP site name.
 // Then that title will be used as the first group returned.
-func (p ProductionV1) Groups() (a string, b string) {
+func (p ProductionV1) Groups() (string, string) {
 	// find any reference to BBS or FTP in the production title to
 	// obtain a possible site name.
+	var a, b string
 	if s := Site(p.Title); s != "" {
 		a = s
 	}
@@ -242,12 +260,12 @@ func Site(title string) string {
 }
 
 // Print to stdout the production API results as tabbed JSON.
-func (p *Productions) Print() error {
+func (p *Productions) Print(w io.Writer) error {
 	js, err := json.MarshalIndent(&p, "", "  ")
 	if err != nil {
 		return fmt.Errorf("print json marshal indent: %w", err)
 	}
-	logs.Println(string(js))
+	fmt.Fprintln(w, js)
 	return nil
 }
 

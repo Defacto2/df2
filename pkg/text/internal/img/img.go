@@ -1,172 +1,253 @@
+// Package img has the functions to convert, compress and resize the images.
 package img
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"io"
+	"io/fs"
+	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
 
 var (
-	ErrNoSrc    = errors.New("requires a source path to a directory")
-	ErrAnsiLove = errors.New("cannot access shared libraries: libansilove.so.1")
-	ErrDest     = errors.New("dest argument requires a destination filename path")
+	ErrNamed     = errors.New("named path cannot be empty")
+	ErrDest      = errors.New("dest path cannot be empty")
+	ErrSharedLib = errors.New("cannot access shared libraries: libansilove.so.1")
+	ErrType      = errors.New("mimetype is not a known text file")
+
+	ErrResize = errors.New("resize only works with the png image format")
 )
 
 const (
 	png  = ".png"
 	webp = ".webp"
-)
 
-// Generate a collection of site images.
-func Generate(name, uuid string, amiga bool) error {
-	prnt := func(s string) {
-		logs.Printf("  %s", s)
-	}
-	const note = `
+	noExePath = `execute ansilove: executable file not found in $PATH`
+	killed    = "signal: killed"
+	note      = `
 this command requires the installation of AnsiLove/C
 installation instructions: https://github.com/ansilove/ansilove`
-	n, f := name, directories.Files(uuid)
-	o := f.Img000 + png
-	s, err := MakePng(n, f.Img000, amiga)
-	if err != nil && err.Error() == `execute ansilove: executable file not found in $PATH` {
-		log.Println(note)
-		return fmt.Errorf("generate, ansilove not found: %w", err)
-	} else if err != nil && errors.Unwrap(err).Error() == "signal: killed" {
-		tmp, err1 := Reduce(f.UUID, uuid)
-		if err1 != nil {
-			return fmt.Errorf("ansilove reduce: %w", err1)
-		}
-		s, err = MakePng(tmp, f.Img000, amiga)
-		defer os.Remove(tmp)
+)
+
+// Make both PNG and Webp preview images and a 400x PNG thumbnail from the named text files.
+// Name is the source text file required for conversion to an image.
+// UUID is the universal ID used for the image filename.
+// When the amiga bool is true the image text will use an Amiga era Topaz+, 80x50 font.
+func Make(w io.Writer, cfg conf.Config, name, uuid string, amiga bool) error {
+	if w == nil {
+		w = io.Discard
 	}
+	if err := Type(name); err != nil {
+		return err
+	}
+	f, err := directories.Files(cfg, uuid)
 	if err != nil {
-		return fmt.Errorf("generate: %w", err)
+		return err
 	}
-	prnt(s)
+	s, err := Export(name, f.Img000, amiga)
+	if err != nil { //nolint:nestif
+		if err.Error() == noExePath {
+			fmt.Fprintln(w, note)
+			return fmt.Errorf("generate, ansilove not found: %w", err)
+		}
+		if errors.Unwrap(err).Error() == killed {
+			tmp, err1 := Reduce(w, f.UUID, uuid)
+			if err1 != nil {
+				return fmt.Errorf("ansilove reduce: %w", err1)
+			}
+			s, err = Export(tmp, f.Img000, amiga)
+			if err != nil {
+				return fmt.Errorf("generate: %w", err)
+			}
+			defer os.Remove(tmp)
+			err = nil
+		}
+		if err != nil {
+			return fmt.Errorf("generate: %w", err)
+		}
+	}
+	fmt.Fprintf(w, "  %s", s)
 	const thumbMedium = 400
-	var w, h int
-	if w, h, _, err = images.Info(o); (w + h) > images.WebpMaxSize {
-		if err != nil {
-			return fmt.Errorf("generate info: %w", err)
-		}
-		cw, ch := images.WebPCalc(w, h)
-		s, err = images.ToPng(o, images.NewExt(o, png), ch, cw)
-		if err != nil {
-			return fmt.Errorf("generate calc: %w", err)
-		}
-		prnt(s)
+	src := f.Img000 + png
+	if err := Resize(w, src); err != nil {
+		return err
 	}
-	s, err = images.ToWebp(o, images.NewExt(o, webp), true)
+	s, err = images.ToWebp(w, src, images.ReplaceExt(webp, src), true)
 	if err != nil {
 		return fmt.Errorf("generate webp: %w", err)
 	}
-	prnt(s)
-	s, err = images.ToThumb(o, f.Img400, thumbMedium)
+	fmt.Fprintf(w, "  %s", s)
+	s, err = images.ToThumb(src, f.Img400, thumbMedium)
 	if err != nil {
 		return fmt.Errorf("generate thumb %dpx: %w", thumbMedium, err)
 	}
-	prnt(s)
+	fmt.Fprintf(w, "  %s", s)
 	return nil
 }
 
-// Reduce the length of the textfile so it can be parsed by AnsiLove.
-func Reduce(src, uuid string) (string, error) {
-	logs.Print(" will attempt to reduce the length of file")
+// Type of the named document is checked and an error is returned for an unknown binary format.
+func Type(name string) error {
+	f, err := os.Open(name)
+	if err != nil {
+		return fmt.Errorf("type cannot open the named file: %w: %s", err, name)
+	}
+	defer f.Close()
+	dst := &bytes.Buffer{}
+	inf, err := f.Stat()
+	if err != nil {
+		return fmt.Errorf("type cannot stat the named file: %w: %s", err, name)
+	}
+	// DetectContentType only needs the first 512B of a file
+	const maxSize = int64(512)
+	n := maxSize
+	if inf.Size() < maxSize {
+		n = inf.Size()
+	}
+	if _, err = io.CopyN(dst, f, n); err != nil {
+		return fmt.Errorf("type cannot copy the first %dB of the named file: %w: %s", n, err, name)
+	}
+	mime := http.DetectContentType(dst.Bytes())
+	s := strings.Split(mime, "/")
+	if len(s) == 0 {
+		return fmt.Errorf("type cannot copy the named file: %w: %s", err, name)
+	}
+	const fallback = "application/octet-stream"
+	if mime == fallback {
+		// fallback is often returned by ANSI encoded files etc
+		return nil
+	}
+	if t := s[0]; t == "text" {
+		return nil
+	}
+	return fmt.Errorf("%w %s: %s", ErrType, mime, name)
+}
 
-	f, err := os.Open(src)
+// Resize the named image so it is compatible with the format restrictions of WebP.
+func Resize(w io.Writer, name string) error {
+	if w == nil {
+		w = io.Discard
+	}
+	wpx, hpx, s, err := images.Info(name)
+	if s != "png" {
+		return fmt.Errorf("%s, %w: %s", s, ErrResize, name)
+	}
+	if (wpx + hpx) > images.WebpMaxSize {
+		if err != nil {
+			return fmt.Errorf("generate info: %w", err)
+		}
+		width, height := images.WebPCalc(wpx, hpx)
+		s, err := images.ToPNG(name, name, width, height)
+		if err != nil {
+			return fmt.Errorf("generate calc: %w", err)
+		}
+		fmt.Fprintf(w, "  %s", s)
+	}
+	return nil
+}
+
+// Reduce the length of the named textfile so it can be parsed by AnsiLove.
+func Reduce(w io.Writer, named, uuid string) (string, error) {
+	if w == nil {
+		w = io.Discard
+	}
+	fmt.Fprint(w, " will attempt to reduce the length of file")
+
+	f, err := os.Open(named)
 	if err != nil {
 		return "", err
 	}
 	defer f.Close()
 
-	save, err := os.CreateTemp(os.TempDir(), uuid+"_reduce")
+	dest, err := os.CreateTemp(os.TempDir(), uuid+"_reduce")
 	if err != nil {
 		return "", err
 	}
-	defer save.Close()
+	defer dest.Close()
+
+	scan, nw := bufio.NewScanner(f), bufio.NewWriter(dest)
+	scan.Split(bufio.ScanLines)
 
 	const maxLines = 500
-	scanner, writer := bufio.NewScanner(f), bufio.NewWriter(save)
-	scanner.Split(bufio.ScanLines)
 	line := 0
-	for scanner.Scan() {
+	for scan.Scan() {
 		line++
-		if _, err := writer.WriteString(scanner.Text() + "\n"); err != nil {
-			os.Remove(save.Name())
-			return "", err
-		}
 		if line > maxLines {
 			break
 		}
+		if _, err := nw.WriteString(scan.Text() + "\n"); err != nil {
+			os.Remove(dest.Name())
+			return "", err
+		}
 	}
-	return save.Name(), nil
+	nw.Flush()
+	return dest.Name(), nil
 }
 
-// ToPng converts any supported format to a compressed PNG image.
+// Export any supported text based named file to a compressed PNG image.
 // helpful: https://www.programming-books.io/essential/go
 // /images-png-jpeg-bmp-tiff-webp-vp8-gif-c84a45304ec3498081c67aa1ea0d9c49.
-func MakePng(src, dest string, amiga bool) (string, error) {
-	if src == "" {
-		return "", fmt.Errorf("makepng: %w", ErrNoSrc)
+func Export(name, dest string, amiga bool) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("makepng: %w", ErrNamed)
 	}
 	if dest == "" {
 		return "", fmt.Errorf("makepng: %w", ErrDest)
 	}
-	_, err := os.Stat(src)
-	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("makepng missing %q: %w", src, err)
+	if _, err := os.Stat(name); errors.Is(err, fs.ErrNotExist) {
+		return "", fmt.Errorf("makepng missing %q: %w", name, err)
 	} else if err != nil {
 		return "", fmt.Errorf("makepng stat: %w", err)
 	}
+
 	const ten = 10 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), ten)
 	defer cancel()
-	// ansilove -q # suppress output messages
-	// ansilove -r # create Retina @2x output file
-	// ansilove -o # specify output filename/path
-	// ansilove -f # select font for supported formats: 80x25 (default), topaz+, 80x50, ...
-	img := dest + png
-	args := []string{"-q", "-r", "-o", img}
+	const (
+		suppressOutput = "-q" // ansilove -q # suppress output messages
+		retina2xImage  = "-r" // ansilove -r # create Retina @2x output file
+		destination    = "-o" // ansilove -o # specify output filename/path
+		selectFont     = "-f" // ansilove -f # select font for supported formats: 80x25 (default), topaz+, 80x50, ...
+	)
+	saveAs := dest + png
+	args := []string{suppressOutput, retina2xImage, destination, saveAs}
 	if amiga {
-		args = append(args, "-f", "topaz+")
+		args = append(args, selectFont, "topaz+")
 	}
-	args = append(args, src)
+	args = append(args, name)
 	cmd := exec.CommandContext(ctx, "ansilove", args...)
 	out, err := cmd.Output()
 	if err != nil && err.Error() == "exit status 127" {
-		return "", fmt.Errorf("make ansilove %q: %w", args, ErrAnsiLove)
+		return "", fmt.Errorf("make ansilove %q: %w", args, ErrSharedLib)
 	} else if err != nil {
 		return "", fmt.Errorf("make ansilove %q: %q %w", args, out, err)
 	}
-
-	_, err = os.Getwd()
+	i, err := Bytes(saveAs)
 	if err != nil {
-		return "", fmt.Errorf("makepng working directory: %w", err)
+		return "", err
 	}
-
-	_, err = os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("makepng failed to obtain exe: %w", err)
-	}
-
-	stat, err := os.Stat(img)
-	if err != nil && os.IsNotExist(err) {
-		return "", fmt.Errorf("makepng stat %q: %w", img, err)
-	} else if err != nil {
-		return "", fmt.Errorf("makepng stat: %w", err)
-	}
-
 	return fmt.Sprintf("✓ text » png %v\n%s",
-		humanize.Bytes(uint64(stat.Size())), color.Secondary.Sprintf("%s", out)), nil
+		humanize.Bytes(i), color.Secondary.Sprintf("%s", out)), nil
+}
+
+func Bytes(name string) (uint64, error) {
+	stat, err := os.Stat(name)
+	if errors.Is(err, fs.ErrNotExist) {
+		return 0, fmt.Errorf("bytes stat %q: %w", name, err)
+	} else if err != nil {
+		return 0, fmt.Errorf("bytes stat: %w", err)
+	}
+	return uint64(stat.Size()), nil
 }

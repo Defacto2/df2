@@ -1,21 +1,25 @@
+// Package netpbm interacts with the netpdm graphics programs and
+// programming library.
 package netpbm
+
+/*
+netpbm requires the installation of Netpbm.
+ubuntu: sudo apt install netpbm
+
+Netpbm is a package of graphics programs and a programming library.
+http://netpbm.sourceforge.net/doc/
+*/
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/Defacto2/df2/pkg/logs"
 )
-
-// netpbm requires the installation of Netpbm.
-// ubuntu: sudo apt install netpbm
-//
-// Netpbm is a package of graphics programs and a programming library.
-// http://netpbm.sourceforge.net/doc/
 
 var (
 	ErrFmt = errors.New("netpdm package hasn't been configured to support this image")
@@ -50,8 +54,11 @@ func Extensions() Idents {
 }
 
 // Convert uses netpdm to convert a configured image to PNG.
-func Convert(src, dest string) error {
-	if _, err := os.Stat(src); os.IsNotExist(err) {
+func Convert(w io.Writer, src, dest string) error {
+	if w == nil {
+		w = io.Discard
+	}
+	if _, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%w: %s", ErrSrc, src)
 	} else if err != nil {
 		return err
@@ -86,13 +93,13 @@ func Convert(src, dest string) error {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, bash, "-c", cmdStr)
-	logs.Printf("running %s\n", cmdStr)
+	fmt.Fprintf(w, "running %s\n", cmdStr)
 	out, err := cmd.Output()
 	if err != nil {
 		return err
 	}
 	if len(out) > 0 {
-		logs.Printf("%s: %s", prog, string(out))
+		fmt.Fprintf(w, "%s: %s", prog, string(out))
 	}
 	return nil
 }

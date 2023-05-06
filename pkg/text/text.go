@@ -1,28 +1,39 @@
-// Package text generates images from text files using the Ansilove/C program.
+// Package text generates preview images and thumbnails from text files using
+// the system installed Ansilove/C program.
 package text
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"io"
 
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
+	"go.uber.org/zap"
 )
 
 const (
-	fixStmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme, platform " +
+	stmt = "SELECT id, uuid, filename, filesize, retrotxt_no_readme, retrotxt_readme, platform " +
 		"FROM files WHERE platform=\"text\" OR platform=\"textamiga\" OR platform=\"ansi\" ORDER BY id DESC"
 )
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix() error {
-	dir, db := directories.Init(false), database.Connect()
-	defer db.Close()
-	rows, err := db.Query(fixStmt)
+func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	dir, err := directories.Init(cfg, false)
+	if err != nil {
+		return err
+	}
+	rows, err := db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("fix db query: %w", err)
 	} else if rows.Err() != nil {
@@ -31,58 +42,71 @@ func Fix() error {
 	defer rows.Close()
 	i, c := 0, 0
 	for rows.Next() {
-		if i, c, err = fixRow(i, c, &dir, rows); err != nil {
+		t := tf.TextFile{}
+		if t, i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
+			if errors.Is(tf.ErrReadmeOff, err) {
+				// website admin has disabled the display of a readme
+				continue
+			}
 			if !errors.Is(err, tf.ErrPNG) {
-				return err
+				fmt.Fprintf(w, "\t%d. %s%s\n",
+					c, t.String(), str.X())
+				l.Error(err)
+				continue
 			}
 		}
 	}
-	logs.Println("scanned", c, "fixes from", i, "text file records")
+	fmt.Fprintf(w, "\tSCAN %d fix attempts for %d text files\n", c, i)
 	if c == 0 {
-		logs.Println("everything is okay, there is nothing to do")
+		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
 	}
 	return nil
 }
 
-func fixRow(i, c int, dir *directories.Dir, rows *sql.Rows) (scanned, records int, err error) {
-	var t tf.TextFile
+func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (tf.TextFile, int, int, error) {
+	t := tf.TextFile{}
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
-		return i, c, fmt.Errorf("fix rows scan: %w", err1)
+		return t, i, c, fmt.Errorf("fix rows scan: %w", err1)
 	}
 	ok, err := t.Exist(dir)
 	if err != nil {
-		return i, c, fmt.Errorf("fix exist: %w", err)
+		return t, i, c, fmt.Errorf("fix exist: %w", err)
 	}
 	// missing images + source is an archive
 	if !ok && t.Archive() {
 		c++
-		err1 := t.Extract(dir)
-		switch {
-		case errors.Is(err1, tf.ErrMeUnk):
-			return i, c, nil
-		case errors.Is(err1, tf.ErrMeNo):
-			return i, c, nil
-		case err1 != nil:
-			log.Println(t.String(), err1)
-			return i, c, nil
+		if err := extract(w, cfg, t, dir); err != nil {
+			return t, i, c, err
 		}
-		if err1 := t.ExtractedImgs(dir.UUID); err1 != nil {
-			log.Println(t.String(), err1)
-		}
-		return i, c, nil
 	}
 	// missing images + source is a textfile
 	if !ok {
 		c++
-		if err := t.TextPng(c, dir.UUID); err != nil {
-			return i, c, err
+		if err := t.TextPNG(w, cfg, c, dir.UUID); err != nil {
+			return t, i, c, err
 		}
 	}
 	// missing webp specific images that rely on PNG sources
-	c, err = t.WebP(c, dir.Img000)
+	c, err = t.WebP(w, c, dir.Img000)
 	if err != nil {
-		logs.Println(err)
+		fmt.Fprintf(w, "\t%s\n", err)
 	}
-	return i, c, nil
+	return t, i, c, nil
+}
+
+func extract(w io.Writer, cfg conf.Config, t tf.TextFile, dir *directories.Dir) error {
+	if dir == nil {
+		return fmt.Errorf("dir %w", tf.ErrPointer)
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if err := t.Extract(w, dir); err != nil {
+		return err
+	}
+	if err := t.ExtractedImgs(w, cfg, dir.UUID); err != nil {
+		fmt.Fprintln(w, t.String(), err)
+	}
+	return nil
 }

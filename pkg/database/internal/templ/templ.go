@@ -1,3 +1,4 @@
+// Package templ has the templates for the database SQL statements.
 package templ
 
 // TableData is a container for the tableTmpl template.
@@ -23,6 +24,27 @@ type TablesData struct {
 	Rows    string
 	Table   string
 }
+
+const (
+	CountFiles   = "SELECT COUNT(*) FROM `files`"
+	CountWaiting = CountFiles + " WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
+
+	SelKeys   = "SELECT `id` FROM `files`"
+	SelNames  = "SELECT `filename` FROM `files`"
+	SelUpdate = "SELECT `updatedat` FROM `files`" +
+		" WHERE `createdat` <> `updatedat` AND `deletedby` IS NULL" +
+		" ORDER BY `updatedat` DESC LIMIT 1"
+
+	WhereDownloadBlock = "WHERE `file_security_alert_url` IS NOT NULL AND `file_security_alert_url` != ''"
+	WhereAvailable     = "WHERE `deletedat` IS NULL"
+	WhereHidden        = "WHERE `deletedat` IS NOT NULL"
+)
+
+const SelNewFiles = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`filesize`," +
+	"`web_id_demozoo`,`file_zip_content`,`updatedat`,`platform`,`file_integrity_strong`," +
+	"`file_integrity_weak`,`web_id_pouet`,`group_brand_for`,`group_brand_by`,`section`\n" +
+	"FROM `files`\n" +
+	"WHERE `deletedby` IS NULL AND `deletedat` IS NOT NULL"
 
 const Table = `
 -- df2 v{{.VER}} Defacto2 MySQL {{.TABLE}} dump

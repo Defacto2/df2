@@ -1,36 +1,47 @@
 package role_test
 
 import (
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestRoles(t *testing.T) {
-	type args struct {
-		r string
-	}
-	tests := []struct {
-		name string
-		args args
-		want role.Role
-	}{
-		{"empty", args{""}, role.Everyone},
-		{"artist", args{"artists"}, role.Artists},
-		{"a", args{"a"}, role.Artists},
-		{"all", args{"all"}, role.Everyone},
-		{"error", args{"xxx"}, -1},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := role.Roles(tt.args.r); got != tt.want {
-				t.Errorf("Roles() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestRole_String(t *testing.T) {
+	t.Parallel()
+	s := role.Writers
+	assert.Equal(t, "writers", s.String())
+}
+
+func TestList(t *testing.T) {
+	t.Parallel()
+	s, i, err := role.List(nil, nil, 0)
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	assert.Len(t, s, 0)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	s, i, err = role.List(db, io.Discard, 9999)
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, i)
+	assert.Len(t, s, 0)
+	s, i, err = role.List(db, io.Discard, role.Everyone)
+	assert.Nil(t, err)
+	assert.Greater(t, i, 1)
+	assert.Greater(t, len(s), 1)
+	s, i, err = role.List(db, io.Discard, role.Musicians)
+	assert.Nil(t, err)
+	assert.Greater(t, i, 1)
+	assert.Greater(t, len(s), 1)
 }
 
 func TestPeopleStmt(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		role               string
 		includeSoftDeletes bool
@@ -51,7 +62,9 @@ func TestPeopleStmt(t *testing.T) {
 		{"all", args{"", true}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := role.PeopleStmt(role.Roles(tt.args.role), tt.args.includeSoftDeletes); len(got) > 0 != tt.want {
 				t.Errorf("sqlPeople() = %v, want = %v", len(got) > 0, tt.want)
 			}
@@ -59,7 +72,90 @@ func TestPeopleStmt(t *testing.T) {
 	}
 }
 
+func TestRoles(t *testing.T) {
+	t.Parallel()
+	type args struct {
+		r string
+	}
+	tests := []struct {
+		name string
+		args args
+		want role.Role
+	}{
+		{"empty", args{""}, role.Everyone},
+		{"artist", args{"artists"}, role.Artists},
+		{"a", args{"a"}, role.Artists},
+		{"all", args{"all"}, role.Everyone},
+		{"error", args{"xxx"}, -1},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := role.Roles(tt.args.r); got != tt.want {
+				t.Errorf("Roles() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRename(t *testing.T) {
+	t.Parallel()
+	i, err := role.Rename(nil, "", "", 9999)
+	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), i)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	i, err = role.Rename(db, "", "", 9999)
+	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), i)
+	i, err = role.Rename(db, "", "", role.Everyone)
+	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), i)
+
+	const (
+		name    = "Rhythm Addiction"
+		replace = "Testing 1 2 3 4 5"
+		falseN  = "abcdef01234blahblah"
+	)
+
+	i, err = role.Rename(db, name, "", role.Everyone)
+	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), i)
+	i, err = role.Rename(db, name, falseN, role.Everyone)
+	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), i)
+
+	i, err = role.Rename(db, name, replace, role.Artists)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1), i)
+	i, err = role.Rename(db, replace, name, role.Artists)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1), i)
+}
+
+func TestClean(t *testing.T) {
+	t.Parallel()
+	b, err := role.Clean(nil, nil, "", 9999)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	b, err = role.Clean(db, io.Discard, "", 9999)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+	b, err = role.Clean(db, io.Discard, "%!somenick", 9999)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+	b, err = role.Clean(db, io.Discard, "%!somenick", role.Artists)
+	assert.Nil(t, err)
+	assert.Equal(t, true, b)
+}
+
 func TestCleanS(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -74,7 +170,9 @@ func TestCleanS(t *testing.T) {
 		{"", args{"name1,name2,!name3!"}, "name1,name2,name3!"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := role.CleanS(tt.args.s); got != tt.want {
 				t.Errorf("CleanS() = %v, want %v", got, tt.want)
 			}
@@ -83,6 +181,7 @@ func TestCleanS(t *testing.T) {
 }
 
 func TestTrim(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -99,50 +198,12 @@ func TestTrim(t *testing.T) {
 		{"", args{"?!nick!!,--someone-else++"}, "nick,--someone-else"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := role.Trim(tt.args.s); got != tt.want {
 				t.Errorf("Trim() = %v, want %v", got, tt.want)
 			}
-		})
-	}
-}
-
-func TestRename(t *testing.T) {
-	const (
-		org     = "Rhythm Addiction"
-		replace = "Testing 1 2 3 4 5"
-		falseN  = "abcdef01234blahblah"
-	)
-	type args struct {
-		replacement string
-		name        string
-		r           role.Role
-	}
-	tests := []struct {
-		name      string
-		args      args
-		wantCount int64
-		wantErr   bool
-	}{
-		{"empty", args{}, 0, true},
-		{"missing replacement", args{name: org, r: role.Musicians}, 0, true},
-		{"missing name", args{replacement: replace, r: role.Musicians}, 0, true},
-		{"missing role", args{replacement: replace, name: org}, 0, true},
-		{"404 name", args{replacement: replace, name: falseN, r: role.Musicians}, 0, false},
-		{"okay", args{replacement: replace, name: org, r: role.Artists}, 1, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotCount, err := role.Rename(tt.args.replacement, tt.args.name, tt.args.r)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Rename() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotCount != tt.wantCount {
-				t.Errorf("Rename() = %v, want %v", gotCount, tt.wantCount)
-				return
-			}
-			_, _ = role.Rename(org, replace, role.Artists) // restore name
 		})
 	}
 }

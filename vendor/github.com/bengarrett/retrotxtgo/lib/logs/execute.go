@@ -12,9 +12,12 @@ import (
 
 // FatalCmd prints a problem highlighting the unsupported command.
 func FatalCmd(usage string, args ...string) {
-	err := fmt.Errorf("%w: %s", ErrCmd, args[0])
 	args = append(args, usage)
-	if s := execute(err, false, args...); s != "" {
+	var err error
+	if len(args) > 0 {
+		err = fmt.Errorf("%w: %s", ErrCmd, args[0])
+	}
+	if s := Execute(err, false, args...); s != "" {
 		fmt.Fprintln(os.Stderr, s)
 		os.Exit(OSErrCode)
 	}
@@ -22,14 +25,14 @@ func FatalCmd(usage string, args ...string) {
 
 // FatalExecute is the error handler for the root command flags and arguments.
 func FatalExecute(err error, args ...string) {
-	if s := execute(err, false, args...); s != "" {
+	if s := Execute(err, false, args...); s != "" {
 		fmt.Fprintln(os.Stderr, s)
 		os.Exit(OSErrCode)
 	}
 }
 
-// execute is the error handler for command flags and arguments.
-func execute(err error, test bool, args ...string) string { //nolint:gocyclo,funlen
+// Execute is the error handler for command flags and arguments.
+func Execute(err error, test bool, args ...string) string { //nolint:funlen
 	if err == nil {
 		return ""
 	}
@@ -111,7 +114,7 @@ func execute(err error, test bool, args ...string) string { //nolint:gocyclo,fun
 	case flagChoice:
 		c = "flagChoice placeholder"
 	default:
-		if errors.As(err, &ErrCmd) {
+		if errors.Is(err, ErrCmd) {
 			mark = strings.Join(args[1:], " ")
 			c = Hint(fmt.Sprintf("%s --help", mark), ErrCmd)
 			break

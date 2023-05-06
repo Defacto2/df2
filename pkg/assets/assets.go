@@ -1,15 +1,17 @@
-// Package assets handles the site resources such as file downloads, thumbnails and backups.
+// Package assets handles the web resources of the site such as the file
+// downloads, thumbnails and backups.
 package assets
 
 import (
-	"errors"
+	"database/sql"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/assets/internal/scan"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/dustin/go-humanize"
 	_ "github.com/go-sql-driver/mysql" // MySQL database driver.
 	"github.com/gookit/color"
@@ -25,17 +27,27 @@ const (
 	Image                   // Image and thumbnail files.
 )
 
-var (
-	ErrStructNil = errors.New("structure cannot be nil")
-	ErrPathEmpty = errors.New("path cannot be empty")
-	ErrTarget    = errors.New("unknown target")
-)
+type Clean struct {
+	Name   string // Named section to clean.
+	Remove bool   // Remove any orphaned files from the directories.
+	Human  bool   // Use humanized, binary size values.
+	Config conf.Config
+}
 
-// Clean walks through and scans directories containing UUID files
+// Walk through and scans directories containing UUID files
 // and erases any orphans that cannot be matched to the database.
-func Clean(dir string, remove, human bool) error {
-	d := directories.Init(false)
-	return Cleaner(targetfy(dir), &d, remove, human)
+func (c Clean) Walk(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	d, err := directories.Init(c.Config, false)
+	if err != nil {
+		return err
+	}
+	return c.Walker(db, w, targetfy(c.Name), &d)
 }
 
 func targetfy(s string) Target {
@@ -52,54 +64,68 @@ func targetfy(s string) Target {
 	return -1
 }
 
-func Cleaner(t Target, d *directories.Dir, remove, human bool) error {
-	paths := Targets(t, d)
+func (c Clean) Walker(db *sql.DB, w io.Writer, t Target, d *directories.Dir) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if d == nil {
+		return directories.ErrNil
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	paths, err := Targets(c.Config, t, d)
+	if err != nil {
+		return err
+	}
 	if paths == nil {
-		return fmt.Errorf("check target %q: %w", t, ErrTarget)
+		return fmt.Errorf("assets walker target check %q: %w", t, scan.ErrTarget)
 	}
 	// connect to the database
-	rows, m, err := CreateUUIDMap()
+	rows, ids, err := CreateUUIDMap(db)
 	if err != nil {
-		return fmt.Errorf("clean uuid map: %w", err)
+		return fmt.Errorf("assets walkter uuid map: %w", err)
 	}
-	logs.Println("The following files do not match any UUIDs in the database")
+	fmt.Fprintln(w, "The following files do not match any UUIDs in the database")
 	// parse directories
-	var sum scan.Results
+	sum := scan.Results{}
 	for p := range paths {
 		s := scan.Scan{
 			Path:   paths[p],
-			Delete: remove,
-			Human:  human,
-			M:      m,
+			Delete: c.Remove,
+			Human:  c.Human,
+			IDs:    ids,
 		}
-		if err := sum.Calculate(s, d); err != nil {
+		if err := sum.Calculate(w, s, d); err != nil {
 			return fmt.Errorf("clean sum calculate: %w", err)
 		}
 	}
 	// output a summary of the Results
-	logs.Println(color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v",
+	fmt.Fprintln(w, color.Notice.Sprintf("\nTotal orphaned files discovered %v out of %v",
 		humanize.Comma(int64(sum.Count)), humanize.Comma(int64(rows))))
 	if sum.Fails > 0 {
-		logs.Print(fmt.Sprintf("assets clean: due to errors %v files could not be deleted\n",
-			sum.Fails))
+		fmt.Fprintf(w, "assets clean: due to errors %v files could not be deleted\n",
+			sum.Fails)
 	}
 	if len(paths) > 1 && sum.Bytes > 0 {
-		pts := fmt.Sprintf("%v B", sum.Bytes)
-		if human {
-			pts = humanize.Bytes(uint64(sum.Bytes))
+		s := fmt.Sprintf("%v B", sum.Bytes)
+		if c.Human {
+			s = humanize.Bytes(uint64(sum.Bytes))
 		}
-		logs.Print(fmt.Sprintf("%v drive space consumed\n", pts))
+		fmt.Fprintf(w, "%v drive space consumed\n", s)
 	}
 	return nil
 }
 
 // CreateUUIDMap builds a map of all the unique UUID values stored in the Defacto2 database.
-func CreateUUIDMap() (total int, uuids database.IDs, err error) {
-	db := database.Connect()
-	defer db.Close()
+// Returns the total number of UUID and a collection of UUIDs.
+func CreateUUIDMap(db *sql.DB) (int, database.IDs, error) {
+	if db == nil {
+		return 0, nil, database.ErrDB
+	}
 	// count rows
 	count := 0
-	if err = db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
+	if err := db.QueryRow("SELECT COUNT(*) FROM `files`").Scan(&count); err != nil {
 		return 0, nil, fmt.Errorf("create uuid map query row: %w", err)
 	}
 	// query database
@@ -112,7 +138,8 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 	if rows.Err() != nil {
 		return 0, nil, rows.Err()
 	}
-	uuids = make(database.IDs, count)
+	total := 0
+	uuids := make(database.IDs, count)
 	for rows.Next() {
 		if err = rows.Scan(&id, &uuid); err != nil {
 			return 0, nil, fmt.Errorf("create uuid map row: %w", err)
@@ -121,15 +148,21 @@ func CreateUUIDMap() (total int, uuids database.IDs, err error) {
 		uuids[uuid] = database.Empty{}
 		total++
 	}
-	return total, uuids, db.Close()
+	return total, uuids, nil
 }
 
-func Targets(t Target, d *directories.Dir) []string {
+func Targets(cfg conf.Config, t Target, d *directories.Dir) ([]string, error) {
+	if d == nil {
+		return nil, directories.ErrNil
+	}
 	if d.Base == "" {
-		reset := directories.Init(false)
+		reset, err := directories.Init(cfg, false)
+		if err != nil {
+			return nil, err
+		}
 		d = &reset
 	}
-	var paths []string
+	paths := []string{}
 	switch t {
 	case All:
 		paths = append(paths, d.UUID, d.Emu, d.Backup, d.Img000, d.Img400)
@@ -139,6 +172,8 @@ func Targets(t Target, d *directories.Dir) []string {
 		paths = append(paths, d.Emu)
 	case Image:
 		paths = append(paths, d.Img000, d.Img400)
+	default:
+		return nil, scan.ErrTarget
 	}
-	return paths
+	return paths, nil
 }

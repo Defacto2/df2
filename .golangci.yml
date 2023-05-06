@@ -3,7 +3,7 @@
 linters:
   enable-all: true
   disable:
-    # deprecated
+    # deprecated 
     - deadcode
     - exhaustivestruct
     - ifshort
@@ -12,30 +12,20 @@ linters:
     - golint
     - maligned
     - nosnakecase
+    - structcheck
     - varcheck
 
     # disabled
-    - cyclop
-    - exhaustruct # extract code bload
-    - forbidigo # forbids the use for fmt.Print(f|ln)
-    - nlreturn # opinionated
-    - nonamedreturns # opinionated
-    - paralleltest # causes tests to randomly fail
-    - tagliatelle # my interfere with external apis?
-    - varnamelen # too many false-pos.
-    - wrapcheck # wrapping 3rd party errors such as those from bolt are unnecessary
-    - wsl # whitespace linter, slow, aggressive and opinionated
+    - cyclop          # disabled for performance
+    - exhaustruct     # conflicts with the cobra pkg
+    - nlreturn        # opinionated
+    - tagliatelle     # naming suggestions interfere with external APIs
+    - varnamelen      # way too many false-positives
+    - wrapcheck       # wrapping 3rd party errors is unnecessary
+    - wsl             # whitespace linter, slow, aggressive and opinionated
 
-    # generics
-    - rowserrcheck
-    - sqlclosecheck
-    - structcheck
-    - wastedassign
-#
-# Fixes
-# gofumpt -l -w <file> || <dir>/*
-# gci write <dir>/*
-
-# install tools
-# gofumpt: go install mvdan.cc/gofumpt@latest
-# gci: go install github.com/daixiang0/gci@latest
+linters-settings:
+  cyclop:
+    # The maximal code complexity to report.
+    # Default: 10
+    max-complexity: 13

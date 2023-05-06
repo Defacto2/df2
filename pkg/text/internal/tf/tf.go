@@ -1,17 +1,20 @@
+// Package tf has the functions to extract and convert text files into images.
 package tf
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/archive"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/text/internal/img"
 	"github.com/dustin/go-humanize"
@@ -19,10 +22,12 @@ import (
 )
 
 var (
-	ErrMeNo  = errors.New("no readme chosen")
-	ErrMeUnk = errors.New("unknown readme")
-	ErrMeNF  = errors.New("readme not found in archive")
-	ErrPNG   = errors.New("no such png file")
+	ErrReadmeBlank = errors.New("readme file cannot be blank or invalid")
+	ErrReadmeOff   = errors.New("noreadme bool cannot be false")
+	ErrMeNF        = errors.New("readme not found in archive")
+	ErrPNG         = errors.New("no such png file")
+	ErrPointer     = errors.New("pointer value cannot be nil")
+	ErrUUID        = errors.New("readme file cannot be blank or invalid")
 )
 
 const (
@@ -50,14 +55,14 @@ const (
 
 // TextFile is a text file object.
 type TextFile struct {
-	ID       uint           // MySQL auto increment Id.
-	UUID     string         // Unique Id.
-	Name     string         // Filename.
-	Ext      string         // File extension.
-	Platform string         // Platform classification of the file.
-	Size     int            // Size of the file in bytes.
-	NoReadme sql.NullBool   // Disable the display of a readme on the site.
-	Readme   sql.NullString // Filename of a readme or NFO textfile to display on the site.
+	ID       uint           // ID is a database auto increment ID.
+	UUID     string         // Universal unique ID.
+	Name     string         // Name of the file.
+	Ext      string         // Ext is the file extension of the name.
+	Platform string         // Platform classification for the file.
+	Size     int64          // Size of the file in bytes.
+	NoReadme sql.NullBool   // NoReadme will disable the display of a readme file on the webpage.
+	Readme   sql.NullString // Readme is the filename of a readme or NFO textfile to display on the webpage.
 }
 
 func (t *TextFile) String() string {
@@ -76,13 +81,16 @@ func (t *TextFile) Archive() bool {
 
 // Exist checks that [UUID].png exists in both thumbnail subdirectories.
 func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
+	if dir == nil {
+		return false, fmt.Errorf("dir %w", ErrPointer)
+	}
 	dirs := [2]string{dir.Img000, dir.Img400}
 	for _, path := range dirs {
 		if path == "" {
 			return false, nil
 		}
 		s, err := os.Stat(filepath.Join(path, t.UUID+png))
-		if os.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return false, nil
 		} else if err != nil {
 			return false, fmt.Errorf("textfile exist: %w", err)
@@ -95,15 +103,21 @@ func (t *TextFile) Exist(dir *directories.Dir) (bool, error) {
 }
 
 // Extract a textfile readme from an archive.
-func (t *TextFile) Extract(dir *directories.Dir) error {
+func (t *TextFile) Extract(w io.Writer, dir *directories.Dir) error {
+	if dir == nil {
+		return fmt.Errorf("dir %w", ErrPointer)
+	}
 	if t.NoReadme.Valid && !t.NoReadme.Bool {
-		return ErrMeNo
+		return ErrReadmeOff
 	}
 	if !t.Readme.Valid {
-		return ErrMeUnk
+		return ErrReadmeBlank
+	}
+	if w == nil {
+		w = io.Discard
 	}
 	s := strings.Split(t.Readme.String, ",")
-	f, _, err := archive.Read(filepath.Join(dir.UUID, t.UUID), t.Name)
+	f, _, err := archive.Read(w, filepath.Join(dir.UUID, t.UUID), t.Name)
 	if err != nil {
 		return err
 	}
@@ -119,7 +133,7 @@ func (t *TextFile) Extract(dir *directories.Dir) error {
 	}
 	tmp, src := os.TempDir(), filepath.Join(dir.UUID, t.UUID)
 	dest := filepath.Join(tmp, s[0])
-	if err1 := archive.Extractor(src, t.Name, s[0], tmp); err1 != nil {
+	if err1 := archive.Extractor(t.Name, src, s[0], tmp); err1 != nil {
 		return err1
 	}
 	if err = os.Rename(dest, src+txt); err != nil {
@@ -130,65 +144,78 @@ func (t *TextFile) Extract(dir *directories.Dir) error {
 }
 
 // ExtractedImgs generates PNG and Webp image assets from a textfile extracted from an archive.
-func (t *TextFile) ExtractedImgs(dir string) error {
+func (t *TextFile) ExtractedImgs(w io.Writer, cfg conf.Config, dir string) error {
+	if w == nil {
+		w = io.Discard
+	}
 	j := filepath.Join(dir, t.UUID) + txt
 	n, err := filepath.Abs(j)
 	if err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
-	logs.Println("n", n)
-	if _, err := os.Stat(n); os.IsNotExist(err) {
-		return fmt.Errorf("extractedimgs: %w", os.ErrNotExist)
+	fmt.Fprintln(w, "n", n)
+	if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("%w: %s", os.ErrNotExist, n)
 	} else if err != nil {
 		return fmt.Errorf("extractedimgs: %s: %w", t.UUID, err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(n, t.UUID, amiga); err != nil {
+	if err := img.Make(w, cfg, n, t.UUID, amiga); err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
 	return nil
 }
 
-// TextPng generates PNG format image assets from a textfile.
-func (t *TextFile) TextPng(c int, dir string) error {
-	logs.Printf("%d. %v", c, t)
+// TextPNG generates PNG format image assets from a textfile.
+func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, count int, dir string) error {
+	if w == nil {
+		w = io.Discard
+	}
+	fmt.Fprintf(w, "\t%d. %v", count, t)
 	name := filepath.Join(dir, t.UUID)
-	if _, err := os.Stat(name); os.IsNotExist(err) {
-		logs.Printf("%s\n", str.X())
-		return fmt.Errorf("txtpng: %w", ErrPNG)
+	if _, err := os.Stat(name); errors.Is(err, fs.ErrNotExist) {
+		fmt.Fprintf(w, "%s\n", str.X())
+		return fmt.Errorf("%w: %s", ErrPNG, name)
 	} else if err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
 	amiga := bool(t.Platform == amigaTxt)
-	if err := img.Generate(name, t.UUID, amiga); err != nil {
+	if err := img.Make(w, cfg, name, t.UUID, amiga); err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
-	logs.Print("\n")
+	fmt.Fprintln(w)
 	return nil
 }
 
 // WebP finds and generates missing WebP format images.
-func (t *TextFile) WebP(c int, imgDir string) (int, error) {
+func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
+	if t.UUID == "" {
+		return c, ErrUUID
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	c++
 	name := filepath.Join(imgDir, t.UUID+webp)
-	if sw, err := os.Stat(name); err == nil && sw.Size() > 0 {
+	if sw, err := os.Stat(name); !errors.Is(err, fs.ErrNotExist) && err != nil {
+		fmt.Fprintf(w, "%s\n", str.X())
+		return c, fmt.Errorf("webp stat %w: %s", err, name)
+	} else if err == nil && sw.Size() > 0 {
+		// skip any existing webp images
 		c--
 		return c, nil
-	} else if !os.IsNotExist(err) && err != nil {
-		logs.Printf("%s\n", str.X())
-		return c, fmt.Errorf("txtwebp stat: %w", err)
 	}
-	logs.Printf("%d. %v", c, t)
+	fmt.Fprintf(w, "\t%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
-	if st, err := os.Stat(src); os.IsNotExist(err) || st.Size() == 0 {
-		logs.Printf("%s (no src png)\n", str.X())
+	if st, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) || st.Size() == 0 {
+		fmt.Fprintf(w, "%s (no src png)\n", str.X())
 		return c, nil
 	}
-	s, err := images.ToWebp(src, name, true)
+	s, err := images.ToWebp(w, src, name, true)
 	if err != nil {
-		logs.Printf("%s\n", str.X())
+		fmt.Fprintf(w, "%s\n", str.X())
 		return c, fmt.Errorf("txtwebp: %w", err)
 	}
-	logs.Printf("%s %s\n", s, str.Y())
+	fmt.Fprintf(w, "%s %s\n", s, str.Y())
 	return c, nil
 }

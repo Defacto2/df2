@@ -1,131 +1,151 @@
 package demozoo_test
 
 import (
+	"context"
 	"database/sql"
+	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/gookit/color"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
+func TestStat_NextRefresh(t *testing.T) {
+	t.Parallel()
+	s := demozoo.Stat{}
+	err := s.NextRefresh(nil, nil, demozoo.Records{})
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = s.NextRefresh(db, io.Discard, demozoo.Records{})
+	assert.NotNil(t, err)
+}
+
+func TestStat_NewPouet(t *testing.T) {
+	t.Parallel()
+	s := demozoo.Stat{}
+	err := s.NextPouet(nil, nil, demozoo.Records{})
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = s.NextPouet(db, io.Discard, demozoo.Records{})
+	assert.NotNil(t, err)
+}
+
+func TestCounter(t *testing.T) {
+	t.Parallel()
+	err := demozoo.Counter(nil, nil, 0)
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	w := strings.Builder{}
+	err = demozoo.Counter(db, &w, 0)
+	assert.Nil(t, err)
+	assert.Contains(t, w.String(), "records with Demozoo links")
+	err = demozoo.Counter(db, &w, 1)
+	assert.Nil(t, err)
+	assert.Contains(t, w.String(), "records with Pouet links")
+	err = demozoo.Counter(db, &w, 1000)
+	assert.NotNil(t, err)
+}
+
+func TestProduct_Get(t *testing.T) {
+	t.Parallel()
+	p := demozoo.Product{}
+	err := p.Get(0)
+	assert.NotNil(t, err)
+	err = p.Get(1)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		assert.Nil(t, err)
+		assert.NotEmpty(t, p.API)
+	}
+}
+
+func TestReleaser_Get(t *testing.T) {
+	t.Parallel()
+	p := demozoo.Releaser{}
+	err := p.Get(0)
+	assert.NotNil(t, err)
+	err = p.Get(1)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		assert.Nil(t, err)
+		assert.NotEmpty(t, p.API)
+	}
+}
+
+func TestReleaserProducts_Get(t *testing.T) {
+	t.Parallel()
+	p := demozoo.ReleaserProducts{}
+	err := p.Get(0)
+	assert.NotNil(t, err)
+	err = p.Get(1)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		assert.Nil(t, err)
+		assert.NotEmpty(t, p.API)
+	}
+}
+
+func TestMsDosProducts_Get(t *testing.T) {
+	t.Parallel()
+	p := demozoo.MsDosProducts{}
+	err := p.Get(nil, nil)
+	assert.NotNil(t, err)
+}
+
+func TestWindowsProducts_Get(t *testing.T) {
+	t.Parallel()
+	p := demozoo.WindowsProducts{}
+	err := p.Get(nil, nil)
+	assert.NotNil(t, err)
+}
+
+func TestFix(t *testing.T) {
+	t.Parallel()
+	err := demozoo.Fix(nil, nil)
+	assert.NotNil(t, err)
+}
+
 func TestRequest_Query(t *testing.T) {
-	r := demozoo.Request{
+	t.Parallel()
+	r := demozoo.Request{}
+	err := r.Query(nil, nil, "")
+	assert.NotNil(t, err)
+	l, err := zap.NewProduction()
+	assert.Nil(t, err)
+	r = demozoo.Request{
 		All:       false,
 		Overwrite: false,
 		Refresh:   false,
+		Config:    conf.Defaults(),
+		Logger:    l.Sugar(),
 	}
-	tests := []struct {
-		name    string
-		id      string
-		wantErr bool
-	}{
-		{"empty", "", true},
-		{"invalid", "abcde", true},
-		{"not demozoo", "1", false},
-		{"demozoo by id", "22884", false},
-		{"demozoo by uuid", "0d4777a3-181a-4ce4-bcf2-2093b48be83b", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := r.Query(tt.id); (err != nil) != tt.wantErr {
-				t.Errorf("Request.Query() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestGetProduct(t *testing.T) {
-	tests := []struct {
-		name       string
-		id         uint
-		wantCode   int
-		wantStatus string
-		wantTitle  string
-	}{
-		{"invalid", 0, 404, "404 Not Found", ""},
-		{"deleted", 9609, 404, "404 Not Found", ""},
-		{"record 1", 1, 200, "200 OK", "Rob Is Jarig"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var f demozoo.Product
-			err := f.Get(tt.id)
-			if err != nil {
-				t.Error(err)
-			}
-			gotCode, gotStatus, gotAPI := f.Code, f.Status, f.API
-			if gotCode != tt.wantCode {
-				t.Errorf("Fetch() gotCode = %v, want %v", gotCode, tt.wantCode)
-			}
-			if gotStatus != tt.wantStatus {
-				t.Errorf("Fetch() gotStatus = %v, want %v", gotStatus, tt.wantStatus)
-			}
-			if gotAPI.Title != tt.wantTitle {
-				t.Errorf("Fetch() gotTitle = %v, want %v", gotAPI.Title, tt.wantTitle)
-			}
-		})
-	}
-}
-
-func TestGetReleaser(t *testing.T) {
-	tests := []struct {
-		name       string
-		id         uint
-		wantCode   int
-		wantStatus string
-		wantName   string
-	}{
-		{"invalid", 0, 404, "404 Not Found", ""},
-		{"releaser #1", 1, 200, "200 OK", "Aardbei"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var f demozoo.Releaser
-			err := f.Get(tt.id)
-			if err != nil {
-				t.Error(err)
-			}
-			gotCode, gotStatus, gotAPI := f.Code, f.Status, f.API
-			if gotCode != tt.wantCode {
-				t.Errorf("Fetch() gotCode = %v, want %v", gotCode, tt.wantCode)
-			}
-			if gotStatus != tt.wantStatus {
-				t.Errorf("Fetch() gotStatus = %v, want %v", gotStatus, tt.wantStatus)
-			}
-			if gotAPI.Name != tt.wantName {
-				t.Errorf("Fetch() gotTitle = %v, want %v", gotAPI.Name, tt.wantName)
-			}
-		})
-	}
-}
-
-func TestGetReleases(t *testing.T) {
-	tests := []struct {
-		name      string
-		id        uint
-		wantProds bool
-		wantErr   bool
-	}{
-		{"invalid", 0, false, true},
-		{"releaser #1", 1, true, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var f demozoo.ReleaserProducts
-			gotErr := f.Get(tt.id)
-			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("ReleaserProducts() error = %v, wantErr %v", gotErr, tt.wantErr)
-			}
-			if prods := (len(f.API) > 0); prods != tt.wantProds {
-				t.Errorf("ReleaserProducts.Get() wantProds = %v", prods)
-			}
-		})
-	}
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.Query(db, io.Discard, "")
+	assert.NotNil(t, err)
+	err = r.Query(db, io.Discard, "qwerty")
+	assert.NotNil(t, err, "invalid id")
+	err = r.Query(db, io.Discard, "1")
+	assert.Nil(t, err, "record doesn't have a Demozoo association")
+	err = r.Query(db, io.Discard, "22884")
+	assert.Nil(t, err, "record has a Demozoo association")
+	err = r.Query(db, io.Discard, "0d4777a3-181a-4ce4-bcf2-2093b48be83b")
+	assert.Nil(t, err, "record by uuid has a Demozoo association")
 }
 
 func values() []sql.RawBytes {
@@ -156,7 +176,8 @@ func values() []sql.RawBytes {
 	return v
 }
 
-func Test_newRecord(t *testing.T) {
+func TestNewRecord(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		c      int
 		values []sql.RawBytes
@@ -181,7 +202,9 @@ func Test_newRecord(t *testing.T) {
 		{"pouet", args{0, pouet}, "1", "somefile.zip", "dos", []string{"Lisa", "Linus"}, 50, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotR, gotErr := demozoo.NewRecord(tt.args.c, tt.args.values)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("newRecord() error = %v, wantErr %v", gotErr, tt.wantErr)
@@ -205,37 +228,34 @@ func Test_newRecord(t *testing.T) {
 	}
 }
 
-func TestRecord_download(t *testing.T) {
-	type fields struct {
-		UUID string
-	}
-	type args struct {
-		overwrite bool
-		api       prods.ProductionsAPIv1
-		st        demozoo.Stat
-	}
-	tests := []struct {
-		name     string
-		fields   fields
-		args     args
-		wantSkip bool
-	}{
-		{"empty", fields{}, args{}, true},
-		{"okay", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, args{}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &demozoo.Record{
-				UUID: tt.fields.UUID,
-			}
-			if gotSkip := r.Download(tt.args.overwrite, &tt.args.api, tt.args.st); gotSkip != tt.wantSkip {
-				t.Errorf("Record.download() = %v, want %v", gotSkip, tt.wantSkip)
-			}
-		})
-	}
+func TestRecord_Download(t *testing.T) {
+	t.Parallel()
+	r := demozoo.Record{}
+	st := demozoo.Stat{}
+	err := r.Download(nil, nil, st, false)
+	assert.NotNil(t, err)
+
+	api := prods.ProductionsAPIv1{}
+	err = r.Download(io.Discard, &api, st, false)
+	assert.NotNil(t, err)
+
+	r = demozoo.Record{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}
+	err = r.Download(io.Discard, &api, st, false)
+	assert.NotNil(t, err)
 }
 
-func TestRecord_doseeMeta_fileMeta(t *testing.T) {
+func TestRecord_DoseeMeta(t *testing.T) { //nolint:tparallel
+	t.Parallel()
+	r := demozoo.Record{}
+	c := conf.Defaults()
+	err := r.DoseeMeta(nil, nil, c)
+	assert.NotNil(t, err)
+	db, err := database.Connect(c)
+	assert.Nil(t, err)
+	defer db.Close()
+	err = r.DoseeMeta(nil, nil, c)
+	assert.NotNil(t, err)
+
 	type fields struct {
 		ID   string
 		UUID string
@@ -249,19 +269,24 @@ func TestRecord_doseeMeta_fileMeta(t *testing.T) {
 		{"id", fields{ID: "22884"}, true},
 		{"uuid", fields{UUID: "0d4777a3-181a-4ce4-bcf2-2093b48be83b"}, true}, // because physical files are missing
 	}
+	cfg := conf.Defaults()
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &demozoo.Record{
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
 			}
-			if err := r.DoseeMeta(); (err != nil) != tt.wantErr {
+			if err := r.DoseeMeta(nil, nil, cfg); (err != nil) != tt.wantErr {
 				t.Errorf("Record.doseeMeta() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &demozoo.Record{
 				ID:   tt.fields.ID,
 				UUID: tt.fields.UUID,
@@ -302,6 +327,7 @@ type fields struct {
 }
 
 func TestSQL(t *testing.T) { //nolint:funlen
+	t.Parallel()
 	const where string = " WHERE id=?"
 	now := time.Now()
 	tests := []struct {
@@ -348,7 +374,9 @@ func TestSQL(t *testing.T) { //nolint:funlen
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := demozoo.Record{
 				Count:          tt.fields.count,
 				FilePath:       tt.fields.FilePath,
@@ -382,6 +410,7 @@ func TestSQL(t *testing.T) { //nolint:funlen
 }
 
 func TestZipContent(t *testing.T) {
+	t.Parallel()
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -395,23 +424,25 @@ func TestZipContent(t *testing.T) {
 	}{
 		{"empty", fields{}, false, true},
 		{"missing", fields{FilePath: "/dev/null"}, false, true},
-		{"dir", fields{FilePath: "tests/demozoo"}, false, true},
+		{"dir", fields{FilePath: "testdata/demozoo"}, false, true},
 		{"7zip", fields{
-			FilePath: filepath.Join(pwd, "tests", "demozoo", "test.7z"),
+			FilePath: filepath.Join(pwd, "testdata", "demozoo", "test.7z"),
 			Filename: "test.7z",
 		}, false, true},
 		{"zip", fields{
-			FilePath: filepath.Join(pwd, "tests", "demozoo", "test.zip"),
+			FilePath: filepath.Join(pwd, "testdata", "demozoo", "test.zip"),
 			Filename: "test.zip",
 		}, true, false},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &demozoo.Record{
 				FilePath: tt.fields.FilePath,
 				Filename: tt.fields.Filename,
 			}
-			gotOk, err := r.ZipContent()
+			gotOk, err := r.ZipContent(nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ZipContent()  error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -423,44 +454,48 @@ func TestZipContent(t *testing.T) {
 }
 
 func TestFileExist(t *testing.T) {
-	pwd, err := os.Getwd()
-	if err != nil {
-		t.Error(err)
-	}
-	pwd = filepath.Join(pwd, "..", "..")
-	type fields struct {
-		count   int
-		missing int
-		total   int
-	}
+	t.Parallel()
+	wd, err := os.Getwd()
+	assert.Nil(t, err)
+	pwd := filepath.Join(wd, "..", "..")
+	st := demozoo.Stat{}
+	b, err := st.FileExist(nil)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+
 	r := demozoo.Record{}
-	tests := []struct {
-		name        string
-		fields      fields
-		path        string
-		wantMissing bool
-	}{
-		{name: "empty", path: "", wantMissing: true},
-		{name: "missing", path: "/this/dir/does/not/exist", wantMissing: true},
-		{name: "7z", path: filepath.Join(pwd, "tests", "demozoo", "test.7z"), wantMissing: false},
-		{name: "zip", path: filepath.Join(pwd, "tests", "demozoo", "test.zip"), wantMissing: false},
+	b, err = st.FileExist(&r)
+	assert.Nil(t, err)
+	assert.Equal(t, false, b)
+	assert.Equal(t, 1, st.Missing)
+
+	r = demozoo.Record{
+		FilePath: "/this/does/not/exist",
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			st := &demozoo.Stat{
-				Count:   tt.fields.count,
-				Missing: tt.fields.missing,
-				Total:   tt.fields.total,
-			}
-			r.FilePath = tt.path
-			if gotMissing := st.FileExist(&r); gotMissing != tt.wantMissing {
-				t.Errorf("FileExist() = %v, want %v", gotMissing, tt.wantMissing)
-			}
-		})
+	b, err = st.FileExist(&r)
+	assert.Nil(t, err)
+	assert.Equal(t, false, b)
+	assert.Equal(t, 2, st.Missing)
+
+	r = demozoo.Record{
+		FilePath: pwd,
 	}
+	b, err = st.FileExist(&r)
+	assert.NotNil(t, err)
+	assert.Equal(t, false, b)
+	assert.Equal(t, 2, st.Missing)
+
+	r = demozoo.Record{
+		FilePath: filepath.Join(pwd, "testdata", "demozoo", "test.7z"),
+	}
+	b, err = st.FileExist(&r)
+	assert.Nil(t, err)
+	assert.Equal(t, true, b)
+	assert.Equal(t, 2, st.Missing)
 }
 
 func TestRecord_String(t *testing.T) {
+	t.Parallel()
 	color.Enable = false
 	type fields struct {
 		count        int
@@ -488,7 +523,9 @@ func TestRecord_String(t *testing.T) {
 		{"eight", f, args{total: 12345678}, "→ 00000005. 99 (77) ?"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := demozoo.Record{
 				Count:        tt.fields.count,
 				ID:           tt.fields.ID,

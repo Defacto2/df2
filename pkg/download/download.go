@@ -1,4 +1,4 @@
-// Package download handles the fetching of remote files.
+// Package download fetches remote files used by this program and the website.
 package download
 
 import (
@@ -13,18 +13,18 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/download/internal/cnter"
-	"github.com/Defacto2/df2/pkg/logs"
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
 
 // Request a HTTP download.
 type Request struct {
-	Link       string        // URL to request.
-	Timeout    time.Duration // Timeout duration (5 * time.Second).
-	Read       []byte        // HTTP body data received.
-	StatusCode int           // HTTP statuscode received.
-	Status     string        // HTTP status received.
+	Link    string        // URL to request.
+	Timeout time.Duration // Timeout duration (5 * time.Second).
+	Read    []byte        // HTTP body data received.
+	Code    int           // HTTP statuscode received.
+	Status  string        // HTTP status received.
 }
 
 const (
@@ -44,8 +44,7 @@ const (
 
 // Body fetches a HTTP link and returns its data and the status code.
 func (r *Request) Body() error {
-	_, err := url.Parse(r.Link)
-	if err != nil {
+	if _, err := url.Parse(r.Link); err != nil {
 		return err
 	}
 	timeout := CheckTime(r.Timeout)
@@ -64,16 +63,16 @@ func (r *Request) Body() error {
 	}
 	defer res.Body.Close()
 	r.Status = res.Status
-	r.StatusCode = res.StatusCode
+	r.Code = res.StatusCode
 	r.Read, err = io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("body readall: %w", err)
+		return fmt.Errorf("body read all: %w", err)
 	}
 	return nil
 }
 
 // CheckTime creates a valid time duration for use with http.Client.Timeout.
-// t can be 0 or a number of seconds.
+// The t value can be 0 or a number of seconds.
 func CheckTime(t time.Duration) time.Duration {
 	const maxTime = 5 * time.Second
 	secs := time.Duration(t.Seconds())
@@ -84,12 +83,18 @@ func CheckTime(t time.Duration) time.Duration {
 }
 
 // printProgress prints that the download progress is complete.
-func progressDone(name string, written int64) {
-	logs.Printcrf("%v download saved to: %v", humanize.Bytes(uint64(written)), name)
+func progressDone(w io.Writer, name string, written int64) {
+	if w == nil {
+		w = io.Discard
+	}
+	logger.PrintfCR(w, "%v download saved to: %v", humanize.Bytes(uint64(written)), name)
 }
 
 // GetSave downloads the url and saves it as the named file.
-func GetSave(name, url string) (http.Header, error) {
+func GetSave(w io.Writer, name, url string) (http.Header, error) {
+	if w == nil {
+		w = io.Discard
+	}
 	// open local target file
 	out, err := os.Create(name)
 	if err != nil {
@@ -115,42 +120,15 @@ func GetSave(name, url string) (http.Header, error) {
 	if err != nil {
 		return nil, err
 	}
-	progressDone(out.Name(), i)
-	return resp.Header, nil
-}
-
-// Silent quietly downloads the URL and saves it to the named file.
-// Not in use.
-func Silent(name, url string) (http.Header, error) {
-	out, err := os.Create(name)
-	if err != nil {
-		return nil, err
-	}
-	defer out.Close()
-	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set(ua, UserAgent)
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	// download and write remote file to the local target
-	if _, err := io.Copy(out, resp.Body); err != nil {
-		return nil, err
-	}
+	progressDone(w, out.Name(), i)
 	return resp.Header, nil
 }
 
 func ping(url, method string, timeout time.Duration) (*http.Response, error) {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +142,11 @@ func ping(url, method string, timeout time.Duration) (*http.Response, error) {
 }
 
 // PingGet connects to a URL and returns its response.
-func Get(url string) ([]byte, int, error) {
-	const timeout = 30 * time.Second
+func Get(url string, timeout time.Duration) ([]byte, int, error) {
+	if timeout == 0 {
+		const httpTimeout = 15 * time.Second
+		timeout = httpTimeout
+	}
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -188,33 +169,39 @@ func Get(url string) ([]byte, int, error) {
 }
 
 // PingHead connects to a URL and returns its HTTP status code and status text.
-func PingHead(url string) (*http.Response, error) {
-	const timeout = 5 * time.Second
+func PingHead(url string, timeout time.Duration) (*http.Response, error) {
+	if timeout == 0 {
+		const httpTimeout = 5 * time.Second
+		timeout = httpTimeout
+	}
 	return ping(url, http.MethodHead, timeout)
 }
 
 // PingFile connects to a URL file down and returns its status code, filename and file size.
-func PingFile(link string) (code int, name string, size string, err error) {
-	res, err := PingHead(link)
+func PingFile(link string, timeout time.Duration) ( //nolint:nonamedreturns
+	code int, name string, size string, err error,
+) {
+	res, err := PingHead(link, timeout)
 	if err != nil {
-		return res.StatusCode, "", "", err
+		if res != nil {
+			return res.StatusCode, "", "", err
+		}
+		return 0, "", "", err
 	}
 	cd, cl := res.Header.Get(ContentDisposition), res.Header.Get(ContentLength)
-	name = strings.TrimPrefix(cd, DownloadPrefix)
+	n := strings.TrimPrefix(cd, DownloadPrefix)
 	res.Body.Close()
 
+	b := ""
 	i, err := strconv.Atoi(cl)
 	if err == nil {
-		size = humanize.Bytes(uint64(i))
+		b = humanize.Bytes(uint64(i))
 	}
-	return res.StatusCode, name, size, nil
+	return res.StatusCode, n, b, nil
 }
 
 // StatusColor colours the HTTP status based on its severity.
-func StatusColor(code int, status string) string {
-	if status == "" {
-		return ""
-	}
+func StatusColor(code int, status string) string { //nolint:cyclop
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
 	const (
 		infoRespCont   = 100 // Informational responses
@@ -229,6 +216,9 @@ func StatusColor(code int, status string) string {
 		serverEnd      = 599
 	)
 	c := code
+	if c < infoRespCont || status == "" {
+		return ""
+	}
 	switch {
 	case c >= infoRespCont && c <= infoRespEnd:
 		return color.Info.Sprint(status)

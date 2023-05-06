@@ -1,3 +1,4 @@
+// Package insert adds Demozoo productions to the Defacto2 database.
 package insert
 
 import (
@@ -5,17 +6,21 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/google/uuid"
 )
 
-var ErrNoQuery = errors.New("query statement is empty")
+var (
+	ErrID      = errors.New("production id must be 1 or higher")
+	ErrNoQuery = errors.New("query statement is empty")
+	ErrProd    = errors.New("productions pointer cannot be nil")
+)
 
 const (
 	sep     = ","
@@ -24,9 +29,9 @@ const (
 
 // Record contains the values for a new Demozoo releaser production to be added to the database file table.
 type Record struct {
-	WebIDDemozoo uint   // Demozoo production id
-	ID           string // MySQL auto increment id
-	UUID         string // record unique id
+	WebIDDemozoo uint   // Demozoo production ID.
+	ID           string // MySQL auto increment ID.
+	UUID         string // Unique ID for the record.
 	Title        string
 	Platform     string
 	Section      string
@@ -42,9 +47,10 @@ type Record struct {
 }
 
 // Insert the new Demozoo releaser production into the database.
-func (r *Record) Insert() (sql.Result, error) {
-	db := database.Connect()
-	defer db.Close()
+func (r *Record) Insert(db *sql.DB) (sql.Result, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("insert uuid: %w", err)
@@ -69,16 +75,28 @@ func (r *Record) Insert() (sql.Result, error) {
 
 // Prods adds the Demozoo releasers productions to the database.
 // API: https://demozoo.org/api/v1/releasers/
-func Prods(p *releases.Productions) error {
+func Prods(db *sql.DB, w io.Writer, prods *releases.Productions) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if prods == nil {
+		return ErrProd
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	recs := 0
-	for i, prod := range *p {
+	for i, prod := range *prods {
 		item := fmt.Sprintf("%d. ", i)
-		logs.Printf("\n%s%s", item, prod.Title)
-		rec := Prod(prod)
+		fmt.Fprintf(w, "\n%s%s", item, prod.Title)
+		rec, err := Prod(db, w, prod)
+		if err != nil {
+			return err
+		}
 		if reflect.DeepEqual(rec, Record{}) {
 			continue
 		}
-		res, err := rec.Insert()
+		res, err := rec.Insert(db)
 		if err != nil {
 			return err
 		}
@@ -87,22 +105,34 @@ func Prods(p *releases.Productions) error {
 			return err
 		}
 		pad := strings.Repeat(" ", len(item))
-		logs.Printf("\n%s ↳ production added using auto-id: %d", pad, newID)
+		fmt.Fprintf(w, "\n%s ↳ production added using auto-id: %d", pad, newID)
 		recs++
 	}
 	if recs > 0 {
-		logs.Printf("\nAdded %d new releaser productions from Demozoo.\n", recs)
+		fmt.Fprintf(w, "\nAdded %d new releaser productions from Demozoo.\n", recs)
 	}
 	return nil
 }
 
 // Prod mutates the raw Demozoo API releaser production data to database ready values.
-func Prod(prod releases.ProductionV1) Record {
-	dbID, _ := database.DemozooID(uint(prod.ID))
-	if dbID > 0 {
+func Prod(db *sql.DB, w io.Writer, prod releases.ProductionV1) (Record, error) {
+	if db == nil {
+		return Record{}, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if prod.ID < 1 {
+		return Record{}, fmt.Errorf("%w %d", ErrID, prod.ID)
+	}
+	id, err := database.DemozooID(db, uint(prod.ID))
+	if err != nil {
+		return Record{}, err
+	}
+	if id > 0 {
 		prod.ExistsInDB = true
-		logs.Printf(": skipped, production already exists")
-		return Record{}
+		fmt.Fprintf(w, ": skipped, production already exists")
+		return Record{}, nil
 	}
 
 	p, t := "", ""
@@ -121,36 +151,34 @@ func Prod(prod releases.ProductionV1) Record {
 		if t != "" {
 			s += " " + t
 		}
-		logs.Printf(": skipped, unsuitable production [%s]", strings.TrimSpace(s))
-		return Record{}
+		fmt.Fprintf(w, ": skipped, unsuitable production [%s]", strings.TrimSpace(s))
+		return Record{}, nil
 	}
-	logs.Printf(" [%s/%s]", platform, section)
+	fmt.Fprintf(w, " [%s/%s]", platform, section)
 
 	a, b := prod.Groups()
 	if a != "" {
-		logs.Printf(" for: %s", a)
+		fmt.Fprintf(w, " for: %s", a)
 	}
 	if b != "" {
-		logs.Printf(" by: %s", b)
+		fmt.Fprintf(w, " by: %s", b)
 	}
-
 	y, m, d := prod.Released()
-
-	var rec Record
-	rec.WebIDDemozoo = uint(prod.ID)
-	rec.Title = strings.TrimSpace(prod.Title)
-	rec.Platform = platform
-	rec.Section = section
-	rec.GroupFor = a
-	rec.GroupBy = b
-	rec.IssuedYear = uint16(y)
-	rec.IssuedMonth = uint8(m)
-	rec.IssuedDay = uint8(d)
-	return rec
+	return Record{
+		WebIDDemozoo: uint(prod.ID),
+		Title:        strings.TrimSpace(prod.Title),
+		Platform:     platform,
+		Section:      section,
+		GroupFor:     a,
+		GroupBy:      b,
+		IssuedYear:   uint16(y),
+		IssuedMonth:  uint8(m),
+		IssuedDay:    uint8(d),
+	}, nil
 }
 
 // stmt creates the SQL prepare statement and values to insert a new Demozoo releaser production.
-func (r *Record) stmt(id uuid.UUID) (query string, args []any, err error) {
+func (r *Record) stmt(id uuid.UUID) (string, []any, error) {
 	set, args := inserts(r)
 	if len(set) == 0 {
 		return "", args, ErrNoQuery
@@ -167,13 +195,14 @@ func (r *Record) stmt(id uuid.UUID) (query string, args []any, err error) {
 	args = append(args, []any{now}...)
 	set = append(set, "deletedat")
 	args = append(args, []any{now}...)
-
 	vals := strings.Split(strings.TrimSpace(strings.Repeat("? ", len(args))), " ")
-	query = "INSERT INTO files (" + strings.Join(set, sep) + ") VALUES (" + strings.Join(vals, sep) + ")"
+	query := "INSERT INTO files (" + strings.Join(set, sep) + ") VALUES (" + strings.Join(vals, sep) + ")"
 	return query, args, nil
 }
 
-func inserts(r *Record) (set []string, args []any) {
+func inserts(r *Record) ([]string, []any) {
+	var args []any
+	set := []string{}
 	if r.WebIDDemozoo != 0 {
 		set = append(set, "web_id_demozoo")
 		args = append(args, []any{r.WebIDDemozoo}...)
@@ -216,7 +245,8 @@ func inserts(r *Record) (set []string, args []any) {
 	return set, args
 }
 
-func credits(r *Record) (set []string, args []any) {
+func credits(r *Record) ([]string, []any) {
+	args, set := []any{}, []string{}
 	if len(r.CreditText) > 0 {
 		set = append(set, "credit_text")
 		j := strings.Join(r.CreditText, sep)

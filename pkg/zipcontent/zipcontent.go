@@ -1,27 +1,41 @@
-// Package zipcontent scans archives for file and directory content.
+// Package zipcontent processes the directory and file content of a file archive.
 package zipcontent
 
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"io"
 
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
+	"go.uber.org/zap"
 )
 
+func stmt() string {
+	const s = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`updatedat`,`retrotxt_readme`"
+	const w = " WHERE file_zip_content IS NULL AND (`filename` LIKE '%.zip' OR `filename`" +
+		" LIKE '%.rar' OR `filename` LIKE '%.7z')"
+	return fmt.Sprintf("%s FROM `files` %s", s, w)
+}
+
 // Fix the content of zip archives within in the database.
-func Fix(summary bool) error {
-	s := scan.Init()
-	db := database.Connect()
-	defer db.Close()
-	rows, err := db.Query(where())
+func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, summary bool) error { //nolint:cyclop
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	s, err := scan.Init(cfg)
 	if err != nil {
 		return err
 	}
-	if rows.Err() != nil {
+	rows, err := db.Query(stmt())
+	if err != nil {
+		return err
+	} else if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()
@@ -30,23 +44,22 @@ func Fix(summary bool) error {
 		return err
 	}
 	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]any, len(values))
+	args := make([]any, len(values))
 	for i := range values {
-		scanArgs[i] = &values[i]
+		args[i] = &values[i]
 	}
 	for rows.Next() {
 		s.Total++
 	}
-	rows, err = db.Query(where())
+	rows, err = db.Query(stmt())
 	if err != nil {
 		return err
-	}
-	if rows.Err() != nil {
+	} else if rows.Err() != nil {
 		return rows.Err()
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err := rows.Scan(scanArgs...); err != nil {
+		if err := rows.Scan(args...); err != nil {
 			return err
 		}
 		s.Count++
@@ -56,21 +69,15 @@ func Fix(summary bool) error {
 		}
 		s.Columns = columns
 		s.Values = &values
-		if err := r.Iterate(&s); err != nil {
-			log.Printf("\n%s\n", err)
+		if err := r.Iterate(db, w, &s); err != nil {
+			fmt.Fprintln(w)
+			l.Errorln(err)
 			continue
 		}
-		logs.Println()
+		fmt.Fprintln(w)
 	}
 	if summary {
-		s.Summary()
+		s.Summary(w)
 	}
 	return nil
-}
-
-func where() string {
-	const s = "SELECT `id`,`uuid`,`deletedat`,`createdat`,`filename`,`updatedat`,`retrotxt_readme`"
-	const w = " WHERE file_zip_content IS NULL AND (`filename` LIKE '%.zip' OR `filename`" +
-		" LIKE '%.rar' OR `filename` LIKE '%.7z')"
-	return fmt.Sprintf("%s FROM `files` %s", s, w)
 }

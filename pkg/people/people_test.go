@@ -1,119 +1,90 @@
 package people_test
 
 import (
-	"reflect"
-	"strings"
+	"bytes"
+	"io"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/people"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestFilters(t *testing.T) {
-	tests := []struct {
-		name string
-		want []string
-	}{
-		{"", strings.Split(people.Roles(), ",")},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := people.Filters(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Filters() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestCronjob(t *testing.T) {
+	t.Parallel()
+	err := people.Cronjob(nil, nil, "", false)
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = people.Cronjob(db, io.Discard, "", false)
+	assert.NotNil(t, err)
 }
 
-func TestList(t *testing.T) {
-	tests := []struct {
-		name    string
-		role    string
-		want    int
-		wantErr bool
-	}{
-		{"empty", "", 0, false},
-		{"error", "error", 0, true},
-		{"writers", "writers", 1, false},
-		{"musicians", "m", 1, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, got, err := role.List(role.Roles(tt.role))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("List() error got = %v, want %v", (err != nil), tt.wantErr)
-			}
-			if got < tt.want {
-				t.Errorf("List() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestDataList(t *testing.T) {
+	t.Parallel()
+	err := people.DataList(nil, nil, "", people.Flags{})
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = people.DataList(db, io.Discard, "", people.Flags{})
+	assert.Nil(t, err)
+	bb := bytes.Buffer{}
+	err = people.DataList(db, &bb, "", people.Flags{})
+	assert.Nil(t, err)
+	assert.Contains(t, bb.String(), `<option value="`)
+}
+
+func TestFilters(t *testing.T) {
+	t.Parallel()
+	f := people.Filters()
+	assert.Len(t, f, 4)
+	s := people.Roles()
+	assert.Contains(t, s, role.Writers.String())
+}
+
+func TestHTML(t *testing.T) {
+	t.Parallel()
+	err := people.HTML(nil, nil, "", people.Flags{})
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = people.HTML(db, io.Discard, "", people.Flags{})
+	assert.Nil(t, err)
+	bb := bytes.Buffer{}
+	err = people.HTML(db, &bb, "", people.Flags{})
+	assert.Nil(t, err)
+	assert.Contains(t, bb.String(), `<h2><a href="/p/`)
 }
 
 func TestPrint(t *testing.T) {
-	tests := []struct {
-		name    string
-		r       people.Request
-		wantErr bool
-	}{
-		{"empty", people.Request{}, false},
-		{"unknown", people.Request{"unknown", false, true}, true},
-		{"regular", people.Request{"writers", false, true}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := people.Print(tt.r); (err != nil) != tt.wantErr {
-				t.Errorf("Print() error = %v, want %v", err, tt.wantErr)
-			}
-		})
-	}
+	t.Parallel()
+	err := people.Print(nil, nil, people.Flags{})
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = people.Print(db, io.Discard, people.Flags{})
+	assert.Nil(t, err)
+	bb := &bytes.Buffer{}
+	err = people.Print(db, bb, people.Flags{})
+	assert.Nil(t, err)
+	assert.Contains(t, bb.String(), `Total authors`)
 }
 
-func Test_DataList_HTML(t *testing.T) {
-	type args struct {
-		filename string
-		r        people.Request
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"error", args{"", people.Request{"error", false, false}}, true},
-		{"ok", args{"", people.Request{"", false, false}}, false},
-		{"progress", args{"", people.Request{"", false, true}}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := people.HTML(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
-				t.Errorf("HTML() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := people.DataList(tt.args.filename, tt.args.r); (err != nil) != tt.wantErr {
-				t.Errorf("DataList() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestRole_String(t *testing.T) {
-	tests := []struct {
-		name string
-		r    role.Role
-		want string
-	}{
-		{"err", -1, ""},
-		{"all", 0, "all"},
-		{"a", 1, "artists"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.r.String(); got != tt.want {
-				t.Errorf("Role.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+func TestFix(t *testing.T) {
+	t.Parallel()
+	err := people.Fix(nil, nil)
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	bb := &bytes.Buffer{}
+	err = people.Fix(db, bb)
+	assert.Nil(t, err)
+	assert.Contains(t, bb.String(), `time taken`)
 }

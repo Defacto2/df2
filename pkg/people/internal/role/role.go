@@ -1,13 +1,14 @@
+// Package role handles the job or activity a person was credited with.
 package role
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 )
@@ -56,14 +57,19 @@ func (r Role) String() string {
 }
 
 // List people filtered by a role.
-func List(role Role) (people []string, total int, err error) {
-	db := database.Connect()
-	defer db.Close()
+func List(db *sql.DB, w io.Writer, role Role) ([]string, int, error) {
+	if db == nil {
+		return nil, 0, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	s := PeopleStmt(role, false)
 	if s == "" {
 		return nil, 0, fmt.Errorf("list statement %v: %w", role, ErrRole)
 	}
-	if total, err = database.Total(&s); err != nil {
+	total, err := database.Total(db, w, &s)
+	if err != nil {
 		return nil, 0, fmt.Errorf("list totals: %w", err)
 	}
 	// interate through records
@@ -74,7 +80,8 @@ func List(role Role) (people []string, total int, err error) {
 		return nil, 0, fmt.Errorf("list rows: %w", rows.Err())
 	}
 	defer rows.Close()
-	var p sql.NullString
+	p := sql.NullString{}
+	people := []string{}
 	i := 0
 	for rows.Next() {
 		if err = rows.Scan(&p); err != nil {
@@ -97,32 +104,30 @@ func PeopleStmt(role Role, softDel bool) string {
 		}
 		return "AND `deletedat` IS NULL"
 	}
-	d := func(s string) string {
+	union := func(s string) string {
 		return fmt.Sprintf(" UNION (SELECT DISTINCT %s AS pubCombined FROM files WHERE Length(%s) <> 0 %s)",
 			s, s, del())
 	}
 	s := ""
 	switch role {
 	case Writers:
-		s += d("credit_text")
+		s += union("credit_text")
 	case Musicians:
-		s += d("credit_audio")
+		s += union("credit_audio")
 	case Coders:
-		s += d("credit_program")
+		s += union("credit_program")
 	case Artists:
-		s += d("credit_illustration")
+		s += union("credit_illustration")
 	case Everyone:
-		s += d("credit_text")
-		s += d("credit_audio")
-		s += d("credit_program")
-		s += d("credit_illustration")
-	}
-	if s == "" {
-		return s
+		s += union("credit_text")
+		s += union("credit_audio")
+		s += union("credit_program")
+		s += union("credit_illustration")
+	default:
+		return ""
 	}
 	s += " ORDER BY pubCombined"
-	s = strings.Replace(s, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
-	return s
+	return strings.Replace(s, "UNION (SELECT DISTINCT ", "(SELECT DISTINCT ", 1)
 }
 
 func Roles(r string) Role {
@@ -143,7 +148,10 @@ func Roles(r string) Role {
 
 // Rename replaces the persons using name with the replacement.
 // The task must be limited names associated to a Role.
-func Rename(replacement, name string, r Role) (count int64, err error) {
+func Rename(db *sql.DB, replacement, name string, r Role) (int64, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	if replacement == "" {
 		return 0, ErrNoReplace
 	}
@@ -163,8 +171,6 @@ func Rename(replacement, name string, r Role) (count int64, err error) {
 	case Everyone:
 		return 0, ErrRenAll
 	}
-	db := database.Connect()
-	defer db.Close()
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return 0, fmt.Errorf("rename people statement: %w", err)
@@ -174,29 +180,38 @@ func Rename(replacement, name string, r Role) (count int64, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("rename people exec: %w", err)
 	}
-	count, err = res.RowsAffected()
+	count, err := res.RowsAffected()
 	if err != nil {
 		return 0, fmt.Errorf("rename people rows affected: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
-// Clean fixes and saves a malformed name.
-func Clean(name string, r Role) (ok bool) {
+// Clean and save a malformed name.
+func Clean(db *sql.DB, w io.Writer, name string, r Role) (bool, error) {
+	if db == nil {
+		return false, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	if name == "" {
+		return false, ErrNoName
+	}
 	rep := CleanS(Trim(name))
 	if rep == name {
-		return false
+		return false, nil
 	}
 	s := str.Y()
-	ok = true
-	c, err := Rename(rep, name, r)
+	ok := true
+	c, err := Rename(db, rep, name, r)
 	if err != nil {
 		s = str.X()
 		ok = false
 	}
-	logs.Printf("\n%s %q %s %s (%d)", s, name,
+	fmt.Fprintf(w, "\n%s %q %s %s (%d)", s, name,
 		color.Question.Sprint("⟫"), color.Info.Sprint(rep), c)
-	return ok
+	return ok, err
 }
 
 // CleanS separates and fixes the substrings of s.

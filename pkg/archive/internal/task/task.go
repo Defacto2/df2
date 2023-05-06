@@ -1,3 +1,4 @@
+// Package task handles the scanning of directories for release proofs.
 package task
 
 import (
@@ -35,7 +36,9 @@ func Init() Task {
 }
 
 // Run a scan for proofs in the provided temp directory.
-func Run(tempDir string) (th, tx Task, err error) {
+func Run(tempDir string) ( //nolint:cyclop,nonamedreturns
+	th Task, tx Task, err error,
+) {
 	entries, err := os.ReadDir(tempDir)
 	if err != nil {
 		return th, tx, fmt.Errorf("extract archive read tempdir %q: %w", tempDir, err)
@@ -50,7 +53,7 @@ func Run(tempDir string) (th, tx Task, err error) {
 		}
 		file, err := entry.Info()
 		if err != nil {
-			fmt.Printf("extract archive entry error: %s\n", err)
+			fmt.Fprintf(os.Stdout, "extract archive entry error: %s\n", err)
 			continue
 		}
 		fn := path.Join(tempDir, entry.Name())

@@ -1,3 +1,4 @@
+// Package prod obtains a Demozoo Production.
 package prod
 
 import (
@@ -13,17 +14,17 @@ import (
 	"github.com/Defacto2/df2/pkg/download"
 )
 
-var ErrNegativeID = errors.New("demozoo production id cannot be a negative integer")
+var ErrID = errors.New("demozoo production id cannot be a negative integer")
 
 const api = "https://demozoo.org/api/v1/productions"
 
 // Production API production request.
 type Production struct {
-	ID         int64         // Demozoo production ID
-	Timeout    time.Duration // HTTP request timeout in seconds (default 5)
-	Link       string        // URL link to sent the request // ??
-	StatusCode int           // received HTTP statuscode
-	Status     string        // received HTTP status
+	ID      int64         // Demozoo production ID.
+	Link    string        // Link URL to receive the request.
+	Code    int           // Code is the HTTP status.
+	Status  string        // Status is the HTTP status.
+	Timeout time.Duration // Timeout in seconds for the HTTP request (default 5).
 }
 
 // URL creates a productions API v.1 request link.
@@ -49,20 +50,21 @@ func (p *Production) Get() (prods.ProductionsAPIv1, error) {
 		return prods.ProductionsAPIv1{}, fmt.Errorf("production data body: %w", err)
 	}
 	p.Status = r.Status
-	p.StatusCode = r.StatusCode
-	var dz prods.ProductionsAPIv1
-	if len(r.Read) > 0 {
-		if err := json.Unmarshal(r.Read, &dz); err != nil {
-			return prods.ProductionsAPIv1{}, fmt.Errorf("production data json unmarshal: %w", err)
-		}
+	p.Code = r.Code
+	if len(r.Read) == 0 {
+		return prods.ProductionsAPIv1{}, nil
+	}
+	dz := prods.ProductionsAPIv1{}
+	if err := json.Unmarshal(r.Read, &dz); err != nil {
+		return prods.ProductionsAPIv1{}, fmt.Errorf("production data json unmarshal: %w", err)
 	}
 	return dz, nil
 }
 
 // URL creates a production URL from a Demozoo ID.
 func URL(id int64) (string, error) {
-	if id < 0 {
-		return "", fmt.Errorf("production id %v: %w", id, ErrNegativeID)
+	if id < 1 {
+		return "", fmt.Errorf("production id %v: %w", id, ErrID)
 	}
 	u, err := url.Parse(api) // base URL
 	if err != nil {

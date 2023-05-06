@@ -1,12 +1,13 @@
+// Package urlset handles creation of XML formatted URLs.
 package urlset
 
 import (
 	"encoding/xml"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 type Set struct {
 	XMLName xml.Name `xml:"urlset,omitempty"`
 	XMLNS   string   `xml:"xmlns,attr,omitempty"`
-	Urls    []Tag    `xml:"url,omitempty"`
+	URLs    []Tag    `xml:"url,omitempty"`
 }
 
 // Tag composes the <url> tag in the sitemap.
@@ -77,8 +78,9 @@ func HTML3Path() [7]string {
 	}
 }
 
-func (set *Set) StaticURLs() (c, i int) {
-	if set == nil || len(set.Urls) < len(Paths()) {
+func (set *Set) StaticURLs(dir string) (int, int) {
+	paths := Paths()
+	if set == nil || len(set.URLs) < len(paths) {
 		return 0, 0
 	}
 	// sitemap priorities
@@ -86,27 +88,27 @@ func (set *Set) StaticURLs() (c, i int) {
 	uri := func(path string) string {
 		return static + path
 	}
-	c, i, view := 0, 0, viper.GetString("directory.views")
-	for i, path := range Paths() {
-		file := filepath.Join(view, path, index)
-		if s, err := os.Stat(file); !os.IsNotExist(err) {
-			set.Urls[i] = Tag{uri(path), Lastmod(s), "", veryHigh}
+	var c, i int
+	for i, path := range paths {
+		file := filepath.Join(dir, path, index)
+		if s, err := os.Stat(file); !errors.Is(err, fs.ErrNotExist) {
+			set.URLs[i] = Tag{uri(path), Lastmod(s), "", veryHigh}
 			c++
 			continue
 		}
-		j := filepath.Join(view, path) + cfm
-		if s, err := os.Stat(j); !os.IsNotExist(err) {
-			set.Urls[i] = Tag{uri(path), Lastmod(s), "", high}
+		j := filepath.Join(dir, path) + cfm
+		if s, err := os.Stat(j); !errors.Is(err, fs.ErrNotExist) {
+			set.URLs[i] = Tag{uri(path), Lastmod(s), "", high}
 			c++
 			continue
 		}
-		k := filepath.Join(view, strings.ReplaceAll(path, "-", "")+cfm)
-		if s, err := os.Stat(k); !os.IsNotExist(err) {
-			set.Urls[i] = Tag{uri(path), Lastmod(s), "", standard}
+		k := filepath.Join(dir, strings.ReplaceAll(path, "-", "")+cfm)
+		if s, err := os.Stat(k); !errors.Is(err, fs.ErrNotExist) {
+			set.URLs[i] = Tag{uri(path), Lastmod(s), "", standard}
 			c++
 			continue
 		}
-		set.Urls[i] = Tag{uri(path), "", "", top}
+		set.URLs[i] = Tag{uri(path), "", "", top}
 	}
 	return c, i
 }

@@ -1,7 +1,8 @@
+// Package main is the command-line tool to manage and optimize defacto2.net.
 package main
 
 /*
-Copyright © 2021-22 Ben Garrett <code.by.ben@gmail.com>
+Copyright © 2021-23 Ben Garrett <code.by.ben@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,44 +18,133 @@ limitations under the License.
 */
 
 import (
-	"bytes"
 	_ "embed"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"runtime"
+	"runtime/debug"
 	"strings"
-	"text/template"
-	"time"
 
-	"github.com/Defacto2/df2/pkg/cmd"
-	"github.com/Defacto2/df2/pkg/database"
-	"github.com/carlmjohnson/versioninfo"
+	"github.com/Defacto2/df2/cmd"
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database/msql"
+	"github.com/Defacto2/df2/pkg/logger"
+	"github.com/caarlos0/env/v7"
 	"github.com/gookit/color"
+	"go.uber.org/zap"
 )
+
+//go:embed cmd/defacto2.txt
+var brand []byte
 
 //go:embed .version
 var version string
 
 func main() {
-	// terminal stderr and stdout configurations
-	rmLogTimestamp()
+	// Logger (use a preset config until env are read)
+	l, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("can't initialize zap logger: %v\n", err)
+	}
+	defer func() {
+		// see issue on false-positive errors.
+		// https://github.com/uber-go/zap/issues/370
+		_ = l.Sync()
+	}()
+	logr := l.Sugar()
+	// Panic recovery to close any active connections and to log the problem.
+	defer func() {
+		if i := recover(); i != nil {
+			debug.PrintStack() // uncomment to trace
+			logr.DPanic(i)
+		}
+	}()
+	// Environment configuration
+	configs := conf.Defaults()
+	if err := env.Parse(
+		&configs, conf.Options()); err != nil {
+		logr.Fatalf("Environment variable probably contains an invalid value: %s.", err)
+	}
+	// Go runtime customizations
+	setProcs(configs)
+	// Setup the production logger
+	if !configs.IsProduction {
+		logr = logger.Production().Sugar()
+	}
+	// Configuration sanity checks
+	if err := configs.Checks(logr); err != nil {
+		logr.Error(err)
+	}
 	if ascii() {
 		color.Enable = false
 	}
-	// print the compile and version details
-	if ver() {
-		fmt.Println(info())
+	// Execute help and exit
+	if help() {
+		execHelp(logr, configs)
 		return
 	}
-	// suppress stdout except when requesting help
-	if quiet() && !help() {
+	// Print the compile and version details
+	if progInfo() {
+		execInfo(logr, configs)
+		return
+	}
+	// Suppress stdout
+	if quiet() {
 		os.Stdout, _ = os.OpenFile(os.DevNull, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		defer os.Stdout.Close()
 	}
-	// cobra flag library
-	if err := cmd.Execute(); err != nil {
+	// Database check
+	checkDB(logr, configs)
+	// Execute the cobra flag library
+	if err := cmd.Execute(logr, configs); err != nil {
+		logr.Error(err)
+		defer os.Exit(1)
+	}
+}
+
+func setProcs(c conf.Config) {
+	if i := c.MaxProcs; i > 0 {
+		runtime.GOMAXPROCS(int(i))
+	}
+}
+
+func checkDB(logr *zap.SugaredLogger, c conf.Config) {
+	db, err := msql.Connect(c)
+	if err != nil {
+		logr.Errorf("Could not connect to the database: %s.", err)
+	}
+	defer func() {
+		if db == nil {
+			return
+		}
+		if !c.IsProduction {
+			logr.Info("Closed the tcp connection to the database.")
+		}
+		if err := db.Close(); err != nil {
+			logr.Error(err)
+		}
+	}()
+}
+
+func execInfo(logr *zap.SugaredLogger, c conf.Config) {
+	w := os.Stdout
+	err := cmd.Brand(w, logr, brand)
+	if err != nil {
+		logr.Error(err)
+	}
+	s, err := cmd.ProgInfo(logr, c, version)
+	if err != nil {
+		logr.Error(err)
+		return
+	}
+	fmt.Fprint(w, s)
+}
+
+func execHelp(logr *zap.SugaredLogger, c conf.Config) {
+	if err := cmd.Execute(logr, c); err != nil {
+		logr.Error(err)
+		// use defer to close any open connections
 		defer os.Exit(1)
 	}
 }
@@ -62,6 +152,7 @@ func main() {
 // global flags that should not be handled by the Cobra library
 // to keep things simple, avoid using the flag standard library
 
+// ascii returns true if the -ascii flag is in use.
 func ascii() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -72,6 +163,7 @@ func ascii() bool {
 	return false
 }
 
+// help returns true if the -help flag or alias is in use.
 func help() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
@@ -82,17 +174,8 @@ func help() bool {
 	return false
 }
 
-func quiet() bool {
-	for _, f := range os.Args {
-		switch strings.ToLower(f) {
-		case "-quiet", "--quiet":
-			return true
-		}
-	}
-	return false
-}
-
-func ver() bool {
+// progInfo returns true if the -version flag or alias is in use.
+func progInfo() bool {
 	for _, f := range os.Args {
 		switch strings.ToLower(f) {
 		case "-v", "--v", "-version", "--version":
@@ -102,183 +185,13 @@ func ver() bool {
 	return false
 }
 
-// rmLogTimestamp removes the timestamp prefixed to the print functions of the log lib.
-func rmLogTimestamp() {
-	// source: https://stackoverflow.com/questions/48629988/remove-timestamp-prefix-from-go-logger
-	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
-}
-
-func exeTmp() string {
-	const tmp = `
- ┬───── {{.Title}} ─────┬─────────────────────────────┬
- │                             │                             │
- │  requirements               │   recommended               │
- │                             │                             │
- │      database  {{.Database}}  │           arj  {{.Arj}}  │
- │                             │    file magic  {{.File}}  │
- │      ansilove  {{.Ansilove}}  │         lhasa  {{.Lha}}  │
- │      webp lib  {{.Webp}}  │         unrar  {{.UnRar}}  │
- │   imagemagick  {{.Magick}}  │         unzip  {{.UnZip}}  │
- │        netpbm  {{.Netpbm}}  │       zipinfo  {{.ZipInfo}}  │
- │      pngquant  {{.PngQuant}}  │                             │
- │                             │                             │
- ┴─────────────────────────────┴─────────────────── {{.Cmd}} ─────┴
-         version  {{.Version}}
-            path  {{.Path}}
-          commit  {{.Revision}}
-            date  {{.LastCommit}}
-              go  v{{.GoVer}} {{.GoOS}}{{.Docker}}
-`
-	return tmp
-}
-
-func check(s string) string {
-	const (
-		disconnect = "disconnect"
-		ok         = "ok"
-		miss       = "missing"
-	)
-	switch s {
-	case ok:
-		const padding = 9
-		return color.Success.Sprint("okay") + strings.Repeat(" ", padding-len(s))
-	case miss:
-		const padding = 11
-		return color.Error.Sprint(miss) + strings.Repeat(" ", padding-len(s))
-	case disconnect:
-		const padding = 11
-		return color.Error.Sprint("disconnect") + strings.Repeat(" ", padding-len(s))
-	}
-	return ""
-}
-
-type looks = map[string]string
-
-func checks() looks {
-	const (
-		disconnect = "disconnect"
-		ok         = "ok"
-		miss       = "missing"
-		db         = "db"
-	)
-	l := looks{
-		"db":       disconnect,
-		"ansilove": miss,
-		"cwebp":    miss,
-		"convert":  miss,
-		"pnmtopng": miss,
-		"pngquant": miss,
-		"arj":      miss,
-		"file":     miss,
-		"lha":      miss,
-		"unrar":    miss,
-		"unzip":    miss,
-		"zipinfo":  miss,
-	}
-	if err := database.ConnInfo(); err == "" {
-		l[db] = ok
-	}
-	for file := range l {
-		if file == db {
-			continue
-		}
-		if _, err := exec.LookPath(file); err == nil {
-			l[file] = ok
+// quiet returns true if the -quiet flag is in use.
+func quiet() bool {
+	for _, f := range os.Args {
+		switch strings.ToLower(f) {
+		case "-quiet", "--quiet":
+			return true
 		}
 	}
-	return l
-}
-
-func info() string {
-	type Data struct {
-		Database   string
-		Ansilove   string
-		Webp       string
-		Magick     string
-		Netpbm     string
-		PngQuant   string
-		Arj        string
-		File       string
-		Lha        string
-		UnRar      string
-		UnZip      string
-		ZipInfo    string
-		Version    string
-		Revision   string
-		LastCommit string
-		Path       string
-		GoVer      string
-		GoOS       string
-		Docker     string
-		Title      string
-		Cmd        string
-	}
-	bin, err := selfBuild()
-	if err != nil {
-		bin = fmt.Sprint(err)
-	}
-	l := checks()
-	data := Data{
-		Database:   check(l["db"]),
-		Ansilove:   check(l["ansilove"]),
-		Webp:       check(l["cwebp"]),
-		Magick:     check(l["convert"]),
-		Netpbm:     check(l["pnmtopng"]),
-		PngQuant:   check(l["pngquant"]),
-		Arj:        check(l["arj"]),
-		File:       check(l["file"]),
-		Lha:        check(l["lha"]),
-		UnRar:      check(l["unrar"]),
-		UnZip:      check(l["unzip"]),
-		ZipInfo:    check(l["zipinfo"]),
-		Version:    tagVersion(),
-		Revision:   versioninfo.Revision,
-		LastCommit: localBuild(versioninfo.LastCommit),
-		Path:       bin,
-		GoVer:      strings.Replace(runtime.Version(), "go", "", 1),
-		GoOS:       fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		Docker:     dockerBuild(),
-		Title:      color.Bold.Sprint(color.Primary.Sprint("The Defacto2 tool")),
-		Cmd:        color.Primary.Sprint("df2"),
-	}
-	tmpl, err := template.New("checks").Parse(exeTmp())
-	if err != nil {
-		log.Fatal(err)
-	}
-	var b bytes.Buffer
-	if err := tmpl.Execute(&b, data); err != nil {
-		log.Fatal(err)
-	}
-	return b.String()
-}
-
-func dockerBuild() string {
-	if _, ok := os.LookupEnv("DF2_HOST"); ok {
-		return " in a Docker container"
-	}
-	return ""
-}
-
-func localBuild(t time.Time) string {
-	const unknown = 1
-	if t.Local().Year() <= unknown {
-		return "unknown"
-	}
-	return t.Local().Format("2006 Jan 2, 15:04 MST")
-}
-
-func selfBuild() (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("self error: %w", err)
-	}
-	return exe, nil
-}
-
-func tagVersion() string {
-	s := color.Style{color.FgCyan, color.OpBold}.Sprint(version)
-	if version == "0.0.0" {
-		s += " (developer build)"
-	}
-	return s
+	return false
 }

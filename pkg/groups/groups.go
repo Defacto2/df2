@@ -2,166 +2,139 @@
 package groups
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
-	"io/fs"
-	"os"
-	"path"
+	"io"
 	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
-	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
-	"github.com/Defacto2/df2/pkg/groups/internal/group"
+	"github.com/Defacto2/df2/pkg/groups/internal/filter"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
-	"github.com/Defacto2/df2/pkg/logs"
-	"github.com/spf13/viper"
+	"github.com/Defacto2/df2/pkg/str"
 )
 
 var (
-	ErrCJDir  = errors.New("cronjob directory does not exist")
-	ErrCJFile = errors.New("cronjob file to save html does not exist")
-	ErrCfg    = errors.New("the directory.html setting is empty")
+	ErrCronDir = errors.New("cronjob directory does not exist")
+	ErrHTMLDir = errors.New("the directory.html setting is empty")
+	ErrTag     = errors.New("cronjob tag cannot be an empty string")
 )
-
-const htm = ".htm"
 
 // Request flags for group functions.
 type Request request.Flags
 
 // DataList prints an auto-complete list for HTML input elements.
-func (r Request) DataList(name string) error {
-	return request.Flags(r).DataList(name)
+func (r Request) DataList(db *sql.DB, w, dest io.Writer) error {
+	return request.Flags(r).DataList(db, w, dest)
 }
 
 // HTML prints a snippet listing links to each group, with an optional file count.
-func (r Request) HTML(name string) error {
-	return request.Flags(r).HTML(name)
+func (r Request) HTML(db *sql.DB, w, dest io.Writer) error {
+	return request.Flags(r).HTML(db, w, dest)
 }
 
 // Print a list of organisations or groups filtered by a name and summarizes the results.
-func (r Request) Print() (total int, err error) {
-	return request.Print(request.Flags(r))
+func (r Request) Print(db *sql.DB, w io.Writer) (int, error) {
+	return request.Print(db, w, request.Flags(r))
 }
 
 // Count returns the number of file entries associated with a named group.
-func Count(name string) (int, error) {
-	return group.Count(name)
+func Count(db *sql.DB, name string) (int, error) {
+	return filter.Count(db, name)
 }
 
 // Cronjob is used for system automation to generate dynamic HTML pages.
-func Cronjob(force bool) error {
-	// as the jobs take time, check the locations before querying the database
-	for _, tag := range Wheres() {
-		f := tag + htm
-		d := viper.GetString("directory.html")
-		n := path.Join((d), f)
-		if d == "" {
-			return fmt.Errorf("cronjob: %w", ErrCfg)
-		}
-		if _, err := os.Stat(d); errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("cronjob: %w: %s", ErrCJDir, d)
-		}
-		if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
-			if err1 := directories.Touch(n); err1 != nil {
-				return fmt.Errorf("cronjob: %w: %s", err1, n)
-			}
-		}
+func Cronjob(db *sql.DB, w, dest io.Writer, tag string, force bool) error {
+	if db == nil {
+		return database.ErrDB
 	}
-	for _, tag := range Wheres() {
-		f := tag + htm
-		d := viper.GetString("directory.html")
-		n := path.Join((d), f)
-		last, err := database.LastUpdate()
-		if err != nil {
-			return fmt.Errorf("cronjob lastupdate: %w", err)
-		}
-		update := true
-		if !force {
-			update, err = database.FileUpdate(n, last)
-		}
-		switch {
-		case err != nil:
-			return fmt.Errorf("cronjob fileupdate: %w", err)
-		case !update:
-			logs.Printf("%s has nothing to update (%s)\n", tag, n)
-		default:
-			r := request.Flags{
-				Filter:      tag,
-				Counts:      true,
-				Initialisms: true,
-				Progress:    false,
-			}
-			if force {
-				r.Progress = true
-			}
-			if err := r.HTML(f); err != nil {
-				return fmt.Errorf("group cronjob html: %w", err)
-			}
-		}
+	if tag == "" {
+		return ErrTag
 	}
-	return nil
+	if w == nil {
+		w = io.Discard
+	}
+	if dest == nil {
+		dest = io.Discard
+	}
+	r := request.Flags{
+		Filter:      tag,
+		Counts:      true,
+		Initialisms: true,
+		Progress:    false,
+	}
+	if force {
+		r.Progress = true
+	}
+	return r.HTML(db, w, dest)
 }
 
-// Exact returns the number of file entries that match an exact named group.
+// Exact returns the number of file entries that match an exact named filter.
 // The casing is ignored, but comma separated multi-groups are not matched to their parents.
 // The name "tristar" will match "Tristar" but will not match records using
 // "Tristar, Red Sector Inc".
-func Exact(name string) (int, error) {
+func Exact(db *sql.DB, name string) (int, error) {
+	if db == nil {
+		return 0, database.ErrDB
+	}
 	if name == "" {
 		return 0, nil
 	}
-	db := database.Connect()
-	defer db.Close()
 	n, count := name, 0
 	row := db.QueryRow("SELECT COUNT(*) FROM files WHERE group_brand_for=? OR "+
 		"group_brand_by=?", n, n)
 	if err := row.Scan(&count); err != nil {
 		return 0, fmt.Errorf("count: %w", err)
 	}
-	return count, db.Close()
+	return count, nil
 }
 
 // Fix any malformed group names found in the database.
-func Fix() error {
+func Fix(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	// fix group names stored in the files table
-	names, _, err := group.List("")
+	names, _, err := filter.List(db, w, "")
 	if err != nil {
 		return err
 	}
-	c, start := 0, time.Now()
+	c := 0
 	for _, name := range names {
-		if r := rename.Clean(name); r {
+		r, err := rename.Clean(db, w, name)
+		if err != nil {
+			return err
+		}
+		if r {
 			c++
 		}
 	}
 	switch {
 	case c == 1:
-		logs.Printcr("1 fix applied")
+		fmt.Fprintf(w, "\t1 group fix applied")
 	case c > 0:
-		logs.Printcrf("%d fixes applied", c)
+		fmt.Fprintf(w, "\t%d tgroup fixes applied", c)
 	default:
-		logs.Printcr("no group fixes needed")
+		fmt.Fprintf(w, "\tgroup fixes, %s\n", str.NothingToDo)
 	}
 	// fix initialisms stored in the groupnames table
-	logs.Print(" and...\n")
-	i, err := acronym.Fix()
+	i, err := acronym.Fix(db)
 	if err != nil {
 		return err
 	}
 	switch i {
 	case 1:
-		logs.Printcr("removed a broken initialism entry")
+		fmt.Fprintf(w, "\t1 broken initialism entry removed")
 	case 0:
-		logs.Printcr("no initialism fixes needed")
+		fmt.Fprintf(w, "\tinitialism fixes, %s\n", str.NothingToDo)
 	default:
-		logs.Printcrf("%d broken initialism entries removed", i)
+		fmt.Fprintf(w, "\t%d broken initialism entries removed", i)
 	}
-	// report time taken
-	elapsed := time.Since(start).Seconds()
-	logs.Print(fmt.Sprintf(", time taken %.1f seconds\n", elapsed))
 	return nil
 }
 
@@ -171,33 +144,39 @@ func Format(name string) string {
 }
 
 // Initialism returns a named group initialism or acronym.
-func Initialism(name string) (string, error) {
+func Initialism(db *sql.DB, name string) (string, error) {
+	if db == nil {
+		return "", database.ErrDB
+	}
 	g := acronym.Group{Name: name}
-	if err := g.Get(); err != nil {
+	if err := g.Get(db); err != nil {
 		return "", fmt.Errorf("initialism %q: %w", name, err)
 	}
 	return g.Initialism, nil
 }
 
 // List returns all the distinct groups.
-func List() ([]string, int, error) {
-	return group.List("")
+func List(db *sql.DB, w io.Writer) ([]string, int, error) {
+	return filter.List(db, w, "")
 }
 
 // Slug takes a string and makes it into a URL friendly slug.
 func Slug(s string) string {
-	return group.Slug(s)
+	return filter.Slug(s)
 }
 
 // Update replaces all instances of the group name with the new group name.
-func Update(newName, group string) (count int64, err error) {
-	return rename.Update(newName, group)
+func Update(db *sql.DB, newName, group string) (int64, error) {
+	return rename.Update(db, newName, group)
 }
 
-// Variations creates format variations for a named group.
-func Variations(name string) ([]string, error) {
+// Variations creates format variations for a named filter.
+func Variations(db *sql.DB, name string) ([]string, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	if name == "" {
-		return []string{}, nil
+		return nil, nil
 	}
 	name = strings.ToLower(name)
 	vars := []string{name}
@@ -214,7 +193,7 @@ func Variations(name string) ([]string, error) {
 	if d := strings.Join(s, "."); name != d {
 		vars = append(vars, d)
 	}
-	if init, err := Initialism(name); err == nil && init != "" {
+	if init, err := Initialism(db, name); err == nil && init != "" {
 		vars = append(vars, strings.ToLower(init))
 	} else if err != nil {
 		return nil, fmt.Errorf("variations %q: %w", name, err)
@@ -222,12 +201,12 @@ func Variations(name string) ([]string, error) {
 	return vars, nil
 }
 
-// Wheres are group categories.
-func Wheres() []string {
+// Tags are the group categories.
+func Tags() []string {
 	return []string{
-		group.BBS.String(),
-		group.FTP.String(),
-		group.Group.String(),
-		group.Magazine.String(),
+		filter.BBS.String(),
+		filter.FTP.String(),
+		filter.Group.String(),
+		filter.Magazine.String(),
 	}
 }

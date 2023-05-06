@@ -3,34 +3,59 @@ package acronym_test
 import (
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
+	"github.com/stretchr/testify/assert"
 )
 
+func TestGroup_Get(t *testing.T) {
+	t.Parallel()
+	g := acronym.Group{}
+	err := g.Get(nil)
+	assert.NotNil(t, err)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = g.Get(db)
+	assert.NotNil(t, err)
+
+	g = acronym.Group{Name: "Defacto2"}
+	err = g.Get(db)
+	assert.Nil(t, err)
+	assert.Equal(t, "DF2", g.Initialism)
+}
+
+func TestFix(t *testing.T) {
+	t.Parallel()
+	i, err := acronym.Fix(nil)
+	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), i)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	_, err = acronym.Fix(db)
+	assert.Nil(t, err)
+}
+
 func TestGet(t *testing.T) {
-	tests := []struct {
-		name    string
-		want    string
-		wantErr bool
-	}{
-		{"", "", false},
-		{"Defacto2", "DF2", false},
-		{"not found", "", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := acronym.Get(tt.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Get() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Parallel()
+	s, err := acronym.Get(nil, "")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", s)
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	s, err = acronym.Get(db, "")
+	assert.Nil(t, err)
+	assert.Equal(t, "", s)
+	s, err = acronym.Get(db, "Defacto2")
+	assert.Nil(t, err)
+	assert.Equal(t, "DF2", s)
 }
 
 func TestTrim(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -48,38 +73,11 @@ func TestTrim(t *testing.T) {
 		{"", args{"Defacto(DF)"}, "Defacto(DF)"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := acronym.Trim(tt.args.s); got != tt.want {
 				t.Errorf("Trim() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGroup_Get(t *testing.T) {
-	type fields struct {
-		Name       string
-		Initialism string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{"empty", fields{}, false},
-		{"df2", fields{
-			Name:       "defacto2",
-			Initialism: "",
-		}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			g := &acronym.Group{
-				Name:       tt.fields.Name,
-				Initialism: tt.fields.Initialism,
-			}
-			if err := g.Get(); (err != nil) != tt.wantErr {
-				t.Errorf("Group.Get() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

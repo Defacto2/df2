@@ -12,6 +12,7 @@ import (
 const empty = "empty"
 
 func TestWalkName(t *testing.T) {
+	t.Parallel()
 	const tmp = "file.temp"
 	dir := os.TempDir()
 	valid, err := file.WalkName(dir, filepath.Join(dir, tmp))
@@ -36,7 +37,9 @@ func TestWalkName(t *testing.T) {
 	}
 	color.Enable = false
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotName, err := file.WalkName(tt.args.basepath, tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("WalkName() error = %v, wantErr %v", err, tt.wantErr)

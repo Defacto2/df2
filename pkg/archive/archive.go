@@ -1,12 +1,15 @@
-// Package archive handles collections of files that are either packaged together or compressed.
+// Package archive handles collections of files that are either packed together or
+// packed and compressed.
 package archive
 
 import (
 	"archive/tar"
 	"compress/gzip"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,10 +18,10 @@ import (
 	"github.com/Defacto2/df2/pkg/archive/internal/demozoo"
 	"github.com/Defacto2/df2/pkg/archive/internal/file"
 	"github.com/Defacto2/df2/pkg/archive/internal/task"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/images"
-	"github.com/Defacto2/df2/pkg/logs"
 )
 
 const (
@@ -28,119 +31,144 @@ const (
 )
 
 var (
-	ErrDir    = errors.New("is a directory")
-	ErrFile   = errors.New("no such file")
-	ErrNotArc = errors.New("format specified by source filename is not an archive format")
+	ErrArchive = errors.New("format specified by source filename is not an archive format")
+	ErrDir     = errors.New("is a directory")
+	ErrFile    = errors.New("no such file")
+	ErrWriter  = errors.New("writer must be a file object")
 )
 
 // Copy copies a file to the destination.
-func Copy(name, dest string) (written int64, err error) {
+func Copy(name, dest string) (int64, error) {
 	return file.Copy(name, dest)
 }
 
 // Move copies a file to the destination and then deletes the source.
-func Move(name, dest string) (written int64, err error) {
+func Move(name, dest string) (int64, error) {
 	return file.Move(name, dest)
 }
 
 // Compress a collection of files using gzip and add them to the tar writter.
-func Compress(files []string, buf io.Writer) []error {
-	gw := gzip.NewWriter(buf)
+func Compress(w io.Writer, files []string) error {
+	_, okf := w.(*os.File)
+	_, okw := w.(*gzip.Writer)
+	if !okf && !okw {
+		return fmt.Errorf("archive compress %w", ErrWriter)
+	}
+	gw := gzip.NewWriter(w)
 	defer gw.Close()
-	w := tar.NewWriter(gw)
-	defer w.Close()
-
-	errs := []error{}
+	nw := tar.NewWriter(gw)
+	defer nw.Close()
+	var errs error
 	for _, f := range files {
-		if err := file.Add(w, f); err != nil {
-			errs = append(errs, fmt.Errorf("compress: %w", err))
+		if err := file.Add(nw, f); err != nil {
+			errs = errors.Join(errs, fmt.Errorf("archive compress: %w", err))
 		}
 	}
-	if len(errs) > 0 {
-		return errs
-	}
-	return nil
+	return errs
 }
 
 // Delete removes the collection of files from the host filesystem.
-func Delete(files []string) []error {
-	errs := []error{}
+func Delete(files []string) error {
+	var errs error
 	for _, file := range files {
 		if err := os.Remove(file); err != nil {
-			errs = append(errs, fmt.Errorf("delete: %w", err))
+			errs = errors.Join(errs, fmt.Errorf("archive delete: %w", err))
 		}
 	}
-	if len(errs) > 0 {
-		return errs
-	}
-	return nil
+	return errs
 }
 
-// Store adds collection of files to the tar writter.
-func Store(files []string, buf io.Writer) []error {
-	tw := tar.NewWriter(buf)
+// Store adds collection of files to the tar writer.
+func Store(w io.Writer, files []string) error {
+	_, okf := w.(*os.File)
+	_, okw := w.(*tar.Writer)
+	if !okf && !okw {
+		return fmt.Errorf("archive store %w", ErrWriter)
+	}
+	tw := tar.NewWriter(w)
 	defer tw.Close()
-
-	errs := []error{}
+	var errs error
 	for _, f := range files {
 		if err := file.Add(tw, f); err != nil {
-			errs = append(errs, fmt.Errorf("store: %w", err))
+			errs = errors.Join(errs, fmt.Errorf("archive store %w", err))
 		}
 	}
-	if len(errs) > 0 {
-		return errs
-	}
-	return nil
+	return errs
+}
+
+type Demozoo struct {
+	Source   string
+	UUID     string
+	VarNames *[]string
+	Config   conf.Config
 }
 
 // Demozoo decompresses and parses archives fetched from https://demozoo.org.
-func Demozoo(src, uuid string, varNames *[]string) (demozoo.Data, error) {
+func (z Demozoo) Decompress(db *sql.DB, w io.Writer) (demozoo.Data, error) {
+	if db == nil {
+		return demozoo.Data{}, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	dz := demozoo.Data{}
-	if err := database.CheckUUID(uuid); err != nil {
-		return demozoo.Data{}, fmt.Errorf("extract demozoo checkuuid %q: %w", uuid, err)
+	if err := database.CheckUUID(z.UUID); err != nil {
+		return demozoo.Data{}, fmt.Errorf("extract demozoo checkuuid %q: %w", z.UUID, err)
 	}
 	// create temp dir
-	tempDir, err := os.MkdirTemp("", "extarc-")
+	tmp, err := os.MkdirTemp("", "extarc-")
 	if err != nil {
-		return demozoo.Data{}, fmt.Errorf("extract demozoo tempdir %q: %w", tempDir, err)
+		return demozoo.Data{}, fmt.Errorf("extract demozoo tempdir %q: %w", tmp, err)
 	}
-	defer os.RemoveAll(tempDir)
-	filename, err := database.GetFile(uuid)
+	defer os.RemoveAll(tmp)
+	name := filepath.Base(z.Source)
+	if z.UUID != database.TestID {
+		name, err = database.GetFile(db, z.UUID)
+		if err != nil {
+			return demozoo.Data{}, fmt.Errorf("extract demozoo lookup id %q: %w", z.UUID, err)
+		}
+	}
+	if _, err = Restore(w, z.Source, name, tmp); err != nil {
+		return demozoo.Data{}, fmt.Errorf("extract demozoo restore %q: %w", name, err)
+	}
+
+	zips, err := zips(tmp)
 	if err != nil {
-		return demozoo.Data{}, fmt.Errorf("extract demozoo lookup id %q: %w", uuid, err)
+		return demozoo.Data{}, err
 	}
-	if _, err = Restore(src, filename, tempDir); err != nil {
-		return demozoo.Data{}, fmt.Errorf("extract demozoo restore %q: %w", filename, err)
+	if nfo := demozoo.NFO(z.Source, zips, z.VarNames); nfo != "" {
+		if z.Source == "" {
+			dz.NFO = nfo
+		} else if err := demozoo.MoveText(w, z.Config, filepath.Join(tmp, nfo), z.UUID); err != nil {
+			return demozoo.Data{}, fmt.Errorf("extract demozo move nfo: %w", err)
+		}
 	}
-	files, err := os.ReadDir(tempDir)
+	if dos := demozoo.DOS(w, z.Source, zips, z.VarNames); dos != "" {
+		dz.DOSee = dos
+	}
+	return dz, nil
+}
+
+func zips(name string) (content.Contents, error) {
+	files, err := os.ReadDir(name)
 	if err != nil {
-		return demozoo.Data{}, fmt.Errorf("extract demozoo readdir %q: %w", tempDir, err)
+		return nil, fmt.Errorf("extract demozoo readdir %q: %w", name, err)
 	}
 	zips := make(content.Contents)
 	for i, file := range files {
 		f, err := file.Info()
 		if err != nil {
-			fmt.Printf("extract demozoo file info error: %s\n", err)
+			fmt.Fprintf(os.Stdout, "extract demozoo file info error: %s\n", err)
 		}
 		var zip content.File
-		zip.Path = tempDir // filename gets appended by z.scan()
+		zip.Path = name // filename gets appended by z.scan()
 		zip.Scan(f)
 		if err = zip.MIME(); err != nil {
-			return demozoo.Data{}, fmt.Errorf("extract demozoo filemime %q: %w", f, err)
+			return nil, fmt.Errorf("extract demozoo filemime %q: %w", f, err)
 		}
 		zips[i] = zip
 	}
-	if nfo := demozoo.NFO(src, zips, varNames); nfo != "" {
-		if src == "" {
-			dz.NFO = nfo
-		} else if err := demozoo.MoveText(filepath.Join(tempDir, nfo), uuid); err != nil {
-			return demozoo.Data{}, fmt.Errorf("extract demozo move nfo: %w", err)
-		}
-	}
-	if dos := demozoo.DOS(src, zips, varNames); dos != "" {
-		dz.DOSee = dos
-	}
-	return dz, nil
+	return zips, nil
 }
 
 // NFO attempts to discover a archive package NFO or information textfile from a collection of files.
@@ -149,71 +177,99 @@ func NFO(name string, files ...string) string {
 	f := make(demozoo.Finds)
 	for _, file := range files {
 		base := strings.TrimSuffix(name, filepath.Ext(name))
-		fn := strings.ToLower(file)
-		ext := filepath.Ext(fn)
+		fname := strings.ToLower(file)
+		ext := filepath.Ext(fname)
 		switch ext {
 		case diz, nfo, txt:
 			// okay
 		default:
 			continue
 		}
-		switch {
-		case fn == base+".nfo": // [archive name].nfo
-			f[file] = demozoo.Lvl1
-		case fn == base+".txt": // [archive name].txt
-			f[file] = demozoo.Lvl2
-		case ext == ".nfo": // [random].nfo
-			f[file] = demozoo.Lvl3
-		case fn == "file_id.diz": // BBS file description
-			f[file] = demozoo.Lvl4
-		case fn == base+".diz": // [archive name].diz
-			f[file] = demozoo.Lvl5
-		case fn == ".txt": // [random].txt
-			f[file] = demozoo.Lvl6
-		case fn == ".diz": // [random].diz
-			f[file] = demozoo.Lvl7
-		default: // currently lacking is [group name].nfo and [group name].txt priorities
-		}
+		f = nfoFile(f, file, fname, base, ext)
 	}
 	return f.Top()
+}
+
+func nfoFile(f demozoo.Finds, file, name, base, ext string) demozoo.Finds {
+	switch {
+	case name == base+".nfo":
+		// [archive name].nfo
+		f[file] = demozoo.Lvl1
+	case name == base+".txt":
+		// [archive name].txt
+		f[file] = demozoo.Lvl2
+	case ext == ".nfo":
+		// [random].nfo
+		f[file] = demozoo.Lvl3
+	case name == "file_id.diz":
+		// BBS file description
+		f[file] = demozoo.Lvl4
+	case name == base+".diz":
+		// [archive name].diz
+		f[file] = demozoo.Lvl5
+	case name == ".txt":
+		// [random].txt
+		f[file] = demozoo.Lvl6
+	case name == ".diz":
+		// [random].diz
+		f[file] = demozoo.Lvl7
+	default:
+		// currently lacking is [group name].nfo and [group name].txt priorities
+	}
+	return f
+}
+
+type Proof struct {
+	Source string
+	Name   string
+	UUID   string
+	Config conf.Config
 }
 
 // Proof decompresses and parses a hosted file archive.
 // src is the path to the file including the uuid filename.
 // filename is the original archive filename, usually kept in the database.
 // uuid is used to rename the extracted assets such as image previews.
-func Proof(src, filename, uuid string) error {
-	if err := database.CheckUUID(uuid); err != nil {
-		return fmt.Errorf("archive uuid %q: %w", uuid, err)
+func (p Proof) Decompress(w io.Writer) error {
+	if w == nil {
+		w = io.Discard
+	}
+	if err := database.CheckUUID(p.UUID); err != nil {
+		return fmt.Errorf("archive uuid %q: %w", p.UUID, err)
 	}
 	// create temp dir
-	tempDir, err := os.MkdirTemp("", "proofextract-")
+	tmp, err := os.MkdirTemp("", "proofextract-")
 	if err != nil {
-		return fmt.Errorf("archive tempdir %q: %w", tempDir, err)
+		return fmt.Errorf("archive tempdir %q: %w", tmp, err)
 	}
-	defer os.RemoveAll(tempDir)
-	if err = Unarchiver(src, filename, tempDir); err != nil {
+	defer os.RemoveAll(tmp)
+	if err = Unarchiver(p.Source, tmp, p.Name); err != nil {
 		return fmt.Errorf("unarchiver: %w", err)
 	}
-	th, tx, err := task.Run(tempDir)
+	th, tx, err := task.Run(tmp)
 	if err != nil {
 		return err
 	}
 	if n := th.Name; n != "" {
-		if err := images.Generate(n, uuid, true); err != nil {
+		if err := images.Generate(w, n, p.UUID, true); err != nil {
 			return fmt.Errorf("archive generate img: %w", err)
 		}
 	}
 	if n := tx.Name; n != "" {
-		f := directories.Files(uuid)
-		if _, err := file.Move(n, f.UUID+txt); err != nil {
-			return fmt.Errorf("archive filemove %q: %w", n, err)
+		f, err := directories.Files(p.Config, p.UUID)
+		if err != nil {
+			return fmt.Errorf("archive config: %w", err)
 		}
-		logs.Print("  »txt")
+		if f.UUID != database.TestID {
+			if _, err := file.Move(n, f.UUID+txt); err != nil {
+				return fmt.Errorf("archive filemove %q: %w", n, err)
+			}
+		}
+		fmt.Fprint(w, "  »txt")
 	}
 	if x := true; !x {
-		if err := file.Dir(tempDir); err != nil {
-			return fmt.Errorf("archive dir %q: %w", tempDir, err)
+		if err := file.Dir(w, tmp); err != nil {
+			return fmt.Errorf("archive dir %q: %w", tmp, err)
 		}
 	}
 	return nil
@@ -225,17 +281,22 @@ func Proof(src, filename, uuid string) error {
 // extension.
 // src is the absolute path to the archive file named as a unique id.
 // name is the original archive filename and file extension.
-func Read(src, name string) ([]string, string, error) {
-	if info, err := os.Stat(src); os.IsNotExist(err) {
+func Read(w io.Writer, src, name string) ([]string, string, error) {
+	if w == nil {
+		w = io.Discard
+	}
+	st, err := os.Stat(src)
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrFile)
-	} else if info.IsDir() {
+	}
+	if st.IsDir() {
 		return nil, "", fmt.Errorf("read %s: %w", filepath.Base(src), ErrDir)
 	}
-	files, filename, err := Readr(src, name)
+	files, fname, err := Readr(w, src, name)
 	if err != nil {
 		return nil, "", fmt.Errorf("read uuid/filename: %w", err)
 	}
-	return files, filename, nil
+	return files, fname, nil
 }
 
 // Restore unpacks or decompresses a given archive file to the destination.
@@ -244,12 +305,15 @@ func Read(src, name string) ([]string, string, error) {
 // supplied using filename.
 // src is the absolute path to the archive file named as a unique id.
 // filename is the original archive filename and file extension.
-func Restore(src, name, dest string) ([]string, error) {
-	err := Unarchiver(src, name, dest)
+func Restore(w io.Writer, src, name, dest string) ([]string, error) {
+	if w == nil {
+		w = io.Discard
+	}
+	err := Unarchiver(src, dest, name)
 	if err != nil {
 		return nil, fmt.Errorf("restore unarchiver: %w", err)
 	}
-	files, _, err := Readr(src, name)
+	files, _, err := Readr(w, src, name)
 	if err != nil {
 		return nil, fmt.Errorf("restore readr: %w", err)
 	}

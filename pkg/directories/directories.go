@@ -1,20 +1,22 @@
-// Package directories interacts with the filepaths that hold files and assets.
+// Package directories interacts with the filepaths that hold both the user files
+// for downloads and website assets.
 package directories
 
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories/internal/create"
-	"github.com/spf13/viper"
 )
 
-var ErrNoDir = errors.New("dir structure cannot be nil")
+var (
+	ErrDir = errors.New("directory cannot be an empty value")
+	ErrNil = errors.New("directories structure pointer cannot be nil")
+)
 
 const (
 	// Archives.
@@ -34,59 +36,84 @@ const (
 
 // Dir is the collection of directories pointing to specific files.
 type Dir struct {
-	Img000 string // Img000 hold screen captures and previews.
-	Img400 string // Img400 hold 400x400 squared thumbnails.
-	Backup string // Backup archives or previously removed files.
-	Emu    string // Emu are the DOSee emulation files.
+	Img000 string // Img000 contain record screenshots and previews.
+	Img400 string // Img400 contain 400x squared thumbnails of the screenshots.
+	Backup string // Backup archives for SQL data and previously removed files.
+	Emu    string // Emu has the DOSee emulation files.
 	Base   string // Base or root directory path, the parent of these other subdirectories.
 	UUID   string // UUID file downloads.
 }
 
 // Init initialises the subdirectories and UUID structure.
-func Init(create bool) Dir {
-	if viper.GetString("directory.root") == "" {
-		viper.SetDefault("directory.000", "/opt/assets/000")
-		viper.SetDefault("directory.400", "/opt/assets/400")
-		viper.SetDefault("directory.backup", "/opt/assets/backups")
-		viper.SetDefault("directory.emu", "/opt/assets/emularity.zip")
-		viper.SetDefault("directory.html", "")
-		viper.SetDefault("directory.incoming.files", "/opt/incoming/files")
-		viper.SetDefault("directory.incoming.previews", "/opt/incoming/previews")
-		viper.SetDefault("directory.root", "/opt/assets")
-		viper.SetDefault("directory.sql", "/opt/assets/sql")
-		viper.SetDefault("directory.uuid", "/opt/assets/downloads")
-		viper.SetDefault("directory.views", "/opt/assets/views")
+func Init(cfg conf.Config, create bool) (Dir, error) {
+	d := Dir{
+		Img000: cfg.Images,
+		Img400: cfg.Thumbs,
+		Backup: cfg.Backups,
+		Emu:    cfg.Emulator,
+		Base:   cfg.WebRoot,
+		UUID:   cfg.Downloads,
 	}
-	var d Dir
-	d.Img000 = viper.GetString("directory.000")
-	d.Img400 = viper.GetString("directory.400")
-	d.Backup = viper.GetString("directory.backup")
-	d.Emu = viper.GetString("directory.emu")
-	d.Base = viper.GetString("directory.root")
-	d.UUID = viper.GetString("directory.uuid")
-	if create {
-		if err := createDirectories(&d); err != nil {
-			log.Print(err)
-		}
-		if err := PlaceHolders(&d); err != nil {
-			log.Print(err)
-		}
+	if cfg.Images == "" {
+		return Dir{}, fmt.Errorf("init %w cfg.images", ErrDir)
 	}
-	return d
+	if cfg.Thumbs == "" {
+		return Dir{}, fmt.Errorf("init %w cfg.thumbs", ErrDir)
+	}
+	if cfg.Backups == "" {
+		return Dir{}, fmt.Errorf("init %w cfg.backups", ErrDir)
+	}
+	if cfg.Emulator == "" {
+		return Dir{}, fmt.Errorf("init %w cfg.emulator", ErrDir)
+	}
+	if cfg.WebRoot == "" {
+		return Dir{}, fmt.Errorf("init %w cfg.webroot", ErrDir)
+	}
+	if cfg.Downloads == "" {
+		return Dir{}, fmt.Errorf("init %w cfg.downloads", ErrDir)
+	}
+	if !create {
+		return d, nil
+	}
+	if err := createDirectories(&d); err != nil {
+		return Dir{}, err
+	}
+	if err := PlaceHolders(&d); err != nil {
+		return Dir{}, err
+	}
+	return d, nil
 }
 
 // createDirectories generates a series of UUID subdirectories.
 func createDirectories(dir *Dir) error {
-	v := reflect.ValueOf(dir)
-	// iterate through the D struct values
-	for i := 0; i < v.NumField(); i++ {
-		if d := fmt.Sprintf("%v", v.Field(i).Interface()); d != "" {
-			if err := create.Dir(d); err != nil {
-				return fmt.Errorf("create directory: %w", err)
-			}
-		}
+	if dir == nil {
+		return fmt.Errorf("create directories: %w", ErrNil)
 	}
-	return nil
+	mkdir := func(path string) error {
+		if path == "" {
+			return nil
+		}
+		if err := create.MkDir(path); err != nil {
+			return fmt.Errorf("create directory: %w", err)
+		}
+		return nil
+	}
+	if err := mkdir(dir.Img000); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Img400); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Backup); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Emu); err != nil {
+		return err
+	}
+	if err := mkdir(dir.Base); err != nil {
+		return err
+	}
+	return mkdir(dir.UUID)
 }
 
 // ArchiveExt checks that the named file uses a known archive extension.
@@ -99,19 +126,22 @@ func ArchiveExt(name string) bool {
 }
 
 // Files initialises the full path filenames for a UUID.
-func Files(name string) Dir {
-	dirs := Init(false)
+func Files(cfg conf.Config, name string) (Dir, error) {
+	dirs, err := Init(cfg, false)
+	if err != nil {
+		return Dir{}, err
+	}
 	dirs.UUID = filepath.Join(dirs.UUID, name)
 	dirs.Emu = filepath.Join(dirs.Emu, name)
 	dirs.Img000 = filepath.Join(dirs.Img000, name)
 	dirs.Img400 = filepath.Join(dirs.Img400, name)
-	return dirs
+	return dirs, nil
 }
 
 // PlaceHolders generates a collection placeholder files in the UUID subdirectories.
 func PlaceHolders(dir *Dir) error {
 	if dir == nil {
-		return fmt.Errorf("placeholder: %w", ErrNoDir)
+		return fmt.Errorf("place holders: %w", ErrNil)
 	}
 	const oneMB, halfMB, twoFiles, nineFiles = 1000000, 500000, 2, 9
 	if err := create.Holders(dir.UUID, oneMB, nineFiles); err != nil {
@@ -130,8 +160,10 @@ func PlaceHolders(dir *Dir) error {
 }
 
 // Size returns the number of counted files and their summed size as bytes.
-func Size(root string) (count int64, bytes uint64, err error) {
-	err = filepath.Walk(root, func(_ string, info os.FileInfo, err error) error {
+func Size(root string) (int64, uint64, error) {
+	var count int64
+	var bytes uint64
+	err := filepath.Walk(root, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

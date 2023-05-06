@@ -1,13 +1,18 @@
 package groups_test
 
 import (
+	"io"
 	"sort"
 	"testing"
 
+	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestContains(t *testing.T) {
+	t.Parallel()
 	const hi = "👋 hi!"
 	x := []string{"hello", "world", "apple", "banana", "carrot", hi, "cake"}
 	sort.Strings(x)
@@ -27,7 +32,9 @@ func TestContains(t *testing.T) {
 		{"unicode", args{hi, x}, true},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := groups.Contains(tt.args.x, tt.args.s); got != tt.want {
 				t.Errorf("Contains() = %v, want %v", got, tt.want)
 			}
@@ -35,7 +42,20 @@ func TestContains(t *testing.T) {
 	}
 }
 
+func TestMatch(t *testing.T) {
+	t.Parallel()
+	err := groups.Match(nil, nil, -1)
+	assert.NotNil(t, err)
+
+	db, err := database.Connect(conf.Defaults())
+	assert.Nil(t, err)
+	defer db.Close()
+	err = groups.Match(db, io.Discard, 100)
+	assert.Nil(t, err)
+}
+
 func TestSwapOne(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group    string
 		phonetic string
@@ -55,7 +75,9 @@ func TestSwapOne(t *testing.T) {
 		{"case", args{"heLLo", "l", "1"}, "He1lo"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := groups.SwapOne(tt.args.group, tt.args.phonetic, tt.args.swap); got != tt.want {
 				t.Errorf("SwapOne() = %v, want %v", got, tt.want)
 			}
@@ -64,6 +86,7 @@ func TestSwapOne(t *testing.T) {
 }
 
 func TestSwapAll(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group    string
 		phonetic string
@@ -84,7 +107,9 @@ func TestSwapAll(t *testing.T) {
 		{"case", args{"heLLo", "l", "1"}, "He11o"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := groups.SwapAll(tt.args.group, tt.args.phonetic, tt.args.swap); got != tt.want {
 				t.Errorf("SwapAll() = %v, want %v", got, tt.want)
 			}
@@ -93,6 +118,7 @@ func TestSwapAll(t *testing.T) {
 }
 
 func TestSwapNumeral(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group string
 		i     int
@@ -109,7 +135,9 @@ func TestSwapNumeral(t *testing.T) {
 		{"100 out of range", args{"100 pounds", 100}, ""},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := groups.SwapNumeral(tt.args.group, tt.args.i); got != tt.want {
 				t.Errorf("SwapNumeral() = %v, want %v", got, tt.want)
 			}
@@ -118,6 +146,7 @@ func TestSwapNumeral(t *testing.T) {
 }
 
 func TestSwapOrdinal(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group string
 		i     int
@@ -134,7 +163,9 @@ func TestSwapOrdinal(t *testing.T) {
 		{"100 out of range", args{"100 pounds", 100}, ""},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := groups.SwapOrdinal(tt.args.group, tt.args.i); got != tt.want {
 				t.Errorf("SwapOrdinal() = %v, want %v", got, tt.want)
 			}
@@ -143,6 +174,7 @@ func TestSwapOrdinal(t *testing.T) {
 }
 
 func TestSwapPrefix(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group  string
 		prefix string
@@ -158,7 +190,9 @@ func TestSwapPrefix(t *testing.T) {
 		{"mix case", args{"The best BBS", "the", "da"}, "Da Best BBS"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := groups.SwapPrefix(tt.args.group, tt.args.prefix, tt.args.swap); got != tt.want {
 				t.Errorf("SwapPrefix() = %v, want %v", got, tt.want)
 			}
@@ -167,6 +201,7 @@ func TestSwapPrefix(t *testing.T) {
 }
 
 func TestSwapSuffix(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		group  string
 		suffix string
@@ -185,7 +220,9 @@ func TestSwapSuffix(t *testing.T) {
 		{"unicode+bbs", args{"🍏 bbs", "🍏", "🍎"}, "🍎 BBS"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if got := groups.SwapSuffix(tt.args.group, tt.args.suffix, tt.args.swap); got != tt.want {
 				t.Errorf("SwapSuffix() = %v, want %v", got, tt.want)
 			}
@@ -194,6 +231,7 @@ func TestSwapSuffix(t *testing.T) {
 }
 
 func TestTrimSP(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		s     string
@@ -208,7 +246,9 @@ func TestTrimSP(t *testing.T) {
 		{"unicode", "🍎 apples 🍏", "🍎Apples🍏", "🍎Apples🍏s", "🍎Apples🍏z"},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, got1, got2 := groups.TrimSP(tt.s)
 			if got != tt.want {
 				t.Errorf("TrimSP() got = %v, want %v", got, tt.want)

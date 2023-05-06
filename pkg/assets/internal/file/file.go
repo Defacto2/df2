@@ -1,3 +1,4 @@
+// Package file writes the results of an asset scan or walk.
 package file
 
 import (
@@ -9,62 +10,79 @@ import (
 	"path/filepath"
 )
 
-var ErrPathEmpty = errors.New("path cannot be empty")
+var (
+	ErrEmptyPath = errors.New("path cannot be empty")
+	ErrWriter    = errors.New("writer pointer cannot be nil")
+)
 
-func WalkName(basepath, path string) (name string, err error) {
+func WalkName(basepath, path string) (string, error) {
 	if path == "" {
-		return "", fmt.Errorf("walkname: %w", ErrPathEmpty)
+		return "", fmt.Errorf("file walkname: %w", ErrEmptyPath)
 	}
+	s := filepath.Dir(basepath)
 	if os.IsPathSeparator(path[len(path)-1]) {
-		name, err = filepath.Rel(basepath, path)
-	} else {
-		name, err = filepath.Rel(filepath.Dir(basepath), path)
+		s = basepath
 	}
+	name, err := filepath.Rel(s, path)
 	if err != nil {
-		return "", fmt.Errorf("walkname rel-path: %w", err)
+		return "", fmt.Errorf("file walkname rel: %w", err)
 	}
 	return filepath.ToSlash(name), nil
 }
 
-// writeTar saves the result of a fileWalk into a TAR writer.
+// Write saves the result of a fileWalk into a TAR writer.
 // Source: cloudfoundry/archiver
 // https://github.com/cloudfoundry/archiver/blob/master/compressor/write_tar.go
-func WriteTar(absPath, filename string, tw *tar.Writer) error {
-	stat, err := os.Lstat(absPath)
+func Write(tw *tar.Writer, path, filename string) error {
+	if tw == nil {
+		return ErrWriter
+	}
+	if path == "" {
+		return ErrEmptyPath
+	}
+	stat, err := os.Lstat(path)
 	if err != nil {
-		return fmt.Errorf("writetar %q:%w", absPath, err)
+		return fmt.Errorf("write tar lstat %q:%w", path, err)
 	}
 	var link string
 	if stat.Mode()&os.ModeSymlink != 0 {
-		if link, err = os.Readlink(absPath); err != nil {
-			return fmt.Errorf("writetar mode:%w", err)
+		if link, err = os.Readlink(path); err != nil {
+			return fmt.Errorf("write tar mode:%w", err)
 		}
 	}
 	head, err := tar.FileInfoHeader(stat, link)
 	if err != nil {
-		return fmt.Errorf("writetar header:%w", err)
+		return fmt.Errorf("write tar header:%w", err)
 	}
 	if stat.IsDir() && !os.IsPathSeparator(filename[len(filename)-1]) {
 		filename += "/"
 	}
+	name := filepath.ToSlash(filename)
 	if head.Typeflag == tar.TypeReg && filename == "." {
 		// archiving a single file
-		head.Name = filepath.ToSlash(filepath.Base(absPath))
-	} else {
-		head.Name = filepath.ToSlash(filename)
+		name = filepath.ToSlash(filepath.Base(path))
 	}
+	head.Name = name
 	if err := tw.WriteHeader(head); err != nil {
-		return fmt.Errorf("writetar write header:%w", err)
+		return fmt.Errorf("write tar write header:%w", err)
 	}
 	if head.Typeflag == tar.TypeReg {
-		file, err := os.Open(absPath)
-		if err != nil {
-			return fmt.Errorf("writetar open %q:%w", absPath, err)
-		}
-		defer file.Close()
-		if _, err = io.Copy(tw, file); err != nil {
-			return fmt.Errorf("writetar io.copy %q:%w", absPath, err)
-		}
+		return copier(tw, path)
+	}
+	return nil
+}
+
+func copier(tw *tar.Writer, name string) error {
+	if tw == nil {
+		return ErrWriter
+	}
+	file, err := os.Open(name)
+	if err != nil {
+		return fmt.Errorf("writetar open %q:%w", name, err)
+	}
+	defer file.Close()
+	if _, err = io.Copy(tw, file); err != nil {
+		return fmt.Errorf("writetar io.copy %q:%w", name, err)
 	}
 	return nil
 }

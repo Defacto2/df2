@@ -6,9 +6,9 @@ import (
 	"crypto/sha512"
 	"database/sql"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,28 +18,25 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/archive"
+	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/insert"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prods"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
 	"github.com/Defacto2/df2/pkg/groups"
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 )
 
 var (
-	ErrFilePath = errors.New("filepath requirement cannot be empty")
-	ErrFilename = errors.New("filename requirement cannot be empty")
-	ErrTooFew   = errors.New("too few record values")
-	ErrNA       = errors.New("this feature is not implemented")
+	ErrAuthors  = errors.New("pointer to the author cannot be nil")
+	ErrFile     = errors.New("file requirement cannot be empty")
+	ErrHead     = errors.New("http header cannot be empty")
 	ErrNoRel    = errors.New("no productions exist for this releaser")
+	ErrParseAPI = errors.New("parse api has skipped")
+	ErrProds    = errors.New("pointer to the productions cannot be nil")
 )
-
-func apiErr(err error) error {
-	return fmt.Errorf("%s%w", "parse api: ", err)
-}
 
 const (
 	dos     = "dos"
@@ -66,16 +63,16 @@ func (c Category) String() string {
 // Record update for an item in the "file" table of the database.
 type Record struct {
 	Count          int
-	FilePath       string // absolute path to file
-	ID             string // MySQL auto increment id
-	UUID           string // record unique id
+	FilePath       string // FilePath is an absolute path to the file download.
+	ID             string // ID is the database auto increment id.
+	UUID           string // UUID is the record's unique id.
 	Filename       string
 	Filesize       string
 	FileZipContent string
 	CreatedAt      string
 	UpdatedAt      string
-	SumMD5         string // file download MD5 hash
-	Sum384         string // file download SHA384 hash
+	SumMD5         string // SumMD5 is the file download MD5 hash.
+	Sum384         string // Sum384 is the file download SHA hash.
 	Readme         string
 	DOSeeBinary    string
 	Platform       string
@@ -87,31 +84,38 @@ type Record struct {
 	CreditCode     []string
 	CreditArt      []string
 	CreditAudio    []string
-	WebIDDemozoo   uint // demozoo production id
-	WebIDPouet     uint
-	LastMod        time.Time // file download last modified time
+	WebIDDemozoo   uint      // WebIDDemozoo is a Demozoo ID associated with the record.
+	WebIDPouet     uint      // WebIDPouet is a Pouet ID associated with the record.
+	LastMod        time.Time // LastMod is the last modified time value of the file download.
 }
 
 func (r *Record) String(total int) string {
-	const leadZeros = 4
-	// calculate the number of prefixed zero characters
-	d := leadZeros
-	if total > 0 {
-		d = len(strconv.Itoa(total))
-	}
-	return fmt.Sprintf("%s %0*d. %v (%v) %v",
-		color.Question.Sprint("→"), d, r.Count, color.Primary.Sprint(r.ID),
-		color.Info.Sprint(r.WebIDDemozoo),
-		r.CreatedAt)
+	return fmt.Sprintf("\t%d. %v  %v  ID:%v  ",
+		r.Count,
+		color.Primary.Sprint(r.ID),
+		r.CreatedAt,
+		color.Info.Sprint(r.WebIDDemozoo))
 }
 
 // DoseeMeta generates DOSee related metadata from the file archive.
-func (r *Record) DoseeMeta() error {
-	names, err := r.variations()
+func (r *Record) DoseeMeta(db *sql.DB, w io.Writer, cfg conf.Config) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	names, err := r.variations(db)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
-	d, err := archive.Demozoo(r.FilePath, r.UUID, &names)
+	dz := archive.Demozoo{
+		Source:   r.FilePath,
+		UUID:     r.UUID,
+		VarNames: &names,
+		Config:   cfg,
+	}
+	d, err := dz.Decompress(db, w)
 	if err != nil {
 		return fmt.Errorf("record dosee meta: %w", err)
 	}
@@ -151,9 +155,10 @@ func (r *Record) FileMeta() error {
 }
 
 // Save the record to the database.
-func (r *Record) Save() error {
-	db := database.Connect()
-	defer db.Close()
+func (r *Record) Save(db *sql.DB) error {
+	if db == nil {
+		return database.ErrDB
+	}
 	query, args := r.Stmt()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -170,7 +175,7 @@ func (r *Record) Save() error {
 }
 
 // Stmt creates the SQL prepare statement and values to update a Demozoo production.
-func (r *Record) Stmt() (query string, args []any) {
+func (r *Record) Stmt() (string, []any) {
 	// a range map iternation is not used due to the varied comparisons
 	set, args := updates(r)
 	if len(set) == 0 {
@@ -180,19 +185,23 @@ func (r *Record) Stmt() (query string, args []any) {
 	args = append(args, []any{time.Now()}...)
 	set = append(set, "updatedby=?")
 	args = append(args, []any{database.UpdateID}...)
-	query = "UPDATE files SET " + strings.Join(set, sep) + " WHERE id=?"
+	query := "UPDATE files SET " + strings.Join(set, sep) + " WHERE id=?"
 	args = append(args, []any{r.ID}...)
 	return query, args
 }
 
 // ZipContent reads an archive and saves its content to the database.
-func (r *Record) ZipContent() (ok bool, err error) {
-	if r.FilePath == "" {
-		return false, fmt.Errorf("zipcontent: %w", ErrFilePath)
-	} else if r.Filename == "" {
-		return false, fmt.Errorf("zipcontent: %w", ErrFilename)
+func (r *Record) ZipContent(w io.Writer) (bool, error) {
+	if w == nil {
+		w = io.Discard
 	}
-	a, fn, err := archive.Read(r.FilePath, r.Filename)
+	if r.FilePath == "" {
+		return false, fmt.Errorf("zipcontent: %w", ErrFile)
+	}
+	if r.Filename == "" {
+		return false, fmt.Errorf("zipcontent: %w", ErrFile)
+	}
+	a, fn, err := archive.Read(w, r.FilePath, r.Filename)
 	if err != nil {
 		return false, fmt.Errorf("zipcontent read: %w", err)
 	}
@@ -202,37 +211,21 @@ func (r *Record) ZipContent() (ok bool, err error) {
 }
 
 // InsertProds adds the collection of Demozoo productions to the file database.
-func InsertProds(p *releases.Productions) error {
-	return insert.Prods(p)
+func InsertProds(db *sql.DB, w io.Writer, p *releases.Productions) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if p == nil {
+		return ErrProds
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	return insert.Prods(db, w, p)
 }
 
-//nolint:funlen
-func updates(r *Record) (set []string, args []any) {
-	if r.Filename != "" {
-		set = append(set, "filename=?")
-		args = append(args, []any{r.Filename}...)
-	}
-	if r.Filesize != "" {
-		set = append(set, "filesize=?")
-		args = append(args, []any{r.Filesize}...)
-	}
-	if r.FileZipContent != "" {
-		set = append(set, "file_zip_content=?")
-		args = append(args, []any{r.FileZipContent}...)
-	}
-	if r.SumMD5 != "" {
-		set = append(set, "file_integrity_weak=?")
-		args = append(args, []any{r.SumMD5}...)
-	}
-	if r.Sum384 != "" {
-		set = append(set, "file_integrity_strong=?")
-		args = append(args, []any{r.Sum384}...)
-	}
-	const errYear = 0o001
-	if r.LastMod.Year() != errYear {
-		set = append(set, "file_last_modified=?")
-		args = append(args, []any{r.LastMod}...)
-	}
+func updates(r *Record) ([]string, []any) {
+	set, args := file(r)
 	if r.WebIDPouet != 0 {
 		set = append(set, "web_id_pouet=?")
 		args = append(args, []any{r.WebIDPouet}...)
@@ -263,7 +256,40 @@ func updates(r *Record) (set []string, args []any) {
 	return set, args
 }
 
-func credits(r *Record) (set []string, args []any) {
+func file(r *Record) ([]string, []any) {
+	args := []any{}
+	set := []string{}
+	if r.Filename != "" {
+		set = append(set, "filename=?")
+		args = append(args, []any{r.Filename}...)
+	}
+	if r.Filesize != "" {
+		set = append(set, "filesize=?")
+		args = append(args, []any{r.Filesize}...)
+	}
+	if r.FileZipContent != "" {
+		set = append(set, "file_zip_content=?")
+		args = append(args, []any{r.FileZipContent}...)
+	}
+	if r.SumMD5 != "" {
+		set = append(set, "file_integrity_weak=?")
+		args = append(args, []any{r.SumMD5}...)
+	}
+	if r.Sum384 != "" {
+		set = append(set, "file_integrity_strong=?")
+		args = append(args, []any{r.Sum384}...)
+	}
+	const errYear = 0o001
+	if r.LastMod.Year() != errYear {
+		set = append(set, "file_last_modified=?")
+		args = append(args, []any{r.LastMod}...)
+	}
+	return set, args
+}
+
+func credits(r *Record) ([]string, []any) {
+	args := []any{}
+	set := []string{}
 	if len(r.CreditText) > 0 {
 		set = append(set, "credit_text=?")
 		j := strings.Join(r.CreditText, sep)
@@ -287,16 +313,22 @@ func credits(r *Record) (set []string, args []any) {
 	return set, args
 }
 
-func (r *Record) authors(a *prods.Authors) {
+func (r *Record) authors(w io.Writer, a *prods.Authors) error {
+	if w == nil {
+		return ErrAuthors
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	compare := func(n, o []string, i string) bool {
-		if !reflect.DeepEqual(n, o) {
-			logs.Printf("c%s:%s ", i, color.Secondary.Sprint(n))
-			if len(o) > 1 {
-				logs.Printf("%s ", color.Danger.Sprint(o))
-			}
-			return false
+		if reflect.DeepEqual(n, o) {
+			return true
 		}
-		return true
+		fmt.Fprintf(w, "c%s:%s ", i, color.Secondary.Sprint(n))
+		if len(o) > 1 {
+			fmt.Fprintf(w, "%s ", color.Danger.Sprint(o))
+		}
+		return false
 	}
 	if len(a.Art) > 1 {
 		n, old := a.Art, r.CreditArt
@@ -322,10 +354,14 @@ func (r *Record) authors(a *prods.Authors) {
 			r.CreditText = n
 		}
 	}
+	return nil
 }
 
 // check record to see if it needs updating.
-func (r *Record) check() (update bool) {
+func (r *Record) check(w io.Writer) bool {
+	if w == nil {
+		w = io.Discard
+	}
 	switch {
 	case
 		r.Filename == "",
@@ -336,58 +372,83 @@ func (r *Record) check() (update bool) {
 		r.FileZipContent == "":
 		return true
 	default:
-		logs.Printf("skipped, no changes needed %v", str.Y())
+		fmt.Fprintf(w, "skipped, no changes needed %v", str.Y())
 		return false
 	}
 }
 
-func (r *Record) confirm(code int, status string) (ok bool, err error) {
-	const nofound, found, problems = 404, 200, 300
-	if code == nofound {
+func (r *Record) confirm(db *sql.DB, w io.Writer, code int, status string) (bool, error) {
+	if db == nil {
+		return false, database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	const notFound, found, problems = 404, 200, 300
+	if code == notFound {
 		r.WebIDDemozoo = 0
-		if err := r.Save(); err != nil {
+		if err := r.Save(db); err != nil {
 			return true, fmt.Errorf("confirm: %w", err)
 		}
-		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		fmt.Fprintf(w, "(%s)\n", download.StatusColor(code, status))
 		return false, nil
 	}
 	if code < found || code >= problems {
-		logs.Printf("(%s)\n", download.StatusColor(code, status))
+		fmt.Fprintf(w, "(%s)\n", download.StatusColor(code, status))
 		return false, nil
 	}
 	return true, nil
 }
 
 // last modified time passed via HTTP.
-func (r *Record) lastMod(head http.Header) {
+func (r *Record) lastMod(w io.Writer, head http.Header) error {
+	if head == nil {
+		return ErrHead
+	}
 	lm := head.Get("Last-Modified")
 	if len(lm) < 1 {
-		return
+		return nil
 	}
 	t, err := time.Parse(download.RFC5322, lm)
 	if err != nil {
-		logs.Printf(" • last-mod value %q ?", lm)
-		return
+		fmt.Fprintf(w, " • last-mod value %q ?", lm)
+		return nil //nolint:nilerr
 	}
 	r.LastMod = t
 	if time.Now().Year() == t.Year() {
-		logs.Printf(" • %s", t.Format("2 Jan"))
-		return
+		fmt.Fprintf(w, " • %s", t.Format("2 Jan"))
+		return nil
 	}
-	logs.Printf(" • %s", t.Format("Jan 06"))
+	fmt.Fprintf(w, " • %s", t.Format("Jan 06"))
+	return nil
 }
 
-func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
+func (r *Record) parse(db *sql.DB, w io.Writer, cfg conf.Config, api *prods.ProductionsAPIv1) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if api == nil {
+		return ErrProds
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	switch {
 	case r.Filename == "":
+		dw := io.Discard
+		if flag.Lookup("test.v") != nil {
+			dw = os.Stdout
+		}
 		// handle an unusual case where filename is missing but all other metadata exists
-		if n, _ := api.DownloadLink(); n != "" {
-			logs.Print(n)
-			r.Filename = n
-			r.save()
-		} else {
-			log.Println("could not find a suitable value for the required filename column")
-			return true, nil
+		n, _ := api.DownloadLink(dw)
+		if n == "" {
+			fmt.Fprintln(w, "could not find a suitable value for the required filename column")
+			return ErrParseAPI
+		}
+		fmt.Fprint(w, n)
+		r.Filename = n
+		if err := r.save(db, w); err != nil {
+			return err
 		}
 		fallthrough
 	case
@@ -395,68 +456,94 @@ func (r *Record) parse(api *prods.ProductionsAPIv1) (bool, error) {
 		r.SumMD5 == "",
 		r.Sum384 == "":
 		if err := r.FileMeta(); err != nil {
-			return true, apiErr(err)
+			return fmt.Errorf("%s%w", "parse api: ", err)
 		}
-		r.save()
+
+		if err := r.save(db, w); err != nil {
+			return err
+		}
 		fallthrough
 	case r.FileZipContent == "":
-		if zip, err := r.ZipContent(); err != nil {
-			return true, apiErr(err)
-		} else if zip {
-			if err := r.DoseeMeta(); err != nil {
-				return true, apiErr(err)
+		zip, err := r.ZipContent(w)
+		if err != nil {
+			return fmt.Errorf("%s%w", "parse api: ", err)
+		}
+		if zip {
+			if err := r.DoseeMeta(db, w, cfg); err != nil {
+				return fmt.Errorf("%s%w", "parse api: ", err)
 			}
 		}
-		r.save()
+
+		if err := r.save(db, w); err != nil {
+			return err
+		}
 	}
-	return false, nil
+	return nil
 }
 
 // parseAPI confirms and parses the API request.
-func (r *Record) parseAPI(st Stat, overwrite bool, storage string) (skip bool, err error) {
+func (r *Record) parseAPI(db *sql.DB, w io.Writer, cfg conf.Config, st Stat, overwrite bool, storage string) error {
+	if db == nil {
+		return database.ErrDB
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	if database.CheckUUID(r.Filename) == nil {
 		// handle anomaly where the Filename was incorrectly given UUID
-		logs.Println("Clearing filename which is incorrectly set as", r.Filename)
+		fmt.Fprintln(w, "Clearing filename which is incorrectly set as", r.Filename)
 		r.Filename = ""
 	}
-	var f Product
-	err = f.Get(r.WebIDDemozoo)
-	if err != nil {
-		return true, fmt.Errorf("parse api fetch: %w", err)
+	f := Product{}
+	if err := f.Get(r.WebIDDemozoo); err != nil {
+		return fmt.Errorf("parse api fetch: %w", err)
 	}
 	code, status, api := f.Code, f.Status, f.API
-	if ok, err := r.confirm(code, status); err != nil {
-		return true, apiErr(err)
-	} else if !ok {
-		return true, nil
+	ok, err := r.confirm(db, w, code, status)
+	if err != nil {
+		return fmt.Errorf("%s%w", "parse api confirm: ", err)
+	}
+	if !ok {
+		return ErrParseAPI
 	}
 	if err := r.pingPouet(&api); err != nil {
-		return true, apiErr(err)
+		return fmt.Errorf("%s%w", "parse api: ", err)
 	}
 	r.FilePath = filepath.Join(storage, r.UUID)
-	if skip := r.Download(overwrite, &api, st); skip {
-		return true, nil
+	if err := r.Download(w, &api, st, overwrite); err != nil {
+		return fmt.Errorf("%s%w", "parse api download: ", err)
 	}
-	if update := r.check(); !update {
-		return true, nil
+	if update := r.check(w); !update {
+		return ErrParseAPI
 	}
-	if r.Platform == "" {
-		r.platform(&api)
+	if err := r.platform(&api); err != nil {
+		return err
 	}
-	return r.parse(&api)
+	return r.parse(db, w, cfg, &api)
 }
 
 func (r *Record) pingPouet(api *prods.ProductionsAPIv1) error {
-	const success = 299
-	if id, code, err := api.PouetID(true); err != nil {
+	if api == nil {
+		return ErrProds
+	}
+	id, code, err := api.PouetID(true)
+	if err != nil {
 		return fmt.Errorf("ping pouet: %w", err)
-	} else if id > 0 && code <= success {
+	}
+	const maxSuccess = 300
+	if id > 0 && code < maxSuccess {
 		r.WebIDPouet = uint(id)
 	}
 	return nil
 }
 
-func (r *Record) platform(api *prods.ProductionsAPIv1) {
+func (r *Record) platform(api *prods.ProductionsAPIv1) error {
+	if api == nil {
+		return ErrProds
+	}
+	if r.Platform == "" {
+		return nil
+	}
 	const msdos, windows = 4, 1
 	for _, p := range api.Platforms {
 		switch p.ID {
@@ -468,47 +555,70 @@ func (r *Record) platform(api *prods.ProductionsAPIv1) {
 			continue
 		}
 	}
+	return nil
 }
 
-func (r *Record) pouet(api *prods.ProductionsAPIv1) error {
-	pid, _, err := api.PouetID(false)
+func (r *Record) pouet(w io.Writer, api *prods.ProductionsAPIv1) error {
+	if api == nil {
+		return ErrProds
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	id, _, err := api.PouetID(false)
 	if err != nil {
 		return fmt.Errorf("pouet: %w", err)
 	}
-	if r.WebIDPouet != uint(pid) {
-		r.WebIDPouet = uint(pid)
-		logs.Printf("PN:%s ", color.Note.Sprint(pid))
+	if r.WebIDPouet != uint(id) {
+		r.WebIDPouet = uint(id)
+		fmt.Fprintf(w, "PN:%s ", color.Note.Sprint(id))
 	}
 	return nil
 }
 
-func (r *Record) save() {
-	if err := r.Save(); err != nil {
-		logs.Printf(" %v \n", str.X())
-		logs.Log(err)
-		return
+func (r *Record) save(db *sql.DB, w io.Writer) error {
+	if db == nil {
+		return database.ErrDB
 	}
-	logs.Printf(" 💾%v", str.Y())
+	if w == nil {
+		w = io.Discard
+	}
+	if err := r.Save(db); err != nil {
+		fmt.Fprintf(w, " %v \n", str.X())
+		return err
+	}
+	fmt.Fprintf(w, " 💾%v", str.Y())
+	return nil
 }
 
-func (r *Record) title(api *prods.ProductionsAPIv1) {
+func (r *Record) title(w io.Writer, api *prods.ProductionsAPIv1) error {
+	if api == nil {
+		return ErrProdAPI
+	}
+	if w == nil {
+		w = io.Discard
+	}
 	if r.Section != Magazine.String() && !strings.EqualFold(r.Title, api.Title) {
-		logs.Printf("i:%s ", color.Secondary.Sprint(api.Title))
+		fmt.Fprintf(w, "i:%s ", color.Secondary.Sprint(api.Title))
 		r.Title = api.Title
 	}
+	return nil
 }
 
-func (r *Record) variations() ([]string, error) {
+func (r *Record) variations(db *sql.DB) ([]string, error) {
+	if db == nil {
+		return nil, database.ErrDB
+	}
 	names := []string{}
 	if r.GroupBy != "" {
-		v, err := groups.Variations(r.GroupBy)
+		v, err := groups.Variations(db, r.GroupBy)
 		if err != nil {
 			return nil, fmt.Errorf("record group by variations: %w", err)
 		}
 		names = append(names, v...)
 	}
 	if r.GroupFor != "" {
-		v, err := groups.Variations(r.GroupFor)
+		v, err := groups.Variations(db, r.GroupFor)
 		if err != nil {
 			return nil, fmt.Errorf("record group for variations: %w", err)
 		}

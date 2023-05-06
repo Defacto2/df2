@@ -1,7 +1,10 @@
-df2
-df2.exe
 dist/
 internal/dist/
+testdata/empty/*
+testdata/images/test_100x.gif
+testdata.rar
+df2
+df2.exe
 UPDATES.md
 .bin
 .DS_Store

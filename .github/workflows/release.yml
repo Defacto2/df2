@@ -19,7 +19,7 @@ jobs:
       - name: Setup Go with cache
         uses: actions/setup-go@v3
         with:
-          go-version: '>=1.19.5'
+          go-version: '>=1.20.0'
           cache: true
       - name: GoReleaser run
         uses: goreleaser/goreleaser-action@v4

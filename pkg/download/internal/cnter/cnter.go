@@ -1,7 +1,10 @@
+// Package cnter is an optional progress counter for the remote file downloads.
 package cnter
 
 import (
-	"github.com/Defacto2/df2/pkg/logs"
+	"io"
+
+	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/dustin/go-humanize"
 )
 
@@ -10,6 +13,7 @@ type Writer struct {
 	Name    string // Filename.
 	Total   uint64 // Expected filesize.
 	Written uint64 // Bytes written.
+	W       io.Writer
 }
 
 // Write to stdout and also return the current write progress.
@@ -23,10 +27,10 @@ func (wc *Writer) Write(p []byte) (int, error) {
 // Percent prints the current download progress.
 func (wc Writer) Percent() {
 	if pct := Percent(wc.Written, wc.Total); pct > 0 {
-		logs.Printcrf("downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
+		logger.PrintfCR(wc.W, "downloading %s (%d%%) from %s", humanize.Bytes(wc.Written), pct, wc.Name)
 		return
 	}
-	logs.Printcrf("downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
+	logger.PrintfCR(wc.W, "downloading %s from %s", humanize.Bytes(wc.Written), wc.Name)
 }
 
 // Percent of count in total.

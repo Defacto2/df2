@@ -1,0 +1,34 @@
+# SQLBoiler configuration file
+# To rebuild run: `go generate` in the root of this repository.
+
+# Target directory.
+output = "pkg/models/mysql" 
+
+# This should always be kept to true.
+wipe = true
+
+# Add generation for global variants.
+add-global-variants = false
+
+# Add generation for panic variants.
+add-panic-variants = false
+
+# Disable the before and after query hook models.
+no-hooks = true
+
+# Disable generated go test files.
+no-tests = false
+
+# MySQL database connection.
+[mysql]
+dbname = "defacto2-inno"
+host = "localhost"
+port = 3306
+user = "root"
+pass = "password"
+sslmode = "false"
+
+[auto-columns]
+created = "createdat"
+updated = "updatedat"
+deleted = "deletedat"

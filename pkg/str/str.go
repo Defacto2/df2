@@ -1,36 +1,51 @@
-// Package str are print to terminal display and colour functions.
+// Package str has string and stdout functions.
 package str
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"math"
 	"os"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/Defacto2/df2/pkg/logs"
 	"github.com/gookit/color"
 )
+
+const (
+	NothingToDo = "all good, there is nothing to do"
+)
+
+func TimeTaken(w io.Writer, elapsed float64) {
+	if w == nil {
+		w = io.Discard
+	}
+	fmt.Fprintf(w, "\ttime taken %.1f seconds\n", elapsed)
+}
 
 // Piped detects whether the program text is being piped to another operating
 // system command or sent to stdout.
 func Piped() bool {
 	stat, err := os.Stdout.Stat()
 	if err != nil {
-		logs.Fatal(err)
+		log.Fatal(err)
 	}
 	return (stat.Mode() & os.ModeCharDevice) == 0
 }
 
 // Progress returns the count of total remaining as a percentage.
-func Progress(name string, count, total int) float64 {
+func Progress(w io.Writer, name string, count, total int) float64 {
+	if w == nil {
+		w = io.Discard
+	}
 	const fin = 100
 	r := float64(count) / float64(total) * fin
 	switch r {
 	case fin:
-		logs.Printf("\rquerying %s %s %.0f %%  \n", name, bar(r), r)
+		fmt.Fprintf(w, "\rquerying %s %s %.0f %%  \n", name, bar(r), r)
 	default:
-		logs.Printf("\rquerying %s %s %.2f %% ", name, bar(r), r)
+		fmt.Fprintf(w, "\rquerying %s %s %.2f %% ", name, bar(r), r)
 	}
 	return r
 }
@@ -57,11 +72,6 @@ func bar(r float64) string {
 	}
 }
 
-// Sec prints a secondary notice.
-func Sec(s string) string {
-	return color.Secondary.Sprint(s)
-}
-
 // Truncate shortens a string to length characters.
 func Truncate(text string, length int) string {
 	if length < 1 {
@@ -72,11 +82,6 @@ func Truncate(text string, length int) string {
 		return text
 	}
 	return text[0:length-utf8.RuneCountInString(s)] + s
-}
-
-// Warn prints a warning notice.
-func Warn(s string) string {
-	return color.Warn.Sprint(s)
 }
 
 // X returns a red ✗ cross mark.
