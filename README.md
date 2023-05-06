@@ -4,8 +4,6 @@
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Defacto2/df2)](https://github.com/Defacto2/df2/releases)
 ![GitHub](https://img.shields.io/github/license/Defacto2/df2?style=flat)
 
-// TODO: varidic funcs for looking up IDs?
-
 The `df2` program is a terminal tool for managing plus optimising the files and database of [defacto2.net](https://defacto2.net) that is broken down into multiple parts.
 
 ```
