@@ -12,16 +12,16 @@ import (
 
 func TestFix(t *testing.T) {
 	t.Parallel()
-	err := text.Fix(nil, nil, conf.Config{})
+	err := text.Fix(nil, nil, nil, conf.Config{})
 	assert.NotNil(t, err)
 
 	cfg := conf.Defaults()
 	db, err := database.Connect(cfg)
 	assert.Nil(t, err)
 	defer db.Close()
-	err = text.Fix(db, io.Discard, conf.Config{})
+	err = text.Fix(db, io.Discard, nil, conf.Config{})
 	assert.NotNil(t, err)
 
-	err = text.Fix(db, io.Discard, cfg)
+	err = text.Fix(db, io.Discard, nil, cfg)
 	assert.Nil(t, err)
 }

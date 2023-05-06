@@ -11,6 +11,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/logger"
+	"github.com/Defacto2/df2/pkg/str"
 	"go.uber.org/zap"
 )
 
@@ -151,10 +152,10 @@ func queriesTotal(w io.Writer, total int) {
 		w = io.Discard
 	}
 	if total == 0 {
-		fmt.Fprintln(w, "nothing to do")
+		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
 		return
 	}
-	fmt.Fprintln(w, "Total records", total)
+	fmt.Fprintf(w, "\t%d total records", total)
 }
 
 // Skip the Request.

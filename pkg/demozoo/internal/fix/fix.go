@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/str"
 )
 
 // Fix repairs imported Demozoo data conflicts.
@@ -18,16 +19,23 @@ func Configs(db *sql.DB, w io.Writer) error {
 	if w == nil {
 		w = io.Discard
 	}
-	res, err := updateApps(db)
+	res1, err := updateApps(db)
 	if err != nil {
 		return fmt.Errorf("demozoo app fix: %w", err)
 	}
-	fmt.Fprintln(w, "moved", res, "Demozoo #releaseadvert records to #groupapplication")
-	res, err = updateInstallers(db)
+	if res1 > 0 {
+		fmt.Fprintln(w, "\tMOVED", res1, "Demozoo #releaseadvert records to #groupapplication")
+	}
+	res2, err := updateInstallers(db)
 	if err != nil {
 		return fmt.Errorf("demozoo installer fix: %w", err)
 	}
-	fmt.Fprintln(w, "moved", res, "Demozoo #releaseadvert records to #releaseinstall")
+	if res2 > 0 {
+		fmt.Fprintln(w, "\tMOVED", res2, "Demozoo #releaseadvert records to #releaseinstall")
+	}
+	if res1 == 0 && res2 == 0 {
+		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
+	}
 	return nil
 }
 

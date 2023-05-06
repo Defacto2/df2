@@ -10,6 +10,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/scan"
+	"go.uber.org/zap"
 )
 
 func stmt() string {
@@ -20,7 +21,7 @@ func stmt() string {
 }
 
 // Fix the content of zip archives within in the database.
-func Fix(db *sql.DB, w io.Writer, cfg conf.Config, summary bool) error { //nolint:cyclop
+func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, summary bool) error { //nolint:cyclop
 	if db == nil {
 		return database.ErrDB
 	}
@@ -69,7 +70,8 @@ func Fix(db *sql.DB, w io.Writer, cfg conf.Config, summary bool) error { //nolin
 		s.Columns = columns
 		s.Values = &values
 		if err := r.Iterate(db, w, &s); err != nil {
-			fmt.Fprintf(w, "\n%s\n", err)
+			fmt.Fprintln(w)
+			l.Errorln(err)
 			continue
 		}
 		fmt.Fprintln(w)

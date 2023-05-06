@@ -157,7 +157,7 @@ func nerdStats(w io.Writer, l *zap.SugaredLogger, st Stat, limit uint) {
 	fmt.Fprint(tw, "\t\tRange of years published: ", "\t")
 	s := []string{}
 	for year, cnt := range st.LastMods {
-		s = append(s, fmt.Sprintf("%s (%d)", year, cnt))
+		s = append(s, fmt.Sprintf("%s ~(%d)", year, cnt))
 	}
 	fmt.Fprint(tw, strings.Join(s, ", "))
 	fmt.Fprint(tw, "\n")

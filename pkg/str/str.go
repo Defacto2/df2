@@ -13,6 +13,17 @@ import (
 	"github.com/gookit/color"
 )
 
+const (
+	NothingToDo = "all good, there is nothing to do"
+)
+
+func TimeTaken(w io.Writer, elapsed float64) {
+	if w == nil {
+		w = io.Discard
+	}
+	fmt.Fprintf(w, "\ttime taken %.1f seconds\n", elapsed)
+}
+
 // Piped detects whether the program text is being piped to another operating
 // system command or sent to stdout.
 func Piped() bool {

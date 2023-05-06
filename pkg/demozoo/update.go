@@ -90,16 +90,11 @@ type Record struct {
 }
 
 func (r *Record) String(total int) string {
-	const leadZeros = 4
-	// calculate the number of prefixed zero characters
-	d := leadZeros
-	if total > 0 {
-		d = len(strconv.Itoa(total))
-	}
-	return fmt.Sprintf("%s %0*d. %v (%v) %v",
-		color.Question.Sprint("→"), d, r.Count, color.Primary.Sprint(r.ID),
-		color.Info.Sprint(r.WebIDDemozoo),
-		r.CreatedAt)
+	return fmt.Sprintf("\t%d. %v  %v  ID:%v  ",
+		r.Count,
+		color.Primary.Sprint(r.ID),
+		r.CreatedAt,
+		color.Info.Sprint(r.WebIDDemozoo))
 }
 
 // DoseeMeta generates DOSee related metadata from the file archive.

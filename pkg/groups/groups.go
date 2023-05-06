@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/groups/internal/acronym"
 	"github.com/Defacto2/df2/pkg/groups/internal/filter"
 	"github.com/Defacto2/df2/pkg/groups/internal/rename"
 	"github.com/Defacto2/df2/pkg/groups/internal/request"
-	"github.com/Defacto2/df2/pkg/logger"
+	"github.com/Defacto2/df2/pkg/str"
 )
 
 var (
@@ -105,7 +104,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	c, start := 0, time.Now()
+	c := 0
 	for _, name := range names {
 		r, err := rename.Clean(db, w, name)
 		if err != nil {
@@ -117,29 +116,25 @@ func Fix(db *sql.DB, w io.Writer) error {
 	}
 	switch {
 	case c == 1:
-		logger.PrintCR(w, "1 fix applied")
+		fmt.Fprintf(w, "\t1 group fix applied")
 	case c > 0:
-		logger.PrintfCR(w, "%d fixes applied", c)
+		fmt.Fprintf(w, "\t%d tgroup fixes applied", c)
 	default:
-		logger.PrintCR(w, "no group fixes needed")
+		fmt.Fprintf(w, "\tgroup fixes, %s\n", str.NothingToDo)
 	}
 	// fix initialisms stored in the groupnames table
-	fmt.Fprint(w, " and...\n")
 	i, err := acronym.Fix(db)
 	if err != nil {
 		return err
 	}
 	switch i {
 	case 1:
-		logger.PrintCR(w, "removed a broken initialism entry")
+		fmt.Fprintf(w, "\t1 broken initialism entry removed")
 	case 0:
-		logger.PrintCR(w, "no initialism fixes needed")
+		fmt.Fprintf(w, "\tinitialism fixes, %s\n", str.NothingToDo)
 	default:
-		logger.PrintfCR(w, "%d broken initialism entries removed", i)
+		fmt.Fprintf(w, "\t%d broken initialism entries removed", i)
 	}
-	// report time taken
-	elapsed := time.Since(start).Seconds()
-	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
 	return nil
 }
 

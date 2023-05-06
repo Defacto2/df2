@@ -15,6 +15,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/str"
 	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
 )
@@ -156,7 +157,7 @@ func Init(w io.Writer, directory string) error { //nolint:funlen
 	}
 	fmt.Fprintf(w, "SQL found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
 	if len(files) == 0 {
-		fmt.Fprintln(w, ", but there is nothing to do.")
+		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
 		return nil
 	}
 	fmt.Fprintln(w, ".")

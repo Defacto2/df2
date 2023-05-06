@@ -12,7 +12,7 @@ import (
 
 func TestFix(t *testing.T) {
 	t.Parallel()
-	err := zipcontent.Fix(nil, nil, conf.Config{}, false)
+	err := zipcontent.Fix(nil, nil, nil, conf.Config{}, false)
 	assert.NotNil(t, err)
 
 	cfg := conf.Defaults()
@@ -21,12 +21,12 @@ func TestFix(t *testing.T) {
 	defer db.Close()
 
 	bb := &bytes.Buffer{}
-	err = zipcontent.Fix(db, bb, cfg, false)
+	err = zipcontent.Fix(db, bb, nil, cfg, false)
 	assert.Nil(t, err)
 	assert.NotContains(t, bb.String(), "Total archives scanned")
 
 	bb = &bytes.Buffer{}
-	err = zipcontent.Fix(db, bb, cfg, true)
+	err = zipcontent.Fix(db, bb, nil, cfg, true)
 	assert.Nil(t, err)
 	assert.Contains(t, bb.String(), "Total archives scanned")
 }

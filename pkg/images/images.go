@@ -86,7 +86,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 			continue
 		}
 		c++
-		fmt.Fprintf(w, "%d. %v", c, img)
+		fmt.Fprintf(w, "\t%d. %v", c, img)
 		if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); errors.Is(err, fs.ErrNotExist) {
 			fmt.Fprintf(w, "%s\n", str.X())
 			continue
@@ -100,7 +100,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 		fmt.Fprintln(w)
 	}
 	if c == 0 {
-		fmt.Fprintln(w, "everything is okay, there is nothing to do")
+		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
 	}
 	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"os"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
@@ -214,11 +213,10 @@ func (st Stat) summary(w io.Writer, elapsed time.Duration) {
 	if w == nil {
 		w = io.Discard
 	}
-	t := fmt.Sprintf("Total Demozoo items handled: %v, time elapsed %.1f seconds", st.Count, elapsed.Seconds())
-	fmt.Fprintln(w, strings.Repeat("─", len(t)))
-	fmt.Fprintln(w, t)
+	fmt.Fprintf(w, "\n\tTOTAL, %d Demozoo items\n", st.Count)
+	fmt.Fprintf(w, "\ttime taken %.1f seconds\n", elapsed.Seconds())
 	if st.Missing > 0 {
-		fmt.Fprintln(w, "UUID files not found:", st.Missing)
+		fmt.Fprintf(w, "\tUUID files, %d not found\n", st.Missing)
 	}
 }
 

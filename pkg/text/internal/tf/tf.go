@@ -171,7 +171,7 @@ func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, count int, dir string) 
 	if w == nil {
 		w = io.Discard
 	}
-	fmt.Fprintf(w, "%d. %v", count, t)
+	fmt.Fprintf(w, "\t%d. %v", count, t)
 	name := filepath.Join(dir, t.UUID)
 	if _, err := os.Stat(name); errors.Is(err, fs.ErrNotExist) {
 		fmt.Fprintf(w, "%s\n", str.X())
@@ -205,7 +205,7 @@ func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 		c--
 		return c, nil
 	}
-	fmt.Fprintf(w, "%d. %v", c, t)
+	fmt.Fprintf(w, "\t%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
 	if st, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) || st.Size() == 0 {
 		fmt.Fprintf(w, "%s (no src png)\n", str.X())

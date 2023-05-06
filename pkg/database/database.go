@@ -257,7 +257,6 @@ func Fix(db *sql.DB, w io.Writer) error {
 	if w == nil {
 		w = io.Discard
 	}
-	start := time.Now()
 	if err := update.Filename.NamedTitles(db, w); err != nil {
 		return fmt.Errorf("update filenames: %w", err)
 	}
@@ -267,8 +266,6 @@ func Fix(db *sql.DB, w io.Writer) error {
 	if err := update.GroupBy.NamedTitles(db, w); err != nil {
 		return fmt.Errorf("update groups by: %w", err)
 	}
-	elapsed := time.Since(start).Seconds()
-	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
 	dist, err := update.Distinct(db, "section")
 	if err != nil {
 		return fmt.Errorf("fix distinct section: %w", err)

@@ -188,7 +188,7 @@ func Filter(db *sql.DB, w io.Writer, prods []releases.ProductionV1) ([]releases.
 			continue
 		}
 		finds++
-		fmt.Fprintf(w, "%d. (%d) %s\n", finds, prod.ID, prod.Title)
+		fmt.Fprintf(w, "\t%d. (%d) %s\n", finds, prod.ID, prod.Title)
 		p = append(p, prod)
 	}
 	return p, nil

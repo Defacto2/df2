@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/directories"
+	"github.com/Defacto2/df2/pkg/str"
 )
 
 // Stats contain the statistics of the archive scan.
@@ -39,9 +39,8 @@ func (s *Stats) Summary(w io.Writer) {
 	}
 	count := s.Count - s.Missing
 	if count == 0 {
-		fmt.Fprint(w, "nothing to do")
+		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
 	}
-	elapsed := time.Since(s.start).Seconds()
-	t := fmt.Sprintf("Total archives scanned: %v, time elapsed %.1f seconds", count, elapsed)
-	fmt.Fprintf(w, "\n%s\n%s\n", strings.Repeat("─", len(t)), t)
+	fmt.Fprintf(w, "\tTOTAL %d archives\n", count)
+	str.TimeTaken(w, time.Since(s.start).Seconds())
 }

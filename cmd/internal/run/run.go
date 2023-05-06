@@ -45,7 +45,7 @@ const (
 var (
 	ErrArg     = errors.New("argument is unsupported")
 	ErrToFew   = errors.New("too few arguments given")
-	ErrNothing = errors.New("had nothing to do")
+	ErrNothing = errors.New(str.NothingToDo)
 	ErrZap     = errors.New("zap logger cannot be nil")
 )
 
@@ -339,9 +339,7 @@ func GroupCron(db *sql.DB, w io.Writer, cfg conf.Config, gro arg.Group) error {
 	return nil
 }
 
-func newDemozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, i string) error {
-	s := color.Info.Sprintf("%s. scan for new demozoo submissions\n", i)
-	fmt.Fprintln(w, s)
+func newDemozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	newDZ := demozoo.Request{
 		All:       false,
 		Overwrite: false,
@@ -352,9 +350,7 @@ func newDemozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, 
 	return newDZ.Queries(db, w)
 }
 
-func newProof(db *sql.DB, w io.Writer, cfg conf.Config, i string) error {
-	s := color.Info.Sprintf("%s. scan for new proof submissions\n", i)
-	fmt.Fprintln(w, s)
+func newProof(db *sql.DB, w io.Writer, cfg conf.Config) error {
 	newProof := proof.Request{
 		Overwrite:   false,
 		All:         false,
@@ -363,39 +359,27 @@ func newProof(db *sql.DB, w io.Writer, cfg conf.Config, i string) error {
 	return newProof.Queries(db, w, cfg)
 }
 
-func genZIPList(db *sql.DB, w io.Writer, cfg conf.Config, i string) error {
-	s := color.Info.Sprintf("%s. scan for empty archives\n", i)
-	fmt.Fprintln(w, s)
-	return zipcontent.Fix(db, w, cfg, true)
+func genZIPList(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
+	return zipcontent.Fix(db, w, l, cfg, true)
 }
 
-func genImage(db *sql.DB, w io.Writer, i string) error {
-	s := color.Info.Sprintf("%s. generate missing images\n", i)
-	fmt.Fprintln(w, s)
+func genImage(db *sql.DB, w io.Writer) error {
 	return images.Fix(db, w)
 }
 
-func genText(db *sql.DB, w io.Writer, cfg conf.Config, i string) error {
-	s := color.Info.Sprintf("%s. generate missing text previews\n", i)
-	fmt.Fprintln(w, s)
-	return text.Fix(db, w, cfg)
+func genText(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
+	return text.Fix(db, w, l, cfg)
 }
 
-func fixDZ(db *sql.DB, w io.Writer, i string) error {
-	s := color.Info.Sprintf("%s. fix demozoo data conflicts\n", i)
-	fmt.Fprintln(w, s)
+func fixDZ(db *sql.DB, w io.Writer) error {
 	return demozoo.Fix(db, w)
 }
 
-func fixDB(db *sql.DB, w io.Writer, i string) error {
-	s := color.Info.Sprintf("%s. fix malformed database entries\n", i)
-	fmt.Fprintln(w, s)
+func fixDB(db *sql.DB, w io.Writer) error {
 	return database.Fix(db, w)
 }
 
-func fixGroup(db *sql.DB, w io.Writer, i string) error {
-	s := color.Info.Sprintf("%s. fix malformed groups\n", i)
-	fmt.Fprintln(w, s)
+func fixGroup(db *sql.DB, w io.Writer) error {
 	return groups.Fix(db, w)
 }
 
@@ -409,30 +393,36 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if w == nil {
 		w = io.Discard
 	}
-	s := color.Primary.Sprint("Scans for new submissions and record cleanup")
-	fmt.Fprintln(w, s)
-	if err := newDemozoo(db, w, l, cfg, "1"); err != nil {
+	l.Info("SCAN for new general submissions and cleanup")
+	if err := newDemozoo(db, w, l, cfg); err != nil {
 		l.Errorln(err)
 	}
-	if err := newProof(db, w, cfg, "2"); err != nil {
+	l.Info("SCAN for new proof submissions and cleanup")
+	if err := newProof(db, w, cfg); err != nil {
 		l.Errorln(err)
 	}
-	if err := genZIPList(db, w, cfg, "3"); err != nil {
+	l.Info("SCAN file archives")
+	if err := genZIPList(db, w, l, cfg); err != nil {
 		l.Errorln(err)
 	}
-	if err := genImage(db, w, "4"); err != nil {
+	l.Info("GENERATE any missing screenshots or thumbnails")
+	if err := genImage(db, w); err != nil {
 		l.Errorln(err)
 	}
-	if err := genText(db, w, cfg, "5"); err != nil {
+	l.Info("GENERATE any previews for the text files")
+	if err := genText(db, w, l, cfg); err != nil {
 		l.Errorln(err)
 	}
-	if err := fixDZ(db, w, "6"); err != nil {
+	l.Info("FIX Demozoo conflicts")
+	if err := fixDZ(db, w); err != nil {
 		l.Errorln(err)
 	}
-	if err := fixDB(db, w, "7"); err != nil {
+	l.Info("FIX malformed database records")
+	if err := fixDB(db, w); err != nil {
 		l.Errorln(err)
 	}
-	if err := fixGroup(db, w, "8"); err != nil {
+	l.Info("FIX malformed database groups")
+	if err := fixGroup(db, w); err != nil {
 		l.Errorln(err)
 	}
 	return nil

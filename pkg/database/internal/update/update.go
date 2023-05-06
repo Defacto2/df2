@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/logger"
+	"github.com/Defacto2/df2/pkg/str"
 	"github.com/gookit/color"
 )
 
@@ -82,10 +83,10 @@ func (col Column) NamedTitles(db *sql.DB, w io.Writer) error {
 		return err
 	}
 	if rows == 0 {
-		logger.PrintfCR(w, "no named title fixes needed")
+		fmt.Fprintf(w, "\t%s `%s`\n", str.NothingToDo, string(col))
 		return nil
 	}
-	logger.PrintfCR(w, "%d named title fixes applied", rows)
+	fmt.Fprintf(w, "\t%d named title fixes applied, `%s`\n", rows, string(col))
 	return nil
 }
 

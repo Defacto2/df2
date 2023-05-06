@@ -11,7 +11,9 @@ import (
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
+	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
+	"go.uber.org/zap"
 )
 
 const (
@@ -20,7 +22,7 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are text based.
-func Fix(db *sql.DB, w io.Writer, cfg conf.Config) error {
+func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
 	}
@@ -40,50 +42,57 @@ func Fix(db *sql.DB, w io.Writer, cfg conf.Config) error {
 	defer rows.Close()
 	i, c := 0, 0
 	for rows.Next() {
-		if i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
+		t := tf.TextFile{}
+		if t, i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
+			if errors.Is(tf.ErrReadmeOff, err) {
+				// website admin has disabled the display of a readme
+				continue
+			}
 			if !errors.Is(err, tf.ErrPNG) {
-				fmt.Fprintln(w, err)
+				fmt.Fprintf(w, "\t%d. %s%s\n",
+					c, t.String(), str.X())
+				l.Error(err)
 				continue
 			}
 		}
 	}
-	fmt.Fprintln(w, "scanned", c, "fixes from", i, "text file records")
+	fmt.Fprintf(w, "\tSCAN %d fix attempts for %d text files\n", c, i)
 	if c == 0 {
-		fmt.Fprintln(w, "everything is okay, there is nothing to do")
+		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
 	}
 	return nil
 }
 
-func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (int, int, error) {
+func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (tf.TextFile, int, int, error) {
 	t := tf.TextFile{}
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
-		return i, c, fmt.Errorf("fix rows scan: %w", err1)
+		return t, i, c, fmt.Errorf("fix rows scan: %w", err1)
 	}
 	ok, err := t.Exist(dir)
 	if err != nil {
-		return i, c, fmt.Errorf("fix exist: %w", err)
+		return t, i, c, fmt.Errorf("fix exist: %w", err)
 	}
 	// missing images + source is an archive
 	if !ok && t.Archive() {
 		c++
 		if err := extract(w, cfg, t, dir); err != nil {
-			return i, c, err
+			return t, i, c, err
 		}
 	}
 	// missing images + source is a textfile
 	if !ok {
 		c++
 		if err := t.TextPNG(w, cfg, c, dir.UUID); err != nil {
-			return i, c, err
+			return t, i, c, err
 		}
 	}
 	// missing webp specific images that rely on PNG sources
 	c, err = t.WebP(w, c, dir.Img000)
 	if err != nil {
-		fmt.Fprintln(w, err)
+		fmt.Fprintf(w, "\t%s\n", err)
 	}
-	return i, c, nil
+	return t, i, c, nil
 }
 
 func extract(w io.Writer, cfg conf.Config, t tf.TextFile, dir *directories.Dir) error {

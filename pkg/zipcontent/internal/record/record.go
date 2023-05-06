@@ -82,10 +82,10 @@ func (r *Record) Iterate(db *sql.DB, w io.Writer, s *scan.Stats) error {
 		case "createdat":
 			s, err := database.DateTime(raw)
 			if err == nil {
-				fmt.Fprintf(w, "%v", s)
+				fmt.Fprintf(w, "  %v", s)
 			}
 		case "filename":
-			fmt.Fprintf(w, "%v", value)
+			fmt.Fprintf(w, "  %v", value)
 			if err := r.Archive(db, w, s); err != nil {
 				return err
 			}
@@ -109,7 +109,6 @@ func (r *Record) Archive(db *sql.DB, w io.Writer, s *scan.Stats) error {
 	if w == nil {
 		w = io.Discard
 	}
-	fmt.Fprint(w, " • ")
 	var err error
 	r.Files, r.Name, err = archive.Read(w, r.File, r.Name)
 	if err != nil {
@@ -120,7 +119,8 @@ func (r *Record) Archive(db *sql.DB, w io.Writer, s *scan.Stats) error {
 	if err := r.Textfile(w, s); err != nil {
 		// instead of returning the error, print it.
 		// otherwise the results of archive.Read will never be saved
-		fmt.Fprintf(w, " %s", err)
+		fmt.Fprintf(w, " %s %s", str.X(), err)
+		//str.X()
 	}
 	updates, err := r.Save(db)
 	if err != nil {
@@ -175,8 +175,7 @@ func (r *Record) id(w io.Writer, s *scan.Stats) error {
 	if w == nil {
 		w = io.Discard
 	}
-	logger.PrintfCR(w, "%s %0*d. %v ",
-		color.Question.Sprint("→"),
+	logger.PrintfCR(w, "\t%0*d. %v",
 		len(strconv.Itoa(s.Total)),
 		s.Count,
 		color.Primary.Sprint(r.ID))

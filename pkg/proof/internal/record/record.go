@@ -66,7 +66,7 @@ func (p *Proof) Summary(id string) string {
 	}
 	total := p.Count - p.Missing
 	if total == 0 {
-		return "nothing to do\n"
+		return fmt.Sprintf("\t%s\n", str.NothingToDo)
 	}
 	elapsed := time.Since(p.start).Seconds()
 	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, elapsed)
@@ -200,7 +200,7 @@ func (r Record) Prefix(w io.Writer, s *Proof) error {
 	if w == nil {
 		w = io.Discard
 	}
-	logger.PrintfCR(w, "%s %0*d. %v ",
+	logger.PrintfCR(w, "->%s %0*d. %v ",
 		color.Question.Sprint("→"),
 		len(strconv.Itoa(s.Total)),
 		s.Count,
@@ -222,7 +222,6 @@ func (r Record) Zip(db *sql.DB, w io.Writer, cfg conf.Config, overwrite bool) er
 	if !overwrite {
 		return nil
 	}
-	fmt.Fprint(w, " • ")
 	u, err := r.fileZipContent(db, w)
 	if err != nil {
 		return fmt.Errorf("zip content: %w", err)
@@ -230,6 +229,7 @@ func (r Record) Zip(db *sql.DB, w io.Writer, cfg conf.Config, overwrite bool) er
 	if !u {
 		return nil
 	}
+	fmt.Fprint(w, " • ")
 	proof := archive.Proof{
 		Source: r.File,
 		Name:   r.Name,

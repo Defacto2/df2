@@ -57,7 +57,7 @@ records that do not have this expected context.`,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := zipcontent.Fix(db, os.Stdout, confg, true); err != nil {
+		if err := zipcontent.Fix(db, os.Stdout, logr, confg, true); err != nil {
 			logr.Errorf("archives fix: %w", err)
 		}
 	},
@@ -164,7 +164,7 @@ that are plain text files.`,
 			logr.Fatal(err)
 		}
 		defer db.Close()
-		if err := text.Fix(db, os.Stdout, confg); err != nil {
+		if err := text.Fix(db, os.Stdout, logr, confg); err != nil {
 			logr.Error(err)
 		}
 	},
