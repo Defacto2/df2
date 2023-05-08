@@ -20,7 +20,7 @@ require (
 	github.com/gookit/color v1.5.3
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
-	github.com/lib/pq v1.10.7
+	github.com/lib/pq v1.10.9
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/muesli/go-app-paths v0.2.2
 	github.com/nickalie/go-webpbin v0.0.0-20220110095747-f10016bf2dc1

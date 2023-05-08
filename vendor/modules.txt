@@ -134,7 +134,7 @@ github.com/inconshreveable/mousetrap
 # github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 ## explicit
 github.com/kat-co/vala
-# github.com/lib/pq v1.10.7
+# github.com/lib/pq v1.10.9
 ## explicit; go 1.13
 github.com/lib/pq
 github.com/lib/pq/oid
