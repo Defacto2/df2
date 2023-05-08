@@ -132,7 +132,7 @@ func Type(name string) error {
 	if t := s[0]; t == "text" {
 		return nil
 	}
-	return fmt.Errorf("%w %s: %s", ErrType, mime, name)
+	return fmt.Errorf("%w: %s: %s", ErrType, mime, name)
 }
 
 // Resize the named image so it is compatible with the format restrictions of WebP.
@@ -238,7 +238,7 @@ func Export(name, dest string, amiga bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("✓ text » png %v\n%s",
+	return fmt.Sprintf("✓ text » png %v %s",
 		humanize.Bytes(i), color.Secondary.Sprintf("%s", out)), nil
 }
 

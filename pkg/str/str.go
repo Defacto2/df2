@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -142,4 +143,29 @@ func YearAbbr(s string) int {
 		return twentyfirst + y
 	}
 	return twentieth + y
+}
+
+func GetTerminalWidth() (int, error) {
+	cmd := exec.Command("tput", "cols")
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, err
+	}
+
+	// Convert the output to an integer
+	width, err := strconv.Atoi(strings.TrimSpace(string(output)))
+	if err != nil {
+		return 0, err
+	}
+
+	return width, nil
+}
+
+func RemoveLine() string {
+	const def, space = 80, ` `
+	w, err := GetTerminalWidth()
+	if err != nil {
+		return strings.Repeat(space, def)
+	}
+	return strings.Repeat(space, w)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/str"
+	"github.com/Defacto2/df2/pkg/text/internal/img"
 	"github.com/Defacto2/df2/pkg/text/internal/tf"
 	"go.uber.org/zap"
 )
@@ -42,16 +43,19 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	defer rows.Close()
 	i, c := 0, 0
 	for rows.Next() {
-		t := tf.TextFile{}
-		if t, i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
+		//t := tf.TextFile{}
+		if _, i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
 			if errors.Is(tf.ErrReadmeOff, err) {
 				// website admin has disabled the display of a readme
 				continue
 			}
+			if errors.Is(err, img.ErrType) {
+				// invalid mimetype
+				continue
+			}
 			if !errors.Is(err, tf.ErrPNG) {
-				fmt.Fprintf(w, "\t%d. %s%s\n",
-					c, t.String(), str.X())
-				l.Error(err)
+				fmt.Fprintln(w)
+				l.Errorln(err)
 				continue
 			}
 		}
@@ -73,6 +77,10 @@ func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *
 	if err != nil {
 		return t, i, c, fmt.Errorf("fix exist: %w", err)
 	}
+	str.RemoveLine()
+	if !ok {
+		fmt.Fprintf(w, "\r\n\t%d. %s", i, t.String())
+	}
 	// missing images + source is an archive
 	if !ok && t.Archive() {
 		c++
@@ -90,7 +98,7 @@ func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *
 	// missing webp specific images that rely on PNG sources
 	c, err = t.WebP(w, c, dir.Img000)
 	if err != nil {
-		fmt.Fprintf(w, "\t%s\n", err)
+		fmt.Fprintf(w, "\n\t%s", err)
 	}
 	return t, i, c, nil
 }

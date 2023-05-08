@@ -145,7 +145,7 @@ func Generate(w io.Writer, src, id string, remove bool) error {
 	if err != nil {
 		return fmt.Errorf("could not generate from %s: %s: %w", src, pngDest, err)
 	}
-	fmt.Fprintf(w, "  %s", s)
+	fmt.Fprintf(w, " %s", s)
 	// use netpbm or imagemagick to convert unsupported image formats into PNG
 	if !file.Check(pngDest, err) {
 		if err := Libraries(w, src, pngDest, remove); err != nil {

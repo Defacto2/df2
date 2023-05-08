@@ -153,7 +153,6 @@ func (t *TextFile) ExtractedImgs(w io.Writer, cfg conf.Config, dir string) error
 	if err != nil {
 		return fmt.Errorf("extractedimgs: %w", err)
 	}
-	fmt.Fprintln(w, "n", n)
 	if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%w: %s", os.ErrNotExist, n)
 	} else if err != nil {
@@ -171,10 +170,9 @@ func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, count int, dir string) 
 	if w == nil {
 		w = io.Discard
 	}
-	fmt.Fprintf(w, "\t%d. %v", count, t)
 	name := filepath.Join(dir, t.UUID)
 	if _, err := os.Stat(name); errors.Is(err, fs.ErrNotExist) {
-		fmt.Fprintf(w, "%s\n", str.X())
+		fmt.Fprintf(w, "%s ", str.X())
 		return fmt.Errorf("%w: %s", ErrPNG, name)
 	} else if err != nil {
 		return fmt.Errorf("txtpng: %w", err)
@@ -183,7 +181,6 @@ func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, count int, dir string) 
 	if err := img.Make(w, cfg, name, t.UUID, amiga); err != nil {
 		return fmt.Errorf("txtpng: %w", err)
 	}
-	fmt.Fprintln(w)
 	return nil
 }
 
@@ -205,7 +202,7 @@ func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 		c--
 		return c, nil
 	}
-	fmt.Fprintf(w, "\t%d. %v", c, t)
+	//fmt.Fprintf(w, "\t%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
 	if st, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) || st.Size() == 0 {
 		fmt.Fprintf(w, "%s (no src png)\n", str.X())
