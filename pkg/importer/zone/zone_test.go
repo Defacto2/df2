@@ -40,10 +40,10 @@ const diz4 = `Some.Develop.Drums.Instrument.v2.0-ZONE
 [oS:WIN9X/NT] [DATE:4/23/00] [DiSK:o1/o1]
 Total Release size Of 704k, Completed By iNSOMNiA...`
 
-const diz5 = `Spin.Audio.Room.Verb.DX-VST.v1.1.WORKING-ZONE
+const diz5 = `Some.Audio.Room.Verb.DX-VST.v1.1.WORKING-ZONE
 [oS:WIN9X/NT] [DATE:2/4/00] [DiSK:o1/o1]`
 
-const diz6 = `Emagic.Logic.Audio.Platinum.v4.61-ZONE
+const diz6 = `Some.Logic.Audio.Platinum.v4.61-ZONE
 ________________________  _______     
 .:\   _  \_____ \______   |/       \:::.
 :__\  /    /   |   \  |  .|   _,    \__:
@@ -54,6 +54,18 @@ ________________________  _______
 :/_________ /_____/___|   |\_\  /____ /:
 --========\/=[Z O N E]|___|===\/====\/--
 -==[Win9x]==-==[11/17/00]==-==[03/03]==-`
+
+const diz7 = `            T-Racks v2.04
+ÚÄ ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Ä¿
+³ ²ÛÛÛßßÛÛÛ°ÛÛÛÛßÛÛÛÛÛÛÛßßÛÛÛÜÛÛÛßßÛÛÛ ³
+³  ßßß  ÛÛÛ°ÛÛÛÛ ÛÛÛ²ÛÛÛ  ÛÛÛ²ÛÛÛ  ßßß ³
+³ ²ÛÛÛßßßßß²ÛÛÛÛ ÛÛÛ²ÛÛÛ  ÛÛÛ²ÛÛÛßß zk ³
+³ °ÛÛÛ  ÛÛÛ²ÛÛÛÛ ÛÛÛ²ÛÛÛ  ÛÛÛ²ÛÛÛ  ÛÛÛ ³
+³ °ÛÛÛ °ÛÛÛ²ÛÛÛÛ ÛÛÛ²ÛÛÛ  ÛÛÛ²ÛÛÛ  ÛÛÛ ³
+³ °ÛÛÛ °ÛÛÛ²ÛÛÛÛ ÛÛÛ²ÛÛÛ  ÛÛÛ²ÛÛÛ °ÛÛÛ ³
+³ °ÛÛÛÜÜÛÛÛ°ÛÛÛÛÜÛÛÛ°ÛÛÛ  ÛÛÛ°ÛÛÛÜÜÛÛÛ ³
+ÀÄÄÄÄÄÄÄÄÄÄ ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ ÄÄÙ
+[06.17.01]                         [1/2]`
 
 func TestDizDate(t *testing.T) {
 	t.Parallel()
@@ -106,6 +118,9 @@ func TestDizTitle(t *testing.T) {
 
 	s = zone.DizTitle(diz3)
 	assert.Equal(t, "Some AutoSome DX PlugIn v3.04", s)
+
+	s = zone.DizTitle(diz7)
+	assert.Equal(t, "T-Racks v2.04", s)
 }
 
 const nfo1 = `  ┌────┐             ┌───-- - ∙ ·   PRESENTS   · ∙ - -─────┐           ┌────┐
@@ -147,6 +162,10 @@ const nfo3 = ` .-===============================================================
 |Relase Date:  03/07/2000                                                   |
 -=========================================================================-'`
 
+const nfo4 = `_žž.·Žš¥[[ Some Account Creator ]]¥š·.žž_
+- Version: 2.5 -
+- release date: 2-24-2000 -`
+
 func TestNfoDate(t *testing.T) {
 	t.Parallel()
 	y, m, d := zone.NfoDate(internal.RandStr)
@@ -156,8 +175,8 @@ func TestNfoDate(t *testing.T) {
 
 	y, m, d = zone.NfoDate(nfo1)
 	assert.Equal(t, 2001, y)
-	assert.Equal(t, time.Month(5), m)
-	assert.Equal(t, 2, d)
+	assert.Equal(t, time.Month(2), m)
+	assert.Equal(t, 5, d)
 
 	y, m, d = zone.NfoDate(nfo2)
 	assert.Equal(t, 2002, y)
@@ -166,6 +185,11 @@ func TestNfoDate(t *testing.T) {
 
 	y, m, d = zone.NfoDate(nfo3)
 	assert.Equal(t, 2000, y)
-	assert.Equal(t, time.Month(7), m)
-	assert.Equal(t, 3, d)
+	assert.Equal(t, time.Month(3), m)
+	assert.Equal(t, 7, d)
+
+	y, m, d = zone.NfoDate(nfo4)
+	assert.Equal(t, 2000, y)
+	assert.Equal(t, time.Month(2), m)
+	assert.Equal(t, 24, d)
 }

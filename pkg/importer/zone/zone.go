@@ -2,7 +2,6 @@ package zone
 
 import (
 	"bufio"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,6 +13,9 @@ import (
 const (
 	Name     = "ZONE"
 	december = 12
+	dd       = 2
+	mm       = 1
+	yy       = 3
 )
 
 func DizDate(body string) ( //nolint:nonamedreturns
@@ -31,7 +33,7 @@ func DizDate(body string) ( //nolint:nonamedreturns
 	for _, exp := range regs {
 		rx := regexp.MustCompile(exp)
 		f := rx.FindStringSubmatch(body)
-		const expected, dd, mm, yy = 4, 2, 1, 3
+		const expected = 4
 		if len(f) != expected {
 			continue
 		}
@@ -68,6 +70,10 @@ func DizTitle(body string) ( //nolint:nonamedreturns
 			continue
 		}
 	}
+	// hack to handle edge cases.
+	if strings.HasPrefix(t, "T-Racks") {
+		return t
+	}
 	return str.PathTitle(t)
 }
 
@@ -78,22 +84,25 @@ func NfoDate(body string) ( //nolint:nonamedreturns
 		return 0, 0, 0
 	}
 
-	// matches `DATE  : 05.29.02` or `[DATE: 02/05/01] or Date:  03/07/2000`
+	// matches
+	// DATE  : 05.29.02
+	// [DATE: 02/05/01]
+	// Date:  03/07/2000
+	// date: 2-24-2000
 	rx := regexp.MustCompile(`(?i)DATE[ ]{0,}:[ ]{1,}` +
-		`(\d?\d)[\/|\.](\d?\d)[\/|\.](\d\d\d?\d?)`)
+		`(\d?\d)[\/|\.|\-](\d?\d)[\/|\.|\-](\d\d\d?\d?)`)
 	f := rx.FindStringSubmatch(body)
 
 	const expected = 4
-	fmt.Println(f)
 	if len(f) != expected {
 		return 0, 0, 0
 	}
-	y, _ := strconv.Atoi(f[3])
+	y, _ := strconv.Atoi(f[yy])
 	if len(f[3]) == 2 {
-		y = str.YearAbbr(f[3])
+		y = str.YearAbbr(f[yy])
 	}
-	m, _ := strconv.Atoi(f[2])
-	d, _ := strconv.Atoi(f[1])
+	m, _ := strconv.Atoi(f[mm])
+	d, _ := strconv.Atoi(f[dd])
 	if m > december {
 		// ZONE releases use both DD/MM & MM/DD formats
 		return y, time.Month(d), m
