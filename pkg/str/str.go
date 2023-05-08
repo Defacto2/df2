@@ -7,7 +7,10 @@ import (
 	"log"
 	"math"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gookit/color"
@@ -92,4 +95,51 @@ func X() string {
 // Y returns a green ✓ tick mark.
 func Y() string {
 	return color.Success.Sprint("✓")
+}
+
+// PathTitle returns the title of the release extracted from the
+// named directory path of the release. This is intended as a fallback
+// when a file_id.diz cannot be parsed.
+func PathTitle(name string) string {
+	n := strings.LastIndex(name, "-")
+	t := name
+	if n > -1 {
+		t = name[0:n]
+	}
+	// match v1.0.0
+	r := regexp.MustCompile(`v(\d+)\.(\d+)\.(\d+)`)
+	t = r.ReplaceAllString(t, "v$1-$2-$3")
+	// match v1.0
+	r = regexp.MustCompile(`v(\d+)\.(\d+)`)
+	t = r.ReplaceAllString(t, "v$1-$2")
+	// word fixes
+	words := strings.Split(t, ".")
+	for i, word := range words {
+		switch strings.ToLower(word) {
+		case "incl":
+			words[i] = "including"
+		case "keymaker":
+			words[i] = "keymaker"
+		}
+	}
+	t = strings.Join(words, " ")
+	// restore v1.0.0
+	r = regexp.MustCompile(`v(\d+)-(\d+)-(\d+)`)
+	t = r.ReplaceAllString(t, "v$1.$2.$3")
+	// restore v1.0
+	r = regexp.MustCompile(`v(\d+)-(\d+)`)
+	t = r.ReplaceAllString(t, "v$1.$2")
+	return strings.TrimSpace(t)
+}
+
+func YearAbbr(s string) int {
+	y, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	const twentieth, twentyfirst = 1900, 2000
+	if y <= time.Now().Year() {
+		return twentyfirst + y
+	}
+	return twentieth + y
 }

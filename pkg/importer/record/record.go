@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/importer/zone"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	models "github.com/Defacto2/df2/pkg/models/mysql"
 	"github.com/google/uuid"
@@ -107,9 +108,11 @@ func (imports Records) Insert(
 			break
 		}
 		clause := qm.Where("file_integrity_strong=?", rec.HashStrong)
-		if cnt, err := models.Files(clause).Count(ctx, db); err != nil {
+		cnt, err := models.Files(clause).Count(ctx, db)
+		if err != nil {
 			return 0, err
-		} else if cnt != 0 {
+		}
+		if cnt != 0 {
 			l.Errorf("SKIP, the hash matches a database entry: %q", rec.Title)
 			continue
 		}
@@ -226,6 +229,9 @@ func (dl *Download) ReadDIZ(body, group string) error {
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
+	case "zone":
+		y, m, d = zone.DizDate(body)
+		title = zone.DizTitle(body)
 	case "zwt", strings.ToLower(zwt.Name):
 		y, m, d = zwt.DizDate(body)
 		title, pub = zwt.DizTitle(body)
@@ -254,6 +260,8 @@ func (dl *Download) ReadNfo(body, group string) error {
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
+	case "zone", strings.ToLower(zone.Name):
+		y, m, d = zone.NfoDate(body)
 	case "zwt", strings.ToLower(zwt.Name):
 		y, m, d = zwt.NfoDate(body)
 	default:
