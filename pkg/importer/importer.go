@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/record"
 	"github.com/Defacto2/df2/pkg/importer/zone"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
@@ -318,7 +319,7 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 					return err
 				}
 			}
-			if strings.ToLower(base) == record.FileID {
+			if g != "arcade.nfo" && strings.ToLower(base) == record.FileID {
 				sub.Diz, err = os.ReadFile(src)
 				if err != nil {
 					return err
@@ -465,6 +466,8 @@ func (sub SubDirectory) Zip(l *zap.SugaredLogger, dst string, sources ...string)
 func Group(key string) string {
 	s := PathGroup(key)
 	switch strings.ToLower(s) {
+	case "arcade":
+		return arcade.Name
 	case "df2":
 		return "Defacto2"
 	case "zone":

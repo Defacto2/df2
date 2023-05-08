@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/zone"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	models "github.com/Defacto2/df2/pkg/models/mysql"
@@ -267,6 +268,8 @@ func (dl *Download) ReadNfo(body, group string) error {
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
+	case "arcade":
+		y, m, d = arcade.NfoDate(body)
 	case "zone", strings.ToLower(zone.Name):
 		y, m, d = zone.NfoDate(body)
 	case "zwt", strings.ToLower(zwt.Name):
