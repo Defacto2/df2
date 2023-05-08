@@ -127,7 +127,7 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 		}
 		if inserts > 0 {
 			im.Logger.Infof("Inserted %d, non-public records\n"+
-				"\tdf2 new and df2 approve commands need to be used to make these public", inserts)
+				"\tThe df2 'new' and df2 'approve' commands need to be used to make these public", inserts)
 		}
 	} else {
 		im.Logger.Warn("No database records will be created without the --insert flag")

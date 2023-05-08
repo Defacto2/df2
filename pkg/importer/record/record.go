@@ -19,7 +19,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"go.uber.org/zap"
 )
 
@@ -107,13 +106,21 @@ func (imports Records) Insert(
 		if limit > 0 && i > int(limit) {
 			break
 		}
-		clause := qm.Where("file_integrity_strong=?", rec.HashStrong)
-		cnt, err := models.Files(clause).Count(ctx, db)
+		query := fmt.Sprintf("SELECT COUNT(*) AS count FROM `files` WHERE `file_integrity_strong` = '%s'",
+			rec.HashStrong)
+		rows, err := db.Query(query)
 		if err != nil {
 			return 0, err
 		}
-		if cnt != 0 {
-			l.Errorf("SKIP, the hash matches a database entry: %q", rec.Title)
+		count := 0
+		for rows.Next() {
+			if err := rows.Scan(&count); err != nil {
+				return 0, err
+			}
+		}
+		if count > 0 {
+			l.Errorf("SKIP, the hash matches a database entry: %q\n\t%s",
+				rec.Title, rec.HashStrong)
 			continue
 		}
 		newpath := filepath.Join(path, rec.UUID)
