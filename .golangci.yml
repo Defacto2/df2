@@ -23,6 +23,7 @@ linters:
     - varnamelen      # way too many false-positives
     - wrapcheck       # wrapping 3rd party errors is unnecessary
     - wsl             # whitespace linter, slow, aggressive and opinionated
+    - godox # temp disabled
 
 linters-settings:
   cyclop:

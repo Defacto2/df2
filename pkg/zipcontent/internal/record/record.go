@@ -120,7 +120,7 @@ func (r *Record) Archive(db *sql.DB, w io.Writer, s *scan.Stats) error {
 		// instead of returning the error, print it.
 		// otherwise the results of archive.Read will never be saved
 		fmt.Fprintf(w, " %s %s", str.X(), err)
-		//str.X()
+		// str.X()
 	}
 	updates, err := r.Save(db)
 	if err != nil {

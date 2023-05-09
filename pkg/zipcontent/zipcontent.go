@@ -21,7 +21,9 @@ func stmt() string {
 }
 
 // Fix the content of zip archives within in the database.
-func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, summary bool) error { //nolint:cyclop
+func Fix( //nolint:cyclop,funlen
+	db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, summary bool,
+) error {
 	if db == nil {
 		return database.ErrDB
 	}

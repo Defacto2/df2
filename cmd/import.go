@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"log"
 	"os"
 
 	"github.com/Defacto2/df2/cmd/internal/arg"
@@ -39,7 +38,7 @@ var importCmd = &cobra.Command{
 		defer db.Close()
 		w := os.Stdout
 		if err := im.Import(db, w); err != nil {
-			log.Fatal(err)
+			logr.Fatal(err)
 		}
 	},
 }

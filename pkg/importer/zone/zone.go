@@ -98,7 +98,8 @@ func NfoDate(body string) ( //nolint:nonamedreturns
 		return 0, 0, 0
 	}
 	y, _ := strconv.Atoi(f[yy])
-	if len(f[3]) == 2 {
+	const abbreviation = 2
+	if len(f[3]) == abbreviation {
 		y = str.YearAbbr(f[yy])
 	}
 	m, _ := strconv.Atoi(f[mm])

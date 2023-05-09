@@ -89,7 +89,7 @@ type Record struct {
 	LastMod        time.Time // LastMod is the last modified time value of the file download.
 }
 
-func (r *Record) String(total int) string {
+func (r *Record) String() string {
 	return fmt.Sprintf("\t%d. %v  %v  ID:%v  ",
 		r.Count,
 		color.Primary.Sprint(r.ID),

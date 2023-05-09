@@ -83,7 +83,7 @@ func (st *Stat) NextRefresh(db *sql.DB, w io.Writer, rec Records) error {
 	if err != nil {
 		return fmt.Errorf("next record 1: %w", err)
 	}
-	logger.PrintfCR(w, r.String(0))
+	logger.PrintfCR(w, r.String())
 	var f Product
 	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
@@ -143,7 +143,7 @@ func (st *Stat) NextPouet(db *sql.DB, w io.Writer, rec Records) error {
 	if r.WebIDPouet > 0 {
 		return nil
 	}
-	logger.PrintfCR(w, r.String(0))
+	logger.PrintfCR(w, r.String())
 	f := Product{}
 	err = f.Get(r.WebIDDemozoo)
 	if err != nil {
@@ -268,13 +268,13 @@ func (r *Record) Download(w io.Writer, api *prods.ProductionsAPIv1, st Stat, ove
 		return ErrDownload
 	}
 	const OK = 200
-	logger.PrintfCR(w, "%s%s %s", r.String(st.Total), color.Primary.Sprint(link),
+	logger.PrintfCR(w, "%s%s %s", r.String(), color.Primary.Sprint(link),
 		download.StatusColor(OK, "200 OK"))
 	head, err := download.GetSave(w, r.FilePath, link)
 	if err != nil {
 		return err
 	}
-	logger.PrintfCR(w, r.String(st.Total))
+	logger.PrintfCR(w, r.String())
 	fmt.Fprintf(w, "• %s", name)
 	r.downloadReset(name)
 	return r.lastMod(w, head)

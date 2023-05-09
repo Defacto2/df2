@@ -97,7 +97,7 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 			r.Logger.Errorf("queries new: %w", err)
 			continue
 		}
-		logger.PrintfCR(w, rec.String(st.Total))
+		logger.PrintfCR(w, rec.String())
 		if update := rec.check(w); !update {
 			continue
 		}

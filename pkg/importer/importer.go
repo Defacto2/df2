@@ -18,7 +18,10 @@ import (
 
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
+	"github.com/Defacto2/df2/pkg/importer/arctic"
+	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/importer/record"
+	"github.com/Defacto2/df2/pkg/importer/spirit"
 	"github.com/Defacto2/df2/pkg/importer/zone"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	"github.com/Defacto2/df2/pkg/str"
@@ -235,16 +238,15 @@ func (st *Stat) Walk(name string, l *zap.SugaredLogger) error {
 		if st.GroupPath == "" {
 			st.GroupPath = strings.ToLower(PathGroup(f.Name()))
 		}
-		if filepath.Dir(f.Name()) != key {
-			key = filepath.Dir(f.Name())
-		}
+		key = fixKey(key, f.Name())
 		// create subdirectory entry
 		sub, exists := st.SubDirs[key]
 		if !exists {
 			sub.Title = str.PathTitle(key)
 		}
 		sub.Path = filepath.Dir(f.Name())
-		sub.Files = append(sub.Files, base)
+		relPath := strings.Replace(f.Name(), key+string(os.PathSeparator), "", 1)
+		sub.Files = append(sub.Files, relPath)
 		sub.LastMods = append(sub.LastMods, f.ModTime())
 		uid, err := uuid.NewRandom()
 		if err != nil {
@@ -275,6 +277,18 @@ func (st *Stat) Walk(name string, l *zap.SugaredLogger) error {
 		st.SubDirs[key] = sub
 		return nil
 	})
+}
+
+func fixKey(key, name string) string {
+	if filepath.Dir(name) == key {
+		return key
+	}
+	key = filepath.Dir(name)
+	s := strings.Split(key, string(filepath.Separator))
+	if len(s) > 1 {
+		key = s[0]
+	}
+	return key
 }
 
 // Store creates a collection of UUID named, uncompressed zip archives
@@ -312,14 +326,14 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 		// read the content of any group nfo or file_id.diz
 		for _, src := range sources {
 			base := filepath.Base(src)
-			g := fmt.Sprintf("%s.nfo", strings.ToLower(st.GroupPath))
+			g := nfo(st.GroupPath, sub.Path)
 			if strings.ToLower(base) == g {
 				sub.Nfo, err = os.ReadFile(src)
 				if err != nil {
 					return err
 				}
 			}
-			if g != "arcade.nfo" && strings.ToLower(base) == record.FileID {
+			if fileID(g, base) {
 				sub.Diz, err = os.ReadFile(src)
 				if err != nil {
 					return err
@@ -362,6 +376,26 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 		st.SubDirs[key] = sub
 	}
 	return nil
+}
+
+func nfo(groupPath, subPath string) string {
+	g := fmt.Sprintf("%s.nfo", groupPath)
+	// handle any edge-cases
+	switch subPath { //nolint:gocritic
+	case `KV331.Synthmaster.2.v2.6.21.MacOSX.Incl.Keyfile-HEXWARS`:
+		g = `HEXWARS-OSX.nfo`
+	}
+	return strings.ToLower(g)
+}
+
+// Do not read the file_id.diz if these named nfo files are discovered,
+// as the included file_id.diz doesn't contain the required metadata.
+func fileID(g, base string) bool {
+	switch g {
+	case `arcade.nfo`, `arctic.nfo`, `arctic (2).nfo`:
+		return false
+	}
+	return strings.ToLower(base) == record.FileID
 }
 
 // Create a collection of records based on the extracted sub-directories,
@@ -468,8 +502,14 @@ func Group(key string) string {
 	switch strings.ToLower(s) {
 	case "arcade":
 		return arcade.Name
+	case "arctic":
+		return arctic.Name
 	case "df2":
 		return "Defacto2"
+	case "hexwars":
+		return hexwars.Name
+	case "spirit":
+		return spirit.Name
 	case "zone":
 		return zone.Name
 	case "zwt":

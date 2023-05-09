@@ -96,9 +96,9 @@ func TestTextFile_ExtractedImgs(t *testing.T) {
 func TestTextFile_TextPNG(t *testing.T) {
 	t.Parallel()
 	s := tf.TextFile{}
-	err := s.TextPNG(nil, conf.Config{}, 0, "")
+	err := s.TextPNG(nil, conf.Config{}, "")
 	assert.NotNil(t, err)
-	err = s.TextPNG(io.Discard, conf.Defaults(), 0, "")
+	err = s.TextPNG(io.Discard, conf.Defaults(), "")
 	assert.NotNil(t, err)
 
 	s = tf.TextFile{
@@ -108,7 +108,7 @@ func TestTextFile_TextPNG(t *testing.T) {
 		Ext:    ".zip",
 		Readme: sql.NullString{String: fileToExtract, Valid: true},
 	}
-	err = s.TextPNG(io.Discard, conf.Defaults(), 0, dzDir())
+	err = s.TextPNG(io.Discard, conf.Defaults(), dzDir())
 	assert.NotNil(t, err)
 	// further tests can be done using the those created for img.Make()
 }

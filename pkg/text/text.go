@@ -43,7 +43,7 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	defer rows.Close()
 	i, c := 0, 0
 	for rows.Next() {
-		//t := tf.TextFile{}
+		// t := tf.TextFile{}
 		if _, i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
 			if errors.Is(tf.ErrReadmeOff, err) {
 				// website admin has disabled the display of a readme
@@ -67,7 +67,9 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	return nil
 }
 
-func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *sql.Rows) (tf.TextFile, int, int, error) {
+func fixRow(
+	w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *sql.Rows,
+) (tf.TextFile, int, int, error) {
 	t := tf.TextFile{}
 	i++
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
@@ -91,7 +93,7 @@ func fixRow(w io.Writer, cfg conf.Config, i, c int, dir *directories.Dir, rows *
 	// missing images + source is a textfile
 	if !ok {
 		c++
-		if err := t.TextPNG(w, cfg, c, dir.UUID); err != nil {
+		if err := t.TextPNG(w, cfg, dir.UUID); err != nil {
 			return t, i, c, err
 		}
 	}

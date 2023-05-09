@@ -14,6 +14,9 @@ import (
 
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
+	"github.com/Defacto2/df2/pkg/importer/arctic"
+	"github.com/Defacto2/df2/pkg/importer/hexwars"
+	"github.com/Defacto2/df2/pkg/importer/spirit"
 	"github.com/Defacto2/df2/pkg/importer/zone"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	models "github.com/Defacto2/df2/pkg/models/mysql"
@@ -104,15 +107,21 @@ func (imports Records) Insert(
 ) (int, error) {
 	inserts := 0
 	for i, rec := range imports {
+		if skip(rec.Slug) {
+			continue
+		}
 		if limit > 0 && i > int(limit) {
 			break
 		}
-		query := fmt.Sprintf("SELECT COUNT(*) AS count FROM `files` WHERE `file_integrity_strong` = '%s'",
+		rows, err := db.Query("SELECT COUNT(*) AS count FROM files WHERE file_integrity_strong = ?",
 			rec.HashStrong)
-		rows, err := db.Query(query)
 		if err != nil {
 			return 0, err
 		}
+		if rows.Err() != nil {
+			return 0, rows.Err()
+		}
+		defer rows.Close()
 		count := 0
 		for rows.Next() {
 			if err := rows.Scan(&count); err != nil {
@@ -135,6 +144,16 @@ func (imports Records) Insert(
 		inserts++
 	}
 	return inserts, nil
+}
+
+// Skip slug, as the subdir is either a duplicate or has known issues
+// that make the it unusable.
+func skip(slug string) bool {
+	switch slug { //nolint:gocritic
+	case `Linplug.CronoX.VSTi.2.04-ArCTiC`:
+		return true
+	}
+	return false
 }
 
 // New creates a Record.
@@ -270,7 +289,13 @@ func (dl *Download) ReadNfo(body, group string) error {
 		return ErrGroup
 	case "arcade":
 		y, m, d = arcade.NfoDate(body)
-	case "zone", strings.ToLower(zone.Name):
+	case "arctic":
+		y, m, d = arctic.NfoDate(body)
+	case "hexwars":
+		y, m, d = hexwars.NfoDate(body)
+	case "spirit":
+		y, m, d = spirit.NfoDate(body)
+	case "zone":
 		y, m, d = zone.NfoDate(body)
 	case "zwt", strings.ToLower(zwt.Name):
 		y, m, d = zwt.NfoDate(body)

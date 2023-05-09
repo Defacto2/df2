@@ -166,7 +166,7 @@ func (t *TextFile) ExtractedImgs(w io.Writer, cfg conf.Config, dir string) error
 }
 
 // TextPNG generates PNG format image assets from a textfile.
-func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, count int, dir string) error {
+func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, dir string) error {
 	if w == nil {
 		w = io.Discard
 	}
@@ -202,7 +202,7 @@ func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 		c--
 		return c, nil
 	}
-	//fmt.Fprintf(w, "\t%d. %v", c, t)
+	// fmt.Fprintf(w, "\t%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
 	if st, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) || st.Size() == 0 {
 		fmt.Fprintf(w, "%s (no src png)\n", str.X())

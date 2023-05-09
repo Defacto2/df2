@@ -532,7 +532,7 @@ func TestRecord_String(t *testing.T) {
 				WebIDDemozoo: tt.fields.WebIDDemozoo,
 				CreatedAt:    tt.fields.CreatedAt,
 			}
-			if got := r.String(tt.args.total); got != tt.want {
+			if got := r.String(); got != tt.want {
 				t.Errorf("String() = %v, want %v", got, tt.want)
 			}
 		})

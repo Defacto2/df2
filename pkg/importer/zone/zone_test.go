@@ -1,3 +1,4 @@
+//nolint:dupword
 package zone_test
 
 import (
