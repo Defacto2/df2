@@ -15,6 +15,7 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/importer/again"
 	"github.com/Defacto2/df2/pkg/importer/air"
+	"github.com/Defacto2/df2/pkg/importer/amplify"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/arctic"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
@@ -152,7 +153,7 @@ func (imports Records) Insert(
 // Skip slug, as the subdir is either a duplicate or has known issues
 // that make the it unusable.
 func skip(slug string) bool {
-	switch slug { //nolint:gocritic
+	switch slug {
 	case
 		`Linplug.CronoX.VSTi.2.04-ArCTiC`,
 		`IK.Multimedia.T-RackS.VST.RTAS.v1.3-AiR`,
@@ -262,6 +263,8 @@ func (dl *Download) ReadDIZ(body, group string) error {
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
+	case "amplify":
+		y, m, d = amplify.DizDate(body)
 	case "again":
 		y, m, d = again.DizDate(body)
 	case "zone":
@@ -299,7 +302,8 @@ func (dl *Download) ReadNfo(body, group string) error {
 		y, m, d = again.NfoDate(body)
 	case "air":
 		y, m, d = air.NfoDate(body)
-		fmt.Println("GROUP", group, "DATE", y, m, d)
+	case "amplify":
+		y, m, d = amplify.NfoDate(body)
 	case "arcade":
 		y, m, d = arcade.NfoDate(body)
 	case "arctic":

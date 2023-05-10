@@ -169,3 +169,19 @@ func RemoveLine() string {
 	}
 	return strings.Repeat(space, w)
 }
+
+func Month(month string) int {
+	const abbreviation = 3
+	if len(month) < abbreviation {
+		return 0
+	}
+	const dec = 12
+	for i := 1; i <= dec; i++ {
+		mon := strings.ToLower(month)[0:3]
+		mmm := strings.ToLower(time.Month(i).String())[0:3]
+		if mon == mmm {
+			return i
+		}
+	}
+	return 0
+}

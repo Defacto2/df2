@@ -18,6 +18,7 @@ import (
 
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/importer/air"
+	"github.com/Defacto2/df2/pkg/importer/amplify"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/arctic"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
@@ -520,6 +521,8 @@ func Group(key string) string {
 	switch strings.ToLower(s) {
 	case "air":
 		return air.Name
+	case "amplify":
+		return amplify.Name
 	case "arcade":
 		return arcade.Name
 	case "arctic":

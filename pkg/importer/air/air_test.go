@@ -50,11 +50,3 @@ func TestNfoDate(t *testing.T) {
 	assert.Equal(t, time.Month(3), m)
 	assert.Equal(t, 19, d)
 }
-
-func TestMonth(t *testing.T) {
-	t.Parallel()
-	i := air.Month("March")
-	assert.Equal(t, 3, i)
-	i = air.Month("December")
-	assert.Equal(t, 12, i)
-}

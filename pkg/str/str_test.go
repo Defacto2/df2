@@ -124,3 +124,11 @@ func TestTitle(t *testing.T) {
 	s = str.PathTitle(r3)
 	assert.Equal(t, "SiSoftware Sandra Pro Business XI SP3 2007 6 11 40 Multilingual Retail including keymaker", s)
 }
+
+func TestMonth(t *testing.T) {
+	t.Parallel()
+	i := str.Month("March")
+	assert.Equal(t, 3, i)
+	i = str.Month("December")
+	assert.Equal(t, 12, i)
+}
