@@ -161,3 +161,24 @@ $ ./df2 --version
 [GitHub Actions](https://github.com/features/actions) combined with [GoReleaser](https://goreleaser.com/) handles the building process when new release tags are created.
 
 All changes should be tested with the `golangci-lint` [Go linters aggregator](https://golangci-lint.run/).
+
+## Usage tips
+
+### `import`
+
+Use [rsync](https://rsync.samba.org/) to upload to the remote server.
+
+```bash
+# rsync -a  optional archive mode
+# rsync -P  optional progress bar and keeps the partially transferred files
+# some_archive.rar is a local file to upload
+# user@[ip address] is the remote destination and user account with SSH access.
+# :~/downloads will place the some_archive.rar to the user account downloads directory.
+rsync -aP some_archive.rar user@[ip address]:~/downloads
+```
+
+On the remote server.
+
+```
+df2 import ~/downloads/some_archive.rar --limit=10
+```
