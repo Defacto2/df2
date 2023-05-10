@@ -13,10 +13,13 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/importer/again"
+	"github.com/Defacto2/df2/pkg/importer/air"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/arctic"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/importer/spirit"
+	"github.com/Defacto2/df2/pkg/importer/xdb"
 	"github.com/Defacto2/df2/pkg/importer/zone"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	models "github.com/Defacto2/df2/pkg/models/mysql"
@@ -150,7 +153,10 @@ func (imports Records) Insert(
 // that make the it unusable.
 func skip(slug string) bool {
 	switch slug { //nolint:gocritic
-	case `Linplug.CronoX.VSTi.2.04-ArCTiC`:
+	case
+		`Linplug.CronoX.VSTi.2.04-ArCTiC`,
+		`IK.Multimedia.T-RackS.VST.RTAS.v1.3-AiR`,
+		`NomadFactory.Liquid.Bundle.2.4-AiR`:
 		return true
 	}
 	return false
@@ -256,6 +262,8 @@ func (dl *Download) ReadDIZ(body, group string) error {
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
+	case "again":
+		y, m, d = again.DizDate(body)
 	case "zone":
 		y, m, d = zone.DizDate(body)
 		title = zone.DizTitle(body)
@@ -287,6 +295,11 @@ func (dl *Download) ReadNfo(body, group string) error {
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
+	case "again":
+		y, m, d = again.NfoDate(body)
+	case "air":
+		y, m, d = air.NfoDate(body)
+		fmt.Println("GROUP", group, "DATE", y, m, d)
 	case "arcade":
 		y, m, d = arcade.NfoDate(body)
 	case "arctic":
@@ -295,6 +308,8 @@ func (dl *Download) ReadNfo(body, group string) error {
 		y, m, d = hexwars.NfoDate(body)
 	case "spirit":
 		y, m, d = spirit.NfoDate(body)
+	case "xdb":
+		y, m, d = xdb.NfoDate(body)
 	case "zone":
 		y, m, d = zone.NfoDate(body)
 	case "zwt", strings.ToLower(zwt.Name):

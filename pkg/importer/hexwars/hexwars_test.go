@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/internal"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +26,7 @@ const nfo1 = `    @BfB                         -+-+-+-+-+-+-+-                  
 
 func TestNfoDate(t *testing.T) {
 	t.Parallel()
-	y, m, d := arcade.NfoDate(internal.RandStr)
+	y, m, d := hexwars.NfoDate(internal.RandStr)
 	assert.Equal(t, 0, y)
 	assert.Equal(t, time.Month(0), m)
 	assert.Equal(t, 0, d)

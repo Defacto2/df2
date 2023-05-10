@@ -18,7 +18,6 @@ func NfoDate(body string) ( //nolint:nonamedreturns
 	}
 
 	// Date        : 03-16-03
-	// rx = regexp.MustCompile(`(?i)Date[.]{0,}:[ ]{1,}(\d\d)\.(\d\d)\.(\d\d)`)
 	rx := regexp.MustCompile(`Date        : (\d\d)\-(\d\d)\-(\d\d)`)
 	f := rx.FindStringSubmatch(body)
 	const ddmmyy = 4

@@ -23,13 +23,13 @@ const (
 func Copy(dst, src string) (written int64, err error) { //nolint:nonamedreturns
 	s, err := os.Open(src)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("copy: %w", err)
 	}
 	defer s.Close()
 
 	d, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, CreateMode)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("copy: %w", err)
 	}
 	defer d.Close()
 
@@ -41,11 +41,11 @@ func Determine(name string) (string, error) {
 	const file = "file" // file — determine file type
 	path, err := exec.LookPath(file)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("determine: %w", err)
 	}
 	_, err = os.Stat(name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("determine: %w", err)
 	}
 	const ten = 10 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), ten)
@@ -54,7 +54,7 @@ func Determine(name string) (string, error) {
 	cmd := exec.CommandContext(ctx, path, args...)
 	out, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("determine: %w", err)
 	}
 	s := strings.TrimSpace(string(out))
 	ss := strings.Split(s, ":")

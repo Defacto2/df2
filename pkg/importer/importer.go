@@ -17,11 +17,13 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/importer/air"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/arctic"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/importer/record"
 	"github.com/Defacto2/df2/pkg/importer/spirit"
+	"github.com/Defacto2/df2/pkg/importer/xdb"
 	"github.com/Defacto2/df2/pkg/importer/zone"
 	"github.com/Defacto2/df2/pkg/importer/zwt"
 	"github.com/Defacto2/df2/pkg/str"
@@ -244,7 +246,7 @@ func (st *Stat) Walk(name string, l *zap.SugaredLogger) error {
 		if !exists {
 			sub.Title = str.PathTitle(key)
 		}
-		sub.Path = filepath.Dir(f.Name())
+		sub.Path = root(f.Name())
 		relPath := strings.Replace(f.Name(), key+string(os.PathSeparator), "", 1)
 		sub.Files = append(sub.Files, relPath)
 		sub.LastMods = append(sub.LastMods, f.ModTime())
@@ -279,6 +281,13 @@ func (st *Stat) Walk(name string, l *zap.SugaredLogger) error {
 	})
 }
 
+func root(p string) string {
+	if p == "" {
+		return ""
+	}
+	return strings.Split(filepath.Dir(p), string(os.PathSeparator))[0]
+}
+
 func fixKey(key, name string) string {
 	if filepath.Dir(name) == key {
 		return key
@@ -288,7 +297,7 @@ func fixKey(key, name string) string {
 	if len(s) > 1 {
 		key = s[0]
 	}
-	return key
+	return strings.TrimSpace(key)
 }
 
 // Store creates a collection of UUID named, uncompressed zip archives
@@ -302,7 +311,7 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 	// make temp dest
 	p, err := os.MkdirTemp(os.TempDir(), output)
 	if err != nil {
-		return err
+		return fmt.Errorf("store mkdir: %w", err)
 	}
 	st.DestUUID = p
 	defer os.Remove(p)
@@ -316,7 +325,6 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 		i++
 		tw := new(tabwriter.Writer)
 		tw.Init(w, 0, width, 0, '\t', 0)
-		fmt.Fprintf(tw, " \t%d. STORE key %s\n", i, key)
 		sources := []string{}
 		for _, f := range sub.Files {
 			sources = append(sources, filepath.Join(st.DestOpen, sub.Path, f))
@@ -326,23 +334,29 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 		// read the content of any group nfo or file_id.diz
 		for _, src := range sources {
 			base := filepath.Base(src)
-			g := nfo(st.GroupPath, sub.Path)
-			if strings.ToLower(base) == g {
+			g := nfos(st.GroupPath, sub.Path)
+			if strings.ToLower(base) == g[0] {
 				sub.Nfo, err = os.ReadFile(src)
 				if err != nil {
-					return err
+					return fmt.Errorf("store readnfo0: %w", err)
 				}
 			}
-			if fileID(g, base) {
+			if len(sub.Nfo) == 0 && strings.ToLower(base) == g[1] {
+				sub.Nfo, err = os.ReadFile(src)
+				if err != nil {
+					return fmt.Errorf("store readnfo1: %w", err)
+				}
+			}
+			if UseDIZ(g[0], base) {
 				sub.Diz, err = os.ReadFile(src)
 				if err != nil {
-					return err
+					return fmt.Errorf("store readdiz: %w", err)
 				}
-			}
-			if len(sub.Nfo) > 0 && len(sub.Diz) > 0 {
-				// as only one of these byte arrays are required,
-				// save system memory by deleting the unused one
-				sub.Nfo = nil
+				if len(sub.Nfo) > 0 && len(sub.Diz) > 0 {
+					// as only one of these byte arrays are required,
+					// save system memory by deleting the unused one
+					sub.Nfo = nil
+				}
 			}
 		}
 		// handle subdirectories containing only a single text file
@@ -354,7 +368,7 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 			}
 			err = os.Chtimes(dest, sub.LastMods[0], sub.LastMods[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("store chtimes: %w", err)
 			}
 
 			sub.Filename = filepath.Base(sources[0])
@@ -378,21 +392,25 @@ func (st *Stat) Store(w io.Writer, l *zap.SugaredLogger) error { //nolint:funlen
 	return nil
 }
 
-func nfo(groupPath, subPath string) string {
+func nfos(groupPath, subPath string) [2]string {
 	g := fmt.Sprintf("%s.nfo", groupPath)
 	// handle any edge-cases
 	switch subPath { //nolint:gocritic
 	case `KV331.Synthmaster.2.v2.6.21.MacOSX.Incl.Keyfile-HEXWARS`:
 		g = `HEXWARS-OSX.nfo`
 	}
-	return strings.ToLower(g)
+	s := [2]string{strings.ToLower(g), ""}
+	if groupPath == `air` {
+		s[1] = "airiso.nfo"
+	}
+	return s
 }
 
 // Do not read the file_id.diz if these named nfo files are discovered,
 // as the included file_id.diz doesn't contain the required metadata.
-func fileID(g, base string) bool {
+func UseDIZ(g, base string) bool {
 	switch g {
-	case `arcade.nfo`, `arctic.nfo`, `arctic (2).nfo`:
+	case `air.nfo`, `airiso.nfo`, `arcade.nfo`, `arctic.nfo`, `arctic (2).nfo`, `xdb.nfo`:
 		return false
 	}
 	return strings.ToLower(base) == record.FileID
@@ -469,7 +487,7 @@ func (sub SubDirectory) Zip(l *zap.SugaredLogger, dst string, sources ...string)
 	for i, src := range sources {
 		f, err := os.Open(src)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("zip open: %w", err)
 		}
 		defer f.Close()
 		// file header for each source
@@ -481,17 +499,17 @@ func (sub SubDirectory) Zip(l *zap.SugaredLogger, dst string, sources ...string)
 		}
 		w, err := zipWr.CreateHeader(&fh)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("zip header: %w", err)
 		}
 		// copy source to the zip file
 		wr, err := io.Copy(w, f)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("zip io copy: %w", err)
 		}
 		written += wr
 	}
 	if err = zipWr.Close(); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("zip close: %w", err)
 	}
 	return written, nil
 }
@@ -500,6 +518,8 @@ func (sub SubDirectory) Zip(l *zap.SugaredLogger, dst string, sources ...string)
 func Group(key string) string {
 	s := PathGroup(key)
 	switch strings.ToLower(s) {
+	case "air":
+		return air.Name
 	case "arcade":
 		return arcade.Name
 	case "arctic":
@@ -510,6 +530,8 @@ func Group(key string) string {
 		return hexwars.Name
 	case "spirit":
 		return spirit.Name
+	case "xdb":
+		return xdb.Name
 	case "zone":
 		return zone.Name
 	case "zwt":
