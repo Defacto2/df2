@@ -264,6 +264,7 @@ func (st *Stat) Walk(name string, l *zap.SugaredLogger) error {
 			st.DIZs++
 			if strings.ToLower(base) == record.FileID {
 				if sub.Readme == "" {
+					// the base value with the exact filename case must be used.
 					sub.Readme = filepath.Base(base)
 				}
 			}
@@ -271,7 +272,8 @@ func (st *Stat) Walk(name string, l *zap.SugaredLogger) error {
 			st.NFOs++
 			g := fmt.Sprintf("%s.nfo", st.GroupPath)
 			if strings.ToLower(base) == g {
-				sub.Readme = filepath.Base(g)
+				// the base value with the exact filename case must be used.
+				sub.Readme = filepath.Base(base)
 			}
 		default:
 			st.Others++
