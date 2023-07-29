@@ -53,17 +53,19 @@ type Config struct {
 func Defaults() Config {
 	// remote server defaults
 	const root = string(os.PathSeparator)
-	assets := filepath.Join(root, "opt", "assets-defacto2")
-	webRoot := filepath.Join(root, "opt", "Defacto2-2020", "ROOT")
-	// local developer defaults
+	opt := filepath.Join(root, "opt")
+	assets := filepath.Join(opt, "assets-defacto2")
+	webRoot := filepath.Join(opt, "Defacto2-2020", "ROOT")
+	incoming := filepath.Join(webRoot, "incoming", "user_submissions")
+	// local developer overrides
 	value, ok := os.LookupEnv(LiveServer)
 	if !ok || value == "" {
 		home, _ := os.UserHomeDir()
 		assets = filepath.Join(home, "assets-defacto2")
+		incoming = filepath.Join(home, "user_submissions")
+		opt = filepath.Join(home, "opt")
 		webRoot = filepath.Join(home, "github", "Defacto2-2020", "ROOT")
 	}
-	// shared defaults
-	incoming := filepath.Join(webRoot, "incoming", "user_submissions")
 
 	const (
 		mysqlPort  = 3306
@@ -92,7 +94,7 @@ func Defaults() Config {
 		HTMLViews:     filepath.Join(webRoot, "views"),
 		IncomingFiles: filepath.Join(incoming, "files"),
 		IncomingImgs:  filepath.Join(incoming, "previews"),
-		SQLDumps:      filepath.Join(root, "backup"),
+		SQLDumps:      filepath.Join(opt, "backup"),
 	}
 	if ok && value != "" {
 		init.DBHost = value
