@@ -52,41 +52,41 @@ func main() {
 		// https://github.com/uber-go/zap/issues/370
 		_ = l.Sync()
 	}()
-	logr := l.Sugar()
+	ls := l.Sugar()
 	// Panic recovery to close any active connections and to log the problem.
 	defer func() {
 		if i := recover(); i != nil {
 			debug.PrintStack() // uncomment to trace
-			logr.DPanic(i)
+			ls.DPanic(i)
 		}
 	}()
 	// Environment configuration
 	configs := conf.Defaults()
 	if err := env.Parse(
 		&configs, conf.Options()); err != nil {
-		logr.Fatalf("Environment variable probably contains an invalid value: %s.", err)
+		ls.Fatalf("Environment variable probably contains an invalid value: %s.", err)
 	}
 	// Go runtime customizations
 	setProcs(configs)
 	// Setup the production logger
 	if !configs.IsProduction {
-		logr = logger.Production().Sugar()
+		ls = logger.Production().Sugar()
 	}
 	// Configuration sanity checks
-	if err := configs.Checks(logr); err != nil {
-		logr.Error(err)
+	if err := configs.Checks(ls); err != nil {
+		ls.Error(err)
 	}
 	if ascii() {
 		color.Enable = false
 	}
 	// Execute help and exit
 	if help() {
-		execHelp(logr, configs)
+		execHelp(ls, configs)
 		return
 	}
 	// Print the compile and version details
 	if progInfo() {
-		execInfo(logr, configs)
+		execInfo(ls, configs)
 		return
 	}
 	// Suppress stdout
@@ -95,10 +95,10 @@ func main() {
 		defer os.Stdout.Close()
 	}
 	// Database check
-	checkDB(logr, configs)
+	checkDB(ls, configs)
 	// Execute the cobra flag library
-	if err := cmd.Execute(logr, configs); err != nil {
-		logr.Error(err)
+	if err := cmd.Execute(ls, configs); err != nil {
+		ls.Error(err)
 		defer os.Exit(1)
 	}
 }
@@ -109,41 +109,41 @@ func setProcs(c conf.Config) {
 	}
 }
 
-func checkDB(logr *zap.SugaredLogger, c conf.Config) {
+func checkDB(ls *zap.SugaredLogger, c conf.Config) {
 	db, err := msql.Connect(c)
 	if err != nil {
-		logr.Errorf("Could not connect to the database: %s.", err)
+		ls.Errorf("Could not connect to the database: %s.", err)
 	}
 	defer func() {
 		if db == nil {
 			return
 		}
 		if !c.IsProduction {
-			logr.Info("Closed the tcp connection to the database.")
+			ls.Info("Closed the tcp connection to the database.")
 		}
 		if err := db.Close(); err != nil {
-			logr.Error(err)
+			ls.Error(err)
 		}
 	}()
 }
 
-func execInfo(logr *zap.SugaredLogger, c conf.Config) {
+func execInfo(ls *zap.SugaredLogger, c conf.Config) {
 	w := os.Stdout
-	err := cmd.Brand(w, logr, brand)
+	err := cmd.Brand(w, ls, brand)
 	if err != nil {
-		logr.Error(err)
+		ls.Error(err)
 	}
-	s, err := cmd.ProgInfo(logr, c, version)
+	s, err := cmd.ProgInfo(ls, c, version)
 	if err != nil {
-		logr.Error(err)
+		ls.Error(err)
 		return
 	}
 	fmt.Fprint(w, s)
 }
 
-func execHelp(logr *zap.SugaredLogger, c conf.Config) {
-	if err := cmd.Execute(logr, c); err != nil {
-		logr.Error(err)
+func execHelp(ls *zap.SugaredLogger, c conf.Config) {
+	if err := cmd.Execute(ls, c); err != nil {
+		ls.Error(err)
 		// use defer to close any open connections
 		defer os.Exit(1)
 	}
