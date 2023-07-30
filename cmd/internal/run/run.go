@@ -87,6 +87,23 @@ func APIs(db *sql.DB, w io.Writer, a arg.APIs) error {
 	}
 }
 
+func Env(w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
+	if l == nil {
+		return ErrZap
+	}
+	if w == nil {
+		w = io.Discard
+	}
+	fmt.Fprintln(w, "Quietly creating directories.")
+	dirs := []string{cfg.Downloads, cfg.Images, cfg.Thumbs, cfg.IncomingFiles, cfg.IncomingImgs, cfg.SQLDumps}
+	for _, d := range dirs {
+		if err := os.MkdirAll(d, 0755); err != nil {
+			l.Errorln(err)
+		}
+	}
+	return nil
+}
+
 func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, dz arg.Demozoo) error {
 	if db == nil {
 		return database.ErrDB

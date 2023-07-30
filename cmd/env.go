@@ -6,8 +6,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Defacto2/df2/cmd/internal/arg"
+	"github.com/Defacto2/df2/cmd/internal/run"
 	"github.com/spf13/cobra"
 )
+
+var envs arg.Env
 
 var envCmd = &cobra.Command{
 	Use:   "env",
@@ -21,9 +25,18 @@ var envCmd = &cobra.Command{
 			logr.Fatal(err)
 		}
 		fmt.Fprintf(os.Stdout, "%s\n", b)
+		if envs.Init {
+			if err := run.Env(os.Stdout, logr, confg); err != nil {
+				logr.Fatal(err)
+			}
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(envCmd)
+	if !confg.IsProduction {
+		envCmd.Flags().BoolVarP(&envs.Init, "init", "i", false,
+			"a developer-mode flag to create the directories within the environment configuration")
+	}
 }

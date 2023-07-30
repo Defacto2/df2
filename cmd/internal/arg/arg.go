@@ -26,6 +26,22 @@ func Targets() []string {
 	}
 }
 
+// Persistent global flags.
+type Persistent struct {
+	Panic   bool // Enable panic errors to help debug.
+	ASCII   bool // Ascii is placeholder for Cobra to store the PersistentFlag value*
+	Quiet   bool // Quiet is placeholder for Cobra to store the PersistentFlag value*
+	Version bool // Version is placeholder for Cobra to store the PersistentFlag value*
+	// * but the quiet flag is handled by main.go.
+}
+
+type APIs struct {
+	Refresh bool
+	Pouet   bool
+	SyncDos bool
+	SyncWin bool
+}
+
 type Approve struct {
 	Verbose bool
 }
@@ -43,13 +59,6 @@ type Config struct {
 	Overwrite bool
 }
 
-type APIs struct {
-	Refresh bool
-	Pouet   bool
-	SyncDos bool
-	SyncWin bool
-}
-
 type Demozoo struct {
 	All       bool // scan for all proofs, not just new submissions
 	Overwrite bool // overwrite all existing assets
@@ -61,13 +70,8 @@ type Demozoo struct {
 	Releaser  uint // id for a releaser
 }
 
-// Persistent global flags.
-type Persistent struct {
-	Panic   bool // Enable panic errors to help debug.
-	ASCII   bool // Ascii is placeholder for Cobra to store the PersistentFlag value*
-	Quiet   bool // Quiet is placeholder for Cobra to store the PersistentFlag value*
-	Version bool // Version is placeholder for Cobra to store the PersistentFlag value*
-	// * but the quiet flag is handled by main.go.
+type Env struct {
+	Init bool
 }
 
 type Group struct {
