@@ -213,6 +213,9 @@ func (st Stat) summary(w io.Writer, elapsed time.Duration) {
 	if w == nil {
 		w = io.Discard
 	}
+	if st.Count > 0 {
+		fmt.Fprintln(w)
+	}
 	str.Total(w, st.Count, "Demozoo items")
 	str.TimeTaken(w, elapsed.Seconds())
 	if st.Missing > 0 {
