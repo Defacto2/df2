@@ -6,46 +6,55 @@ version: '3'
 tasks:
   default:
     silent: true
-    desc: this task, list all available tasks
+    desc: list all available tasks
     cmds:
      - task --list-all
   lint:
     silent: false
-    desc: runs a formatter and lints the source code
+    desc: runs the go formatter and lints the source code
+    ignore_error: true
     cmds:
       - cmd: clear
+        platforms: [linux,darwin]
       - cmd: gofumpt -w .
       - cmd: golangci-lint run
-  race:
+  build:
+    desc: there is no build command, it is done via github actions
+  build-race:
     silent: false
-    desc: build a binary of this program with the race detection configuration
+    desc: build a binary of this program with the race detection
     cmds:
-      - go build -v -race -o df2 main.go
-      - ./df2 --version
-  releases:
+      - cmd: go build -v -race -o df2 main.go
+        platforms: [linux,darwin]
+      - cmd: go build -v -race -o df2.exe main.go
+        platforms: [windows]
+      - cmd: ./df2 --version
+        platforms: [linux,darwin]
+      - cmd: ./df2.exe --version
+        platforms: [windows]
+  build-sim:
     silent: false
-    desc: build the multiple distribution packages for this program by simulating a release
+    desc: build the distribution package for this program by simulating a release
     cmds:
       - cmd: goreleaser release --clean --snapshot
       - cmd: ./dist/df2_linux_amd64_v1/df2 --version
         platforms: [linux/amd64]
-  patch:
+  pkg-patch:
     silent: false
     desc: patch the package deependencies
     cmds:
       - cmd: go get -u=patch -x
-      - cmd: go mod vendor
       - cmd: go mod verify
-  update:
+  pkg-update:
     silent: false
     desc: update the package deependencies
     cmds:
       - cmd: go get -u -x
-      - cmd: go mod vendor
       - cmd: go mod verify
   ver:
     silent: false
     desc: print the versions of tools
+    ignore_error: true
     cmds:
       - cmd: go version
       - cmd: gofumpt --version
