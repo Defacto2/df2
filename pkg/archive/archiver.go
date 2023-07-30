@@ -35,6 +35,14 @@ func Extractor(name, src, target, dest string) error {
 	if !ok {
 		return fmt.Errorf("extractor %s (%T): %w", name, f, ErrArchive)
 	}
+
+	// recover from panic caused by mholt/archiver.
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("extractor panic %s: %v", name, r)
+		}
+	}()
+
 	if err := e.Extract(src, target, dest); err != nil {
 		// second attempt at extraction using a system archiver program
 		if err := sys.Extract(name, src, target, dest); err != nil {
