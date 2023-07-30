@@ -75,7 +75,7 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 	if err = st.sumTotal(Records{rows, args, values}, r); err != nil {
 		return fmt.Errorf("queries sumtotal: %w", err)
 	}
-	queriesTotal(w, st.Total)
+	str.Total(w, st.Total, "records")
 	rows, err = db.Query(stmt)
 	if err != nil {
 		return fmt.Errorf("queries query 2: %w", err)
@@ -145,17 +145,6 @@ func values(db *sql.DB, stmt string) ([]sql.RawBytes, []any, *sql.Rows, error) {
 		args[i] = &values[i]
 	}
 	return values, args, rows, nil
-}
-
-func queriesTotal(w io.Writer, total int) {
-	if w == nil {
-		w = io.Discard
-	}
-	if total == 0 {
-		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
-		return
-	}
-	fmt.Fprintf(w, "\t%d total records", total)
 }
 
 // Skip the Request.

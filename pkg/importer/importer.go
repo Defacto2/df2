@@ -140,7 +140,7 @@ func (im Importer) Import(db *sql.DB, w io.Writer) error {
 		im.Logger.Warn("No database records will be created without the --insert flag")
 	}
 	nerdStats(w, im.Logger, st, limit)
-	im.Logger.Infof("Time taken, %v sec.", time.Since(ticker).Seconds())
+	str.TimeTaken(w, time.Since(ticker).Seconds())
 	return nil
 }
 

@@ -163,7 +163,7 @@ func Total(s *record.Proof, request Request) (string, error) {
 		return fmt.Sprintf("file record id '%s' does not exist or is not a release proof\n", request.ByID), nil
 	}
 	if s.Total > 1 {
-		return fmt.Sprintf("\tTOTAL, %d proof records\n", s.Total), nil
+		return fmt.Sprintf("\t  TOTAL, %d proof records\n", s.Total), nil
 	}
 	return "", nil
 }

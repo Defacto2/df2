@@ -213,8 +213,8 @@ func (st Stat) summary(w io.Writer, elapsed time.Duration) {
 	if w == nil {
 		w = io.Discard
 	}
-	fmt.Fprintf(w, "\n\tTOTAL, %d Demozoo items\n", st.Count)
-	fmt.Fprintf(w, "\ttime taken %.1f seconds\n", elapsed.Seconds())
+	str.Total(w, st.Count, "Demozoo items")
+	str.TimeTaken(w, elapsed.Seconds())
 	if st.Missing > 0 {
 		fmt.Fprintf(w, "\tUUID files, %d not found\n", st.Missing)
 	}

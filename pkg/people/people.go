@@ -281,8 +281,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 	default:
 		logger.PrintCR(w, "no people fixes needed")
 	}
-	elapsed := time.Since(start).Seconds()
-	fmt.Fprintf(w, ", time taken %.1f seconds\n", elapsed)
+	str.TimeTaken(w, time.Since(start).Seconds())
 	return nil
 }
 

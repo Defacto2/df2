@@ -15,6 +15,7 @@ import (
 	"github.com/Defacto2/df2/pkg/demozoo/internal/prod"
 	"github.com/Defacto2/df2/pkg/demozoo/internal/releases"
 	"github.com/Defacto2/df2/pkg/download"
+	"github.com/Defacto2/df2/pkg/str"
 )
 
 const (
@@ -188,7 +189,7 @@ func Filter(db *sql.DB, w io.Writer, prods []releases.ProductionV1) ([]releases.
 			continue
 		}
 		finds++
-		fmt.Fprintf(w, "\t%d. (%d) %s\n", finds, prod.ID, prod.Title)
+		fmt.Fprintf(w, "%s%d. (%d) %s\n", str.PrePad, finds, prod.ID, prod.Title)
 		p = append(p, prod)
 	}
 	return p, nil

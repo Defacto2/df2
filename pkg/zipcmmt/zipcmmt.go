@@ -12,6 +12,7 @@ import (
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
+	"github.com/Defacto2/df2/pkg/str"
 	"github.com/Defacto2/df2/pkg/zipcmmt/internal/cmmt"
 )
 
@@ -64,9 +65,8 @@ func Fix(db *sql.DB, w io.Writer, cfg conf.Config, unicode, overwrite, stdout bo
 			fmt.Fprintln(w, err)
 		}
 	}
-	elapsed := time.Since(start).Seconds()
 	fmt.Fprintln(w)
 	fmt.Fprintf(w, "%d zip archives scanned for comments", i)
-	fmt.Fprintf(w, ", time taken %.3f seconds\n", elapsed)
+	str.TimeTaken(w, time.Since(start).Seconds())
 	return nil
 }

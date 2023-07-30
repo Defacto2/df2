@@ -3,7 +3,6 @@ package scan
 
 import (
 	"database/sql"
-	"fmt"
 	"io"
 	"time"
 
@@ -38,9 +37,6 @@ func (s *Stats) Summary(w io.Writer) {
 		w = io.Discard
 	}
 	count := s.Count - s.Missing
-	if count == 0 {
-		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
-	}
-	fmt.Fprintf(w, "\tTOTAL %d archives\n", count)
+	str.Total(w, count, "archives")
 	str.TimeTaken(w, time.Since(s.start).Seconds())
 }

@@ -18,14 +18,28 @@ import (
 )
 
 const (
-	NothingToDo = "all good, there is nothing to do"
+	NothingToDo = "  OK, nothing to do" // NothingToDo is the message when there is nothing to do.
+	PrePad      = "\t  "                // PrePad is the prefix padding for stdout.
 )
 
+// TimeTaken returns the elapsed time in seconds.
 func TimeTaken(w io.Writer, elapsed float64) {
 	if w == nil {
 		w = io.Discard
 	}
-	fmt.Fprintf(w, "\ttime taken %.1f seconds\n", elapsed)
+	fmt.Fprintf(w, "%sTIME TAKEN, %.1f seconds\n", PrePad, elapsed)
+}
+
+// Total returns the count and name of the total number of items.
+func Total(w io.Writer, count int, name string) {
+	if w == nil {
+		w = io.Discard
+	}
+	if count == 0 {
+		fmt.Fprintf(w, "%s%s\n", PrePad, NothingToDo)
+		return
+	}
+	fmt.Fprintf(w, "%sTOTAL, %d %s\n", PrePad, count, name)
 }
 
 // Piped detects whether the program text is being piped to another operating

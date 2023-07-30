@@ -417,35 +417,35 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if w == nil {
 		w = io.Discard
 	}
-	l.Info("SCAN for new general submissions and cleanup")
+	l.Info("> SCAN for new general submissions and cleanup")
 	if err := newDemozoo(db, w, l, cfg); err != nil {
 		l.Errorln(err)
 	}
-	l.Info("SCAN for new proof submissions and cleanup")
+	l.Info("> SCAN for new proof submissions and cleanup")
 	if err := newProof(db, w, cfg); err != nil {
 		l.Errorln(err)
 	}
-	l.Info("SCAN file archives")
+	l.Info("> SCAN file archives")
 	if err := genZIPList(db, w, l, cfg); err != nil {
 		l.Errorln(err)
 	}
-	l.Info("GENERATE any missing screenshots or thumbnails")
+	l.Info("> GENERATE any missing screenshots or thumbnails")
 	if err := genImage(db, w); err != nil {
 		l.Errorln(err)
 	}
-	l.Info("GENERATE any previews for the text files")
+	l.Info("> GENERATE any previews for the text files")
 	if err := genText(db, w, l, cfg); err != nil {
 		l.Errorln(err)
 	}
-	l.Info("FIX Demozoo conflicts")
+	l.Info("> FIX Demozoo conflicts")
 	if err := fixDZ(db, w); err != nil {
 		l.Errorln(err)
 	}
-	l.Info("FIX malformed database records")
+	l.Info("> FIX malformed database records")
 	if err := fixDB(db, w); err != nil {
 		l.Errorln(err)
 	}
-	l.Info("FIX malformed database groups")
+	l.Info("> FIX malformed database groups")
 	if err := fixGroup(db, w); err != nil {
 		l.Errorln(err)
 	}

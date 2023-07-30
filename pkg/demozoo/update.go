@@ -90,8 +90,8 @@ type Record struct {
 }
 
 func (r *Record) String() string {
-	return fmt.Sprintf("\t%d. %v  %v  ID:%v  ",
-		r.Count,
+	return fmt.Sprintf("%s%d. %v  %v  ID: %v  ",
+		str.PrePad, r.Count,
 		color.Primary.Sprint(r.ID),
 		r.CreatedAt,
 		color.Info.Sprint(r.WebIDDemozoo))

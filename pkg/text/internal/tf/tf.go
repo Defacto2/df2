@@ -202,7 +202,6 @@ func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 		c--
 		return c, nil
 	}
-	// fmt.Fprintf(w, "\t%d. %v", c, t)
 	src := filepath.Join(imgDir, t.UUID+png)
 	if st, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) || st.Size() == 0 {
 		fmt.Fprintf(w, "%s (no src png)\n", str.X())

@@ -81,7 +81,7 @@ func fixRow(
 	}
 	str.RemoveLine()
 	if !ok {
-		fmt.Fprintf(w, "\r\n\t%d. %s", i, t.String())
+		fmt.Fprintf(w, "\r\n%s%d. %s", str.PrePad, i, t.String())
 	}
 	// missing images + source is an archive
 	if !ok && t.Archive() {

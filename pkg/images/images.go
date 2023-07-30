@@ -86,7 +86,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 			continue
 		}
 		c++
-		fmt.Fprintf(w, "\t%d. %v", c, img)
+		fmt.Fprintf(w, "%s%d. %v", str.PrePad, c, img)
 		if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); errors.Is(err, fs.ErrNotExist) {
 			fmt.Fprintf(w, "%s\n", str.X())
 			continue
