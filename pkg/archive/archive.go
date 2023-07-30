@@ -251,7 +251,7 @@ func (p Proof) Decompress(w io.Writer) error {
 		return err
 	}
 	if n := th.Name; n != "" {
-		if err := images.Generate(w, n, p.UUID, true); err != nil {
+		if err := images.Generate(w, p.Config, n, p.UUID, true); err != nil {
 			return fmt.Errorf("archive generate img: %w", err)
 		}
 	}

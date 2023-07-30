@@ -118,13 +118,13 @@ func TestGenerate(t *testing.T) {
 	)
 	dir := testDir(imgs)
 
-	err := images.Generate(nil, "", "", false)
+	err := images.Generate(nil, conf.Defaults(), "", "", false)
 	assert.NotNil(t, err)
-	err = images.Generate(io.Discard, "", tg, false)
+	err = images.Generate(io.Discard, conf.Defaults(), "", tg, false)
 	assert.NotNil(t, err)
-	err = images.Generate(io.Discard, filepath.Join(dir, ts+gif), tg, false)
+	err = images.Generate(io.Discard, conf.Defaults(), filepath.Join(dir, ts+gif), tg, false)
 	assert.Nil(t, err)
-	err = images.Generate(io.Discard, filepath.Join(dir, ts+wbm), tg, false)
+	err = images.Generate(io.Discard, conf.Defaults(), filepath.Join(dir, ts+wbm), tg, false)
 	assert.NotNil(t, err)
 }
 
@@ -352,12 +352,12 @@ func TestWebPCalc(t *testing.T) {
 
 func TestFix(t *testing.T) {
 	t.Parallel()
-	err := images.Fix(nil, nil)
+	err := images.Fix(nil, nil, conf.Defaults())
 	assert.NotNil(t, err)
 	db, err := database.Connect(conf.Defaults())
 	assert.Nil(t, err)
 	defer db.Close()
-	err = images.Fix(db, io.Discard)
+	err = images.Fix(db, io.Discard, conf.Defaults())
 	assert.Nil(t, err)
 }
 

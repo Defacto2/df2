@@ -52,14 +52,14 @@ const (
 )
 
 // Fix generates any missing assets from downloads that are images.
-func Fix(db *sql.DB, w io.Writer) error {
+func Fix(db *sql.DB, w io.Writer, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
 	}
 	if w == nil {
 		w = io.Discard
 	}
-	dir, err := directories.Init(conf.Defaults(), false)
+	dir, err := directories.Init(cfg, false)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 		} else if err != nil {
 			return fmt.Errorf("images fix stat: %w", err)
 		}
-		if err := Generate(w, filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
+		if err := Generate(w, cfg, filepath.Join(dir.UUID, img.UUID), img.UUID, false); err != nil {
 			// return fmt.Errorf("images fix generate: %w", err)
 			fmt.Fprintf(w, "%s", err)
 		}
@@ -126,14 +126,14 @@ func Duplicate(name, suffix string) (string, error) {
 }
 
 // Generate a collection of site images.
-func Generate(w io.Writer, src, id string, remove bool) error {
+func Generate(w io.Writer, cfg conf.Config, src, id string, remove bool) error {
 	if w == nil {
 		w = io.Discard
 	}
 	if _, err := os.Stat(src); errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("generate stat %q: %w", src, err)
 	}
-	f, err := directories.Files(conf.Defaults(), id)
+	f, err := directories.Files(cfg, id)
 	if err != nil {
 		return err
 	}

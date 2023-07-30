@@ -386,8 +386,8 @@ func genZIPList(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) 
 	return zipcontent.Fix(db, w, l, cfg, true)
 }
 
-func genImage(db *sql.DB, w io.Writer) error {
-	return images.Fix(db, w)
+func genImage(db *sql.DB, w io.Writer, cfg conf.Config) error {
+	return images.Fix(db, w, cfg)
 }
 
 func genText(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
@@ -430,7 +430,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 		l.Errorln(err)
 	}
 	l.Info("> GENERATE any missing screenshots or thumbnails")
-	if err := genImage(db, w); err != nil {
+	if err := genImage(db, w, cfg); err != nil {
 		l.Errorln(err)
 	}
 	l.Info("> GENERATE any previews for the text files")
