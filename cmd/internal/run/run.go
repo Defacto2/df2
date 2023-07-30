@@ -100,7 +100,7 @@ func Env(w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	fmt.Fprintln(w, "Quietly creating directories.")
 	dirs := []string{cfg.Downloads, cfg.Images, cfg.Thumbs, cfg.IncomingFiles, cfg.IncomingImgs, cfg.SQLDumps}
 	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0755); err != nil {
+		if err := os.MkdirAll(d, 0o755); err != nil {
 			l.Errorln(err)
 		}
 	}
