@@ -87,14 +87,14 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 	for rows.Next() {
 		st.Fetched++
 		if skip, err := st.nextResult(Records{rows, args, values}, r); err != nil {
-			r.Logger.Errorf("queries nextrow: %w", err)
+			r.Logger.Errorf("queries nextrow: %s", err)
 			continue
 		} else if skip {
 			continue
 		}
 		rec, err := NewRecord(st.Count, values)
 		if err != nil {
-			r.Logger.Errorf("queries new: %w", err)
+			r.Logger.Errorf("queries new: %s", err)
 			continue
 		}
 		logger.PrintfCR(w, rec.String())
@@ -102,14 +102,14 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 			continue
 		}
 		if err := rec.parseAPI(db, w, r.Config, st, r.Overwrite, storage); err != nil {
-			r.Logger.Errorf("queries parseapi: %w", err)
+			r.Logger.Errorf("queries parseapi: %s", err)
 			continue
 		}
 		if st.Total == 0 {
 			break
 		}
 		if err := rec.save(db, w); err != nil {
-			r.Logger.Errorf("queries save: %w", err)
+			r.Logger.Errorf("queries save: %s", err)
 		}
 	}
 	if r.ByID != "" {

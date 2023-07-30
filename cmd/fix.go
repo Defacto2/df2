@@ -58,7 +58,7 @@ records that do not have this expected context.`,
 		}
 		defer db.Close()
 		if err := zipcontent.Fix(db, os.Stdout, logr, confg, true); err != nil {
-			logr.Errorf("archives fix: %w", err)
+			logr.Errorf("archives fix: %s", err)
 		}
 	},
 }
@@ -101,7 +101,7 @@ var fixDemozooCmd = &cobra.Command{
 		}
 		defer db.Close()
 		if err := demozoo.Fix(db, os.Stdout); err != nil {
-			logr.Errorf("demozoo fix: %w", err)
+			logr.Errorf("demozoo fix: %s", err)
 		}
 	},
 }

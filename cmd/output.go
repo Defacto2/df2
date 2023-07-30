@@ -42,7 +42,7 @@ var outputCmd = &cobra.Command{
 		if err := cmd.Usage(); err != nil {
 			logr.Fatal(err)
 		}
-		logr.Errorf("%q subcommand for output is an %w", args[0], ErrCommand)
+		logr.Errorf("%q subcommand for output is an %s", args[0], ErrCommand)
 	},
 }
 
