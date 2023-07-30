@@ -16,7 +16,6 @@ import (
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/directories"
 	"github.com/Defacto2/df2/pkg/groups"
-	"github.com/Defacto2/df2/pkg/logger"
 	"github.com/Defacto2/df2/pkg/people/internal/person"
 	"github.com/Defacto2/df2/pkg/people/internal/role"
 	"github.com/Defacto2/df2/pkg/str"
@@ -273,14 +272,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 			}
 		}
 	}
-	switch {
-	case c == 1:
-		logger.PrintCR(w, "1 fix applied")
-	case c > 0:
-		logger.PrintfCR(w, "%d fixes applied", c)
-	default:
-		logger.PrintCR(w, "no people fixes needed")
-	}
+	str.Total(w, c, "people fixes")
 	str.TimeTaken(w, time.Since(start).Seconds())
 	return nil
 }

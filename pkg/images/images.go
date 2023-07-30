@@ -432,6 +432,8 @@ func checkWebP(src string) (string, bool, error) {
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("to webp mimetype detect: %w", err)
+	case m.Extension() == "":
+		return "", false, fmt.Errorf("no extension for webp mimetype: %w", ErrFormat)
 	case !valid(v, m.Extension()):
 		return "", false, fmt.Errorf("to webp mimetype %q != %s: %w",
 			m.Extension(), strings.Join(v, " "), ErrFormat)

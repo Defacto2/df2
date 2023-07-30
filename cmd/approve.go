@@ -25,15 +25,19 @@ var approveCmd = &cobra.Command{
 		}
 		defer db.Close()
 		w := os.Stdout
+		logr.Info("> CHECK database records")
 		if err := database.Approve(db, w, confg, approve.Verbose); err != nil {
 			logr.Error(err)
 		}
+		logr.Info("> FIX database sections and platforms")
 		if err := database.Fix(db, w); err != nil {
 			logr.Error(err)
 		}
+		logr.Info("> FIX database groups")
 		if err := groups.Fix(db, w); err != nil {
 			logr.Error(err)
 		}
+		logr.Info("> FIX database people")
 		if err := people.Fix(db, w); err != nil {
 			logr.Error(err)
 		}
