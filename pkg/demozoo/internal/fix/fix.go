@@ -34,7 +34,7 @@ func Configs(db *sql.DB, w io.Writer) error {
 		fmt.Fprintln(w, "\tMOVED", res2, "Demozoo #releaseadvert records to #releaseinstall")
 	}
 	if res1 == 0 && res2 == 0 {
-		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
+		fmt.Fprintf(w, "%s%s\n", str.PrePad, str.NothingToDo)
 	}
 	return nil
 }

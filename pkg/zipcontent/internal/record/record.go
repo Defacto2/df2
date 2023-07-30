@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/Defacto2/df2/pkg/archive"
@@ -175,8 +174,8 @@ func (r *Record) id(w io.Writer, s *scan.Stats) error {
 	if w == nil {
 		w = io.Discard
 	}
-	logger.PrintfCR(w, "\t%0*d. %v",
-		len(strconv.Itoa(s.Total)),
+	logger.PrintfCR(w, "%s%d. %v",
+		str.PrePad,
 		s.Count,
 		color.Primary.Sprint(r.ID))
 	return nil

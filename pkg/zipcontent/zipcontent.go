@@ -3,9 +3,11 @@ package zipcontent
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 
+	"github.com/Defacto2/df2/pkg/archive"
 	"github.com/Defacto2/df2/pkg/conf"
 	"github.com/Defacto2/df2/pkg/database"
 	"github.com/Defacto2/df2/pkg/zipcontent/internal/record"
@@ -72,6 +74,10 @@ func Fix( //nolint:cyclop,funlen
 		s.Columns = columns
 		s.Values = &values
 		if err := r.Iterate(db, w, &s); err != nil {
+			if errors.Is(err, archive.ErrFile) {
+				fmt.Fprint(w, " ✗ file not found\n")
+				continue
+			}
 			fmt.Fprintln(w)
 			l.Errorln(err)
 			continue

@@ -82,11 +82,7 @@ func (col Column) NamedTitles(db *sql.DB, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if rows == 0 {
-		fmt.Fprintf(w, "\t%s `%s`\n", str.NothingToDo, string(col))
-		return nil
-	}
-	fmt.Fprintf(w, "\t%d named title fixes applied, `%s`\n", rows, string(col))
+	str.Total(w, int(rows), fmt.Sprintf("named title fixes applied, `%s`", string(col)))
 	return nil
 }
 

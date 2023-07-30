@@ -157,7 +157,7 @@ func Init(w io.Writer, directory string) error { //nolint:funlen
 	}
 	fmt.Fprintf(w, "SQL found %d files using %s", cnt, humanize.Bytes(uint64(inUse)))
 	if len(files) == 0 {
-		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
+		fmt.Fprintf(w, "%s%s\n", str.PrePad, str.NothingToDo)
 		return nil
 	}
 	fmt.Fprintln(w, ".")

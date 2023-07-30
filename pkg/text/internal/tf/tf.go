@@ -27,7 +27,6 @@ var (
 	ErrMeNF        = errors.New("readme not found in archive")
 	ErrPNG         = errors.New("no such png file")
 	ErrPointer     = errors.New("pointer value cannot be nil")
-	ErrUUID        = errors.New("readme file cannot be blank or invalid")
 )
 
 const (
@@ -66,8 +65,10 @@ type TextFile struct {
 }
 
 func (t *TextFile) String() string {
-	return fmt.Sprintf("(%v) %v %v ", color.Primary.Sprint(t.ID), t.Name,
-		color.Info.Sprint(humanize.Bytes(uint64(t.Size))))
+	return fmt.Sprintf("%v  %v  %v ",
+		color.Primary.Sprint(t.ID),
+		color.Info.Sprint(humanize.Bytes(uint64(t.Size))),
+		t.Name)
 }
 
 // Archive confirms that the named file is a known archive.
@@ -187,7 +188,7 @@ func (t *TextFile) TextPNG(w io.Writer, cfg conf.Config, dir string) error {
 // WebP finds and generates missing WebP format images.
 func (t *TextFile) WebP(w io.Writer, c int, imgDir string) (int, error) {
 	if t.UUID == "" {
-		return c, ErrUUID
+		return c, ErrReadmeBlank
 	}
 	if w == nil {
 		w = io.Discard

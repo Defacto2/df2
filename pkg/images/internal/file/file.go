@@ -39,9 +39,11 @@ type Image struct {
 }
 
 func (i Image) String() string {
-	return fmt.Sprintf("(%v) %v %v ",
-		color.Primary.Sprint(i.ID), i.Name,
-		color.Info.Sprint(humanize.Bytes(uint64(i.Size))))
+	return fmt.Sprintf("%v  %v  %v ",
+		color.Primary.Sprint(i.ID),
+		color.Info.Sprint(humanize.Bytes(uint64(i.Size))),
+		i.Name,
+	)
 }
 
 func (i Image) IsExt() bool {

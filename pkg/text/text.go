@@ -43,7 +43,6 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	defer rows.Close()
 	i, c := 0, 0
 	for rows.Next() {
-		// t := tf.TextFile{}
 		if _, i, c, err = fixRow(w, cfg, i, c, &dir, rows); err != nil {
 			if errors.Is(tf.ErrReadmeOff, err) {
 				// website admin has disabled the display of a readme
@@ -54,16 +53,13 @@ func Fix(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 				continue
 			}
 			if !errors.Is(err, tf.ErrPNG) {
-				fmt.Fprintln(w)
-				l.Errorln(err)
+				fmt.Fprintf(w, "%s %s", str.X(), err)
 				continue
 			}
 		}
 	}
-	fmt.Fprintf(w, "\tSCAN %d fix attempts for %d text files\n", c, i)
-	if c == 0 {
-		fmt.Fprintf(w, "\t%s\n", str.NothingToDo)
-	}
+	fmt.Fprintln(w)
+	str.Total(w, i, fmt.Sprintf("attempted to fix %d text files", i))
 	return nil
 }
 
@@ -75,13 +71,10 @@ func fixRow(
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
 		return t, i, c, fmt.Errorf("fix rows scan: %w", err1)
 	}
+	fmt.Fprintf(w, "\n%s%d. %s", str.PrePad, i, t.String())
 	ok, err := t.Exist(dir)
 	if err != nil {
 		return t, i, c, fmt.Errorf("fix exist: %w", err)
-	}
-	str.RemoveLine()
-	if !ok {
-		fmt.Fprintf(w, "\r\n%s%d. %s", str.PrePad, i, t.String())
 	}
 	// missing images + source is an archive
 	if !ok && t.Archive() {
@@ -100,7 +93,7 @@ func fixRow(
 	// missing webp specific images that rely on PNG sources
 	c, err = t.WebP(w, c, dir.Img000)
 	if err != nil {
-		fmt.Fprintf(w, "\n\t%s", err)
+		return t, i, c, err
 	}
 	return t, i, c, nil
 }

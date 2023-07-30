@@ -114,27 +114,13 @@ func Fix(db *sql.DB, w io.Writer) error {
 			c++
 		}
 	}
-	switch {
-	case c == 1:
-		fmt.Fprintf(w, "\t1 group fix applied")
-	case c > 0:
-		fmt.Fprintf(w, "\t%d tgroup fixes applied", c)
-	default:
-		fmt.Fprintf(w, "\tgroup fixes, %s\n", str.NothingToDo)
-	}
+	str.Total(w, c, "group fixes applied")
 	// fix initialisms stored in the groupnames table
 	i, err := acronym.Fix(db)
 	if err != nil {
 		return err
 	}
-	switch i {
-	case 1:
-		fmt.Fprintf(w, "\t1 broken initialism entry removed")
-	case 0:
-		fmt.Fprintf(w, "\tinitialism fixes, %s\n", str.NothingToDo)
-	default:
-		fmt.Fprintf(w, "\t%d broken initialism entries removed", i)
-	}
+	str.Total(w, int(i), "initialism entries removed")
 	return nil
 }
 

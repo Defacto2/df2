@@ -64,13 +64,11 @@ func (p *Proof) Summary(id string) string {
 	if id != "" && p.Total < 1 {
 		return ""
 	}
+	w := &strings.Builder{}
 	total := p.Count - p.Missing
-	if total == 0 {
-		return fmt.Sprintf("\t%s\n", str.NothingToDo)
-	}
-	elapsed := time.Since(p.start).Seconds()
-	t := fmt.Sprintf("Total proofs handled: %v, time elapsed %.1f seconds", total, elapsed)
-	return fmt.Sprintf("\n%s\n%s\n", strings.Repeat("─", len(t)), t)
+	str.Total(w, total, "proofs handled")
+	str.TimeTaken(w, time.Since(p.start).Seconds())
+	return w.String()
 }
 
 // Record of a file item.
