@@ -71,10 +71,12 @@ func fixRow(
 	if err1 := rows.Scan(&t.ID, &t.UUID, &t.Name, &t.Size, &t.NoReadme, &t.Readme, &t.Platform); err1 != nil {
 		return t, i, c, fmt.Errorf("fix rows scan: %w", err1)
 	}
-	fmt.Fprintf(w, "\n%s%d. %s", str.PrePad, i, t.String())
 	ok, err := t.Exist(dir)
 	if err != nil {
 		return t, i, c, fmt.Errorf("fix exist: %w", err)
+	}
+	if !ok {
+		fmt.Fprintf(w, "\n%s%d. %s", str.PrePad, i, t.String())
 	}
 	// missing images + source is an archive
 	if !ok && t.Archive() {

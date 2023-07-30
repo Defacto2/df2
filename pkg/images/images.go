@@ -88,7 +88,7 @@ func Fix(db *sql.DB, w io.Writer) error {
 		c++
 		fmt.Fprintf(w, "%s%d. %v", str.PrePad, c, img)
 		if _, err := os.Stat(filepath.Join(dir.UUID, img.UUID)); errors.Is(err, fs.ErrNotExist) {
-			fmt.Fprintf(w, "%s\n", str.X())
+			fmt.Fprintf(w, "%s %q\n", str.X(), filepath.Join(dir.UUID, img.UUID))
 			continue
 		} else if err != nil {
 			return fmt.Errorf("images fix stat: %w", err)
