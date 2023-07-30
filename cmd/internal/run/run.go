@@ -49,6 +49,7 @@ var (
 	ErrZap     = errors.New("zap logger cannot be nil")
 )
 
+// Data is the work function for the data command.
 func Data(db *sql.DB, w io.Writer, d database.Flags) error {
 	if db == nil {
 		return database.ErrDB
@@ -66,6 +67,7 @@ func Data(db *sql.DB, w io.Writer, d database.Flags) error {
 	}
 }
 
+// API is the work function for the api command.
 func APIs(db *sql.DB, w io.Writer, a arg.APIs) error {
 	if db == nil {
 		return database.ErrDB
@@ -87,6 +89,7 @@ func APIs(db *sql.DB, w io.Writer, a arg.APIs) error {
 	}
 }
 
+// Env is the work function for the env command.
 func Env(w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if l == nil {
 		return ErrZap
@@ -104,6 +107,7 @@ func Env(w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	return nil
 }
 
+// Demozoos is the work function for the demozoo command.
 func Demozoo(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config, dz arg.Demozoo) error {
 	if db == nil {
 		return database.ErrDB
@@ -275,6 +279,7 @@ func extract(db *sql.DB, w io.Writer, cfg conf.Config, src string) error {
 	return nil
 }
 
+// Group is the work function for the group command.
 func Groups(db *sql.DB, w, dest io.Writer, gro arg.Group) error {
 	if db == nil {
 		return database.ErrDB
@@ -302,6 +307,7 @@ func Groups(db *sql.DB, w, dest io.Writer, gro arg.Group) error {
 	return ErrNothing
 }
 
+// GroupCron is the work function for the group cronjob command.
 func GroupCron(db *sql.DB, w io.Writer, cfg conf.Config, gro arg.Group) error {
 	if db == nil {
 		return database.ErrDB
@@ -400,6 +406,7 @@ func fixGroup(db *sql.DB, w io.Writer) error {
 	return groups.Fix(db, w)
 }
 
+// New is the work function for the new command.
 func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	if db == nil {
 		return database.ErrDB
@@ -445,6 +452,7 @@ func New(db *sql.DB, w io.Writer, l *zap.SugaredLogger, cfg conf.Config) error {
 	return nil
 }
 
+// People is the work function for the people command.
 func People(db *sql.DB, w io.Writer, directory string, f arg.People) error {
 	if db == nil {
 		return database.ErrDB
@@ -482,6 +490,7 @@ func People(db *sql.DB, w io.Writer, directory string, f arg.People) error {
 	return ErrNothing
 }
 
+// Rename is the work function for the rename command.
 func Rename(db *sql.DB, w io.Writer, args ...string) error {
 	if db == nil {
 		return database.ErrDB
@@ -538,6 +547,7 @@ func Rename(db *sql.DB, w io.Writer, args ...string) error {
 	return nil
 }
 
+// TestSite is the work function for the test command.
 func TestSite(db *sql.DB, w io.Writer, base string) error { //nolint:funlen
 	if db == nil {
 		return database.ErrDB

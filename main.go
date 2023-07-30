@@ -42,7 +42,7 @@ var brand []byte
 var version string
 
 func main() {
-	// Logger (use a preset config until env are read)
+	// Logger, uses a preset config until the env vars are read
 	l, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v\n", err)
@@ -53,7 +53,7 @@ func main() {
 		_ = l.Sync()
 	}()
 	ls := l.Sugar()
-	// Panic recovery to close any active connections and to log the problem.
+	// Panic recovery to close any active connections and to log the problem
 	defer func() {
 		if i := recover(); i != nil {
 			debug.PrintStack() // uncomment to trace
@@ -103,12 +103,14 @@ func main() {
 	}
 }
 
+// setProcs sets the maximum number of CPUs that can be executing simultaneously.
 func setProcs(c conf.Config) {
 	if i := c.MaxProcs; i > 0 {
 		runtime.GOMAXPROCS(int(i))
 	}
 }
 
+// checkDB checks the database connection.
 func checkDB(ls *zap.SugaredLogger, c conf.Config) {
 	db, err := msql.Connect(c)
 	if err != nil {
@@ -127,6 +129,7 @@ func checkDB(ls *zap.SugaredLogger, c conf.Config) {
 	}()
 }
 
+// execInfo prints the compile and version details.
 func execInfo(ls *zap.SugaredLogger, c conf.Config) {
 	w := os.Stdout
 	err := cmd.Brand(w, ls, brand)
@@ -141,6 +144,7 @@ func execInfo(ls *zap.SugaredLogger, c conf.Config) {
 	fmt.Fprint(w, s)
 }
 
+// execHelp prints the help and exits.
 func execHelp(ls *zap.SugaredLogger, c conf.Config) {
 	if err := cmd.Execute(ls, c); err != nil {
 		ls.Error(err)

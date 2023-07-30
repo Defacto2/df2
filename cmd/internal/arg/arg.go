@@ -17,6 +17,7 @@ var (
 	ErrNoCmd     = errors.New("no command argument was provided")
 )
 
+// Targets are the file sections to clean.
 func Targets() []string {
 	return []string{
 		"all",
@@ -35,84 +36,90 @@ type Persistent struct {
 	// * but the quiet flag is handled by main.go.
 }
 
+// APIs synchronization flags.
 type APIs struct {
-	Refresh bool
-	Pouet   bool
-	SyncDos bool
-	SyncWin bool
+	Refresh bool // Refresh empty fields in the database with data from the API.
+	Pouet   bool // Pouet sync local files with pouet ids linked on demozoo.
+	SyncDos bool // SyncDos scan demozoo for missing local msdos bbstros and cracktros.
+	SyncWin bool // SyncWin scan demozoo for missing local windows bbstros and cracktros.
 }
 
+// Approve records flags.
 type Approve struct {
-	Verbose bool
+	Verbose bool // Verbose display the records that are being approved.
 }
 
+// Clean orphan file flags.
 type Clean struct {
-	Delete   bool
-	Humanise bool
-	MakeDirs bool
-	Target   string
+	Delete   bool   // Delete erase the orphan files.
+	Humanise bool   // Humanise display the file sizes in human readable format.
+	MakeDirs bool   // MakeDirs generate uuid directories.
+	Target   string // Target is the type of file to clean.
 }
 
-type Config struct {
-	InfoSize  bool
-	Name      string
-	Overwrite bool
-}
-
+// Demozoo synchronization flags.
 type Demozoo struct {
-	All       bool // scan for all proofs, not just new submissions
-	Overwrite bool // overwrite all existing assets
-	New       bool
-	ID        string // auto-generated id or a uuid
-	Extract   []string
-	Ping      uint
-	Download  uint
-	Releaser  uint // id for a releaser
+	All       bool     // All scans all demozoo records.
+	Overwrite bool     // Overwrite all existing assets.
+	New       bool     // New scans for new demozoo submissions.
+	ID        string   // ID auto-generated id or a uuid.
+	Extract   []string // Extracts and parses an archived file.
+	Ping      uint     // Ping fetches and displays the demozoo api response.
+	Download  uint     // Download fetches and saves the demozoo api response.
+	Releaser  uint     // Releaser add to the local files all the productions of a demozoo scener.
 }
 
+// Env flags.
 type Env struct {
-	Init bool
+	Init bool // Init creates the configuration directories.
 }
 
+// Group flags.
 type Group struct {
-	Counts   bool
-	Cronjob  bool
-	Forcejob bool
-	Init     bool
-	Progress bool
-	Filter   string
-	Format   string
+	Counts   bool   // Counts display the file totals for each group.
+	Cronjob  bool   // Cronjob run the group command as a cronjob.
+	Forcejob bool   // Forcejob run the group command as a cronjob ignoring any conditions.
+	Init     bool   // Init displays the acronyms and initalialisms for each group.
+	Progress bool   // Progress display the progress bar.
+	Filter   string // Filter groups by tags.
+	Format   string // Format the output.
 }
 
+// Import flags.
 type Import struct {
-	Insert bool
-	Limit  uint
+	Insert bool // Insert the found text files metadata into the database.
+	Limit  uint // Limit the number of found text files to import.
 }
 
+// People flags.
 type People struct {
-	Cronjob  bool
-	Forcejob bool
-	Progress bool
-	Filter   string
-	Format   string
+	Cronjob  bool   // Cronjob run the people command as a cronjob.
+	Forcejob bool   // Forcejob run the people command as a cronjob ignoring any conditions.
+	Progress bool   // Progress display the progress bar.
+	Filter   string // Filter people by roles.
+	Format   string // Format the output.
 }
 
+// Prods flags.
 type Proof struct {
-	ID          string // auto-generated id or a uuid
-	All         bool   // scan for all proofs, not just new uploads
-	HideMissing bool   // hide proofs that are missing their file download
-	Overwrite   bool   // overwrite all existing images
+	ID          string // ID or uuid of a single proof.
+	All         bool   // All scans for all proofs, not just new uploads.
+	HideMissing bool   // HideMissing hide proofs that are missing their file download.
+	Overwrite   bool   // Overwrite all existing images.
 }
 
+// Recent flags.
 type Recent struct {
-	Compress bool
-	Limit    uint
+	Compress bool // Compress removes insignificant whitespace characters from the output.
+	Limit    uint // Limit the number of recent records to display.
 }
 
+// TestSite flags.
 type TestSite struct {
-	LocalHost bool
+	LocalHost bool // LocalHost runs the tests to target a developer, Docker setup.
 }
 
+// ZipCmmt flags.
 type ZipCmmt struct {
 	Stdout  bool // Stdout writes any found zip comment to the stdout.
 	Unicode bool // Unicode attempts to convert any CP-437 encoded comments to Unicode.
@@ -170,6 +177,7 @@ func FilterFlag(w io.Writer, t any, flag, val string) error {
 	return nil
 }
 
+// CleanOpts returns a string of sorted options.
 func CleanOpts(a ...string) string {
 	const opts = "\noptions: "
 	if len(a) == 0 {
