@@ -34,9 +34,9 @@ require (
 	github.com/volatiletech/strmangle v0.0.5
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	go.uber.org/zap v1.24.0
-	golang.org/x/image v0.9.0
+	golang.org/x/image v0.11.0
 	golang.org/x/sys v0.10.0
-	golang.org/x/text v0.11.0
+	golang.org/x/text v0.12.0
 )
 
 require (
