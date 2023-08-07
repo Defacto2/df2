@@ -33,7 +33,7 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.14.2
 	github.com/volatiletech/strmangle v0.0.5
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.25.0
 	golang.org/x/image v0.9.0
 	golang.org/x/sys v0.10.0
 	golang.org/x/text v0.11.0
@@ -73,7 +73,6 @@ require (
 	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
