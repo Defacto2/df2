@@ -8,7 +8,7 @@ require (
 	github.com/bengarrett/retrotxtgo v0.0.38
 	github.com/caarlos0/env/v7 v7.1.0
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
-	github.com/carlmjohnson/versioninfo v0.22.4
+	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.1
