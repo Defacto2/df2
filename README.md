@@ -7,8 +7,8 @@
 The `df2` program is a terminal tool for managing plus optimising the files and database of [defacto2.net](https://defacto2.net) that is broken down into multiple parts.
 
 ```
-The tool to optimise and manage defacto2.net
-Copyright © 2020-23 Ben Garrett
+The Defacto2 tool is the program to manage, maintain and optimise defacto2.net.
+© 2020-23 Defacto2 & Ben Garrett
 https://github.com/Defacto2/df2
 
 Usage:
@@ -18,6 +18,7 @@ Usage:
 Admin:
   approve     Approve the records that are ready to go live.
   fix         Fixes database entries and records.
+  import      Import a .rar archive collection containing information NFO and text files.
   new         Manage files marked as waiting to go live (default).
   output      Generators for JSON, HTML, SQL and sitemap documents.
   proof       Manage records tagged as #releaseproof.
@@ -33,7 +34,7 @@ Remote:
   test        Test various features of the website or database that cannot be fixed with automation.
 
 Additional Commands:
-  config      Configure the settings for this tool.
+  env         Show environment variables used for configuration.
   help        Help about any command
 
 Flags:
