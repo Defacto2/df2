@@ -17,6 +17,8 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/conf"
+	"github.com/Defacto2/df2/pkg/importer/a6581"
+	"github.com/Defacto2/df2/pkg/importer/adsr"
 	"github.com/Defacto2/df2/pkg/importer/air"
 	"github.com/Defacto2/df2/pkg/importer/amplify"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
@@ -419,7 +421,8 @@ func nfos(groupPath, subPath string) [2]string {
 // as the included file_id.diz doesn't contain the required metadata.
 func UseDIZ(g, base string) bool {
 	switch g {
-	case `air.nfo`,
+	case `6581.nfo`,
+		`air.nfo`,
 		`airiso.nfo`,
 		`arcade.nfo`,
 		`arctic.nfo`, `arctic (2).nfo`,
@@ -532,6 +535,10 @@ func (sub SubDirectory) Zip(l *zap.SugaredLogger, dst string, sources ...string)
 func Group(key string) string {
 	s := PathGroup(key)
 	switch strings.ToLower(s) {
+	case "6581":
+		return a6581.Name
+	case "adsr":
+		return adsr.Name
 	case "air":
 		return air.Name
 	case "amplify":

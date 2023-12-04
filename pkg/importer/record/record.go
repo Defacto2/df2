@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/Defacto2/df2/pkg/database"
+	"github.com/Defacto2/df2/pkg/importer/a6581"
+	"github.com/Defacto2/df2/pkg/importer/adsr"
 	"github.com/Defacto2/df2/pkg/importer/again"
 	"github.com/Defacto2/df2/pkg/importer/air"
 	"github.com/Defacto2/df2/pkg/importer/amplify"
@@ -302,6 +304,10 @@ func (dl *Download) ReadNfo(body, group string) error {
 	switch strings.ToLower(group) {
 	case "":
 		return ErrGroup
+	case "6581":
+		y, m, d = a6581.NfoDate(body)
+	case "adsr", strings.ToLower(adsr.Name):
+		y, m, d = adsr.NfoDate(body)
 	case "again":
 		y, m, d = again.NfoDate(body)
 	case "air":
