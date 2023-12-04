@@ -18,6 +18,7 @@ import (
 	"github.com/Defacto2/df2/pkg/importer/amplify"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/arctic"
+	"github.com/Defacto2/df2/pkg/importer/assign"
 	"github.com/Defacto2/df2/pkg/importer/audiop2p"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/importer/spirit"
@@ -309,6 +310,8 @@ func (dl *Download) ReadNfo(body, group string) error {
 		y, m, d = arcade.NfoDate(body)
 	case "arctic":
 		y, m, d = arctic.NfoDate(body)
+	case "assign":
+		y, m, d = assign.NfoDate(body)
 	case "audiop2p":
 		y, m, d = audiop2p.NfoDate(body)
 	case "hexwars":
