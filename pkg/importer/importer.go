@@ -238,6 +238,9 @@ func (st *Stat) Walk(name string, l *zap.SugaredLogger) error {
 		base := filepath.Base(f.Name())
 		if st.Group == "" {
 			st.Group = Group(f.Name())
+			if st.Group == "" {
+				l.Warnln("No group found for", f.Name())
+			}
 		}
 		if st.GroupPath == "" {
 			st.GroupPath = strings.ToLower(PathGroup(f.Name()))
@@ -567,8 +570,10 @@ func PathGroup(name string) string {
 	n := strings.Split(name, string(filepath.Separator))
 	s := strings.Split(n[0], "-")
 	x := len(s) - 1
+	// return the last element
 	if x > 0 {
 		return s[x]
 	}
+	// this blank value will cause an error when inserting into the DB
 	return ""
 }
