@@ -23,6 +23,7 @@ import (
 	"github.com/Defacto2/df2/pkg/importer/arctic"
 	"github.com/Defacto2/df2/pkg/importer/assign"
 	"github.com/Defacto2/df2/pkg/importer/audiop2p"
+	"github.com/Defacto2/df2/pkg/importer/audioutopia"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/importer/record"
 	"github.com/Defacto2/df2/pkg/importer/spirit"
@@ -164,7 +165,7 @@ func nerdStats(w io.Writer, l *zap.SugaredLogger, st Stat, limit uint) {
 	fmt.Fprint(tw, "\t\tNFO files found: ", "\t", st.NFOs, "\n")
 	fmt.Fprint(tw, "\t\tfile_id.diz files found: ", "\t", st.DIZs, "\n")
 	fmt.Fprint(tw, "\t\tOther file discoveries: ", "\t", st.Others, "\n")
-	fmt.Fprint(tw, "\t\tRange of years published: ", "\t")
+	fmt.Fprint(tw, "\t\tRange of last modified years: ", "\t")
 	s := []string{}
 	for year, cnt := range st.LastMods {
 		s = append(s, fmt.Sprintf("%s (%d)", year, cnt))
@@ -538,6 +539,8 @@ func Group(key string) string {
 		return assign.Name
 	case "audiop2p":
 		return audiop2p.Name
+	case "audioutopia":
+		return audioutopia.Name
 	case "df2":
 		return "Defacto2"
 	case "hexwars":
