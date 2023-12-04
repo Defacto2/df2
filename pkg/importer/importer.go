@@ -419,7 +419,12 @@ func nfos(groupPath, subPath string) [2]string {
 // as the included file_id.diz doesn't contain the required metadata.
 func UseDIZ(g, base string) bool {
 	switch g {
-	case `air.nfo`, `airiso.nfo`, `arcade.nfo`, `arctic.nfo`, `arctic (2).nfo`, `xdb.nfo`:
+	case `air.nfo`,
+		`airiso.nfo`,
+		`arcade.nfo`,
+		`arctic.nfo`, `arctic (2).nfo`,
+		`bean.nfo`,
+		`xdb.nfo`:
 		return false
 	}
 	return strings.ToLower(base) == record.FileID
@@ -541,6 +546,8 @@ func Group(key string) string {
 		return audiop2p.Name
 	case "audioutopia":
 		return audioutopia.Name
+	case "bean":
+		return "Bean"
 	case "df2":
 		return "Defacto2"
 	case "hexwars":
