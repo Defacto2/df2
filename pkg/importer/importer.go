@@ -21,6 +21,7 @@ import (
 	"github.com/Defacto2/df2/pkg/importer/amplify"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/arctic"
+	"github.com/Defacto2/df2/pkg/importer/audiop2p"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/importer/record"
 	"github.com/Defacto2/df2/pkg/importer/spirit"
@@ -529,6 +530,8 @@ func Group(key string) string {
 		return arcade.Name
 	case "arctic":
 		return arctic.Name
+	case "audiop2p":
+		return audiop2p.Name
 	case "df2":
 		return "Defacto2"
 	case "hexwars":
