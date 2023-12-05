@@ -20,12 +20,16 @@ import (
 	"github.com/Defacto2/df2/pkg/importer/a6581"
 	"github.com/Defacto2/df2/pkg/importer/adsr"
 	"github.com/Defacto2/df2/pkg/importer/air"
+	"github.com/Defacto2/df2/pkg/importer/alfiso"
 	"github.com/Defacto2/df2/pkg/importer/amplify"
 	"github.com/Defacto2/df2/pkg/importer/arcade"
 	"github.com/Defacto2/df2/pkg/importer/arctic"
 	"github.com/Defacto2/df2/pkg/importer/assign"
 	"github.com/Defacto2/df2/pkg/importer/audiop2p"
+	"github.com/Defacto2/df2/pkg/importer/audiostrike"
 	"github.com/Defacto2/df2/pkg/importer/audioutopia"
+	"github.com/Defacto2/df2/pkg/importer/bean"
+	"github.com/Defacto2/df2/pkg/importer/beat"
 	"github.com/Defacto2/df2/pkg/importer/hexwars"
 	"github.com/Defacto2/df2/pkg/importer/record"
 	"github.com/Defacto2/df2/pkg/importer/spirit"
@@ -427,6 +431,7 @@ func UseDIZ(g, base string) bool {
 		`arcade.nfo`,
 		`arctic.nfo`, `arctic (2).nfo`,
 		`bean.nfo`,
+		`beat.nfo`,
 		`xdb.nfo`:
 		return false
 	}
@@ -541,12 +546,16 @@ func Group(key string) string {
 		return adsr.Name
 	case "air":
 		return air.Name
+	case "alfiso":
+		return alfiso.Name
 	case "amplify":
 		return amplify.Name
 	case "arcade":
 		return arcade.Name
 	case "arctic":
 		return arctic.Name
+	case "audiostrike":
+		return audiostrike.Name
 	case "assign":
 		return assign.Name
 	case "audiop2p":
@@ -554,7 +563,9 @@ func Group(key string) string {
 	case "audioutopia":
 		return audioutopia.Name
 	case "bean":
-		return "Bean"
+		return bean.Name
+	case "beat":
+		return beat.Name
 	case "df2":
 		return "Defacto2"
 	case "hexwars":
