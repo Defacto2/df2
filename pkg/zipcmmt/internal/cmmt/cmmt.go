@@ -12,8 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bengarrett/retrotxtgo/lib/convert"
+	"github.com/bengarrett/retrotxtgo/byter"
 	"go.uber.org/zap/buffer"
+	"golang.org/x/text/encoding/charmap"
 )
 
 var (
@@ -164,7 +165,7 @@ func (z *Zipfile) unicode(cmmt *string) string {
 	if cmmt == nil || *cmmt == "" {
 		return ""
 	}
-	b, err := convert.D437(*cmmt)
+	b, err := byter.Decode(charmap.CodePage437, *cmmt)
 	if err != nil {
 		return fmt.Sprintf("Could not convert to Unicode:\n%s%s\n", *cmmt, resetCmd)
 	}
