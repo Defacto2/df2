@@ -24,7 +24,7 @@ var (
 
 const (
 	sep     = ","
-	timeout = 5 * time.Second
+	timeout = 10 * time.Second
 )
 
 // Record contains the values for a new Demozoo releaser production to be added to the database file table.

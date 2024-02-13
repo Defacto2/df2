@@ -42,7 +42,7 @@ const (
 	dos     = "dos"
 	win     = "windows"
 	sep     = ","
-	timeout = 5 * time.Second
+	timeout = 10 * time.Second
 )
 
 // Category are tags for production imports.

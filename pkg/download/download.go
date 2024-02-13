@@ -74,7 +74,7 @@ func (r *Request) Body() error {
 // CheckTime creates a valid time duration for use with http.Client.Timeout.
 // The t value can be 0 or a number of seconds.
 func CheckTime(t time.Duration) time.Duration {
-	const maxTime = 5 * time.Second
+	const maxTime = 10 * time.Second
 	secs := time.Duration(t.Seconds())
 	if secs < time.Second {
 		return maxTime
@@ -171,7 +171,7 @@ func Get(url string, timeout time.Duration) ([]byte, int, error) {
 // PingHead connects to a URL and returns its HTTP status code and status text.
 func PingHead(url string, timeout time.Duration) (*http.Response, error) {
 	if timeout == 0 {
-		const httpTimeout = 5 * time.Second
+		const httpTimeout = 10 * time.Second
 		timeout = httpTimeout
 	}
 	return ping(url, http.MethodHead, timeout)

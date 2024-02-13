@@ -106,7 +106,7 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 			r.Logger.Errorf("queries parseapi: %s", err)
 			if errors.Is(err, context.DeadlineExceeded) {
 				r.Logger.Warnf("%sSKIP, as demozoo.org is taking too long", str.PrePad)
-				break
+				continue
 			}
 			continue
 		}
