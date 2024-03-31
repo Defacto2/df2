@@ -46,9 +46,11 @@ func (r *Request) Query(db *sql.DB, w io.Writer, id string) error {
 	return nil
 }
 
-// Queries parses all new proofs.
-// Overwrite will replace existing assets such as images.
-// All parses every Demozoo entry, not just records waiting for approval.
+// Queries parses all new Demozoo submissions.
+//
+// Request.Overwrite will replace existing assets such as images.
+//
+// Request.All parses every Demozoo entry, not just records waiting for approval.
 func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 	if db == nil {
 		return database.ErrDB
@@ -111,7 +113,7 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 			continue
 		}
 		if st.Total == 0 {
-			break
+			continue
 		}
 		if err := rec.save(db, w); err != nil {
 			r.Logger.Errorf("queries save: %s", err)
