@@ -506,9 +506,9 @@ func (r *Record) parseAPI(db *sql.DB, w io.Writer, cfg conf.Config, st Stat, ove
 	if !ok {
 		return ErrParseAPI
 	}
-	if err := r.pingPouet(&api); err != nil {
-		return fmt.Errorf("%s%w", "parse api: ", err)
-	}
+	// if err := r.pingPouet(&api); err != nil {
+	// 	return fmt.Errorf("%s%w", "parse api: ", err)
+	// }
 	r.FilePath = filepath.Join(storage, r.UUID)
 	if err := r.Download(w, &api, st, overwrite); err != nil {
 		return fmt.Errorf("%s%w", "parse api download: ", err)

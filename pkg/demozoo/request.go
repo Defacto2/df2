@@ -104,6 +104,7 @@ func (r Request) Queries(db *sql.DB, w io.Writer) error { //nolint:cyclop,funlen
 		if update := rec.check(w); !update {
 			continue
 		}
+		time.Sleep(1 * time.Second)
 		if err := rec.parseAPI(db, w, r.Config, st, r.Overwrite, storage); err != nil {
 			r.Logger.Errorf("queries parseapi: %s", err)
 			if errors.Is(err, context.DeadlineExceeded) {
