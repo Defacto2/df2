@@ -9,12 +9,12 @@ require (
 	github.com/caarlos0/env/v7 v7.1.0
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e
 	github.com/carlmjohnson/versioninfo v0.22.5
-	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/friendsofgo/errors v0.9.2
 	github.com/gabriel-vasile/mimetype v1.4.3
-	github.com/go-sql-driver/mysql v1.7.1
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
 	github.com/gookit/color v1.5.4
@@ -35,11 +35,12 @@ require (
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	go.uber.org/zap v1.27.0
 	golang.org/x/image v0.15.0
-	golang.org/x/sys v0.17.0
+	golang.org/x/sys v0.18.0
 	golang.org/x/text v0.14.0
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
