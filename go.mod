@@ -35,7 +35,7 @@ require (
 	github.com/yusukebe/go-pngquant v0.0.0-20200223090257-49b91f11b627
 	go.uber.org/zap v1.27.0
 	golang.org/x/image v0.15.0
-	golang.org/x/sys v0.18.0
+	golang.org/x/sys v0.19.0
 	golang.org/x/text v0.14.0
 )
 
