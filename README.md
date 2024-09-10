@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This redundant repository was archived in September 2024 after Defacto2 discontinued its legacy Coldfusion build web application.
+
 # df2
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/Defacto2/df2)](https://goreportcard.com/report/github.com/Defacto2/df2)
